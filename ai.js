@@ -7,7 +7,7 @@ let AI = function() {
 }
 
 //https://pdfs.semanticscholar.org/047f/6ee946c678c874029d8a3483c8a5f0f58666.pdf (Relación entre profundidad y ELO)
-let totaldepth = 12
+let totaldepth = 10
 let seconds = 3
 let n = 0
 let nodes = 0
