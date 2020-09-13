@@ -184,9 +184,9 @@ AI.history[1][5] = [
 
 
   for (let color = 0; color < 2; color++) {
-    for (let piece = 0; piece < 6; piece++) {
+    for (let from = 0; from < 64; from++) {
       for (let to = 0; to < 64; to++) {
-        AI.history[color][piece][to] =  0//AI.history[color][piece][to] / 50000
+        AI.history[color][from][to] =  0//AI.history[color][from][to] / 50000
       }
     }
   }
@@ -836,7 +836,7 @@ AI.sortMoves = function(moves, turn, ply, chessPosition, ttHash) {
       }
     }
 
-    move.hvalue = AI.history[turn][move.getPiece()][move.getTo()]
+    move.hvalue = AI.history[turn][move.getFrom()][move.getTo()]
   })
 
   moves.sort((a, b) => {
@@ -989,7 +989,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply, iid) {
 
         //History prunning
         /*if (TESTER && iteration >= 12 && !moves[i].isCapture() && !chessPosition.isKingInCheck() && legal >= 5) {
-          let hscore = AI.history[turn][moves[i].getPiece()][moves[i].getTo()] // history hscore
+          let hscore = AI.history[turn][moves[i].getFrom()][moves[i].getTo()] // history hscore
           if (!hscore) {
             chessPosition.unmakeMove()
             continue
@@ -1020,7 +1020,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply, iid) {
 
         if( score > bestscore ) {
            if( score >= beta ) {
-            AI.history[turn][moves[i].getPiece()][moves[i].getTo()] = parseInt(AI.history[turn][moves[i].getPiece()][moves[i].getTo()]) + (1 << depth); // 1 << depth
+            AI.history[turn][moves[i].getFrom()][moves[i].getTo()] = parseInt(AI.history[turn][moves[i].getFrom()][moves[i].getTo()]) + (1 << depth); // 1 << depth
             AI.transpositionTableStore(hashkey, score, -1, depth, moves[i])
             return score;
           }
