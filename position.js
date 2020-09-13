@@ -296,9 +296,9 @@ Position.makeKingAttackMask = function(color, king) {
 	var attacks1 = king.dup().and_not(Chess.Bitboard.FILES[0]).shiftLeft(white ? 7 : -9);
 	var attacks2 = king.dup().and_not(Chess.Bitboard.FILES[Chess.LAST_FILE]).shiftLeft(white ? 9 : -7);
 	var attacks3 = king.dup().shiftLeft(white ? 8 : -8);
-	// var attacks4 = king.dup().and_not(Chess.Bitboard.FILES[0]).shiftLeft(white ? -1 : 1);
-	// var attacks5 = king.dup().and_not(Chess.Bitboard.FILES[Chess.LAST_FILE]).shiftLeft(white ? 1 : -1);
-	return attacks1.or(attacks2).or(attacks3)//.or(attacks4).or(attacks5);
+	var attacks4 = king.dup().and_not(Chess.Bitboard.FILES[0]).shiftLeft(white ? -1 : 1);
+	var attacks5 = king.dup().and_not(Chess.Bitboard.FILES[Chess.LAST_FILE]).shiftLeft(white ? 1 : -1);
+	return attacks1.or(attacks2).or(attacks3).or(attacks4).or(attacks5);
 };
 
 /**
@@ -326,7 +326,7 @@ Position.makeSlidingAttackMask = function(fromBB, occupied, rankDirection, fileD
  * @param {!Chess.Bitboard} occupied
  * @return {!Chess.Bitboard}
  */
-Position.makeBishopAttackMask = function(fromBB, occupied) {
+Position.prototype.makeBishopAttackMask = function(fromBB, occupied) {
 	return Position.makeSlidingAttackMask(fromBB.dup(), occupied, 1, 1).or(
 		Position.makeSlidingAttackMask(fromBB.dup(), occupied, 1, -1)).or(
 		Position.makeSlidingAttackMask(fromBB.dup(), occupied, -1, 1)).or(
@@ -338,7 +338,7 @@ Position.makeBishopAttackMask = function(fromBB, occupied) {
  * @param {!Chess.Bitboard} occupied
  * @return {!Chess.Bitboard}
  */
-Position.makeRookAttackMask = function(fromBB, occupied) {
+Position.prototype.makeRookAttackMask = function(fromBB, occupied) {
 	return Position.makeSlidingAttackMask(fromBB.dup(), occupied, 0, 1).or(
 		Position.makeSlidingAttackMask(fromBB.dup(), occupied, 0, -1)).or(
 		Position.makeSlidingAttackMask(fromBB.dup(), occupied, 1, 0)).or(

@@ -26,9 +26,11 @@ let protozobrist = Chess.Zobrist.prototype
 let protomove = Chess.Move.prototype
 
 app.post('/', function (req, res) {
-  let chessboard = req.body
+  let chessboard = req.body.chessPosition
+  let options = req.body.options
+
   Object.assign(chessboard.__proto__, protochess, protoposition, protobitboard, protozobrist, protomove)
-  Chess.AI.search(req.body).then(move=>{
+  Chess.AI.search(chessboard, options).then(move=>{
   	res.send(move);
   })
 });
@@ -36,22 +38,3 @@ app.post('/', function (req, res) {
 app.listen(3010, function () {
   console.log('Example app listening on port 3010!');
 });
-/*
-
-let ai = new Chess.AI
-// let position = new Chess.Position
-// let position = new Chess.Bitboard
-let protochess = Chess.prototype
-let protoposition = Chess.Position.prototype
-let protobitboard = Chess.Bitboard.prototype
-let protozobrist = Chess.Zobrist.prototype
-let protomove = Chess.Move.prototype
-// let protomove = Chess.Move.prototype
-
-this.onmessage = function(e) {
-	Object.assign(e.data.__proto__, protochess, protoposition, protobitboard, protozobrist, protomove)
-
-	ai.search(e.data).then(m=>{
-		this.postMessage({move: m})
-	})
-}*/
