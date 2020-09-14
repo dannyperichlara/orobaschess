@@ -7,7 +7,7 @@ let totaldepth = 128
 let random = 10
 let stage = 1
 let htlength = 1e6
-let secondspermove = 3
+let secondspermove = 1
 let mindepth = 6
 
 let AI = function() {
@@ -1117,24 +1117,14 @@ AI.setStage = function (chessPosition, simple) {
 
 AI.search = function(chessPosition, options) {
   console.log('blancas')
-  console.log(AI.history[0][0])
-  console.log(AI.history[0][1])
-  console.log(AI.history[0][2])
-  console.log(AI.history[0][3])
-  console.log(AI.history[0][4])
-  console.log(AI.history[0][5])
+  console.log(AI.history[0])
 
   console.log('negras')
 
-  console.log(AI.history[1][0])
-  console.log(AI.history[1][1])
-  console.log(AI.history[1][2])
-  console.log(AI.history[1][3])
-  console.log(AI.history[1][4])
-  console.log(AI.history[1][5])
+  console.log(AI.history[1])
 
 
-  if (!chessPosition.madeMoves.length) AI.createTables()
+  if (chessPosition.madeMoves.length < 2) AI.createTables()
 
   return new Promise((resolve, reject) => {
     let color = chessPosition.getTurnColor()
@@ -1176,9 +1166,10 @@ AI.search = function(chessPosition, options) {
       }
 
       for (let depth = 1; depth <= totaldepth; depth+=1) {
-          iteration++
-          AI.bestmove = AI.PV[iteration-1][1]
+          if (iteration > 1) AI.bestmove = AI.PV[iteration-1][1]
           lastscore = score
+
+          iteration++
 
           fh = fhf = 1
           
