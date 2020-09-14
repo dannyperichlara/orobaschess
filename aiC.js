@@ -8,7 +8,7 @@ let random = 10
 let stage = 1
 let htlength = 1e6
 let secondspermove = 3
-let mindepth = 4
+let mindepth = 6
 
 let AI = function() {
 
@@ -184,9 +184,9 @@ AI.history[1][5] = [
 
 
   for (let color = 0; color < 2; color++) {
-    for (let from = 0; from < 64; from++) {
+    for (let piece = 0; piece < 6; piece++) {
       for (let to = 0; to < 64; to++) {
-        AI.history[color][from][to] =  0//AI.history[color][from][to] / 50000
+        AI.history[color][piece][to] =  0//AI.history[color][piece][to] / 50000
       }
     }
   }
@@ -209,7 +209,7 @@ AI.MATE = AI.PIECE_VALUES[5]
 
 AI.PSQT_KNIGHTS_KSC = [ 
   -50,-40,-30,-30,-30,-30,-40,-50,
-  -40,-20,  0, 10, 10, 10, 10,-40,
+  -40,-20,  0, 40, 40, 40, 40,-40,
   -30,-20,  0, 15, 15, 10, 10,-30,
   -30,-20,  0, 20, 20, 20, 10,-30,
   -30,-20,  0, 30, 30, 15, 10,-30,
@@ -220,7 +220,7 @@ AI.PSQT_KNIGHTS_KSC = [
 
 AI.PSQT_KNIGHTS_QSC = [ 
   -50,-40,-30,-30,-30,-30,-40,-50,
-  -40, 10, 10, 10, 10,  0,-20,-40,
+  -40, 40, 40, 40, 40,  0,-20,-40,
   -30, 10, 10, 15, 15,  0,-20,-30,
   -30, 10, 20, 20, 20,  0,-20,-30,
   -30, 10, 15, 30, 30,  0,-20,-30,
@@ -231,7 +231,7 @@ AI.PSQT_KNIGHTS_QSC = [
 
 AI.PSQT_BISHOPS_KSC = [ 
   -30, -30, -30, -30, -30, 20, 10, 0,
--30, -30, -30, -30, 0, 20, 20, 10,
+-30, -30, -30, -30,40, 40, 40, 10,
 -30, -30, -30, 0, 20, 30, 20, 20,
 -30, -30, 0, 20, 30, 20, 0, -30,
 -30, 0, 20, 30, 20, 0, -30, -30,
@@ -242,7 +242,7 @@ AI.PSQT_BISHOPS_KSC = [
 
 AI.PSQT_BISHOPS_QSC = [ 
   0, 10, 20, -30, -30, -30, -30, -30,
- 10, 20, 20, 0, -30, -30, -30, -30,
+ 10, 40, 40, 40, -30, -30, -30, -30,
  20, 20, 30, 20, 0, -30, -30, -30,
 -30,  0, 20, 30, 20, 0, -30, -30,
 -30, -30, 0, 20, 30, 20, 0, -30,
@@ -291,7 +291,7 @@ AI.PIECE_SQUARE_TABLES_MIDGAME = [
     // Knight
     [ 
     -50,-40,-30,-30,-30,-30,-40,-50,
-    -40,-20,  0,  0,  0,  0,-20,-40,
+    -40, 30, 30, 30, 30, 30, 30,-40,
     -30,  0, 10, 15, 15, 10,  0,-30,
     -30,  0, 20, 20, 20, 20,  0,-30,
     -30,  0, 15, 30, 30, 15,  0,-30,
@@ -302,17 +302,17 @@ AI.PIECE_SQUARE_TABLES_MIDGAME = [
     // Bishop
   [ 
     -20,-10,-10,-10,-10,-10,-10,-20,
-    -10,  0,  0,  0,  0,  0,  0,-10,
+    -10, 20, 20, 20, 20, 20, 20,-10,
     -10,  0,  5, 10, 10,  5,  0,-10,
-    -10, 15, 10,-20,-20, 10, 15,-10,
-    -40,  0, 20, 10, 10, 20,  0,-40,
-    -10, 10,-50,-40,-40,-50, 20,-10,
+    -10, 15, 10, 10, 10, 10, 15,-10,
+    -40, 20, 10, 10, 10, 10, 20,-40,
+    -10, 20,-50,-40,-40,-50, 20,-10,
     -10, 20,  0,  0,  0,  0, 20,-10,
     -20,-10,-20,-10,-10,-20,-10,-20,
   ],
   // Rook
   [ 
-  0, 20, 20, 20, 20, 20, 20,  0,
+  0, 30, 30, 30, 30, 30, 30,  0,
   5, 40, 40, 40, 40, 40, 40,  5,
  -5,  0,  0,  0,  0,  0,  0, -5,
  -5,  0,  0,  0,  0,  0,  0, -5,
@@ -324,8 +324,8 @@ AI.PIECE_SQUARE_TABLES_MIDGAME = [
 
   // Queen
   [ 
--20,-10,-10, -5, -5,-10,-10,-20,
--10, 10, 10, 10, 10, 10, 10,-10,
+-20, 30, 30, 30, 30, 30, 30,-20,
+-10, 40, 40, 40, 40, 40, 40,-10,
 -10,  0,  0,  0,  0,  0,  0,-10,
  -5,  0,  0,  0,  0,  0,  0, -5,
   0,  0,  0,  0,  0,  0,  0, -5,
@@ -836,7 +836,7 @@ AI.sortMoves = function(moves, turn, ply, chessPosition, ttHash) {
       }
     }
 
-    move.hvalue = AI.history[turn][move.getFrom()][move.getTo()]
+    move.hvalue = AI.history[turn][move.getPiece()][move.getTo()]
   })
 
   moves.sort((a, b) => {
@@ -989,7 +989,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply, iid) {
 
         //History prunning
         /*if (TESTER && iteration >= 12 && !moves[i].isCapture() && !chessPosition.isKingInCheck() && legal >= 5) {
-          let hscore = AI.history[turn][moves[i].getFrom()][moves[i].getTo()] // history hscore
+          let hscore = AI.history[turn][moves[i].getPiece()][moves[i].getTo()] // history hscore
           if (!hscore) {
             chessPosition.unmakeMove()
             continue
@@ -1020,7 +1020,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply, iid) {
 
         if( score > bestscore ) {
            if( score >= beta ) {
-            AI.history[turn][moves[i].getFrom()][moves[i].getTo()] = parseInt(AI.history[turn][moves[i].getFrom()][moves[i].getTo()]) + (1 << depth); // 1 << depth
+            AI.history[turn][moves[i].getPiece()][moves[i].getTo()] = parseInt(AI.history[turn][moves[i].getPiece()][moves[i].getTo()]) + (1 << depth); // 1 << depth
             AI.transpositionTableStore(hashkey, score, -1, depth, moves[i])
             return score;
           }
@@ -1134,7 +1134,7 @@ AI.search = function(chessPosition, options) {
   console.log(AI.history[1][5])
 
 
-  // if (!chessPosition.madeMoves.length) AI.createTables()
+  if (!chessPosition.madeMoves.length) AI.createTables()
 
   return new Promise((resolve, reject) => {
     let color = chessPosition.getTurnColor()

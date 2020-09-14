@@ -15,7 +15,7 @@ Chess.Bitboard = require('./bitboard.js')
 Chess.Zobrist = require('./zobrist.js')
 Chess.Move = require('./move.js')
 Chess.Position = require('./position.js')
-Chess.AI = require('./ai.js')
+Chess.AI = require('./aiC.js')
 
 console.log(Chess.AI)
 
