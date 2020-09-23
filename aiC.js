@@ -1087,24 +1087,25 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
       let R = 0
       let E = 0
+      //History reduction & prunning
+      if (!moves[i].isCapture() && !chessPosition.isKingInCheck() && !pvNode && legal > 4) {
+        let hscore = AI.history[turn][moves[i].getPiece()][moves[i].getTo()] // history hscore
+        if (!hscore) {
+          R += 1
+        }
+        
+        if (hscore < 0.5 * Math.max(...AI.history[turn][moves[i].getPiece()])) {
+          R += 0.5
+        }
+      }
+
+
       /*//LMP
       if (iteration > 4 && stage < 3 && !chessPosition.isKingInCheck() && depth <= 2 && i > depth * 5) {
        chessPosition.unmakeMove()
        continue
       }
-
-      //History prunning
-      if (!moves[i].isCapture() && !chessPosition.isKingInCheck() && !pvNode) {
-        let hscore = AI.history[turn][moves[i].getPiece()][moves[i].getTo()] // history hscore
-        if (!hscore) {
-          chessPosition.unmakeMove()
-          continue
-        }
-
-        if (!pvNode && hscore < 2*Math.min([...AI.history[turn][moves[i].getPiece()]])) {
-          continue
-        }
-      }*/
+      */
 
       //EXTENSIONS
 /*      if (chessPosition.isKingInCheck() && depth < 5) {
@@ -1113,7 +1114,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
       //LMR
       if (depth >= 3 && !chessPosition.isKingInCheck()) {
-        R = 1 + depth/3 + i/20 | 0
+        R += 1 + depth/3 + i/20 | 0
       }
 
 
