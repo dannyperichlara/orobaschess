@@ -824,10 +824,10 @@ AI.getPieceSquareValue = function(chessPosition, color) {
 
 AI.scoreMove = function(move) {
   let policyValue = move.policyValue
-/*
+
   if (move.isCastle()) {
     return 1e8 + 1e6
-  } else */if (move.tt) {
+  } else if (move.tt) {
     return 1e8
   } else if (move.pv) {
     return 1e6
@@ -853,15 +853,13 @@ AI.sortMoves = function(moves, turn, ply, chessPosition, ttHash, pvMoveValue) {
       move.pv = true
     }
 
-    /*if (!move.hvalue) */move.hvalue = AI.history[turn][move.getPiece()][move.getTo()]
+    move.hvalue = AI.history[turn][move.getPiece()][move.getTo()]
 
   }
 
   moves.sort((a, b) => {
       return AI.scoreMove(b, chessPosition) - AI.scoreMove(a, chessPosition)
   })
-
-  // console.log(moves)
 
   return moves
 }
@@ -900,7 +898,7 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
           AI.ttSave(hashkey, bestscore, -1, 0, moves[i])
           return beta
         }
-        
+
         if( score > alpha ) {
           alpha = score
           bestmove = moves[i]
