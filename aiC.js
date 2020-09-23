@@ -1301,7 +1301,7 @@ AI.search = function(chessPosition, options) {
         
         score = (white? 1 : -1) * AI.PVS(chessPosition, -Infinity, Infinity, depth, 1)
         
-        AI.PV = AI.getPV(chessPosition)
+        AI.PV = AI.getPV(chessPosition).slice(0, iteration)
 
         console.log(depth, AI.PV.map(e=>{ return e? e.getString() : '---'}).join(' '), 'FHF ' + Math.round(fhf*100/fh) + '%', score)
         
