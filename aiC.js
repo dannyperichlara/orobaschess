@@ -7,8 +7,8 @@ let totaldepth = 23
 let random = 0
 let stage = 1
 let htlength = 1 << 24
-let secondspermove = 3
-let mindepth = 6
+let secondspermove = 1
+let mindepth = 2
 
 let AI = function() {
 
@@ -1039,20 +1039,20 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   if (pvNode && depth > 3) {
     AI.PVS(chessPosition, alpha, beta, depth-2, ply)
   }
-  
+
   if( depth <=0 ) {
-      return AI.quiescenceSearch(chessPosition, alpha, beta, depth, ply, pvNode)
-    /*if (ttEntry && ttEntry.depth <= 0) {
+      // return AI.quiescenceSearch(chessPosition, alpha, beta, depth, ply, pvNode)
+    if (ttEntry && ttEntry.depth <= 0) {
       return ttEntry.score
     } else {
       return AI.quiescenceSearch(chessPosition, alpha, beta, depth, ply, pvNode)
-    }*/
+    }
   }
 
   let bestmove = {value: 2080,  getString() {return '-'}} // iteration > 1? AI.PV[iteration-1][1] : moves[0]
 
 
- /* if (ttEntry && ttEntry.depth >= depth) {
+  if (ttEntry && ttEntry.depth >= depth) {
       if (ttEntry.flag === 0) {
         // AI.PV[ply] = ttEntry.move
         return ttEntry.score          
@@ -1068,7 +1068,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
         return ttEntry.score
       }
       
-  }*/
+  }
 
 
 
