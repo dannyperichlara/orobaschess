@@ -3,8 +3,8 @@
 let Chess = require('./chess.js')
 
 let TESTER, nodes, qsnodes, enodes, iteration, status, fhf, fh
-let totaldepth = 23
-let random = 0
+let totaldepth = 128
+let random = 50
 let stage = 1
 let htlength = 1 << 24
 let secondspermove = 1
@@ -35,7 +35,7 @@ AI.createTables = function () {
 
   AI.history = [[],[]]
 
-  AI.history[0] = [
+  AI.history[0][0] = [
        0,       0,      0,     0,     0,     0,
        0,       0,      0,     0,     0,     0,
        0,       0,      0,     0,  6792, 52304,
@@ -47,8 +47,8 @@ AI.createTables = function () {
       16,     308,   1882,  7168,   516,  7580,
      330,     506,    876,     2,   196,    16,
       12,       0,      0,     0
-],
-[
+]
+AI.history[0][1] = [
        0,    386,    30,    14,    258,    28,   394,
        0,     22,    80,    80, 312574,  5300,    44,
      374,    150,   180,  3104,  14676,  3462,  1882,
@@ -59,8 +59,8 @@ AI.createTables = function () {
    10042,   2822, 21338,  2578,  12976,  2632, 27078,
        8,     58,    12,   388,    100,  1290,    50,
      376
-],
-[
+]
+AI.history[0][2] = [
        16,  1078,    264,   192,     4,   284,
         0,    58,     44, 13238,   812,  5180,
      6230,   200,  48646,     4,   608,  1882,
@@ -72,8 +72,8 @@ AI.createTables = function () {
      5430,  9698,  20248,  5914,  6732,  7430,
      4642, 11764,    134, 11098,   156,  2400,
       244,   466,   2684,   546
-],
-[
+]
+AI.history[0][3] = [
    2390, 7204, 2360, 283068, 51414, 4823,   326,
     376, 3608,  622,   1440,  3024, 2130,   766,
       4,  976,  122,   1876,  6422,  984,  3414,
@@ -84,8 +84,8 @@ AI.createTables = function () {
    5928, 3982, 4788,    962,  6430, 1402,  6100,
     280, 1094,  966,   3026,  1234,  232,     2,
      12
-],
-[
+]
+AI.history[0][4] = [
         0,   266,   164,   442,   362,    56,
        16,    72,  2396,   180, 17078,  9859,
     13016,   590,   306,    22,  1084, 10704,
@@ -97,8 +97,8 @@ AI.createTables = function () {
     10456, 30764, 15092,   954,   408,  2584,
       412,  3340,   878,   100,    32,  2998,
       792,    40,     6,    32
-],
-[
+]
+AI.history[0][5] = [
         4,    1777,   34055,     428,     142,     680,
    134017,     272,      68,    3982,     104,    3890,
       836,   25242,    1240,     796,       4,       6,
@@ -111,6 +111,10 @@ AI.createTables = function () {
         0,       0,       0,       0,       0,       0,
         0,       0,       0,       0
 ]
+
+
+
+
 
 
 AI.history[1][0] = [
@@ -194,7 +198,7 @@ AI.history[1][5] = [
   for (let color = 0; color < 2; color++) {
     for (let piece = 0; piece < 6; piece++) {
       for (let to = 0; to < 64; to++) {
-        AI.history[color][piece] = AI.PSQT_POSITIONAL
+        AI.history[color][piece] = AI.PSQT_POSITIONAL //[to] =  0//AI.history[color][piece][to] / 50000
       }
     }
   }
@@ -453,15 +457,15 @@ AI.bitCount = function(n) {
 AI.kingSafety = function(chessPosition, color) {
     let safety = 0
 
-    /*if (chessPosition.canCastle(color, true, true) || chessPosition.canCastle(color, false, true)) {
+    if (chessPosition.canCastle(color, true, true) || chessPosition.canCastle(color, false, true)) {
         // safety -=100
     } else {
-    }*/
-    //Rey seguro (Concepto: ataca sus propias piezas)
-    let pawns = chessPosition.getPieceColorBitboard(0, color)
-    let king = chessPosition.getPieceColorBitboard(5, color)
-    let kingmask = Chess.Position.makeKingAttackMask(color, king)
-    safety += AI.bitCount(kingmask.low & pawns.low) + AI.bitCount(kingmask.high & pawns.high)
+        //Rey seguro (Concepto: ataca sus propias piezas)
+        let pieces = chessPosition.getColorBitboard(color)
+        let king = chessPosition.getPieceColorBitboard(5, color)
+        let kingmask = Chess.Position.makeKingAttackMask(color, king)
+        safety += AI.bitCount(kingmask.low & pieces.low) + AI.bitCount(kingmask.high & pieces.high)
+    }
 
     return safety
 }
@@ -755,13 +759,12 @@ AI.policyEvaluate = function (chessPosition, color) {
 AI.posEvaluate = function (chessPosition, color) {
   let positional = 0
   let mobility =  AI.mobility(chessPosition, color) - AI.mobility(chessPosition, !color) // (CORRECTO)
-  let doubledPawns = AI.doubledPawns(chessPosition, color)
   let rookinopenedcolumn = AI.rookInOpenedColumns(chessPosition, color) - AI.rookInOpenedColumns(chessPosition, !color) //(CORRECTO)
   let kinginopenedcolumn = stage < 3? AI.kingInOpenedColumns(chessPosition, color) - AI.kingInOpenedColumns(chessPosition, !color) : 0 // (CORRECTO)
-  // let pawnstructure = AI.pawnstructure(chessPosition, color) - AI.pawnstructure(chessPosition, !color) // (INCORRECTO??)
+  let pawnstructure = AI.pawnstructure(chessPosition, color) - AI.pawnstructure(chessPosition, !color) // (INCORRECTO??)
 
-  positional += 30*mobility + 80*rookinopenedcolumn /*+ 10*pawnstructure*/ - 150*kinginopenedcolumn -50*doubledPawns
-  // positional = 100/(1 + Math.exp(-positional/25)) - 50
+  positional += 30*mobility + 40*rookinopenedcolumn + 10*pawnstructure - 150*kinginopenedcolumn
+  positional = 100/(1 + Math.exp(-positional/25)) - 50
 
   return positional
 }
@@ -769,34 +772,35 @@ AI.posEvaluate = function (chessPosition, color) {
 AI.evaluate = function(chessPosition, pvNode) {
     let color = chessPosition.getTurnColor()
     let material = AI.getMaterialValue(chessPosition, color) - AI.getMaterialValue(chessPosition, !color)
+    let pawns = AI.getPawnsValue(chessPosition, color) - AI.getPawnsValue(chessPosition, !color)
 
-    // if (Math.abs(material) <= AI.PIECE_VALUES[0] && AI.pawnequality(chessPosition, color) > 0) {
-    //   material += AI.PIECE_VALUES[0] / 2 //medio peón
-    // }
+    /*if (Math.abs(material) <= AI.PIECE_VALUES[0] && AI.pawnequality(chessPosition, color) > 0) {
+      material += AI.PIECE_VALUES[0] / 2 //potencial pieza promovida
+    }*/
 
 
     let positional = 0
     let psqt = 0
 
-    /*if (pvNode) {
+    if (pvNode) {
       positional = AI.posEvaluate(chessPosition, color)
-    }   */   
+    }      
 
     psqt = AI.getPieceSquareValue(chessPosition, color) - AI.getPieceSquareValue(chessPosition,  !color)
     // psqt = 200/(1 + Math.exp(-psqt/50)) - 100
     // console.log(psqt)
 
-    return material + psqt + positional
+    return material + pawns + psqt + positional
 }
 
 AI.getMaterialValue = function(chessPosition, color) {
     let value = 0
 
-    for (let piece = 0, len = AI.PIECE_VALUES.length; piece < len; piece++) {
+    for (let piece = 1, len = AI.PIECE_VALUES.length; piece < len; piece++) {
         value += chessPosition.getPieceColorBitboard(piece, color).popcnt() * AI.PIECE_VALUES[piece]
     }
 
-    return value // + Math.random()*random - random/2
+    return value + Math.random()*random - random/2
 }
 
 AI.getPawnsValue = function(chessPosition, color) {
@@ -823,17 +827,13 @@ AI.getPieceSquareValue = function(chessPosition, color) {
 }
 
 AI.scoreMove = function(move) {
-  let policyValue = move.policyValue
-/*
-  if (move.isCastle()) {
-    return 1e8 + 1e6
-  } else */if (move.tt) {
+  if (move.pv) {
     return 1e8
-  } else if (move.pv) {
+  } else if (move.tt) {
     return 1e6
   } else if (move.isCapture()) {
     move.capture = true
-    let mvvlva = 1e4* (move.getCapturedPiece() + 1)/(move.getPiece() + 1)
+    let mvvlva = 1e4 + (move.getCapturedPiece() + 1)/(move.getPiece() + 1)
     return mvvlva
   } else if (move.hvalue) {
     return move.hvalue
@@ -843,19 +843,20 @@ AI.scoreMove = function(move) {
 }
 
 
-AI.sortMoves = function(moves, turn, ply, chessPosition, ttHash, pvMoveValue) {
+AI.sortMoves = function(moves, turn, ply, chessPosition, ttHash, PV) {
 
-  for (let i = 0, len = moves.length; i < len; i++) {
-    let move = moves[i]
+  let pvmove = PV[ply]
+  
+  moves.map(move=>{
     if (ttHash && move.value === ttHash) move.tt = true
 
-    if (pvMoveValue === move.value) {
+    if (pvmove && pvmove.value === move.value) {
+      // console.log(pvmove.getString())
       move.pv = true
     }
 
-    /*if (!move.hvalue) */move.hvalue = AI.history[turn][move.getPiece()][move.getTo()]
-
-  }
+    if (!move.hvalue) move.hvalue = AI.history[turn][move.getPiece()][move.getTo()]
+  })
 
   moves.sort((a, b) => {
       return AI.scoreMove(b, chessPosition) - AI.scoreMove(a, chessPosition)
@@ -866,7 +867,7 @@ AI.sortMoves = function(moves, turn, ply, chessPosition, ttHash, pvMoveValue) {
   return moves
 }
 
-AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
+AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode, PV) {
 
     let turn = chessPosition.getTurnColor()
     let hashkey = chessPosition.hashKey.getHashKey()
@@ -882,16 +883,13 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
     if( stand_pat >= beta ) return beta;
     if( alpha < stand_pat ) alpha = stand_pat;
 
-    let moves = chessPosition.getMoves(false, !chessPosition.isKingInCheck())
-    moves = AI.setPoliciyValues(chessPosition, moves)
-    moves = AI.sortMoves(moves, turn, ply, chessPosition, null, AI.PV[ply]? AI.PV[ply].value : null)
-
+    let moves = AI.sortMoves(chessPosition.getMoves(false, !chessPosition.isKingInCheck()), turn, ply, chessPosition, null, PV)
 
     for (let i=0, len=moves.length; i < len; i++) {
       if (chessPosition.makeMove(moves[i])) {
         legal++
 
-        let score = -AI.quiescenceSearch(chessPosition, -beta, -alpha, depth-1, ply+1, pvNode)
+        let score = -AI.quiescenceSearch(chessPosition, -beta, -alpha, depth-1, ply+1, pvNode, PV)
 
         chessPosition.unmakeMove()
 
@@ -905,7 +903,6 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
     }
 
     if (bestmove) {
-      AI.PV[ply] = bestmove
       AI.ttSave(hashkey, bestscore, 0, 0, bestmove)
     }
 
@@ -968,7 +965,7 @@ AI.ttGet = function (hashkey) {
 }
 
 AI.setPoliciyValues = function (chessPosition, moves) {
-  /*let color = chessPosition.getTurnColor()
+  let color = chessPosition.getTurnColor()
   let actual = AI.policyEvaluate(chessPosition, color)
 
   for (let i = 0; i < moves.length; i++) {
@@ -976,7 +973,9 @@ AI.setPoliciyValues = function (chessPosition, moves) {
       moves[i].policyValue = AI.policyEvaluate(chessPosition, color) - actual
       chessPosition.unmakeMove()
     }
-  }*/
+  }
+
+  // console.log(moves)
 
   return moves
 }
@@ -995,8 +994,8 @@ AI.saveHistory = function(turn, move, depth) {
   AI.history[turn][move.getPiece()][move.getTo()] = AI.history[turn][move.getPiece()][move.getTo()] + (1 << depth)
 }
 
-AI.PVS = function(chessPosition, alpha, beta, depth, ply) {  
-  if ((new Date()).getTime() > AI.timer + 1000 * secondspermove /*&& iteration > 1*/) {
+AI.PVS = function(chessPosition, alpha, beta, depth, ply, PV) {  
+  if ((new Date()).getTime() > AI.timer + 1000 * secondspermove  /*&& depth > 2*/) {
     AI.stop = true
   }
 
@@ -1005,108 +1004,86 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   let turn = chessPosition.getTurnColor()
   let pvNode = beta != (alpha + 1)
 
-
-
-
-
-  var matingValue = AI.MATE - ply
-  
-  if (matingValue < beta) {
-     beta = matingValue;
-     if (alpha >= matingValue)
-       return matingValue;
-  }
-  
-  var matingValue = -AI.MATE + ply
-  
-  if (matingValue > alpha) {
-     alpha = matingValue;
-     if (beta <= matingValue)
-       return matingValue;
-  }
-
-
-
-
-
   let alphaOrig = alpha
 
   let hashkey = chessPosition.hashKey.getHashKey()
 
   let ttEntry = AI.ttGet(hashkey)
-
-
-  if (pvNode && depth > 3) {
-    AI.PVS(chessPosition, alpha, beta, depth-2, ply)
-  }
-
+  
   if( depth <=0 ) {
-      // return AI.quiescenceSearch(chessPosition, alpha, beta, depth, ply, pvNode)
-    if (ttEntry && ttEntry.depth <= 0) {
+      // return AI.quiescenceSearch(chessPosition, alpha, beta, depth, ply, pvNode, PV)
+    if (ttEntry && ttEntry.depth === 0 && false) {
       return ttEntry.score
     } else {
-      return AI.quiescenceSearch(chessPosition, alpha, beta, depth, ply, pvNode)
+      return AI.quiescenceSearch(chessPosition, alpha, beta, depth, ply, pvNode, PV)
     }
   }
 
   let bestmove = {value: 2080,  getString() {return '-'}} // iteration > 1? AI.PV[iteration-1][1] : moves[0]
+  let moves = chessPosition.getMoves()
 
+  // (* Transposition Table Lookup; node is the lookup key for ttEntry *)+
 
-  if (ttEntry && ttEntry.depth >= depth) {
+  /*if (ttEntry && ttEntry.depth >= depth) {
       if (ttEntry.flag === 0) {
-        // AI.PV[ply] = ttEntry.move
-        return ttEntry.score          
+          // AI.saveHistory(turn, ttEntry.move, depth)
+          return ttEntry.score          
+      }
+
+      if (ttEntry.flag === 1 && ttEntry.score <= alpha) {
+        return ttEntry.score
+      }
+
+      if (ttEntry.flag === -1 && ttEntry.score >= beta) {
+        return ttEntry.score
+      }      
+  }*/
+
+  /*if (ttEntry && ttEntry.depth - 2 >= depth) {
+      if (ttEntry.flag === 0) {
+          AI.saveHistory(turn, ttEntry.move, depth)
+          return ttEntry.score          
       } else if (ttEntry.flag === -1) {
-        if (ttEntry.score > alpha) alpha = ttEntry.score
+        alpha = Math.max(alpha, ttEntry.score)
       } else if (ttEntry.flag === 1) {
-        if (ttEntry.score < beta) beta = ttEntry.score
+        beta = Math.min(beta, ttEntry.score)
       }
 
       if (alpha >= beta) {
-        // fhf++; fh++
+        fhf++; fh++
         AI.saveHistory(turn, ttEntry.move, depth)
         return ttEntry.score
       }
       
-  }
-
+  }*/
 
 
   // console.log(!!ttEntry && ttEntry.flag === 0)
 
 
+  if (pvNode && depth > 3 && !ttEntry) {
+    AI.PVS(chessPosition, alpha, beta, depth-2, ply, PV)
+  }
 
-  let pvMoveValue = AI.PV[ply]? AI.PV[ply].value : null
+  let lastmove = chessPosition.getLastMove()
 
-  let moves = chessPosition.getMoves()
-  moves = AI.setPoliciyValues(chessPosition, moves)
-  moves = AI.sortMoves(moves, turn, ply, chessPosition, ttEntry? ttEntry.move.value : null, pvMoveValue)
-  // moves = AI.sortMoves(moves, turn, ply, chessPosition, null)
+  moves = AI.sortMoves(moves, turn, ply, chessPosition, ttEntry? ttEntry.move.value : null, PV)
+  // moves = AI.sortMoves(moves, turn, ply, chessPosition, null, PV)
 
   // console.log(moves.length)
 
   // console.log(moves.length)
 
-  // console.log(ttEntry)
+  // moves = AI.setPoliciyValues(chessPosition, moves)
 
   let legal = 0
   let bestscore = -Infinity
   let score
 
-  if (AI.stop) return alpha
-  
-  if (!AI.PV[ply]) {
-    let hashkey = chessPosition.hashKey.getHashKey()
-    let ttEntry = AI.ttGet(hashkey)
-
-    if (ttEntry && ttEntry.depth >= depth) {
-      AI.PV[ply] = ttEntry.move
-    }
-  } 
+  if (AI.stop) return
 
   for (let i=0, len=moves.length; i < len; i++) {
-
-    /*if (depth > 4 && !AI.possiblemoves[moves[i].value % htlength] && !moves[i].isCapture() && !moves[i].isCastle() && !chessPosition.isKingInCheck()) {
+    /*if (depth > 4 && !AI.possiblemoves[moves[i].value % htlength] && !moves[i].isCapture() && !moves[i].isCastle()) {
       // console.log('prune')
       continue
     }*/
@@ -1115,76 +1092,93 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
       legal++
 
       // if (depth <= 4) AI.possiblemoves[moves[i].value % htlength] = true
-
-
-
-      let R = 0
-      let E = 0
-      /*//LMP
-      if (iteration > 4 && stage < 3 && !chessPosition.isKingInCheck() && depth <= 2 && i > depth * 5) {
-       chessPosition.unmakeMove()
-       continue
-      }
-
-      //History prunning
-      if (!moves[i].isCapture() && !chessPosition.isKingInCheck() && !pvNode) {
-        let hscore = AI.history[turn][moves[i].getPiece()][moves[i].getTo()] // history hscore
-        if (!hscore) {
-          chessPosition.unmakeMove()
-          continue
-        }
-
-        if (!pvNode && hscore < 2*Math.min([...AI.history[turn][moves[i].getPiece()]])) {
-          continue
-        }
-      }*/
-
-      //EXTENSIONS
-/*      if (chessPosition.isKingInCheck() && depth < 5) {
-        E = 1
-      }*/
-
-      //Late Move RR
-      if (depth >= 3 && !chessPosition.isKingInCheck()) {
-        R = 1 + depth/3 + i/20 | 0
-      }
+      
 
       if (legal === 1) {
-        // console.log('sdfksdkfsdkfsdkfdkfsdkfdk')        
-        score = -AI.PVS(chessPosition, -beta, -alpha, depth+E-1, ply+1)
-      }
-      else {
-        score = -AI.PVS(chessPosition, -alpha-1, -alpha, depth+E-R-1, ply+1)
-        if (!AI.stop && score > alpha) {
-          score = -AI.PVS(chessPosition, -beta, -alpha, depth+E-1, ply+1)
-        }
-      }
-      
-      chessPosition.unmakeMove()
 
-      if (AI.stop) return alpha
+        bestscore = -AI.PVS(chessPosition, -beta, -alpha, depth-1, ply+1, PV)/* + (ply == 1? moves[i].policyValue : 0)*/
 
-      if (score > bestscore) {
-        if (score > alpha) {
-          if (score >= beta) {
-            if (legal === 1) {
-              fhf++
-            }
 
-            fh++
-            // AI.addKiller(score, move)
-            AI.PV[ply] = moves[i]
-            AI.ttSave(hashkey, score, -1, depth, moves[i])
+        chessPosition.unmakeMove()
+        if( bestscore > alpha ) {
+          
+          if( bestscore >= beta ) {
             AI.saveHistory(turn, moves[i], depth)
-            return score
+            bestmove = moves[i]
+            fhf++
+            fh++
+            return bestscore;
+          }
+
+          alpha = bestscore;
+        }
+        bestmove = moves[i]
+        
+        if (AI.stop) return alpha
+      } else {
+        let R = 0
+        //LMP
+        /*if (iteration > 4 && stage < 3 && !chessPosition.isKingInCheck() && depth <= 2 && i > depth * 5) {  
+         chessPosition.unmakeMove()
+         continue
+        }
+
+        //History prunning
+        if (!moves[i].isCapture() && !chessPosition.isKingInCheck() && !pvNode) {
+          let hscore = AI.history[turn][moves[i].getPiece()][moves[i].getTo()] // history hscore
+          if (!hscore) {
+            chessPosition.unmakeMove()
+            continue
+          }
+
+          if (!pvNode && hscore < 2*Math.min([...AI.history[turn][moves[i].getPiece()]])) {
+            continue
+          }
+        }*/
+
+        //Late Move Rs
+        if (moves[i].getKind()>=8) {
+          R = 0
+        } else {
+          if (depth >= 3 && !chessPosition.isKingInCheck() /*&& !pvNode*/) {
+            R = 1 + depth/5 + legal/20 | 0
+          }
+        }
+
+        score = -AI.PVS(chessPosition,-alpha-1, -alpha, depth-1-R, ply+1, PV); // alphaBeta or zwSearch     
+
+        // bestmove = moves[i]
+        if( score > alpha && score < beta) {
+           // research with window [alpha;beta]
+           score = -AI.PVS(chessPosition, -beta, -alpha, depth-1, ply+1, PV);
+           if( score > alpha ) {
+            bestmove = moves[i]
+
+            alpha = score
+           }
+
+           bestscore = score
+           // bestmove = moves[i]
+        }
+        
+        chessPosition.unmakeMove()
+
+        if (AI.stop) {
+          return
+        }        
+
+        if( score > bestscore ) {
+           if( score >= beta ) {
+            if (!moves[i].isCapture()) {
+              AI.saveHistory(turn, moves[i], depth)
+            }
+            // AI.ttSave(hashkey, score, -1, depth, moves[i])
+            fh++
+            return score;
           }
           
           AI.saveHistory(turn, moves[i], depth)
-          alpha = score
         }
-
-        bestscore = score
-        bestmove  = moves[i]
       }
     }
   }
@@ -1196,7 +1190,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
         return 0
       }
       
-      AI.ttSave(hashkey, -AI.MATE + ply, 0, depth, bestmove)
+      AI.ttSave(hashkey, -AI.MATE, 0, depth, bestmove)
       return -AI.MATE + ply
       
   } else {
@@ -1208,18 +1202,15 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
       return 0
     }
 
-/*    if (legal === 1) {
+    /*if (legal === 1) {
       AI.stop = true
     }*/
 
-
-
     if (bestscore > alphaOrig) {
-      AI.PV[ply] = bestmove
       AI.ttSave(hashkey, bestscore, 0, depth, bestmove)
       return bestscore
     } else {
-      AI.ttSave(hashkey, alphaOrig, 1, depth, bestmove)
+      AI.ttSave(hashkey, alphaOrig, -1, depth, bestmove)
       return alphaOrig
     }
   }
@@ -1232,6 +1223,10 @@ AI.setStage = function (chessPosition, simple) {
 
   let nofpieces = chessPosition.getColorBitboard(0).popcnt() + chessPosition.getColorBitboard(1).popcnt()
 
+  // let castled = AI.isKingCastled(chessPosition, color)
+  // let enemycastled = AI.isKingCastled(chessPosition, !color)
+
+
   if (nofpieces <= 28 || chessPosition.madeMoves.length > 18) {
       stage = 2 //'midgame'
   }
@@ -1240,39 +1235,66 @@ AI.setStage = function (chessPosition, simple) {
       stage = 3 //endgame
   }
 
-  if (nofpieces <= 8) {
-    stage = 4 //mate
+  if (nofpieces <= 6) {
+    stage = 4
   }
 
+  // console.log(chessPosition.madeMoves.length, castled, stage)
+
   if (stage < 3 || simple) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_MIDGAME]
+  // console.log(chessPosition.madeMoves.length, castled, stage, nofpieces)
+  // console.log('----------------------------------------------------------------------------------')
+
+  /*if (simple) return
+
+  if (stage < 3 && castled && castled == 1) {
+    AI.PIECE_SQUARE_TABLES[0] = [...AI.PSQT_PAWNS_KSC] 
+  }
+
+  if (stage < 3 && castled && castled == 2) {
+    AI.PIECE_SQUARE_TABLES[0] = [...AI.PSQT_PAWNS_QSC] 
+  }
+
+  if (stage < 3 && enemycastled && enemycastled === 1) {
+    AI.PIECE_SQUARE_TABLES[1] = [...AI.PSQT_KNIGHTS_KSC]
+    AI.PIECE_SQUARE_TABLES[2] = [...AI.PSQT_BISHOPS_KSC]
+  }
+
+  if (stage < 3 && enemycastled && enemycastled === 2) {
+    AI.PIECE_SQUARE_TABLES[1] = [...AI.PSQT_KNIGHTS_QSC]
+    AI.PIECE_SQUARE_TABLES[2] = [...AI.PSQT_BISHOPS_QSC]
+  }*/
 
   if (stage >= 3) {
+    // console.log('EEENNNNNNNNNNNNDDDDDDDDDDDDGGGGGGGGGGGGGGGGGAAAAAAAAAAAAAAAAAMMMMMMMMMMMMMMMMMMMEEEEEEEEEEEEEEEEE')
     AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_ENDGAME]
   }
 
 }
 
-AI.getPV = function (chessPosition) {
-  let PV = [chessPosition.getLastMove()]
+// AI.PV = new Array(totaldepth * 2)
+// console.log(AI.PV)  
+
+/*for (let i=0; i < AI.PV.length; i++) {
+  AI.PV[i] = []
+}*/
+
+AI.getPV = function (chessPosition, depth) {
+  let PV = [null]
   let legal = 0
 
-  let ttEntry
-  let ttFound
-
-  for (let i = 0; i < totaldepth; i++) {
-    ttFound = false
+  for (let i = 0; i < depth; i++) {
     let hashkey = chessPosition.hashKey.getHashKey()
-    ttEntry = AI.ttGet(hashkey)
+    let ttEntry = AI.ttGet(hashkey)
 
-    if (ttEntry && ttEntry.flag != 1) {
+    if (ttEntry) {
       if (chessPosition.makeMove(ttEntry.move)) {
-        ttFound = true
         legal++
         PV.push(ttEntry.move)
       }
-    } else {
-      break
+
     }
+
   }
 
   for (let i = 0; i < legal; i++) {
@@ -1290,6 +1312,7 @@ AI.search = function(chessPosition, options) {
 
   AI.reduceHistory()
 
+// console.log(AI.PV)  
   return new Promise((resolve, reject) => {
     let color = chessPosition.getTurnColor()
     let white = color == 0
@@ -1300,6 +1323,8 @@ AI.search = function(chessPosition, options) {
         TESTER = false
     }
 
+    stage = 1 //Apertura
+
     nodes = 0
     qsnodes = 0
     enodes = 0
@@ -1307,6 +1332,8 @@ AI.search = function(chessPosition, options) {
 
     AI.nofpieces = chessPosition.getColorBitboard(0).popcnt() + chessPosition.getColorBitboard(1).popcnt()
 
+    // console.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', AI.nofpieces)
+    
     let staticeval = AI.evaluate(chessPosition)
 
     AI.timer = (new Date()).getTime()
@@ -1316,38 +1343,59 @@ AI.search = function(chessPosition, options) {
 
     let status = 0
 
+    AI.bestmove = null
 
     AI.setStage(chessPosition)
 
-    AI.PV = AI.getPV(chessPosition)
-    AI.bestmove = AI.PV[1]
+    let PV = AI.getPV(chessPosition, 1)
 
-    console.log('Last Principal Variation', AI.PV.map(e=>{ return e? e.getString() : '---'}).join(' '))
+    let hashkey = chessPosition.hashKey.getHashKey()
+    let ttEntry = AI.ttGet(hashkey)
 
-    for (let depth = 1; depth <= totaldepth; depth+=1) {
-        AI.bestmove = [...AI.PV][1]
-        lastscore = score
 
-        iteration++
 
-        fh = fhf = 1
-        
-        score = (white? 1 : -1) * AI.PVS(chessPosition, -Infinity, Infinity, depth, 1)
-        
-        AI.PV = AI.getPV(chessPosition)
+    // console.log(hashkey, ttEntry)
 
-        console.log(depth, AI.PV.map(e=>{ return e? e.getString() : '---'}).join(' '), 'FHF ' + Math.round(fhf*100/fh) + '%', score)
-        
-        if (AI.stop && iteration > 1 && AI.bestmove !== null) {
-            break
-        }
+    if (status == 0 || true) {
 
+      for (let depth = 1; depth <= totaldepth; depth+=1) {
+          if (iteration > 1) AI.bestmove = PV[1]
+          lastscore = score
+
+          iteration++
+
+          fh = fhf = 1
+          
+          score = (white? 1 : -1) * AI.PVS(chessPosition, -Infinity, Infinity, depth, 1, PV)
+          
+          PV = AI.getPV(chessPosition, iteration)
+
+          console.log(PV.map(e=>{ return e? e.getString() : '---'}).join(' '), iteration)
+
+
+          // let strPV = PV.map(e=>e.getString())
+          // console.log(strPV)
+          let strmove = PV[1]? PV[1].getString() : '----'
+          // console.info(chessPosition.madeMoves.length, white ? 'W' : 'B', 'Score:' + lastscore, 'Depth ' + depth + ` NPS: ${nodes}`, `QSNPS: ${qsnodes}`, `NODES: ${nodes+qsnodes}`, 'FHF ' + Math.round(fhf*100/fh) + '%' + (TESTER? ' (TESTER)' : ''))
+          
+          if (AI.stop && iteration >= mindepth && AI.bestmove) {
+              break
+          }
+
+      }
+      
     }
+
+
+    /*for (let i = 0; i <= iteration; i++) {
+      let m = AI.PV[i].map(e=>e.getString())
+      console.log(m)
+    }*/
     
-    // console.log(AI.possiblemoves)
+    console.log(AI.possiblemoves)
 
     console.info('                ')
-    console.log(AI.bestmove.getString(), lastscore)
+    console.log(AI.bestmove.getString())
     console.info('__________________________________________________________________________________________')
     console.info('                ')
 
