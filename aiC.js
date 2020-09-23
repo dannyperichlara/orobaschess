@@ -872,13 +872,32 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
     let stand_pat
     let bestmove
     let bestscore
+    let inCheck
 
     qsnodes++
 
     stand_pat = AI.evaluate(chessPosition, pvNode)
 
-    if( stand_pat >= beta ) return beta;
+    /*if( stand_pat >= beta ) return beta;
     if( alpha < stand_pat ) alpha = stand_pat;
+
+
+*/
+  
+
+    if (depth > -2) {
+      inCheck = chessPosition.isKingInCheck()
+    } else {
+      inCheck = 0;
+    }
+
+    if (!inCheck && stand_pat >= beta) {
+      return stand_pat
+    }
+
+    if (!inCheck && stand_pat > alpha) {
+      alpha = stand_pat
+    }
 
     let moves = chessPosition.getMoves(false, !chessPosition.isKingInCheck())
     moves = AI.setPoliciyValues(chessPosition, moves)
@@ -887,6 +906,12 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
 
     for (let i=0, len=moves.length; i < len; i++) {
       if (chessPosition.makeMove(moves[i])) {
+
+        if (chessPosition.isKingInCheck()) {
+          chessPosition.unmakeMove()
+          continue
+        }
+
         legal++
 
         let score = -AI.quiescenceSearch(chessPosition, -beta, -alpha, depth-1, ply+1, pvNode)
@@ -910,6 +935,10 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
     if (bestmove) {
       AI.PV[ply] = bestmove
       AI.ttSave(hashkey, bestscore, 0, 0, bestmove)
+    }
+
+    if (chessPosition.isKingInCheck() && legal === 0) {
+       return -AI.MATE + ply;
     }
 
     return alpha
@@ -997,10 +1026,6 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   let turn = chessPosition.getTurnColor()
   let pvNode = beta != (alpha + 1)
 
-
-
-
-
   var matingValue = AI.MATE - ply
   
   if (matingValue < beta) {
@@ -1080,6 +1105,8 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     }
   } 
 
+  let stand_pat = AI.evaluate(chessPosition)
+
   for (let i=0, len=moves.length; i < len; i++) {
     if (chessPosition.makeMove(moves[i])) {
       legal++
@@ -1111,6 +1138,12 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 /*      if (chessPosition.isKingInCheck() && depth < 5) {
         E = 1
       }*/
+
+      //Futility
+      if (!chessPosition.isKingInCheck() && depth <= 4 && (stand_pat + depth * 120) < alpha) {
+        chessPosition.unmakeMove()
+        continue
+      }
 
       //LMR
       if (depth >= 3 && !chessPosition.isKingInCheck()) {
@@ -1304,7 +1337,7 @@ AI.search = function(chessPosition, options) {
         
         AI.PV = AI.getPV(chessPosition).slice(0, iteration)
 
-        console.log(depth, AI.PV.map(e=>{ return e? e.getString() : '---'}).join(' '), 'FHF ' + Math.round(fhf*100/fh) + '%', score)
+        console.log(depth, AI.PV.map(e=>{ return e? e.getString() : '---'}).join(' '), 'FHF ' + Math.round(fhf*100/fh) + '%', score, nodes, qsnodes)
         
         if (AI.stop && iteration > 1 && AI.bestmove !== null) {
             break
