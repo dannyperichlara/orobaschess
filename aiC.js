@@ -15,7 +15,7 @@ let AI = function() {
 }
 
 
-AI.PSQT_POSITIONAL = [
+AI.HST_POSITIONAL = [
     3, 5, 5, 9, 7, 3, 0, 1,
     8, 15, 11, 16, 13, 10, 6, 5,
     12, 17, 26, 28, 21, 24, 13, 11,
@@ -194,7 +194,7 @@ AI.history[1][5] = [
   for (let color = 0; color < 2; color++) {
     for (let piece = 0; piece < 6; piece++) {
       for (let to = 0; to < 64; to++) {
-        AI.history[color][piece] = AI.PSQT_POSITIONAL
+        AI.history[color][piece] = AI.HST_POSITIONAL
       }
     }
   }
@@ -302,10 +302,10 @@ AI.PIECE_SQUARE_TABLES_MIDGAME = [
     -50,-40,-30,-30,-30,-30,-40,-50,
     -40, 30, 30, 30, 30, 30, 30,-40,
     -30,  0, 10, 15, 15, 10,  0,-30,
-    -30,  0, 20, 20, 20, 20,  0,-30,
     -30,  0, 15, 30, 30, 15,  0,-30,
-    -80,  5,  0, 15, 15, 20,  5,-80,
-    -40,-20,  0, 40, 20,  0,-20,-40,
+    -30,  0, 15, 30, 30, 15,  0,-30,
+    -80,  5, 20, 15, 15, 20,  5,-80,
+    -40,-20,  0, 10, 10,  0,-20,-40,
     -50,-20,-30,-30,-30,-30,-20,-50,
     ],
     // Bishop
@@ -313,18 +313,18 @@ AI.PIECE_SQUARE_TABLES_MIDGAME = [
     -20,-10,-10,-10,-10,-10,-10,-20,
     -10, 20, 20, 20, 20, 20, 20,-10,
     -10,  0,  5, 10, 10,  5,  0,-10,
-    -10, 15, 10, 10, 10, 10, 15,-10,
-    -40, 20, 10, 10, 10, 10, 20,-40,
+    -10, 15, 10, 20, 20, 10, 15,-10,
+    -40, 20, 10, 20, 20, 10, 20,-40,
     -10, 20,-50,-40,-40,-50, 20,-10,
     -10, 20,  0,  0,  0,  0, 20,-10,
     -20,-10,-20,-10,-10,-20,-10,-20,
   ],
   // Rook
   [ 
-  0, 30, 30, 30, 30, 30, 30,  0,
-  5, 40, 40, 50, 50, 40, 40,  5,
- -5,  0,  0,  0,  0,  0,  0, -5,
- -5,  0,  0,  0,  0,  0,  0, -5,
+  0,  30, 30, 30, 30, 30, 30,   0,
+ -15, 20, 40, 50, 50, 40, 20, -15,
+ -15,  0,  0,  0,  0,  0,  0, -15,
+ -15,  0,  0,  0,  0,  0,  0, -15,
  -25,  0,  0,  0,  0,  0,  0, -25,
  -15,  0,  0,  0,  0,  0,  0, -15,
  -80,-50,  0, 10, 10,  0,-80,-100,
@@ -338,9 +338,9 @@ AI.PIECE_SQUARE_TABLES_MIDGAME = [
 -10,  0,  0,  0,  0,  0,  0,-10,
  -5,  0,  0,  0,  0,  0,  0, -5,
   0,  0,  0,  0,  0,  0,  0, -5,
--10,  0,  0,-20,-20,  0,  0,-10,
--10,  0, 10, 10, 10, 10,  0,-10,
--20,-20,-20, -5, -5,-20,-20,-20
+-10,  0,  0,  0,  0,  0,  0,-10,
+-10,  0,  0,  0,  0, 10,  0,-10,
+-20,-20,-20,-20,-20,-20,-20,-20
   ],
 
   // King
@@ -571,7 +571,7 @@ AI.getPositionalPSQTValue = function(chessPosition, color) {
 
         while (!pieces.isEmpty()) {
             let index = pieces.extractLowestBitPosition()
-            value +=  AI.PSQT_POSITIONAL[color ? index : (56 ^ index)]
+            value +=  AI.HST_POSITIONAL[color ? index : (56 ^ index)]
         }
     }
 
@@ -899,12 +899,6 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
 
     for (let i=0, len=moves.length; i < len; i++) {
       if (chessPosition.makeMove(moves[i])) {
-
-        if (chessPosition.isKingInCheck()) {
-          chessPosition.unmakeMove()
-          continue
-        }
-
         legal++
 
         let score = -AI.quiescenceSearch(chessPosition, -beta, -alpha, depth-1, ply+1, pvNode)
@@ -1046,9 +1040,6 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   let ttEntry = AI.ttGet(hashkey)
 
 
-  if (pvNode && depth > 3) {
-    AI.PVS(chessPosition, alpha, beta, depth-2, ply)
-  }
 
   if( depth <=0 ) {
     if (ttEntry && ttEntry.depth <= 0) {
@@ -1075,6 +1066,10 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
         return ttEntry.score
       }
       
+  }
+  
+  if (pvNode && depth > 3 && !ttEntry) {
+    AI.PVS(chessPosition, alpha, beta, depth-2, ply)
   }
 
   let pvMoveValue = AI.PV[ply]? AI.PV[ply].value : null
@@ -1113,7 +1108,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
       let R = 0
       let E = 0
-      //History reduction & prunning
+      //History reduction
       if (!moves[i].isCapture() && !chessPosition.isKingInCheck() && !pvNode && legal > 4) {
         let hscore = AI.history[turn][moves[i].getPiece()][moves[i].getTo()] // history hscore
         if (!hscore) {
