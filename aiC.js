@@ -1125,31 +1125,29 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
         }
       }
 
-
-      /*//LMP
-      if (iteration > 4 && stage < 3 && !chessPosition.isKingInCheck() && depth <= 2 && i > depth * 5) {
-       chessPosition.unmakeMove()
-       continue
-      }
-      */
-
       //EXTENSIONS
-/*      if (chessPosition.isKingInCheck() && depth < 5) {
+      if (chessPosition.isKingInCheck() && depth < 5) {
         E = 1
-      }*/
+      } else {
+        //LMP
+        if (iteration > 4 && stage < 3 && !chessPosition.isKingInCheck() && depth <= 2 && i > depth * 5) {
+         chessPosition.unmakeMove()
+         continue
+        }
+        
 
-      //Futility
-      if (!chessPosition.isKingInCheck() && depth <= 4 && (stand_pat + depth * 120) < alpha) {
-        chessPosition.unmakeMove()
-        continue
+
+        //Futility
+        if (!chessPosition.isKingInCheck() && depth <= 4 && (stand_pat + depth * 120) < alpha) {
+          chessPosition.unmakeMove()
+          continue
+        }
+
+        //LMR
+        if (depth >= 3 && !chessPosition.isKingInCheck()) {
+          R += 1 + depth/3 + i/20 | 0
+        }        
       }
-
-      //LMR
-      if (depth >= 3 && !chessPosition.isKingInCheck()) {
-        R += 1 + depth/3 + i/20 | 0
-      }
-
-
 
       if (legal === 1) {
         score = -AI.PVS(chessPosition, -beta, -alpha, depth+E-1, ply+1)
