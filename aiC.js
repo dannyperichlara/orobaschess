@@ -716,7 +716,7 @@ AI.pawnequality = function(chessPosition, color) {
 AI.betas = [
   1 /*material*/,
   1 /*psqt*/,
- 10 /*mobility*/,
+ 30 /*mobility*/,
  10 /*isKingCastled*/,
  50 /*doubledPawns*/,
  50 /*openedColumns*/,
@@ -730,8 +730,8 @@ AI.betas = [
  10 /*center*/,
 ]
 
-AI.policyEvaluate = function (chessPosition, color) {
-  let policyValue = 0
+AI.positionEvaluate = function (chessPosition, color) {
+  let positionValue = 0
   let centerControl = stage < 3? AI.getCenterControlValue(chessPosition, color) : 0
   let mobility =  AI.mobility(chessPosition, color)
   let pawnstructure = AI.pawnstructure(chessPosition, color)
@@ -745,14 +745,14 @@ AI.policyEvaluate = function (chessPosition, color) {
 
   let undeveloped = AI.undevelopedPieces(chessPosition, color)
 
-  policyValue += AI.betas[2]*mobility + AI.betas[3]*isKingCastled + AI.betas[7]*rookinopenedcolumn + AI.betas[13] * centerControl
-  policyValue += AI.betas[8]*advancedpawns + AI.betas[11]*pawnstructure + AI.betas[12] * xrayed
-  policyValue += -AI.betas[4]*doubledPawns - AI.betas[5]*(openedColumns > 1? openedColumns : 0) - AI.betas[6]*kinginopenedcolumn - AI.betas[10]*undeveloped
+  positionValue += AI.betas[2]*mobility + AI.betas[3]*isKingCastled + AI.betas[7]*rookinopenedcolumn + AI.betas[13] * centerControl
+  positionValue += AI.betas[8]*advancedpawns + AI.betas[11]*pawnstructure + AI.betas[12] * xrayed
+  positionValue += -AI.betas[4]*doubledPawns - AI.betas[5]*(openedColumns > 1? openedColumns : 0) - AI.betas[6]*kinginopenedcolumn - AI.betas[10]*undeveloped
 
-  return policyValue
+  return positionValue
 }
 
-AI.posEvaluate = function (chessPosition, color) {
+/*AI.posEvaluate = function (chessPosition, color) {
   let positional = 0
   let mobility =  AI.mobility(chessPosition, color) - AI.mobility(chessPosition, !color) // (CORRECTO)
   let doubledPawns = AI.doubledPawns(chessPosition, color)
@@ -760,11 +760,11 @@ AI.posEvaluate = function (chessPosition, color) {
   let kinginopenedcolumn = stage < 3? AI.kingInOpenedColumns(chessPosition, color) - AI.kingInOpenedColumns(chessPosition, !color) : 0 // (CORRECTO)
   // let pawnstructure = AI.pawnstructure(chessPosition, color) - AI.pawnstructure(chessPosition, !color) // (INCORRECTO??)
 
-  positional += 30*mobility + 80*rookinopenedcolumn /*+ 10*pawnstructure*/ - 150*kinginopenedcolumn -50*doubledPawns
+  positional += 30*mobility + 80*rookinopenedcolumn + 10*pawnstructure - 150*kinginopenedcolumn -50*doubledPawns
   // positional = 100/(1 + Math.exp(-positional/25)) - 50
 
   return positional
-}
+}*/
 
 AI.evaluate = function(chessPosition, pvNode) {
     let color = chessPosition.getTurnColor()
@@ -778,9 +778,9 @@ AI.evaluate = function(chessPosition, pvNode) {
     let positional = 0
     let psqt = 0
 
-    /*if (pvNode) {
-      positional = AI.posEvaluate(chessPosition, color)
-    }   */   
+    if (pvNode) {
+      positional = AI.positionEvaluate(chessPosition, color) - AI.positionEvaluate(chessPosition, !color)
+    }      
 
     psqt = AI.getPieceSquareValue(chessPosition, color) - AI.getPieceSquareValue(chessPosition,  !color)
     // psqt = 200/(1 + Math.exp(-psqt/50)) - 100
