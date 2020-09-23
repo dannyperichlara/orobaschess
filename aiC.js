@@ -878,13 +878,6 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
 
     stand_pat = AI.evaluate(chessPosition, pvNode)
 
-    /*if( stand_pat >= beta ) return beta;
-    if( alpha < stand_pat ) alpha = stand_pat;
-
-
-*/
-  
-
     if (depth > -2) {
       inCheck = chessPosition.isKingInCheck()
     } else {
@@ -1106,6 +1099,12 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   } 
 
   let stand_pat = AI.evaluate(chessPosition)
+
+  //Prune
+  if (!pvNode && !chessPosition.isKingInCheck() && depth <= 2 && (stand_pat - depth * 200) >= beta) {
+    // console.log('prune')
+    return beta;
+  }
 
   for (let i=0, len=moves.length; i < len; i++) {
     if (chessPosition.makeMove(moves[i])) {
