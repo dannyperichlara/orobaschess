@@ -895,7 +895,12 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
 
         chessPosition.unmakeMove()
 
-        if( score >= beta ) return beta;
+        if( score >= beta ) {
+          AI.PV[ply] = moves[i]
+          AI.ttSave(hashkey, bestscore, -1, 0, moves[i])
+          return beta
+        }
+        
         if( score > alpha ) {
           alpha = score
           bestmove = moves[i]
@@ -913,17 +918,6 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
 
 
 }
-
-/*AI.ttSave = function (hashkey, score, flag, depth, move) {
-  AI.hashtable[hashkey % htlength] = {
-    hashkey,
-    score,
-    flag,
-    depth,
-    move
-  }
-}*/
-
 
 AI.ttSave = function (hashkey, score, flag, depth, move) {
   let oldEntry = AI.hashtable[hashkey % htlength]
@@ -1041,7 +1035,6 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   }
 
   if( depth <=0 ) {
-      // return AI.quiescenceSearch(chessPosition, alpha, beta, depth, ply, pvNode)
     if (ttEntry && ttEntry.depth <= 0) {
       return ttEntry.score
     } else {
@@ -1054,7 +1047,6 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
   if (ttEntry && ttEntry.depth >= depth) {
       if (ttEntry.flag === 0) {
-        // AI.PV[ply] = ttEntry.move
         return ttEntry.score          
       } else if (ttEntry.flag === -1) {
         if (ttEntry.score > alpha) alpha = ttEntry.score
@@ -1063,31 +1055,17 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
       }
 
       if (alpha >= beta) {
-        // fhf++; fh++
         AI.saveHistory(turn, ttEntry.move, depth)
         return ttEntry.score
       }
       
   }
 
-
-
-  // console.log(!!ttEntry && ttEntry.flag === 0)
-
-
-
   let pvMoveValue = AI.PV[ply]? AI.PV[ply].value : null
 
   let moves = chessPosition.getMoves()
   moves = AI.setPoliciyValues(chessPosition, moves)
   moves = AI.sortMoves(moves, turn, ply, chessPosition, ttEntry? ttEntry.move.value : null, pvMoveValue)
-  // moves = AI.sortMoves(moves, turn, ply, chessPosition, null)
-
-  // console.log(moves.length)
-
-  // console.log(moves.length)
-
-  // console.log(ttEntry)
 
   let legal = 0
   let bestscore = -Infinity
@@ -1105,17 +1083,8 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   } 
 
   for (let i=0, len=moves.length; i < len; i++) {
-
-    /*if (depth > 4 && !AI.possiblemoves[moves[i].value % htlength] && !moves[i].isCapture() && !moves[i].isCastle() && !chessPosition.isKingInCheck()) {
-      // console.log('prune')
-      continue
-    }*/
-
     if (chessPosition.makeMove(moves[i])) {
       legal++
-
-      // if (depth <= 4) AI.possiblemoves[moves[i].value % htlength] = true
-
 
 
       let R = 0
@@ -1144,16 +1113,16 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
         E = 1
       }*/
 
-      //Late Move RR
+      //LMR
       if (depth >= 3 && !chessPosition.isKingInCheck()) {
         R = 1 + depth/3 + i/20 | 0
       }
 
+
+
       if (legal === 1) {
-        // console.log('sdfksdkfsdkfsdkfdkfsdkfdk')        
         score = -AI.PVS(chessPosition, -beta, -alpha, depth+E-1, ply+1)
-      }
-      else {
+      } else {
         score = -AI.PVS(chessPosition, -alpha-1, -alpha, depth+E-R-1, ply+1)
         if (!AI.stop && score > alpha) {
           score = -AI.PVS(chessPosition, -beta, -alpha, depth+E-1, ply+1)
@@ -1286,8 +1255,6 @@ AI.search = function(chessPosition, options) {
 
   if (chessPosition.madeMoves.length < 2) AI.createTables()
 
-  AI.possiblemoves = Array(htlength)
-
   AI.reduceHistory()
 
   return new Promise((resolve, reject) => {
@@ -1322,6 +1289,8 @@ AI.search = function(chessPosition, options) {
     AI.PV = AI.getPV(chessPosition)
     AI.bestmove = AI.PV[1]
 
+    if (TESTER) console.log('+++++++++++++++++++++++++++++++ TESTER +++++++++++++++++++++++++++++++++')
+
     console.log('Last Principal Variation', AI.PV.map(e=>{ return e? e.getString() : '---'}).join(' '))
 
     for (let depth = 1; depth <= totaldepth; depth+=1) {
@@ -1344,8 +1313,6 @@ AI.search = function(chessPosition, options) {
 
     }
     
-    // console.log(AI.possiblemoves)
-
     console.info('                ')
     console.log(AI.bestmove.getString(), lastscore)
     console.info('__________________________________________________________________________________________')
