@@ -17,7 +17,7 @@ Chess.Move = require('./move.js')
 Chess.Position = require('./position.js')
 Chess.AI = require('./ai.js')
 
-console.log(Chess.AI)
+// console.log(Chess.AI)
 
 let protochess = Chess.prototype
 let protoposition = Chess.Position.prototype

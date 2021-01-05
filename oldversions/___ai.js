@@ -379,18 +379,6 @@ AI.undevelopedPieces = function(chessPosition, color) {
     return undeveloped
 }
 
-AI.pawnstructure = function(chessPosition, color) {
-    let score = 0
-
-    let local = color == 0 ? 'low' : 'high'
-    let foreign = color == 0 ? 'high' : 'low'
-    let pawns = chessPosition.getPieceColorBitboard(0, color)
-    let pawnsmask = Chess.Position.makePawnAttackMask(color, pawns)
-    let structure = AI.bitCount(pawnsmask.low & pawns.low) + AI.bitCount(pawnsmask.high & pawns.high)
-
-    return structure
-}
-
 AI.doubledPawns= function (chessPosition, color) {
     //Peones doblados
     let doubledPawns = (AI.bitCount(2155905152 & chessPosition.getPieceColorBitboard(0, color).low) > 1) + (AI.bitCount(2155905152 & chessPosition.getPieceColorBitboard(0, color).high) > 1) +

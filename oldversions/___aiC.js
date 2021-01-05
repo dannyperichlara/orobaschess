@@ -774,10 +774,11 @@ AI.evaluate = function(chessPosition, pvNode) {
     let material = AI.getMaterialValue(chessPosition, color) - AI.getMaterialValue(chessPosition, !color)
     let pawns = AI.getPawnsValue(chessPosition, color) - AI.getPawnsValue(chessPosition, !color)
 
-    /*if (Math.abs(material) <= AI.PIECE_VALUES[0] && AI.pawnequality(chessPosition, color) > 0) {
+    if (Math.abs(material) <= AI.PIECE_VALUES[0] && AI.pawnequality(chessPosition, color) > 0) {
       material += AI.PIECE_VALUES[0] / 2 //potencial pieza promovida
-    }*/
+    }
 
+    if (chessPosition.getPieceColorBitboard(Chess.Piece.BISHOP, color).popcnt() > 1) value += Chess.AI.BISHOP_PAIR_VALUE / 2
 
     let positional = 0
     let psqt = 0

@@ -291,6 +291,15 @@ Position.makePawnAttackMask = function(color, pawns) {
 	return attacks1.or(attacks2);
 };
 
+Position.makePawnDefenseMask = function(color, pawns) {
+	var white = (color === Chess.PieceColor.WHITE);
+	var attacks1 = pawns.dup().and_not(Chess.Bitboard.FILES[0]).shiftLeft(white ? 7 : -9);
+	var attacks2 = pawns.dup().and_not(Chess.Bitboard.FILES[Chess.LAST_FILE]).shiftLeft(white ? 9 : -7);
+	var attacks3 = pawns.dup().and_not(Chess.Bitboard.FILES[0]).shiftLeft(white ? -1 : 1);
+	var attacks4 = pawns.dup().and_not(Chess.Bitboard.FILES[Chess.LAST_FILE]).shiftLeft(white ? 1 : -1);
+	return attacks1.or(attacks2).or(attacks3).or(attacks4);
+};
+
 Position.makeKingAttackMask = function(color, king) {
 	var white = (color === Chess.PieceColor.WHITE);
 	var attacks1 = king.dup().and_not(Chess.Bitboard.FILES[0]).shiftLeft(white ? 7 : -9);
