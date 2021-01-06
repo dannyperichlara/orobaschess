@@ -552,9 +552,6 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   
   for (let i=0, len=moves.length; i < len; i++) {
     let move = moves[i]
-    let piece = move.getPiece()
-    let to = move.getTo()
-    let hmove = !!move.hmove
     let R = 0
     let E = 0
 
@@ -602,8 +599,8 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
       //Mate in 1
       if (iteration == 1) {
         if (chessPosition.getStatus() === 1) {
-          AI.ttSave(hashkey, -AI.MATE + ply, 0, depth, moves[i])
-          bestmove  = moves[i]
+          AI.ttSave(hashkey, -AI.MATE + ply, 0, depth, move)
+          bestmove  = move
           return -AI.MATE + ply
         }
       }
@@ -619,18 +616,18 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
             // console.log(legal, move.getPiece())
 
-            // AI.PV[ply] = moves[i]
-            AI.ttSave(hashkey, score, -1, depth, moves[i])
-            AI.saveHistory(turn, moves[i], depth)
+            // AI.PV[ply] = move
+            AI.ttSave(hashkey, score, -1, depth, move)
+            AI.saveHistory(turn, move, depth)
             return score
           }
           
-          AI.saveHistory(turn, moves[i], depth)
+          AI.saveHistory(turn, move, depth)
           alpha = score
         }       
 
         bestscore = score
-        bestmove  = moves[i]
+        bestmove  = move
       }
     }
   }
