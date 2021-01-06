@@ -964,17 +964,17 @@ AI.createPSQT = function (chessPosition) {
 
   /////////////////// PSQT a sigmoidea ///////////////////////
 
-  // for (let i = 0; i < 6; i++) {
-  //   AI.PIECE_SQUARE_TABLES_MIDGAME[i] = AI.PIECE_SQUARE_TABLES_MIDGAME[i].map(psqv=>{
-  //     return 80/(1 + Math.exp(-psqv/20)) - 40
-  //   })
-  // }
+  for (let i = 0; i < 6; i++) {
+    AI.PIECE_SQUARE_TABLES_MIDGAME[i] = AI.PIECE_SQUARE_TABLES_MIDGAME[i].map(psqv=>{
+      return 40/(1 + Math.exp(-psqv/10)) - 20
+    })
+  }
 
-  // for (let i = 0; i < 6; i++) {
-  //   AI.PIECE_SQUARE_TABLES_ENDGAME[i] = AI.PIECE_SQUARE_TABLES_ENDGAME[i].map(psqv=>{
-  //     return 80/(1 + Math.exp(-psqv/20)) - 40
-  //   })
-  // }
+  for (let i = 0; i < 6; i++) {
+    AI.PIECE_SQUARE_TABLES_ENDGAME[i] = AI.PIECE_SQUARE_TABLES_ENDGAME[i].map(psqv=>{
+      return 40/(1 + Math.exp(-psqv/10)) - 20
+    })
+  }
 }
 
 AI.setStage = function (chessPosition) {
