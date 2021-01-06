@@ -539,14 +539,14 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   
   let hmoves = 0
 
-  let halfmax = [
+/*  let halfmax = [
     Math.max(...AI.history[turn][0]) * 0.5,
     Math.max(...AI.history[turn][1]) * 0.5,
     Math.max(...AI.history[turn][2]) * 0.5,
     Math.max(...AI.history[turn][3]) * 0.5,
     Math.max(...AI.history[turn][4]) * 0.5,
     Math.max(...AI.history[turn][5]) * 0.5,
-  ]
+  ]*/
 
   
   
@@ -1093,7 +1093,7 @@ AI.search = function(chessPosition, options) {
 
         iteration++
 
-        fh = fhf = 1
+        fh = fhf = 0.01
         
         score = (white? 1 : -1) * AI.PVS(chessPosition, -Infinity, Infinity, depth, 1)
         
