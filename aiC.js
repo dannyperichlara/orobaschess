@@ -173,21 +173,14 @@ AI.createTables = function () {
       ]
   ]
 
-for (let color = 0; color < 2; color++) {
-    for (let piece = 0; piece < 6; piece++) {
-      for (let to = 0; to < 64; to++) {
-        AI.history[color][piece][to] = 10 * Math.log(AI.history[color][piece][to]) | 0
-      }
-    }
-  }
 
-  /*for (let color = 0; color < 2; color++) {
+  for (let color = 0; color < 2; color++) {
     for (let piece = 0; piece < 6; piece++) {
       for (let to = 0; to < 64; to++) {
         AI.history[color][piece][to] = 0
       }
     }
-  }*/
+  }
 
   AI.hashtable = new Array(htlength) //positions
 }
@@ -373,7 +366,7 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
          return matingValue;
     }
 
-    let turn = chessPosition.getTurnColor()  
+    let turn = chessPosition.getTurnColor()
 
     // let legal = 0
     let stand_pat
@@ -504,7 +497,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     ttEntry = AI.ttGet(hashkey)
   }
 
-  if( depth < 1 ) {
+  if( depth <= 0 ) {
     if (ttEntry && ttEntry.flag === 0) {
       return ttEntry.score
     } else {
