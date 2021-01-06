@@ -173,6 +173,13 @@ AI.createTables = function () {
       ]
   ]
 
+for (let color = 0; color < 2; color++) {
+    for (let piece = 0; piece < 6; piece++) {
+      for (let to = 0; to < 64; to++) {
+        AI.history[color][piece][to] = 10 * Math.log(AI.history[color][piece][to]) | 0
+      }
+    }
+  }
 
   /*for (let color = 0; color < 2; color++) {
     for (let piece = 0; piece < 6; piece++) {
@@ -497,7 +504,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     ttEntry = AI.ttGet(hashkey)
   }
 
-  if( depth <= 0 ) {
+  if( depth < 1 ) {
     if (ttEntry && ttEntry.flag === 0) {
       return ttEntry.score
     } else {
@@ -580,7 +587,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
             R += 0.22 * depth * (1 - Math.exp(-8.5/depth)) * Math.log(i)
             
             //History reduction
-            if (AI.history[turn][piece][to] < halfmax[piece]) R += 1
+            // if (AI.history[turn][piece][to] < halfmax[piece]) R += 1
 
             //Odd-Even effect. Prune more agressively on even plies
             // if (TESTER && depth % 2 === 0) R+=1

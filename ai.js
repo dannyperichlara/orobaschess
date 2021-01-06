@@ -580,7 +580,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
             R += 0.22 * depth * (1 - Math.exp(-8.5/depth)) * Math.log(i)
             
             //History reduction
-            if (AI.history[turn][piece][to] < halfmax[piece]) R += 1
+            // if (AI.history[turn][piece][to] < halfmax[piece]) R += 1
 
             //Odd-Even effect. Prune more agressively on even plies
             // if (TESTER && depth % 2 === 0) R+=1
