@@ -325,7 +325,7 @@ AI.scoreMove = function(move) {
     return move.hvalue
   } else {  
     move.vmove = true 
-    return Math.log(move.value)
+    return Math.log(move.value) - 1000
   } 
 }
 
