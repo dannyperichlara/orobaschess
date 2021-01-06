@@ -8,7 +8,7 @@ let random = 40
 let stage = 1
 let htlength = 1 << 24
 let reduceHistoryFactor = 0.2
-let secondspermove = 0.5
+let secondspermove = 1
 let mindepth = 4
 
 let AI = function() {
@@ -367,12 +367,6 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
     }
 
     let turn = chessPosition.getTurnColor()
-    let hashkey = chessPosition.hashKey.getHashKey()
-    let ttEntry = AI.ttGet(hashkey)
-
-    if (ttEntry && ttEntry.flag === 0) {
-        return ttEntry.score          
-    }
 
     // let legal = 0
     let stand_pat
