@@ -174,13 +174,13 @@ AI.createTables = function () {
   ]
 
 
-  for (let color = 0; color < 2; color++) {
+  /*for (let color = 0; color < 2; color++) {
     for (let piece = 0; piece < 6; piece++) {
       for (let to = 0; to < 64; to++) {
         AI.history[color][piece][to] = 0
       }
     }
-  }
+  }*/
 
   AI.hashtable = new Array(htlength) //positions
 }
@@ -312,17 +312,20 @@ AI.getPieceSquareValue = function(chessPosition, color) {
 }
 
 AI.scoreMove = function(move) {
+  let mvvlva = 1e7 + (move.getCapturedPiece() + 1)/(move.getPiece() + 1)
+
   if (move.pv) {
     return 1e9
   } else if (move.tt) { 
     return 1e8 + move.tt
-  } else if (move.isCapture()) {  
+  } else if (move.isCapture() && mvvlva >= 0) {  
     move.capture = true 
-    let mvvlva = 1e7 + (move.getCapturedPiece() + 1)/(move.getPiece() + 1)  
     return mvvlva
   } else if (move.hvalue) { 
     move.hmove = true 
     return move.hvalue
+  } else if (move.isCapture() && mvvlva < 0) {
+    return 0
   } else {  
     move.vmove = true 
     return Math.log(move.value) - 1000
@@ -403,6 +406,7 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
 
         if( score >= beta ) {
           AI.saveHistory(turn, move, 0)
+          AI.ttSave(chessPosition.hashKey.getHashKey(), bestscore, -1, 0, move) //?????????????????
           return beta;
         }
 
@@ -410,9 +414,15 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
           AI.saveHistory(turn, move, 0)
           alpha = score
           bestscore = score
+          bestmove = move
         }
       }
     }
+
+    if (bestmove) {
+      AI.ttSave(chessPosition.hashKey.getHashKey(), bestscore, 0, 0, bestmove)
+    }
+
 
     return alpha
 
@@ -442,10 +452,10 @@ AI.ttGet = function (hashkey) {
 AI.reduceHistory = function () {
   for (let color = 0; color < 2; color++) {
     for (let piece = 0; piece < 6; piece++) {
-      let min = Math.min(...AI.history[color][piece])
+      // let min = Math.min(...AI.history[color][piece])
       
       for (let to = 0; to < 64; to++) {
-        AI.history[color][piece][to] = (reduceHistoryFactor*min + ((1 - reduceHistoryFactor) * AI.history[color][piece][to])) | 0
+        AI.history[color][piece][to] = (/*reduceHistoryFactor*min + */((1 - reduceHistoryFactor) * AI.history[color][piece][to])) | 0
       }
     }
   }
@@ -493,12 +503,18 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
   //IID
   if (!ttEntry && depth > 2) {
-    AI.PVS(chessPosition, alpha, beta, depth-2, ply)
+    // console.log('IID')
+    AI.PVS(chessPosition, alpha, beta, depth - 2, ply)
     ttEntry = AI.ttGet(hashkey)
+
+    // console.log(!!ttEntry)
+
+    AI.PV = AI.getPV(chessPosition, depth + 1)
   }
 
   if( depth <= 0 ) {
-    if (ttEntry && ttEntry.flag === 0) {
+    if (ttEntry && ttEntry.depth === 0 && ttEntry.flag === 0) {
+      // console.log('dsfdsf')
       return ttEntry.score
     } else {
       return AI.quiescenceSearch(chessPosition, alpha, beta, depth, ply, pvNode)
@@ -526,6 +542,8 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
   let pvMoveValue = AI.PV[ply]? AI.PV[ply].value : null
 
+  // if (!pvMoveValue) console.log('no')
+
   let moves = chessPosition.getMoves(false, false)
   moves = AI.sortMoves(moves, turn, ply, chessPosition, ttEntry, pvMoveValue)
 
@@ -537,18 +555,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
   let incheck = chessPosition.isKingInCheck()
   
-  let hmoves = 0
-
-/*  let halfmax = [
-    Math.max(...AI.history[turn][0]) * 0.5,
-    Math.max(...AI.history[turn][1]) * 0.5,
-    Math.max(...AI.history[turn][2]) * 0.5,
-    Math.max(...AI.history[turn][3]) * 0.5,
-    Math.max(...AI.history[turn][4]) * 0.5,
-    Math.max(...AI.history[turn][5]) * 0.5,
-  ]*/
-
-  
+  let hmoves = 0  
   
   for (let i=0, len=moves.length; i < len; i++) {
     let move = moves[i]
@@ -572,13 +579,10 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
         score = -AI.PVS(chessPosition, -beta, -alpha, depth+E-1, ply+1)
       } else {
         //REDUCTIONS
-        if (!incheck) {
+        if (!incheck && legal > 2) {
             //https://chess.ultimaiq.net/cc_in_detail.htm
             R += 0.22 * depth * (1 - Math.exp(-8.5/depth)) * Math.log(i)
             
-            //History reduction
-            // if (AI.history[turn][piece][to] < halfmax[piece]) R += 1
-
             //Odd-Even effect. Prune more agressively on even plies
             // if (TESTER && depth % 2 === 0) R+=1
         }
