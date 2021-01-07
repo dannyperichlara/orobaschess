@@ -8,7 +8,7 @@ let random = 20
 let stage = 1
 let htlength = 1 << 24
 let reduceHistoryFactor = 0.2
-let secondspermove = 0.2
+let secondspermove = 0.6
 let mindepth = 2
 
 let AI = function() {
@@ -794,6 +794,8 @@ AI.createPSQT = function (chessPosition) {
   let R = chessPosition.getPieceColorBitboard(3, color)
   let Q = chessPosition.getPieceColorBitboard(4, color)
   let K = chessPosition.getPieceColorBitboard(5, color)
+  let RX = chessPosition.getPieceColorBitboard(3, !color)
+  let QX = chessPosition.getPieceColorBitboard(4, !color)
   let KX = chessPosition.getPieceColorBitboard(5, !color)
 
   let pawnmask = Chess.Position.makePawnAttackMask(color, P)
@@ -834,13 +836,15 @@ AI.createPSQT = function (chessPosition) {
 
   //Caballos al centro
   AI.PIECE_SQUARE_TABLES_MIDGAME[1] = AI.PIECE_SQUARE_TABLES_MIDGAME[1].map((e,i)=>{
-    return e + (4 - AI.manhattanDistance(28, i)) * 10
+    return e + 40 - 16 * AI.distance(28, i)
   })
 
   //Caballos cerca del rey enemigo
   AI.PIECE_SQUARE_TABLES_MIDGAME[1] = AI.PIECE_SQUARE_TABLES_MIDGAME[1].map((e,i)=>{
-    return e + 14 - AI.manhattanDistance(kingXposition, i)
+    return e + 40 - 8 * AI.distance(kingXposition, i)
   })
+
+  console.log(AI.PIECE_SQUARE_TABLES_MIDGAME[1])
 
   //Alfiles al centro
   AI.PIECE_SQUARE_TABLES_MIDGAME[2] = AI.PIECE_SQUARE_TABLES_MIDGAME[2].map((e,i)=>{
@@ -866,10 +870,7 @@ AI.createPSQT = function (chessPosition) {
   AI.PIECE_SQUARE_TABLES_MIDGAME[3].reverse() //Revertir una sola vez
 
   //Torres delante del rey enemigo ("torre en séptima")
-  console.log('X positon', kingXposition)
-  for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_MIDGAME[3][i + 8*(kingXposition/8 | 0)] += 27
-
-  console.log(AI.PIECE_SQUARE_TABLES_MIDGAME[3])
+  for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_ENDGAME[3][i + 8*(kingXposition/8 | 0)] += 27
 
   //Dama cerca del rey enemigo
   AI.PIECE_SQUARE_TABLES_MIDGAME[4] = AI.PIECE_SQUARE_TABLES_MIDGAME[4].map((e,i)=>{
@@ -891,12 +892,49 @@ AI.createPSQT = function (chessPosition) {
   let KB = chessPosition.makeBishopAttackMask(KX, false)
   let KBmap = AI.bin2map(KB, color)
 
+  let RB = chessPosition.makeBishopAttackMask(RX, false)
+  let RBmap = AI.bin2map(RB, color)
+  
+  let QB = chessPosition.makeBishopAttackMask(QX, false)
+  let QBmap = AI.bin2map(QB, color)
+
   let KR = chessPosition.makeRookAttackMask(KX, false)
   let KRmap = AI.bin2map(KR, color)
 
+  let QR = chessPosition.makeRookAttackMask(KX, false)
+  let QRmap = AI.bin2map(QR, color)
+
+
+  //Alfiles apuntando a torres
+  AI.PIECE_SQUARE_TABLES_MIDGAME[2] = AI.PIECE_SQUARE_TABLES_MIDGAME[2].map((e,i)=>{
+    return e + 20*RBmap[i]
+  })
+
+  //Alfiles apuntando a dama
+  AI.PIECE_SQUARE_TABLES_MIDGAME[2] = AI.PIECE_SQUARE_TABLES_MIDGAME[2].map((e,i)=>{
+    return e + 20*QBmap[i]
+  })
+  
   //Alfiles apuntando al rey
   AI.PIECE_SQUARE_TABLES_MIDGAME[2] = AI.PIECE_SQUARE_TABLES_MIDGAME[2].map((e,i)=>{
     return e + 20*KBmap[i]
+  })
+
+  if (kingXposition % 8 !== 7) {
+    AI.PIECE_SQUARE_TABLES_MIDGAME[2] = AI.PIECE_SQUARE_TABLES_MIDGAME[2].map((e,i)=>{
+      return e + 20*KBmap[i + 1]
+    })    
+  }
+
+  if (kingXposition % 8 !== 0) {
+    AI.PIECE_SQUARE_TABLES_MIDGAME[2] = AI.PIECE_SQUARE_TABLES_MIDGAME[2].map((e,i)=>{
+      return e + 20*KBmap[i - 1]
+    })
+  }
+
+  //Torres apuntando a dama
+  AI.PIECE_SQUARE_TABLES_MIDGAME[3] = AI.PIECE_SQUARE_TABLES_MIDGAME[3].map((e,i)=>{
+    return e + 20*QRmap[i]
   })
 
   //Torres apuntando al rey
@@ -925,15 +963,23 @@ AI.createPSQT = function (chessPosition) {
     return positional | 0
   })
   
+  //Caballos al centro
+  AI.PIECE_SQUARE_TABLES_ENDGAME[1] = AI.PIECE_SQUARE_TABLES_ENDGAME[1].map((e,i)=>{
+    return e + 40 - 16 * AI.distance(28, i)
+  })
+
   //Caballos cerca del rey enemigo
   AI.PIECE_SQUARE_TABLES_ENDGAME[1] = AI.PIECE_SQUARE_TABLES_ENDGAME[1].map((e,i)=>{
-    return 4 * (8 - AI.manhattanDistance(kingXposition, i))
+    return e + 40 - 8 * AI.distance(kingXposition, i)
   })
 
   //Alfiles al centro
   AI.PIECE_SQUARE_TABLES_ENDGAME[2] = AI.PIECE_SQUARE_TABLES_ENDGAME[2].map((e,i)=>{
     return e + (4 - AI.manhattanDistance(28, i)) * 10
   })
+
+  //Torres delante del rey enemigo ("torre en séptima")
+  for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_ENDGAME[3][i + 8*(kingXposition/8 | 0)] += 27
 
   //Dama cerca del rey enemigo
   AI.PIECE_SQUARE_TABLES_ENDGAME[4] = AI.PIECE_SQUARE_TABLES_ENDGAME[4].map((e,i)=>{
@@ -952,7 +998,7 @@ AI.createPSQT = function (chessPosition) {
 
   /////////////////// PSQT a sigmoidea ///////////////////////
 
-  for (let i = 0; i < 6; i++) {
+  /*for (let i = 0; i < 6; i++) {
     AI.PIECE_SQUARE_TABLES_MIDGAME[i] = AI.PIECE_SQUARE_TABLES_MIDGAME[i].map(psqv=>{
       return 40/(1 + Math.exp(-psqv/10)) - 20
     })
@@ -962,7 +1008,7 @@ AI.createPSQT = function (chessPosition) {
     AI.PIECE_SQUARE_TABLES_ENDGAME[i] = AI.PIECE_SQUARE_TABLES_ENDGAME[i].map(psqv=>{
       return 40/(1 + Math.exp(-psqv/10)) - 20
     })
-  }
+  }*/
 }
 
 AI.setStage = function (chessPosition) {
