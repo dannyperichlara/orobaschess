@@ -8,8 +8,8 @@ let random = 20
 let stage = 1
 let htlength = 1 << 24
 let reduceHistoryFactor = 0.2
-let secondspermove = 1
-let mindepth = 6
+let secondspermove = 0.2
+let mindepth = 2
 
 let AI = function() {
 
@@ -714,8 +714,8 @@ AI.createPSQT = function (chessPosition) {
       0,  0,  0,  0,  0,  0,  0,  0,
       0,-20,  0,  0,  0,  0,-20,  0,
     -20,  0,  0,  0,  0,  0,  0,-20,
-    -40,  0, 40,  0,  0, 40,  0,-40,
-      0,  0,  0, 20, 20,  0,  0,  0,
+    -40,  0,  0,  0,  0, 40,  0,-40,
+      0,  0,  0, 40, 20,  0,  0,  0,
       0,-20,  0,  0,  0,  0,-20,  0,
       
       ],
@@ -725,8 +725,8 @@ AI.createPSQT = function (chessPosition) {
       0,  0,  0,  0,  0,  0,  0,  0,
       0,  0,  0,  0,  0,  0,  0,  0,
       0,-40,  0,  0,  0,  0,-40,  0,
-      0,  0, 20,  0,  0, 20,  0,  0,
-    -40,  0,  0,-20,-20,  0,  0,-40,
+      0,  0, 40,  0,  0, 40,  0,  0,
+    -40,  0, 20,-20,-20, 20,  0,-40,
       0, 40,  0, 20, 20,  0, 40,  0,
       0,  0,-20,  0,  0,-20,  0,  0,
     ],
@@ -820,7 +820,7 @@ AI.createPSQT = function (chessPosition) {
   //Castiga captura y maniobras con peón frontal del rey
   AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 15] -=20
   AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 17] -=20
-  AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 24] -=20 //Bug: Si peós`
+  AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 24] -=20
 
   //Peones al centro
   AI.PIECE_SQUARE_TABLES_MIDGAME[0] = AI.PIECE_SQUARE_TABLES_MIDGAME[0].map((e,i)=>{
@@ -865,8 +865,11 @@ AI.createPSQT = function (chessPosition) {
 
   AI.PIECE_SQUARE_TABLES_MIDGAME[3].reverse() //Revertir una sola vez
 
-  //Torres en séptima
-  for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_MIDGAME[3][i] += 20
+  //Torres delante del rey enemigo ("torre en séptima")
+  console.log('X positon', kingXposition)
+  for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_MIDGAME[3][i + 8*(kingXposition/8 | 0)] += 27
+
+  console.log(AI.PIECE_SQUARE_TABLES_MIDGAME[3])
 
   //Dama cerca del rey enemigo
   AI.PIECE_SQUARE_TABLES_MIDGAME[4] = AI.PIECE_SQUARE_TABLES_MIDGAME[4].map((e,i)=>{
