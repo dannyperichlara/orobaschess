@@ -4,12 +4,12 @@ let Chess = require('./chess.js')
 
 let TESTER, nodes, qsnodes, enodes, iteration, status, fhf, fh
 let totaldepth = 48
-let random = 40
+let random = 20
 let stage = 1
 let htlength = 1 << 24
 let reduceHistoryFactor = 0.2
 let secondspermove = 1
-let mindepth = 4
+let mindepth = 6
 
 let AI = function() {
 
@@ -19,7 +19,7 @@ let AI = function() {
 // AI.INITIAL_PIECE_VALUES = [141, 300, 342, 495, 1107, 20000]
 
 //https://www.r-bloggers.com/2015/06/big-data-and-chess-what-are-the-predictive-point-values-of-chess-pieces/
-AI.INITIAL_PIECE_VALUES = [100, 300, 330, 520, 850, 20000]
+AI.INITIAL_PIECE_VALUES = [120, 300, 330, 520, 850, 20000]
 
 
 AI.MATE = AI.INITIAL_PIECE_VALUES[5]
@@ -174,13 +174,13 @@ AI.createTables = function () {
   ]
 
 
-  /*for (let color = 0; color < 2; color++) {
+  for (let color = 0; color < 2; color++) {
     for (let piece = 0; piece < 6; piece++) {
       for (let to = 0; to < 64; to++) {
         AI.history[color][piece][to] = 0
       }
     }
-  }*/
+  }
 
   AI.hashtable = new Array(htlength) //positions
 }
@@ -246,7 +246,8 @@ AI.evaluate = function(chessPosition, pvNode) {
 
   // if (color === 0) material += 20 //Diminishes White effect
 
-  // if (TESTER && colorMaterial.P > notcolorMaterial.P) material += 120
+  //https://www.r-bloggers.com/2015/06/big-data-and-chess-what-are-the-predictive-point-values-of-chess-pieces/
+  // if (colorMaterial.P > notcolorMaterial.P) material += 120
 
   return material + psqt
 }
@@ -280,20 +281,13 @@ AI.getMaterialValue = function(chessPosition, color) {
     let B = chessPosition.getPieceColorBitboard(2, color).popcnt()
     let R = chessPosition.getPieceColorBitboard(3, color).popcnt()
     let Q = chessPosition.getPieceColorBitboard(4, color).popcnt()
-    // let K = chessPosition.getPieceColorBitboard(5, color).popcnt()
 
-    value = P*AI.PIECE_VALUES[0] + N*AI.PIECE_VALUES[1] + B*AI.PIECE_VALUES[2] + R*AI.PIECE_VALUES[3] + Q*AI.PIECE_VALUES[4]// + K*AI.PIECE_VALUES[5]
+    value = P*AI.PIECE_VALUES[0] + N*AI.PIECE_VALUES[1] + B*AI.PIECE_VALUES[2] + R*AI.PIECE_VALUES[3] + Q*AI.PIECE_VALUES[4]
 
-    // if (TESTER) {
-      // value += B > 1?   60 : 0
-      // value += color === 0? 40 : 0
-    // } else {
-      value += B > 1?   AI.PIECE_VALUES[0]/2 : 0
-      value += P == 0? -AI.PIECE_VALUES[0]/2 : 0      
-    // }
+    //Bishop pair: https://www.r-bloggers.com/2015/06/big-data-and-chess-what-are-the-predictive-point-values-of-chess-pieces/
+    value += B > 1? 110 : 0
 
-
-    return {value, P, B}
+    return {value, P, N, B, R, Q}
 }
 
 AI.getPieceSquareValue = function(chessPosition, color) {
@@ -312,20 +306,20 @@ AI.getPieceSquareValue = function(chessPosition, color) {
 }
 
 AI.scoreMove = function(move) {
-  let mvvlva = 1e7 + (move.getCapturedPiece() + 1)/(move.getPiece() + 1)
+  let mvvlva = (move.getCapturedPiece() + 1)/(move.getPiece() + 1)
 
   if (move.pv) {
     return 1e9
   } else if (move.tt) { 
-    return 1e8 + move.tt
-  } else if (move.isCapture() && mvvlva >= 0) {  
+    return 1e8
+  } else if (move.isCapture() && mvvlva >= 1) {  
     move.capture = true 
-    return mvvlva
+    return 1e7 + mvvlva
   } else if (move.hvalue) { 
     move.hmove = true 
     return move.hvalue
-  } else if (move.isCapture() && mvvlva < 0) {
-    return 0
+  } else if (move.isCapture() && mvvlva < 1) {
+    return -1e6
   } else {  
     move.vmove = true 
     return Math.log(move.value) - 1000
@@ -337,13 +331,11 @@ AI.sortMoves = function(moves, turn, ply, chessPosition, ttEntry, pvMoveValue) {
 
   for (let i = 0, len = moves.length; i < len; i++) {
     let move = moves[i]
-    if (ttEntry && move.value === ttEntry.move.value) move.tt = ttEntry.score
+    if (ttEntry && move.value === ttEntry.move.value) move.tt = ttEntry.true
 
     if (pvMoveValue === move.value) {
       move.pv = true
     }
-
-    // if (AI.PV[ply-2] && AI.PV[ply-2].getPiece() === move.getPiece()) move.samepiece = true
 
     move.hvalue = AI.history[turn][move.getPiece()][move.getTo()]
 
@@ -405,13 +397,13 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
         chessPosition.unmakeMove()
 
         if( score >= beta ) {
-          AI.saveHistory(turn, move, 0)
+          // AI.saveHistory(turn, move, 0)
           AI.ttSave(chessPosition.hashKey.getHashKey(), bestscore, -1, 0, move) //?????????????????
           return beta;
         }
 
         if( score > alpha ) {
-          AI.saveHistory(turn, move, 0)
+          // AI.saveHistory(turn, move, 0)
           alpha = score
           bestscore = score
           bestmove = move
@@ -535,7 +527,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
       if (alpha >= beta) {
         // fhf++; fh++
-        AI.saveHistory(turn, ttEntry.move, depth)
+        // AI.saveHistory(turn, ttEntry.move, depth)
         return ttEntry.score
       }
   }
@@ -562,13 +554,10 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     let R = 0
     let E = 0
 
-
-    //LMP
-    // let lmp_limit = Math.max(40 - 4*iteration, 10)
-    // if (depth <= 3 && piece < 5 && legal > lmp_limit) continue
-
     if (chessPosition.makeMove(move)) {
       legal++
+
+      let isCapture = move.isCapture()
 
       //EXTENSIONS
       if (incheck && depth < 3) {
@@ -582,7 +571,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
         if (!incheck && legal > 2) {
             //https://chess.ultimaiq.net/cc_in_detail.htm
             R += 0.22 * depth * (1 - Math.exp(-8.5/depth)) * Math.log(i)
-            
+
             //Odd-Even effect. Prune more agressively on even plies
             // if (TESTER && depth % 2 === 0) R+=1
         }
@@ -590,6 +579,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
         score = -AI.PVS(chessPosition, -alpha-1, -alpha, depth+E-R-1, ply+1)
 
         if (!AI.stop && score > alpha && score < beta) { //https://www.chessprogramming.org/Principal_Variation_Search
+          // console.log('research')
           score = -AI.PVS(chessPosition, -beta, -alpha, depth+E-1, ply+1)
         }
       }
@@ -622,11 +612,11 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
             // AI.PV[ply] = move
             AI.ttSave(hashkey, score, -1, depth, move)
-            AI.saveHistory(turn, move, depth)
+            if (!isCapture) AI.saveHistory(turn, move, depth)
             return score
           }
           
-          AI.saveHistory(turn, move, depth)
+          // AI.saveHistory(turn, move, depth)
           alpha = score
         }       
 
@@ -1043,15 +1033,11 @@ AI.search = function(chessPosition, options) {
     AI.createTables()
   }
 
-  console.log(AI.history[0])
-
   AI.reduceHistory()
 
   if (!AI.PIECE_VALUES || nmoves < 2) {
     AI.PIECE_VALUES = AI.INITIAL_PIECE_VALUES
   }
-
-  console.log(AI.PIECE_VALUES)
 
   return new Promise((resolve, reject) => {
     let color = chessPosition.getTurnColor()
