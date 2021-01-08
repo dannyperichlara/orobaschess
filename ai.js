@@ -8,7 +8,7 @@ let random = 80
 let stage = 1
 let htlength = 1 << 24
 let reduceHistoryFactor = 0.2
-let secondspermove = 3
+let secondspermove = 0.5
 let mindepth = 4
 
 let AI = function() {
@@ -333,7 +333,7 @@ AI.sortMoves = function(moves, turn, ply, chessPosition, ttEntry, pvMoveValue) {
 
   for (let i = 0, len = moves.length; i < len; i++) {
     let move = moves[i]
-    if (ttEntry && move.value === ttEntry.move.value) move.tt = ttEntry.true
+    if (ttEntry && move.value === ttEntry.move.value) move.tt = true
 
     if (pvMoveValue === move.value) {
       move.pv = true
@@ -351,7 +351,6 @@ AI.sortMoves = function(moves, turn, ply, chessPosition, ttEntry, pvMoveValue) {
 }
 
 AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
-
 
     var matingValue = -AI.MATE + ply
   
@@ -397,13 +396,12 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
         chessPosition.unmakeMove()
 
         if( score >= beta ) {
-          // AI.saveHistory(turn, move, 0)
-          AI.ttSave(chessPosition.hashKey.getHashKey(), bestscore, -1, 0, move) //?????????????????
+          AI.saveHistory(turn, move, 0)
           return beta;
         }
 
         if( score > alpha ) {
-          // AI.saveHistory(turn, move, 0)
+          AI.saveHistory(turn, move, 0)
           alpha = score
           bestscore = score
           bestmove = move
@@ -411,14 +409,7 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
       }
     }
 
-    if (bestmove) {
-      AI.ttSave(chessPosition.hashKey.getHashKey(), bestscore, 0, 0, bestmove)
-    }
-
-
     return alpha
-
-
 }
 
 AI.ttSave = function (hashkey, score, flag, depth, move) {
@@ -496,7 +487,8 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   //IID
   if (!ttEntry && depth > 2) {
     // console.log('IID')
-    AI.PVS(chessPosition, alpha, beta, depth - 2, ply)
+    // AI.PVS(chessPosition, alpha, beta, depth - 2, ply)
+    AI.PVS(chessPosition, alpha, beta, 2, ply)
     ttEntry = AI.ttGet(hashkey)
 
     // console.log(!!ttEntry)
@@ -505,7 +497,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   }
 
   if( depth <= 0 ) {
-    if (ttEntry && ttEntry.depth >= 0 && ttEntry.flag === 0) {
+    if (ttEntry && ttEntry.depth <= 0) {
       return ttEntry.score
     } else {
       return AI.quiescenceSearch(chessPosition, alpha, beta, depth, ply, pvNode)
@@ -553,6 +545,8 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
     if (chessPosition.makeMove(move)) {
       legal++
+
+      if (AI.stop) depth = 0
 
       let isCapture = move.isCapture()
 
@@ -605,6 +599,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
             fh++
 
+            //LOWERBOUND
             AI.ttSave(hashkey, score, -1, depth, move)
             if (!isCapture) AI.saveHistory(turn, move, depth)
             return score
@@ -643,11 +638,12 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     }
 
     if (bestscore > alphaOrig) {
-      // AI.PV[ply] = bestmove
+      // EXACT
       AI.ttSave(hashkey, bestscore, 0, depth, bestmove)
       AI.saveHistory(turn, bestmove, depth)
       return bestscore
     } else {
+      //UPPERBOUND value <= alphaorig
       AI.ttSave(hashkey, alphaOrig, 1, depth, bestmove)
       return alphaOrig
     }
@@ -1126,11 +1122,11 @@ AI.search = function(chessPosition, options) {
         
         score = (white? 1 : -1) * AI.PVS(chessPosition, -Infinity, Infinity, depth, 1)
         
-        AI.PV = AI.getPV(chessPosition, iteration + 6)
+        AI.PV = AI.getPV(chessPosition, iteration)
 
         let strmove = AI.PV[1]? AI.PV[1].getString() : '----'
         
-        if (AI.stop && iteration > mindepth && AI.bestmove) {
+        if (AI.stop && iteration > mindepth) {
             break
         }
         
