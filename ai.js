@@ -4,12 +4,12 @@ let Chess = require('./chess.js')
 
 let TESTER, nodes, qsnodes, enodes, iteration, status, fhf, fh
 let totaldepth = 48
-let random = 20
+let random = 80
 let stage = 1
 let htlength = 1 << 24
 let reduceHistoryFactor = 0.2
-let secondspermove = 0.6
-let mindepth = 2
+let secondspermove = 3
+let mindepth = 4
 
 let AI = function() {
 
@@ -189,10 +189,12 @@ AI.createTables()
 
 //Randomize
 AI.randomizePSQT = function () {
-  for (let i = 0; i < 6; i++) {
-    AI.PIECE_SQUARE_TABLES[i] = AI.PIECE_SQUARE_TABLES[i].map(e=>{
-      return e + Math.random() * random - random/2 | 0
-    })
+  if (stage === 1) {
+    for (let i = 0; i < 6; i++) {
+      AI.PIECE_SQUARE_TABLES[i] = AI.PIECE_SQUARE_TABLES[i].map(e=>{
+        return e + Math.random() * random - random/2 | 0
+      })
+    }    
   }
 }
 
@@ -247,7 +249,7 @@ AI.evaluate = function(chessPosition, pvNode) {
   // if (color === 0) material += 20 //Diminishes White effect
 
   //https://www.r-bloggers.com/2015/06/big-data-and-chess-what-are-the-predictive-point-values-of-chess-pieces/
-  // if (colorMaterial.P > notcolorMaterial.P) material += 120
+  if (colorMaterial.P > notcolorMaterial.P) material += 40
 
   return material + psqt
 }
@@ -344,8 +346,6 @@ AI.sortMoves = function(moves, turn, ply, chessPosition, ttEntry, pvMoveValue) {
   moves.sort((a, b) => {
       return AI.scoreMove(b, chessPosition) - AI.scoreMove(a, chessPosition)
   })
-
-  // console.log(moves)
 
   return moves
 }
@@ -505,8 +505,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   }
 
   if( depth <= 0 ) {
-    if (ttEntry && ttEntry.depth === 0 && ttEntry.flag === 0) {
-      // console.log('dsfdsf')
+    if (ttEntry && ttEntry.depth >= 0 && ttEntry.flag === 0) {
       return ttEntry.score
     } else {
       return AI.quiescenceSearch(chessPosition, alpha, beta, depth, ply, pvNode)
@@ -518,7 +517,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
   if (ttEntry && ttEntry.depth >= depth) {
       if (ttEntry.flag === 0) {
-        return ttEntry.score          
+        return ttEntry.score
       } else if (ttEntry.flag === -1) {
         if (ttEntry.score > alpha) alpha = ttEntry.score
       } else if (ttEntry.flag === 1) {
@@ -526,8 +525,6 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
       }
 
       if (alpha >= beta) {
-        // fhf++; fh++
-        // AI.saveHistory(turn, ttEntry.move, depth)
         return ttEntry.score
       }
   }
@@ -608,15 +605,11 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
             fh++
 
-            // console.log(legal, move.getPiece())
-
-            // AI.PV[ply] = move
             AI.ttSave(hashkey, score, -1, depth, move)
             if (!isCapture) AI.saveHistory(turn, move, depth)
             return score
           }
           
-          // AI.saveHistory(turn, move, depth)
           alpha = score
         }       
 
@@ -702,7 +695,7 @@ AI.createPSQT = function (chessPosition) {
       0,  0,  0,  0,  0,  0,  0,  0, 
       0,  0,  0, 40, 40,  0,  0,  0, 
     -20,-20, 10, 40, 40, 10,-20,-20, 
-     20, 20, 20, 10, 10,-10, 20, 20, 
+     20, 20, 30, 10, 10,-10, 20, 20, 
      20, 20, 20,-20,-20, 50, 50, 50,
       0,  0,  0,  0,  0,  0,  0,  0
       ],
@@ -998,7 +991,7 @@ AI.createPSQT = function (chessPosition) {
 
   /////////////////// PSQT a sigmoidea ///////////////////////
 
-  /*for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 6; i++) {
     AI.PIECE_SQUARE_TABLES_MIDGAME[i] = AI.PIECE_SQUARE_TABLES_MIDGAME[i].map(psqv=>{
       return 40/(1 + Math.exp(-psqv/10)) - 20
     })
@@ -1008,7 +1001,7 @@ AI.createPSQT = function (chessPosition) {
     AI.PIECE_SQUARE_TABLES_ENDGAME[i] = AI.PIECE_SQUARE_TABLES_ENDGAME[i].map(psqv=>{
       return 40/(1 + Math.exp(-psqv/10)) - 20
     })
-  }*/
+  }
 }
 
 AI.setStage = function (chessPosition) {
