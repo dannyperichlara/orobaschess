@@ -8,7 +8,7 @@ let random = 80
 let stage = 1
 let htlength = 1 << 24
 let reduceHistoryFactor = 0.2
-let secondspermove = 3
+let secondspermove = 0.4
 let mindepth = 4
 
 let AI = function() {
@@ -380,8 +380,8 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
 
     let moves
 
-    // moves = chessPosition.getMoves(false, !chessPosition.isKingInCheck())
-    moves = chessPosition.getMoves(false, true)
+    moves = chessPosition.getMoves(false, !chessPosition.isKingInCheck())
+    // moves = chessPosition.getMoves(false, true)
 
 
     moves = AI.sortMoves(moves, turn, ply, chessPosition, null, AI.PV[ply]? AI.PV[ply].value : null)
@@ -504,11 +504,11 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   }
 
   if( depth <= 0 ) {
-    if (ttEntry && ttEntry.depth <= 0) {
-      return ttEntry.score
-    } else {
+    // if (ttEntry && ttEntry.depth <= 0) {
+      // return ttEntry.score
+    // } else {
       return AI.quiescenceSearch(chessPosition, alpha, beta, depth, ply, pvNode)
-    }
+    // }
     
   }
 
@@ -566,13 +566,13 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
         score = -AI.PVS(chessPosition, -beta, -alpha, depth+E-1, ply+1)
       } else {
         //REDUCTIONS
-        if (!incheck && legal > 2) {
-            //https://chess.ultimaiq.net/cc_in_detail.htm
-            R += 0.22 * depth * (1 - Math.exp(-8.5/depth)) * Math.log(i)
+        // if (!incheck && legal > 2) {
+            // R += 0.22 * depth * (1 - Math.exp(-8.5/depth)) * Math.log(i)
+            R += depth > 1? Math.log(depth) * Math.log(i) : 0
 
             //Odd-Even effect. Prune more agressively on even plies
             // if (TESTER && depth % 2 === 0) R+=1
-        }
+        // }
 
         score = -AI.PVS(chessPosition, -alpha-1, -alpha, depth+E-R-1, ply+1)
 
@@ -1131,7 +1131,7 @@ AI.search = function(chessPosition, options) {
         
         score = (white? 1 : -1) * AI.PVS(chessPosition, -Infinity, Infinity, depth, 1)
         
-        AI.PV = AI.getPV(chessPosition, iteration + 1)
+        AI.PV = AI.getPV(chessPosition, iteration)
 
         let strmove = AI.PV[1]? AI.PV[1].getString() : '----'
         

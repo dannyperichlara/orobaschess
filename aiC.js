@@ -8,7 +8,7 @@ let random = 80
 let stage = 1
 let htlength = 1 << 24
 let reduceHistoryFactor = 0.2
-let secondspermove = 3
+let secondspermove = 0.4
 let mindepth = 4
 
 let AI = function() {
@@ -325,7 +325,7 @@ AI.scoreMove = function(move) {
     move.hmove = true 
     return move.hvalue
   } else if (move.isCapture() && mvvlva < 1) {
-    return 0 //-1e6
+    return -1e6
   } else {  
     move.vmove = true 
     return Math.log(move.value) - 1000
@@ -376,9 +376,10 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
     stand_pat = AI.evaluate(chessPosition, pvNode)
 
     if( stand_pat >= beta ) {
-      return beta;
+      return beta
     }
-    if( alpha < stand_pat ) alpha = stand_pat;
+
+    if( alpha < stand_pat ) alpha = stand_pat
 
     let moves
 
@@ -494,8 +495,8 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   //IID
   if (!ttEntry && depth > 2) {
     // console.log('IID')
-    // AI.PVS(chessPosition, alpha, beta, depth - 2, ply)
-    AI.PVS(chessPosition, alpha, beta, 2, ply)
+    AI.PVS(chessPosition, alpha, beta, depth - 2, ply)
+    // AI.PVS(chessPosition, alpha, beta, 2, ply)
     ttEntry = AI.ttGet(hashkey)
 
     // console.log(!!ttEntry)
@@ -504,11 +505,11 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   }
 
   if( depth <= 0 ) {
-    if (ttEntry && ttEntry.depth <= 0) {
-      return ttEntry.score
-    } else {
+    // if (ttEntry && ttEntry.depth <= 0) {
+      // return ttEntry.score
+    // } else {
       return AI.quiescenceSearch(chessPosition, alpha, beta, depth, ply, pvNode)
-    }
+    // }
     
   }
 
@@ -532,7 +533,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
   // if (!pvMoveValue) console.log('no')
 
-  let moves = chessPosition.getMoves(false, false)
+  let moves = chessPosition.getMoves(true, false)
   moves = AI.sortMoves(moves, turn, ply, chessPosition, ttEntry, pvMoveValue)
 
   let legal = 0
@@ -566,13 +567,14 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
         score = -AI.PVS(chessPosition, -beta, -alpha, depth+E-1, ply+1)
       } else {
         //REDUCTIONS
-        if (!incheck && legal > 2) {
+        // if (!incheck) {
             //https://chess.ultimaiq.net/cc_in_detail.htm
-            R += 0.22 * depth * (1 - Math.exp(-8.5/depth)) * Math.log(i)
+            // R += 0.22 * depth * (1 - Math.exp(-8.5/depth)) * Math.log(i)
+            R += depth > 1? Math.log(depth) * Math.log(i) : 0
 
             //Odd-Even effect. Prune more agressively on even plies
             // if (TESTER && depth % 2 === 0) R+=1
-        }
+        // }
 
         score = -AI.PVS(chessPosition, -alpha-1, -alpha, depth+E-R-1, ply+1)
 
@@ -1005,6 +1007,8 @@ AI.createPSQT = function (chessPosition) {
       return 80/(1 + Math.exp(-psqv/20)) - 40 | 0
     })
   }
+
+  console.log(AI.PIECE_SQUARE_TABLES_MIDGAME)
 }
 
 AI.setStage = function (chessPosition) {
@@ -1119,7 +1123,7 @@ AI.search = function(chessPosition, options) {
     AI.PV = AI.getPV(chessPosition, 1)
     
 
-    for (let depth = 1; depth <= (Math.max(totaldepth, AI.PV.length + 1)); depth+=1) {
+    for (let depth = 1; depth <= totaldepth; depth+=1) {
         AI.bestmove = [...AI.PV][1]
         lastscore = score
 
