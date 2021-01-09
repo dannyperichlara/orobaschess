@@ -8,7 +8,7 @@ let random = 80
 let stage = 1
 let htlength = 1 << 24
 let reduceHistoryFactor = 0.2
-let secondspermove = 0.5
+let secondspermove = 3
 let mindepth = 4
 
 let AI = function() {
@@ -246,6 +246,10 @@ AI.evaluate = function(chessPosition, pvNode) {
   let material = colorMaterial.value - notcolorMaterial.value
   let psqt = AI.getPieceSquareValue(chessPosition, color) - AI.getPieceSquareValue(chessPosition,  !color)
 
+  // console.log('EEEEEEEEEEEEEEEEEEEEE', psqt)
+
+  // console.log(AI.PIECE_SQUARE_TABLES)
+
   // if (color === 0) material += 20 //Diminishes White effect
 
   //https://www.r-bloggers.com/2015/06/big-data-and-chess-what-are-the-predictive-point-values-of-chess-pieces/
@@ -321,7 +325,7 @@ AI.scoreMove = function(move) {
     move.hmove = true 
     return move.hvalue
   } else if (move.isCapture() && mvvlva < 1) {
-    return -1e6
+    return 0 //-1e6
   } else {  
     move.vmove = true 
     return Math.log(move.value) - 1000
@@ -390,23 +394,26 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
 
       if (chessPosition.makeMove(move)) {
         // legal++
-
         let score = -AI.quiescenceSearch(chessPosition, -beta, -alpha, depth-1, ply+1, pvNode)
 
         chessPosition.unmakeMove()
 
         if( score >= beta ) {
-          AI.saveHistory(turn, move, 0)
-          return beta;
+          return beta
         }
 
         if( score > alpha ) {
-          AI.saveHistory(turn, move, 0)
           alpha = score
           bestscore = score
           bestmove = move
         }
       }
+    }
+        // console.log('AAAAAAAA', bestscore)
+
+    if (bestmove) {
+      let hashkey = chessPosition.hashKey.getHashKey()
+      AI.ttSave(hashkey, bestscore, 0, 0, bestmove)
     }
 
     return alpha
@@ -537,16 +544,16 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   let incheck = chessPosition.isKingInCheck()
   
   let hmoves = 0  
-  
+
+
   for (let i=0, len=moves.length; i < len; i++) {
     let move = moves[i]
     let R = 0
     let E = 0
+    // console.log('ssssssssssssssssssssssssss')
 
     if (chessPosition.makeMove(move)) {
       legal++
-
-      if (AI.stop) depth = 0
 
       let isCapture = move.isCapture()
 
@@ -909,15 +916,15 @@ AI.createPSQT = function (chessPosition) {
     return e + 20*KBmap[i]
   })
 
-  if (kingXposition % 8 !== 7) {
+  if (kingXposition % 8 < 7) {
     AI.PIECE_SQUARE_TABLES_MIDGAME[2] = AI.PIECE_SQUARE_TABLES_MIDGAME[2].map((e,i)=>{
-      return e + 20*KBmap[i + 1]
+      return e + 20*(KBmap[i + 1] || 0)
     })    
   }
 
-  if (kingXposition % 8 !== 0) {
+  if (kingXposition % 8 > 0) {
     AI.PIECE_SQUARE_TABLES_MIDGAME[2] = AI.PIECE_SQUARE_TABLES_MIDGAME[2].map((e,i)=>{
-      return e + 20*KBmap[i - 1]
+      return e + 20*(KBmap[i - 1] || 0)
     })
   }
 
@@ -989,13 +996,13 @@ AI.createPSQT = function (chessPosition) {
 
   for (let i = 0; i < 6; i++) {
     AI.PIECE_SQUARE_TABLES_MIDGAME[i] = AI.PIECE_SQUARE_TABLES_MIDGAME[i].map(psqv=>{
-      return 40/(1 + Math.exp(-psqv/10)) - 20
+      return 80/(1 + Math.exp(-psqv/20)) - 40 | 0
     })
   }
 
   for (let i = 0; i < 6; i++) {
     AI.PIECE_SQUARE_TABLES_ENDGAME[i] = AI.PIECE_SQUARE_TABLES_ENDGAME[i].map(psqv=>{
-      return 40/(1 + Math.exp(-psqv/10)) - 20
+      return 80/(1 + Math.exp(-psqv/20)) - 40 | 0
     })
   }
 }

@@ -8,7 +8,7 @@ let random = 80
 let stage = 1
 let htlength = 1 << 24
 let reduceHistoryFactor = 0.2
-let secondspermove = 0.5
+let secondspermove = 3
 let mindepth = 4
 
 let AI = function() {
@@ -347,6 +347,8 @@ AI.sortMoves = function(moves, turn, ply, chessPosition, ttEntry, pvMoveValue) {
       return AI.scoreMove(b, chessPosition) - AI.scoreMove(a, chessPosition)
   })
 
+  // console.log(moves)
+
   return moves
 }
 
@@ -378,8 +380,8 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
 
     let moves
 
-    moves = chessPosition.getMoves(false, !chessPosition.isKingInCheck())
-    // moves = chessPosition.getMoves(false, true)
+    // moves = chessPosition.getMoves(false, !chessPosition.isKingInCheck())
+    moves = chessPosition.getMoves(false, true)
 
 
     moves = AI.sortMoves(moves, turn, ply, chessPosition, null, AI.PV[ply]? AI.PV[ply].value : null)
@@ -407,6 +409,11 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
           bestmove = move
         }
       }
+    }
+
+    if (bestmove) {
+      let hashkey = chessPosition.hashKey.getHashKey()
+      AI.ttSave(hashkey, bestscore, 0, 0, bestmove)
     }
 
     return alpha
@@ -487,8 +494,8 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   //IID
   if (!ttEntry && depth > 2) {
     // console.log('IID')
-    // AI.PVS(chessPosition, alpha, beta, depth - 2, ply)
-    AI.PVS(chessPosition, alpha, beta, 2, ply)
+    AI.PVS(chessPosition, alpha, beta, depth - 2, ply)
+    // AI.PVS(chessPosition, alpha, beta, 2, ply)
     ttEntry = AI.ttGet(hashkey)
 
     // console.log(!!ttEntry)
@@ -528,6 +535,8 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   let moves = chessPosition.getMoves(false, false)
   moves = AI.sortMoves(moves, turn, ply, chessPosition, ttEntry, pvMoveValue)
 
+  // console.log(moves)
+
   let legal = 0
   let bestscore = -Infinity
   let score
@@ -545,8 +554,6 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
     if (chessPosition.makeMove(move)) {
       legal++
-
-      if (AI.stop) depth = 0
 
       let isCapture = move.isCapture()
 
@@ -909,15 +916,15 @@ AI.createPSQT = function (chessPosition) {
     return e + 20*KBmap[i]
   })
 
-  if (kingXposition % 8 !== 7) {
+  if (kingXposition % 8 < 7) {
     AI.PIECE_SQUARE_TABLES_MIDGAME[2] = AI.PIECE_SQUARE_TABLES_MIDGAME[2].map((e,i)=>{
-      return e + 20*KBmap[i + 1]
+      return e + 20*(KBmap[i + 1] || 0)
     })    
   }
 
-  if (kingXposition % 8 !== 0) {
+  if (kingXposition % 8 > 0) {
     AI.PIECE_SQUARE_TABLES_MIDGAME[2] = AI.PIECE_SQUARE_TABLES_MIDGAME[2].map((e,i)=>{
-      return e + 20*KBmap[i - 1]
+      return e + 20*(KBmap[i - 1] || 0)
     })
   }
 
@@ -989,15 +996,17 @@ AI.createPSQT = function (chessPosition) {
 
   for (let i = 0; i < 6; i++) {
     AI.PIECE_SQUARE_TABLES_MIDGAME[i] = AI.PIECE_SQUARE_TABLES_MIDGAME[i].map(psqv=>{
-      return 40/(1 + Math.exp(-psqv/10)) - 20
+      return 80/(1 + Math.exp(-psqv/20)) - 40 | 0
     })
   }
 
   for (let i = 0; i < 6; i++) {
     AI.PIECE_SQUARE_TABLES_ENDGAME[i] = AI.PIECE_SQUARE_TABLES_ENDGAME[i].map(psqv=>{
-      return 40/(1 + Math.exp(-psqv/10)) - 20
+      return 80/(1 + Math.exp(-psqv/20)) - 40 | 0
     })
   }
+
+  console.log(AI.PIECE_SQUARE_TABLES_MIDGAME)
 }
 
 AI.setStage = function (chessPosition) {
@@ -1112,7 +1121,7 @@ AI.search = function(chessPosition, options) {
     AI.PV = AI.getPV(chessPosition, 1)
     
 
-    for (let depth = 1; depth <= (Math.max(totaldepth, AI.PV.length + 1)); depth+=1) {
+    for (let depth = 1; depth <= totaldepth; depth+=1) {
         AI.bestmove = [...AI.PV][1]
         lastscore = score
 
@@ -1122,7 +1131,7 @@ AI.search = function(chessPosition, options) {
         
         score = (white? 1 : -1) * AI.PVS(chessPosition, -Infinity, Infinity, depth, 1)
         
-        AI.PV = AI.getPV(chessPosition, iteration)
+        AI.PV = AI.getPV(chessPosition, iteration + 1)
 
         let strmove = AI.PV[1]? AI.PV[1].getString() : '----'
         
