@@ -789,9 +789,9 @@ AI.createPSQT = function (chessPosition) {
   })
 
   //Caballos cerca del rey enemigo
-  AI.PIECE_SQUARE_TABLES_MIDGAME[1] = AI.PIECE_SQUARE_TABLES_MIDGAME[1].map((e,i)=>{
+  /*AI.PIECE_SQUARE_TABLES_MIDGAME[1] = AI.PIECE_SQUARE_TABLES_MIDGAME[1].map((e,i)=>{
     return e + 20 - 4 * AI.distance(kingXposition, i)
-  })
+  })*/
 
   //Castiga caballos sin desarrollar
   AI.PIECE_SQUARE_TABLES_MIDGAME[1][57] -= 20
