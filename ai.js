@@ -8,8 +8,8 @@ let random = 40
 let phase = 1
 let htlength = 2e7
 let reduceHistoryFactor = 0.1
-let secondspermove = 0.2
-let mindepth = 4
+let secondspermove = 0.6
+let mindepth = 3
 
 let AI = function() {
 
@@ -479,9 +479,13 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
       } else {
         //REDUCTIONS (LMR)
 
-        if (!incheck && depth >= 1) {
-          // R += 0.22 * depth * (1 - Math.exp(-8.5/depth))
-          R += Math.log(depth) * Math.log(legal) / 1.95
+        if (!incheck) {
+
+          if (pvNode) {
+            R += Math.log(depth) * Math.log(legal) / 1.95
+          } else {
+            R += Math.sqrt(depth+1) + Math.sqrt(i+1)
+          }
         }
 
 
@@ -508,6 +512,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
         if (/*!AI.stop && */score > alpha /*&& score < beta*/) { //https://www.chessprogramming.org/Principal_Variation_Search
           // console.log('research')
+          // score = -AI.PVS(chessPosition, -beta, -alpha, depth+E-1, ply+1)
           score = -AI.PVS(chessPosition, -beta, -alpha, depth+E-1, ply+1)
         }
       }
