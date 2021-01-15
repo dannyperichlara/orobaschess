@@ -108,7 +108,8 @@ Move.prototype.getCaptureSquare = function() {
 Move.prototype.getString = function() {
 	if (!this.isCastle()) {
 		return Chess.PIECE_ALGEBRAIC_NAMES.charAt(this.getPiece()) +
-			(this.getPiece > 0 || this.isCapture() ? Chess.getAlgebraicFromIndex(this.getFrom()) : '') +
+			// (this.getPiece > 0 || this.isCapture() ? Chess.getAlgebraicFromIndex(this.getFrom()) : '') +
+			Chess.getAlgebraicFromIndex(this.getFrom()) +
 			(this.isCapture() ? "x" : "") +
 			Chess.getAlgebraicFromIndex(this.getTo()) +
 			((this.getKind() === Move.Kind.EN_PASSANT_CAPTURE) ? "e.p." : "") +
