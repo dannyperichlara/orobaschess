@@ -8,7 +8,7 @@ let random = 40
 let phase = 1
 let htlength = 2e7
 let reduceHistoryFactor = 0.1
-let secondspermove = 0.1
+let secondspermove = 0.2
 let mindepth = 4
 
 let AI = function() {
@@ -806,7 +806,7 @@ AI.createPSQT = function (chessPosition) {
   AI.PIECE_SQUARE_TABLES_MIDGAME[2][58] -= 40
   AI.PIECE_SQUARE_TABLES_MIDGAME[2][61] -= 40
 
-  //Torres en columnas abiertas
+  //Torres en columnas semiabiertas
   let opencol
 
   for (let i = 0; i < 8; i++) {
@@ -832,7 +832,12 @@ AI.createPSQT = function (chessPosition) {
     return e + (4 - AI.manhattanDistance(28, i)) * 10
   })
 
-  //Rey en columnas abiertas
+  //Dama cerca del rey enemigo
+  /*AI.PIECE_SQUARE_TABLES_MIDGAME[4] = AI.PIECE_SQUARE_TABLES_MIDGAME[4].map((e,i)=>{
+    return e + 20 - 4 * AI.distance(kingXposition, i)
+  })*/
+
+  //Rey en columnas semiabiertas
   let Kopencol
 
   for (let i = 0; i < 8; i++) {
@@ -953,7 +958,7 @@ AI.createPSQT = function (chessPosition) {
 
     return (64 - i) * 4 - 100  | 0
   })
-  
+
   //Caballos al centro
   AI.PIECE_SQUARE_TABLES_ENDGAME[1] = AI.PIECE_SQUARE_TABLES_ENDGAME[1].map((e,i)=>{
     return e + 40 - 16 * AI.distance(28, i)
