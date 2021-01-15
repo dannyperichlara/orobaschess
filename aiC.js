@@ -509,7 +509,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
         if (/*!AI.stop && */score > alpha /*&& score < beta*/) { //https://www.chessprogramming.org/Principal_Variation_Search
           // console.log('research')
           // score = -AI.PVS(chessPosition, -beta, -alpha, depth+E-1, ply+1)
-          score = -AI.PVS(chessPosition, -beta-100, -alpha+100, depth+E-1, ply+1)
+          score = -AI.PVS(chessPosition, -beta, -alpha, depth+E-1, ply+1)
         }
       }
       
