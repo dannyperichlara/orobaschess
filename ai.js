@@ -8,8 +8,8 @@ let random = 40
 let phase = 1
 let htlength = 2e7
 let reduceHistoryFactor = 0.1
-let secondspermove = 1
-let mindepth = 2
+let secondspermove = 0.1
+let mindepth = 4
 
 let AI = function() {
 
@@ -893,14 +893,30 @@ AI.createPSQT = function (chessPosition) {
     return e + 20*KBmap[i]
   })
 
+  AI.PIECE_SQUARE_TABLES_ENDGAME[2] = AI.PIECE_SQUARE_TABLES_ENDGAME[2].map((e,i)=>{
+    return e + 20*KBmap[i]
+  })
+
   if (kingXposition % 8 < 7) {
     AI.PIECE_SQUARE_TABLES_MIDGAME[2] = AI.PIECE_SQUARE_TABLES_MIDGAME[2].map((e,i)=>{
       return e + 20*(KBmap[i + 1] || 0)
     })    
   }
 
+  if (kingXposition % 8 < 7) {
+    AI.PIECE_SQUARE_TABLES_ENDGAME[2] = AI.PIECE_SQUARE_TABLES_ENDGAME[2].map((e,i)=>{
+      return e + 20*(KBmap[i + 1] || 0)
+    })    
+  }
+
   if (kingXposition % 8 > 0) {
     AI.PIECE_SQUARE_TABLES_MIDGAME[2] = AI.PIECE_SQUARE_TABLES_MIDGAME[2].map((e,i)=>{
+      return e + 20*(KBmap[i - 1] || 0)
+    })
+  }
+
+  if (kingXposition % 8 > 0) {
+    AI.PIECE_SQUARE_TABLES_ENDGAME[2] = AI.PIECE_SQUARE_TABLES_ENDGAME[2].map((e,i)=>{
       return e + 20*(KBmap[i - 1] || 0)
     })
   }
@@ -912,6 +928,10 @@ AI.createPSQT = function (chessPosition) {
 
   //Torres apuntando al rey
   AI.PIECE_SQUARE_TABLES_MIDGAME[3] = AI.PIECE_SQUARE_TABLES_MIDGAME[3].map((e,i)=>{
+    return e + 10*KRmap[i]
+  })
+
+  AI.PIECE_SQUARE_TABLES_ENDGAME[3] = AI.PIECE_SQUARE_TABLES_ENDGAME[3].map((e,i)=>{
     return e + 10*KRmap[i]
   })
 
