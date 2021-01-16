@@ -2,13 +2,13 @@
 
 let Chess = require('./chess.js')
 
-let TESTER, nodes, qsnodes, enodes, iteration, status, fhf, fh
-let totaldepth = 12
+let TESTER, nodes, qsnodes, enodes, ttnodes, iteration, status, fhf, fh
+let totaldepth = 23
 let random = 40
 let phase = 1
 let htlength = 1 << 30
 let reduceHistoryFactor = 0.1
-let secondspermove = 0.2
+let secondspermove = 1
 let mindepth = 2
 
 let AI = function() {
@@ -76,6 +76,7 @@ AI.createTables = function () {
   }*/
 
   AI.hashtable = new Array(htlength) //positions
+  AI.evaltable = new Array(htlength) //evaluations
 }
 
 AI.createTables()
@@ -133,7 +134,16 @@ AI.distance = function (sq1,sq2) {
    return Math.max(rankDistance, fileDistance);
 }
 
-AI.evaluate = function(chessPosition, pvNode) {
+AI.evaluate = function(chessPosition, hashkey) {
+  if (hashkey) {
+    let evalentry = AI.evaltable[hashkey % htlength]
+
+    if (evalentry) {
+      return evalentry
+    }
+  }
+
+  let score = 0
   let color = chessPosition.getTurnColor()
   let colorMaterial = AI.getMaterialValue(chessPosition, color)
   let notcolorMaterial = AI.getMaterialValue(chessPosition, !color)
@@ -141,16 +151,17 @@ AI.evaluate = function(chessPosition, pvNode) {
   let psqt = AI.getPieceSquareValue(chessPosition, color) - AI.getPieceSquareValue(chessPosition,  !color)
   let mobility = 0// AI.mobility(chessPosition, color) - AI.mobility(chessPosition,  !color)
 
-  // console.log('EEEEEEEEEEEEEEEEEEEEE', psqt)
 
-  // console.log(AI.PIECE_SQUARE_TABLES)
-
-  // if (color === 0) material += 20 //Diminishes White effect
 
   //https://www.r-bloggers.com/2015/06/big-data-and-chess-what-are-the-predictive-point-values-of-chess-pieces/
   if (colorMaterial.P > notcolorMaterial.P) material += 60
 
-  return material + psqt + mobility
+  score += material + psqt + mobility
+
+  AI.evaltable[hashkey % htlength] = score
+
+  return score
+
 }
 
 AI.mobility = function(chessPosition, color) {
@@ -223,7 +234,7 @@ AI.scoreMove = function(move) {
     return move.hvalue
   } else if (move.mvvlva && move.mvvlva < 1) {
     move.badcapture = true
-    return -1e4 + move.mvvlva
+    return 1e4 + move.mvvlva
   } else {  
     move.psqtvalue = AI.PIECE_SQUARE_TABLES[move.getPiece()][move.getTo()]
     return move.psqtvalue - 200
@@ -275,13 +286,14 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
 
     let legal = 0
     let standpat
-    let bestmove
-    let bestscore
+    // let bestmove
+    // let bestscore
     let incheck
+    let hashkey = chessPosition.hashKey.getHashKey()
 
     qsnodes++
 
-    standpat = AI.evaluate(chessPosition, pvNode)
+    standpat = AI.evaluate(chessPosition, hashkey)
 
     if (standpat >= beta ) {
       return beta
@@ -312,9 +324,11 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
 
         if( score > alpha ) {
           alpha = score
-          bestscore = score
-          bestmove = move
+          // bestscore = score
+          // bestmove = move
         }
+
+
       }
     }
 
@@ -322,10 +336,9 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
        return -AI.MATE + ply;
     }
 
-    if (bestmove) {
-      let hashkey = chessPosition.hashKey.getHashKey()
-      AI.ttSave(hashkey, bestscore, 0, 0, bestmove)
-    }
+/*    if (bestmove) {
+      // AI.ttSave(hashkey, bestscore, 0, 0, bestmove)
+    }*/
 
     return alpha
 }
@@ -402,40 +415,41 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   let hashkey = chessPosition.hashKey.getHashKey()
   let ttEntry = AI.ttGet(hashkey)
 
-  //IID
-  if (!ttEntry && depth > 2) {
-    // console.log('IID')
-    AI.PVS(chessPosition, alpha, beta, depth - 2, ply)
-    // AI.PVS(chessPosition, alpha, beta, 2, ply)
-    ttEntry = AI.ttGet(hashkey)
 
+  if (ttEntry && ttEntry.depth >= depth) {
+    ttnodes++
+    
+    if (ttEntry.flag === 0) {
+      return ttEntry.score
+    } else if (ttEntry.flag === -1) {
+      if (ttEntry.score > alpha) alpha = ttEntry.score
+    } else if (ttEntry.flag === 1) {
+      if (ttEntry.score < beta) beta = ttEntry.score
+    }
+
+    if (alpha >= beta) {
+      AI.addKiller(ply, ttEntry.move)
+      return ttEntry.score
+    }
   }
 
   if( depth <= 0 ) {
     if (ttEntry && ttEntry.depth <= 0) {
+      console.log('QS from entry XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
       return ttEntry.score
     } else {
       return AI.quiescenceSearch(chessPosition, alpha, beta, depth, ply, pvNode)
     }
     
   }
-
-  let bestmove = {value: 2080,  getString() {return '-'}}
-
-  if (ttEntry && ttEntry.depth >= depth) {
-      if (ttEntry.flag === 0) {
-        return ttEntry.score
-      } else if (ttEntry.flag === -1) {
-        if (ttEntry.score > alpha) alpha = ttEntry.score
-      } else if (ttEntry.flag === 1) {
-        if (ttEntry.score < beta) beta = ttEntry.score
-      }
-
-      if (alpha >= beta) {
-        AI.addKiller(ply, ttEntry.move)
-        return ttEntry.score
-      }
+  
+  //IID
+  if (!ttEntry && depth > 2) {
+    AI.PVS(chessPosition, alpha, beta, depth - 2, ply)
+    ttEntry = AI.ttGet(hashkey)
   }
+  
+  let bestmove = {value: 2080,  getString() {return '-'}}
 
   let pvMoveValue = AI.PV[ply]? AI.PV[ply].value : null
 
@@ -488,31 +502,9 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
           }
         }
 
+        score = -AI.PVS(chessPosition, -alpha-1, -alpha, depth-R-1, ply+1)
 
-        /*if (!incheck) {
-          if (iteration <= 6 && !AI.stop) {
-            //https://chess.ultimaiq.net/cc_in_detail.htm
-            R += 0.22 * depth * (1 - Math.exp(-8.5/depth)) * Math.log(i)
-            // R += Math.log(depth) * Math.log(i) / 1.95            
-          } else {
-            if (AI.stop) {
-              R += 1 + depth/2 + i/5
-            } else {
-              R += Math.log(depth) * Math.log(i)
-            }
-          }
-
-          if (R < 1) R = 1
-
-          //Odd-Even effect. Prune more agressively on even plies
-          // if (TESTER && depth % 2 === 0) R+=1
-        }*/
-
-        score = -AI.PVS(chessPosition, -alpha-1, -alpha, depth/*+E*/-R-1, ply+1)
-
-        if (/*!AI.stop && */score > alpha /*&& score < beta*/) { //https://www.chessprogramming.org/Principal_Variation_Search
-          // console.log('research')
-          // score = -AI.PVS(chessPosition, -beta, -alpha, depth+E-1, ply+1)
+        if (score > alpha && score < beta) { //https://www.chessprogramming.org/Principal_Variation_Search
           score = -AI.PVS(chessPosition, -beta, -alpha, depth+E-1, ply+1)
         }
       }
@@ -610,8 +602,6 @@ AI.addKiller = function (ply, move) {
   let temp = killers.killer1
   killers.killer1 = move
   killers.killer2 = temp
-
-  // console.log(ply, killers)
 }
 
 AI.bin2map = function(bin, color) {
@@ -1021,7 +1011,7 @@ AI.PSQT2Sigmoid = function () {
     })
   }
 
-  console.log(AI.PIECE_SQUARE_TABLES)
+  // console.log(AI.PIECE_SQUARE_TABLES)
 }
 
 AI.setphase = function (chessPosition) {
@@ -1078,9 +1068,15 @@ AI.getPV = function (chessPosition, length) {
 
       if (moves.length) {
         if (chessPosition.makeMove(ttEntry.move)) {
-          ttFound = true
           legal++
-          PV.push(ttEntry.move)
+          
+          if (chessPosition.isDraw() && legal > 1) {
+            break
+          } else {
+            ttFound = true
+            PV.push(ttEntry.move)
+          }
+          
         }
       }      
     } else {
@@ -1124,6 +1120,7 @@ AI.search = function(chessPosition, options) {
     nodes = 0
     qsnodes = 0
     enodes = 0
+    ttnodes = 0
     iteration = 0
 
     AI.nofpieces = chessPosition.getOccupiedBitboard().popcnt()
@@ -1182,7 +1179,7 @@ AI.search = function(chessPosition, options) {
     }
 
     // console.info('                ')
-    console.log(nodes, ' nodes |', qsnodes,' QS nodes|')
+    console.log(nodes, qsnodes, ttnodes)
     if (TESTER) {
       console.info('___________________________________ TESTER _____________________________________')
     } else {
