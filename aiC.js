@@ -312,8 +312,8 @@ AI.scoreMove = function(move) {
   } else if (move.mvvlva) {  
     move.capture = true 
     return 1e6 + move.mvvlva
-  }else if (move.promotion) {
-    return 1e5 + move.promotion
+  }else if (move.special) {
+    return 1e5 + move.special
   } else if (move.killer) {
     return 1e4
   } else if (move.hvalue) { 
@@ -336,13 +336,19 @@ AI.sortMoves = function(moves, turn, ply, chessPosition, ttEntry, pvMoveValue) {
       move.pv = true
     }
 
-    if (AI.killers[ply] && (AI.killers[ply].killer1.value === move.value || AI.killers[ply].killer2.value === move.value)) move.killer = true
 
     // if (move.isCapture()) move.mvvlva = (move.getCapturedPiece() + 1)/(move.getPiece() + 1)
-    if (move.isCapture()) move.mvvlva = 2 * AI.PIECE_VALUES[4] * AI.PIECE_VALUES[move.getCapturedPiece()] - AI.PIECE_VALUES[move.getPiece()]
+    if (move.isCapture()) {
+      move.mvvlva = 2 * AI.PIECE_VALUES[4] * AI.PIECE_VALUES[move.getCapturedPiece()] - AI.PIECE_VALUES[move.getPiece()]
+      continue
+    }
+    
+    if (AI.killers[ply] && (AI.killers[ply].killer1.value === move.value || AI.killers[ply].killer2.value === move.value)) move.killer = true
 
     let kind = move.getKind()
-    if (kind >=8) move.promotion = kind
+    if (kind >=2) {
+      move.special = kind
+    }
 
     move.hvalue = AI.history[turn][move.getPiece()][move.getTo()]
 
@@ -853,17 +859,19 @@ AI.createPSQT = function (chessPosition) {
   })
 
   //Castiga captura y maniobras con peón frontal del rey
-  AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 7] +=200
-  AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 8] +=200
-  AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 9] +=200
+  if (chessPosition.getMadeMoveCount()>12 && kingposition > 55) {
+    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 7] +=200
+    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 8] +=200
+    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 9] +=200
 
-  AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 15] -=200
-  AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 17] -=200
-  AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 24] -=200
+    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 15] -=200
+    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 17] -=200
+    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 24] -=200    
+  }
 
   //Peones al centro
-  AI.PIECE_SQUARE_TABLES_MIDGAME[0][27]+=40
-  AI.PIECE_SQUARE_TABLES_MIDGAME[0][28]+=40
+  AI.PIECE_SQUARE_TABLES_MIDGAME[0][27]+=20
+  AI.PIECE_SQUARE_TABLES_MIDGAME[0][28]+=20
   AI.PIECE_SQUARE_TABLES_MIDGAME[0][35]+=40
   AI.PIECE_SQUARE_TABLES_MIDGAME[0][36]+=40
 
@@ -932,37 +940,48 @@ AI.createPSQT = function (chessPosition) {
   })
 
   //Rey en columnas semiabiertas
-  let Kopencol
+    let Kopencol
 
-  for (let i = 0; i < 8; i++) {
-      Kopencol = pawnmap[7 - i+32] + 
-                pawnmap[7 - i+40] + 
-                pawnmap[7 - i+48] + 
-                pawnmap[7 - i+56]
+    for (let i = 0; i < 8; i++) {
+        Kopencol = pawnmap[7 - i+32] + 
+                  pawnmap[7 - i+40] + 
+                  pawnmap[7 - i+48] + 
+                  pawnmap[7 - i+56]
 
-    if (Kopencol == 0) {
-      AI.PIECE_SQUARE_TABLES_MIDGAME[5] = AI.PIECE_SQUARE_TABLES_MIDGAME[5].map((e,j)=>{
-        return e + (j % 8 == i % 8? -47 : 0)
-      })
+      if (Kopencol == 0) {
+        AI.PIECE_SQUARE_TABLES_MIDGAME[5] = AI.PIECE_SQUARE_TABLES_MIDGAME[5].map((e,j)=>{
+          return e + (j % 8 == i % 8? -47 : 0)
+        })
+      }
     }
-  }
 
-  AI.PIECE_SQUARE_TABLES_MIDGAME[5].reverse() //Revertir una sola vez
+    AI.PIECE_SQUARE_TABLES_MIDGAME[5].reverse() //Revertir una sola vez
 
   //Rey lejos del centro
-  AI.PIECE_SQUARE_TABLES_MIDGAME[5] = AI.PIECE_SQUARE_TABLES_MIDGAME[5].map((e,i)=>{
-    return e + Math.pow(AI.manhattanDistance(28, i), 2) * 4 - 50
-  })
+    AI.PIECE_SQUARE_TABLES_MIDGAME[5] = AI.PIECE_SQUARE_TABLES_MIDGAME[5].map((e,i)=>{
+      return e + Math.pow(AI.manhattanDistance(28, i), 2) * 4 - 50
+    })
 
-  //Castiga rey sin enrocar
-  /*AI.PIECE_SQUARE_TABLES_MIDGAME[5][59]  -= 20
-  AI.PIECE_SQUARE_TABLES_MIDGAME[5][60]  -= 20*/
+  //Premia enrocar
+    if (chessPosition.hasCastlingRight(color, true)) {
+      console.log('KINGSIDE')
+      AI.PIECE_SQUARE_TABLES_MIDGAME[5][60]  -= 20
+      AI.PIECE_SQUARE_TABLES_MIDGAME[5][61]  -=100
+      AI.PIECE_SQUARE_TABLES_MIDGAME[5][62]  +=120
+    }
+
+    if (chessPosition.hasCastlingRight(color, false)) {
+      console.log('QUEENSIDE')
+      AI.PIECE_SQUARE_TABLES_MIDGAME[5][58]  += 80
+      AI.PIECE_SQUARE_TABLES_MIDGAME[5][59]  -= 80
+      AI.PIECE_SQUARE_TABLES_MIDGAME[5][60]  -= 20
+    }
 
   //Rey fuera de las esquinas por poca movilidad y riesgo de mate de pasillo
-  AI.PIECE_SQUARE_TABLES_MIDGAME[5][0]  -= 100
-  AI.PIECE_SQUARE_TABLES_MIDGAME[5][7]  -= 100
-  AI.PIECE_SQUARE_TABLES_MIDGAME[5][56] -= 100
-  AI.PIECE_SQUARE_TABLES_MIDGAME[5][63] -= 100
+    AI.PIECE_SQUARE_TABLES_MIDGAME[5][0]  -= 100
+    AI.PIECE_SQUARE_TABLES_MIDGAME[5][7]  -= 100
+    AI.PIECE_SQUARE_TABLES_MIDGAME[5][56] -= 100
+    AI.PIECE_SQUARE_TABLES_MIDGAME[5][63] -= 100
 
   //////////////// Rayos X ///////////////////////
   let KB = chessPosition.makeBishopAttackMask(KX, false)
