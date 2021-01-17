@@ -3,8 +3,8 @@
 let Chess = require('./chess.js')
 
 let TESTER, nodes, qsnodes, enodes, ttnodes, iteration, status, fhf, fh
-let totaldepth = 23
-let random = 20
+let totaldepth = 12
+let random = 40
 let phase = 1
 let htlength = 1 << 30
 let reduceHistoryFactor = 0.1
@@ -101,14 +101,14 @@ AI.ENEMY_PSQT = [
 
     // Knight
     [ 
-    -50,-40,-30,-30,-30,-30,-40,-50,
-    -40, 30, 30, 30, 30, 30, 30,-40,
-    -30,  0, 10, 15, 15, 10,  0,-30,
-    -30,  0, 20, 30, 30, 20,  0,-30,
-    -30,  0, 15, 30, 30, 15,  0,-30,
+    -80,-40,-30,-30,-30,-30,-40,-80,
+    -80, 30, 30, 30, 30, 30, 30,-80,
+    -80,  0, 10, 15, 15, 10,  0,-80,
+    -80,  0, 20, 30, 30, 20,  0,-80,
+    -80,  0, 15, 30, 30, 15,  0,-80,
     -80,  5, 20, 15, 15,-20,  5,-80,
-    -40,-20,  0, 20, 20,  0,-20,-40,
-    -50,-20,-30,-30,-30,-30,-20,-50,
+    -80,-20,  0, 20, 20,  0,-20,-80,
+    -80,-20,-30,-30,-30,-30,-20,-80,
     ],
     // Bishop
   [ 
@@ -161,30 +161,34 @@ AI.ENEMY_PSQT = [
 
 AI.createTables = function () {
   console.log('Creating tables.......................................................................')
-  AI.history = [
-    new Array(64).fill(new Array(64).fill(0)), //blancas
-    new Array(64).fill(new Array(64).fill(0)) //negras
-  ]
 
-  AI.history = [[],[]]
+  if (true || !AI.history) {
+    AI.history = [
+      new Array(64).fill(new Array(64).fill(0)), //blancas
+      new Array(64).fill(new Array(64).fill(0)) //negras
+    ]
 
-  AI.history[0] = [
-    Array(64).fill(0),
-    Array(64).fill(0),
-    Array(64).fill(0),
-    Array(64).fill(0),
-    Array(64).fill(0),
-    Array(64).fill(0),
-  ]
+    AI.history = [[],[]]
 
-  AI.history[1] = [
-    Array(64).fill(0),
-    Array(64).fill(0),
-    Array(64).fill(0),
-    Array(64).fill(0),
-    Array(64).fill(0),
-    Array(64).fill(0),
-  ]
+    AI.history[0] = [
+      Array(64).fill(0),
+      Array(64).fill(0),
+      Array(64).fill(0),
+      Array(64).fill(0),
+      Array(64).fill(0),
+      Array(64).fill(0),
+    ]
+
+    AI.history[1] = [
+      Array(64).fill(0),
+      Array(64).fill(0),
+      Array(64).fill(0),
+      Array(64).fill(0),
+      Array(64).fill(0),
+      Array(64).fill(0),
+    ]    
+  }
+
 
 /*
   for (let color = 0; color < 2; color++) {
@@ -725,8 +729,6 @@ AI.bin2map = function(bin, color) {
 
 AI.createPSQT = function (chessPosition) {
 
-  console.log(AI.ENEMY_PSQT)
-
   AI.PIECE_SQUARE_TABLES_APERTURE = [
   // Pawn
       [ 
@@ -748,7 +750,7 @@ AI.createPSQT = function (chessPosition) {
       0,-20, 20,  0,  0, 20,-20,  0,
     -80,  0, 30, 30, 30,  0,  0,-80,
     -40, 20, 20,  0,  0, 40, 40,-40,
-      0,  0,  0, 40, 20,  0,  0,  0,
+      0,  0,  0, 20, 20,  0,  0,  0,
       0,-20,  0,-40,-40, 20,-20,  0,
       
       ],
@@ -885,7 +887,11 @@ AI.createPSQT = function (chessPosition) {
     return e + 10 - 2 * AI.distance(kingXposition, i)
   })
 
-  // console.log(AI.PIECE_SQUARE_TABLES_MIDGAME[1])
+  //Castiga caballos en las orillas
+  AI.PIECE_SQUARE_TABLES_MIDGAME[1] = AI.PIECE_SQUARE_TABLES_MIDGAME[1].map((e,i)=>{
+    let mod = i % 8
+    return e - (mod === 0 || mod === 7? 80 : 0)
+  })
 
   //Castiga caballos sin desarrollar
   AI.PIECE_SQUARE_TABLES_MIDGAME[1][57] -= 20
@@ -1156,6 +1162,8 @@ AI.createPSQT = function (chessPosition) {
       })
     }
   }
+
+
 
   AI.PIECE_SQUARE_TABLES_ENDGAME[3].reverse() //Revertir una sola vez
 
