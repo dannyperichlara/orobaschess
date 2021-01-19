@@ -1,4 +1,5 @@
 "use strict"
+//NEW
 
 let Chess = require('./chess.js')
 
