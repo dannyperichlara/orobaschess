@@ -3,7 +3,7 @@
 let Chess = require('./chess.js')
 
 let TESTER, nodes, qsnodes, enodes, ttnodes, iteration, status, fhf, fh
-let totaldepth = 12
+let totaldepth = 23
 let random = 40
 let phase = 1
 let htlength = 1 << 30
@@ -213,28 +213,37 @@ AI.randomizePSQT = function () {
   }
 }
 
-AI.evaluate = function(chessPosition, hashkey) {
+AI.evaluate = function(chessPosition, hashkey, pvNode) {
   if (hashkey) {
     let evalentry = AI.evaltable[hashkey % htlength]
 
     if (evalentry) {
-      return evalentry
+      if (chessPosition.madeMoves.length - evalentry < 5) return evalentry
     }
   }
 
   let color = chessPosition.getTurnColor()
+
   let colorMaterial = AI.getMaterialValue(chessPosition, color)
   let notcolorMaterial = AI.getMaterialValue(chessPosition, !color)
   let material = colorMaterial.value - notcolorMaterial.value
-  let psqt = AI.getPieceSquareValue(chessPosition, color) - AI.getPieceSquareValue(chessPosition,  !color)
-  let mobility = 0 //AI.mobility(chessPosition, color) - AI.mobility(chessPosition,  !color)
+  let psqt = 0
+  let mobility = 0
+
+
+  if (phase === 2 && iteration < 3) {
+      mobility = AI.mobility(chessPosition, color) - AI.mobility(chessPosition, !color)
+  }
+
+  psqt = AI.getPieceSquareValue(chessPosition, color) - AI.getPieceSquareValue(chessPosition,  !color)
+  
 
   //https://www.r-bloggers.com/2015/06/big-data-and-chess-what-are-the-predictive-point-values-of-chess-pieces/
-  if (colorMaterial.P > notcolorMaterial.P) material += 60
+  // if (colorMaterial.P > notcolorMaterial.P) material += 60
 
-  let score = material + psqt + mobility
+  let score = material + psqt + Math.min(50, 5*mobility)
 
-  AI.evaltable[hashkey % htlength] = score
+  AI.evaltable[hashkey % htlength] = {score, n: chessPosition.madeMoves.length}
 
   return score
 
@@ -243,12 +252,13 @@ AI.evaluate = function(chessPosition, hashkey) {
 
 AI.mobility = function(chessPosition, color) {
   let us = chessPosition.getColorBitboard(color).dup()
-  let enemy = chessPosition.getColorBitboard(!color).dup()
-  let empty = chessPosition.getEmptyBitboard().dup()//.and(enemy)
+  // let enemy = chessPosition.getColorBitboard(!color).dup()
+  // let empty = chessPosition.getEmptyBitboard().dup()//.and(enemy)
+  let pawns = chessPosition.getPieceColorBitboard(Chess.Piece.PAWN, color).dup()
   let knights = chessPosition.getPieceColorBitboard(Chess.Piece.KNIGHT, color).dup()
-  let queens = chessPosition.getPieceColorBitboard(Chess.Piece.QUEEN, color).dup()
-  let bishopqueen = chessPosition.getPieceColorBitboard(Chess.Piece.BISHOP, color).dup().or(queens).dup()
-  let rookqueen = chessPosition.getPieceColorBitboard(Chess.Piece.ROOK, color).dup().or(queens).dup()
+  // let queens = chessPosition.getPieceColorBitboard(Chess.Piece.QUEEN, color).dup()
+  let bishops = chessPosition.getPieceColorBitboard(Chess.Piece.BISHOP, color).dup()
+  let rooks = chessPosition.getPieceColorBitboard(Chess.Piece.ROOK, color).dup()
   
   let enemypawns = chessPosition.getPieceColorBitboard(0, !color).dup()
   let enemypawnattackmask = Chess.Position.makePawnAttackMask(!color, enemypawns).dup()
@@ -259,13 +269,12 @@ AI.mobility = function(chessPosition, color) {
       mobility += Chess.Bitboard.KNIGHT_MOVEMENTS[knights.extractLowestBitPosition()].dup().popcnt()
   }
 
-  let space = enemy.or(enemypawnattackmask)
+  let space = enemypawnattackmask.or(enemypawns).or(us)
 
-  mobility += Chess.Position.makeBishopAttackMask(bishopqueen, space).dup().popcnt()
-  mobility += Chess.Position.makeRookAttackMask(rookqueen, space).dup().popcnt()
-
-  mobility = -200 + 40 * Math.sqrt(mobility) | 0
-  // console.log(mobility)
+  mobility += Chess.Position.makeBishopAttackMask(bishops, space).dup().popcnt()
+  mobility += Chess.Position.makeRookAttackMask(rooks, space).dup().popcnt()
+  // mobility += Chess.Position.makeBishopAttackMask(queens, space).dup().popcnt()
+  // mobility += Chess.Position.makeRookAttackMask(queens , space).dup().popcnt()
 
   return mobility
 }
@@ -384,7 +393,7 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
 
     qsnodes++
 
-    standpat = AI.evaluate(chessPosition, hashkey)
+    standpat = AI.evaluate(chessPosition, hashkey, pvNode)
 
     if (standpat >= beta ) {
       return beta
@@ -467,7 +476,7 @@ AI.reduceHistory = function () {
 }
 
 AI.saveHistory = function(turn, move, depth) {
-  AI.history[turn][move.getPiece()][move.getTo()] += Math.pow(depth, 2) | 0
+  AI.history[turn][move.getPiece()][move.getTo()] += depth << 2 | 0
 }
 
 AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
@@ -558,7 +567,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
   let incheck = chessPosition.isKingInCheck()
   
-  let standpat = AI.evaluate(chessPosition)
+  let standpat = AI.evaluate(chessPosition, hashkey, pvNode)
 
   let hmoves = 0  
 
@@ -745,7 +754,7 @@ AI.createPSQT = function (chessPosition) {
       0,  0,  0,  0,  0,  0,  0,  0,
       0,  0,  0,  0,  0,  0,  0,  0,
       0,  0,  0,  0,  0,  0,  0,  0,
-      0,-20, 20,  0,  0, 20,-20,  0,
+      0,-20, 20,-20,-20, 20,-20,  0,
     -80,  0, 30, 30, 30,  0,  0,-80,
     -40, 20, 20,  0,  0, 40, 40,-40,
       0,  0,  0, 20, 20,  0,  0,  0,
@@ -772,7 +781,7 @@ AI.createPSQT = function (chessPosition) {
       0,  0,  0,  0,  0,  0,  0,  0,
     -80,  0,  0,  0,  0,  0,  0,  0,
     -40,  0,  0,  0,  0,  0,  0,  0,
-    -20,-60,-20, 20, 20, 20,-10,  0,
+    -20,-60,-20, 20, 20, 20,-80,-60,
     ],
 
     // Queen
@@ -864,9 +873,11 @@ AI.createPSQT = function (chessPosition) {
     AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 8] +=200
     AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 9] +=200
 
-    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 15] -=200
-    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 17] -=200
+    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 15] -=20
+    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 17] -=20
+    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 23] -=100    
     AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 24] -=200    
+    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 25] -=100    
   }
 
   //Peones al centro
@@ -933,15 +944,19 @@ AI.createPSQT = function (chessPosition) {
     return e + 10*RRmap[i]
   })
 
+  //Castiga torres sin desarrollar
+  AI.PIECE_SQUARE_TABLES_MIDGAME[2][56] -= 40
+  AI.PIECE_SQUARE_TABLES_MIDGAME[2][63] -=200
+
   //Dama al centro
   AI.PIECE_SQUARE_TABLES_MIDGAME[2] = AI.PIECE_SQUARE_TABLES_MIDGAME[2].map((e,i)=>{
     return e + (4 - AI.manhattanDistance(28, i)) * 10
   })
 
   //Dama lejos del rey enemigo en mediojuego
-  AI.PIECE_SQUARE_TABLES_MIDGAME[4] = AI.PIECE_SQUARE_TABLES_MIDGAME[4].map((e,i)=>{
-    return e - 10 + 2 * AI.distance(kingXposition, i)
-  })
+  // AI.PIECE_SQUARE_TABLES_MIDGAME[4] = AI.PIECE_SQUARE_TABLES_MIDGAME[4].map((e,i)=>{
+  //   return e - 10 + 2 * AI.distance(kingXposition, i)
+  // })
 
   //Rey en columnas semiabiertas
     let Kopencol
@@ -1228,7 +1243,7 @@ AI.setphase = function (chessPosition) {
 }
 
 AI.getPV = function (chessPosition, length) {
-  let PV = [chessPosition.getLastMove()]
+  let PV = [chessPosition.getLastMove() || {}]
   let legal = 0
 
   let ttEntry
@@ -1252,7 +1267,19 @@ AI.getPV = function (chessPosition, length) {
             break
           } else {
             ttFound = true
-            PV.push(ttEntry.move)
+
+            //Checks if the move is already in the PV line
+            let already = PV.filter(e=>{
+              return e.value === ttEntry.move.value
+            })
+
+            if (already.length === 0) {
+              PV.push(ttEntry.move)
+            } else {
+              break
+            }
+
+            
           }
           
         }
@@ -1306,7 +1333,9 @@ AI.search = function(chessPosition, options) {
 
     AI.nofpieces = chessPosition.getOccupiedBitboard().popcnt()
 
-    let staticeval = AI.evaluate(chessPosition)
+    let hashkey = chessPosition.hashKey.getHashKey()
+
+    let staticeval = AI.evaluate(chessPosition, hashkey, true)
 
     AI.timer = (new Date()).getTime()
     AI.stop = false
