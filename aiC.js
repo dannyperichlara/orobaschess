@@ -8,8 +8,8 @@ let random = 0
 let phase = 1
 let htlength = 1 << 30
 let reduceHistoryFactor = 0.1
-let secondspermove = 1
-let mindepth = 4
+let secondspermove = 0.2
+let mindepth = 2
 
 let AI = function() {
 
@@ -169,10 +169,10 @@ let pawnstructures = [[
 AI.pawnstructure = (new Array(64)).fill(0)
 
 for (let i in pawnstructures) {
-	console.log(pawnstructures[i])
-	AI.pawnstructure = AI.pawnstructure.map((e,j)=>{
-		return e + pawnstructures[i][j]
-	})
+  console.log(pawnstructures[i])
+  AI.pawnstructure = AI.pawnstructure.map((e,j)=>{
+    return e + pawnstructures[i][j]
+  })
 }
 
 
@@ -416,22 +416,19 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
 }
 
 AI.getBadBishops = function(chessPosition, color) {
-	let pawns = chessPosition.getPieceColorBitboard(Chess.Piece.PAWN, color).dup()
-	let enemypawns = chessPosition.getPieceColorBitboard(0, !color).dup()
-	let bishops = chessPosition.getPieceColorBitboard(Chess.Piece.BISHOP, color).dup()
-	let bishopmask = Chess.Position.makeBishopAttackMask(bishops, 0).dup()
+  let pawns = chessPosition.getPieceColorBitboard(Chess.Piece.PAWN, color).dup()
+  let enemypawns = chessPosition.getPieceColorBitboard(0, !color).dup()
+  let bishops = chessPosition.getPieceColorBitboard(Chess.Piece.BISHOP, color).dup()
+  let bishopmask = Chess.Position.makeBishopAttackMask(bishops, 0).dup()
 
-	return (bishops.or(bishopmask)).and(pawns.or(enemypawns)).dup().popcnt()
+  return (bishops.or(bishopmask)).and(pawns.or(enemypawns)).dup().popcnt()
 }
 
 
 AI.mobility = function(chessPosition, color) {
   let us = chessPosition.getColorBitboard(color).dup()
-  // let enemy = chessPosition.getColorBitboard(!color).dup()
-  // let empty = chessPosition.getEmptyBitboard().dup()//.and(enemy)
   let pawns = chessPosition.getPieceColorBitboard(Chess.Piece.PAWN, color).dup()
   let knights = chessPosition.getPieceColorBitboard(Chess.Piece.KNIGHT, color).dup()
-  // let queens = chessPosition.getPieceColorBitboard(Chess.Piece.QUEEN, color).dup()
   let bishops = chessPosition.getPieceColorBitboard(Chess.Piece.BISHOP, color).dup()
   let rooks = chessPosition.getPieceColorBitboard(Chess.Piece.ROOK, color).dup()
   
@@ -441,15 +438,13 @@ AI.mobility = function(chessPosition, color) {
   let mobility = 0
 
   while (!knights.isEmpty()) {
-      mobility += Chess.Bitboard.KNIGHT_MOVEMENTS[knights.extractLowestBitPosition()].dup().popcnt()
+      mobility += Chess.Bitboard.KNIGHT_MOVEMENTS[knights.extractLowestBitPosition()].dup().and_not(enemypawnattackmask).and_not(us).popcnt()
   }
 
   let space = enemypawnattackmask.or(enemypawns).or(us)
 
   mobility += Chess.Position.makeBishopAttackMask(bishops, space).dup().popcnt()
   mobility += Chess.Position.makeRookAttackMask(rooks, space).dup().popcnt()
-  // mobility += Chess.Position.makeBishopAttackMask(queens, space).dup().popcnt()
-  // mobility += Chess.Position.makeRookAttackMask(queens , space).dup().popcnt()
 
   return mobility
 }
@@ -1078,12 +1073,12 @@ AI.createPSQT = function (chessPosition) {
 
   //Incentiva captura de peones
   AI.PIECE_SQUARE_TABLES_MIDGAME[0] = AI.PIECE_SQUARE_TABLES_MIDGAME[0].map((e,i)=>{
-  	return e + pawnXmap[i]? 40 : 0
+    return e + pawnXmap[i]? 40 : 0
   })
 
   //Incentiva bloqueo de peones
   AI.PIECE_SQUARE_TABLES_MIDGAME[0] = AI.PIECE_SQUARE_TABLES_MIDGAME[0].map((e,i)=>{
-  	return e + pawnXmap[i-8]? 20 : 0
+    return e + pawnXmap[i-8]? 20 : 0
   })
 
   //Princicipalmente, invita a a hacerse cargo de los peones avanzados
@@ -1361,12 +1356,12 @@ AI.createPSQT = function (chessPosition) {
 
   //Incentiva captura de peones
   AI.PIECE_SQUARE_TABLES_ENDGAME[0] = AI.PIECE_SQUARE_TABLES_ENDGAME[0].map((e,i)=>{
-  	return e + pawnXmap[i]? 100 : 0
+    return e + pawnXmap[i]? 100 : 0
   })
 
   //Incentiva bloqueo de peones
   AI.PIECE_SQUARE_TABLES_ENDGAME[0] = AI.PIECE_SQUARE_TABLES_ENDGAME[0].map((e,i)=>{
-  	return e + pawnXmap[i-8]? 50 : 0
+    return e + pawnXmap[i-8]? 50 : 0
   })
 
   //Caballos al centro
@@ -1521,7 +1516,7 @@ AI.getPV = function (chessPosition, length) {
 
 AI.search = function(chessPosition, options) {
 
-	console.log(AI.pawnstructure)
+  console.log(AI.pawnstructure)
 
   let nmoves = chessPosition.madeMoves.length
 

@@ -8,8 +8,8 @@ let random = 0
 let phase = 1
 let htlength = 1 << 30
 let reduceHistoryFactor = 0.1
-let secondspermove = 1
-let mindepth = 4
+let secondspermove = 0.2
+let mindepth = 2
 
 let AI = function() {
 
@@ -427,11 +427,8 @@ AI.getBadBishops = function(chessPosition, color) {
 
 AI.mobility = function(chessPosition, color) {
   let us = chessPosition.getColorBitboard(color).dup()
-  // let enemy = chessPosition.getColorBitboard(!color).dup()
-  // let empty = chessPosition.getEmptyBitboard().dup()//.and(enemy)
   let pawns = chessPosition.getPieceColorBitboard(Chess.Piece.PAWN, color).dup()
   let knights = chessPosition.getPieceColorBitboard(Chess.Piece.KNIGHT, color).dup()
-  // let queens = chessPosition.getPieceColorBitboard(Chess.Piece.QUEEN, color).dup()
   let bishops = chessPosition.getPieceColorBitboard(Chess.Piece.BISHOP, color).dup()
   let rooks = chessPosition.getPieceColorBitboard(Chess.Piece.ROOK, color).dup()
   
@@ -441,15 +438,13 @@ AI.mobility = function(chessPosition, color) {
   let mobility = 0
 
   while (!knights.isEmpty()) {
-      mobility += Chess.Bitboard.KNIGHT_MOVEMENTS[knights.extractLowestBitPosition()].dup().popcnt()
+      mobility += Chess.Bitboard.KNIGHT_MOVEMENTS[knights.extractLowestBitPosition()].dup().and_not(enemypawnattackmask).and_not(us).popcnt()
   }
 
   let space = enemypawnattackmask.or(enemypawns).or(us)
 
   mobility += Chess.Position.makeBishopAttackMask(bishops, space).dup().popcnt()
   mobility += Chess.Position.makeRookAttackMask(rooks, space).dup().popcnt()
-  // mobility += Chess.Position.makeBishopAttackMask(queens, space).dup().popcnt()
-  // mobility += Chess.Position.makeRookAttackMask(queens , space).dup().popcnt()
 
   return mobility
 }
