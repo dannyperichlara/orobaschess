@@ -1053,15 +1053,15 @@ AI.createPSQT = function (chessPosition) {
 
   //Castiga captura y maniobras con peón frontal del rey
   if (chessPosition.getMadeMoveCount()>12 && kingposition > 55) {
-    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 7] +=100
+    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 7] +=50
     AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 8] +=200
-    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 9] +=100
+    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 9] +=50
 
     AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 15] -=20
     AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 17] -=20
-    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 23] -=100    
-    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 24] -=200    
-    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 25] -=100    
+    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 23] -=50    
+    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 24] -=100    
+    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 25] -=50    
   }
 
   //Peones al centro
@@ -1328,27 +1328,6 @@ AI.createPSQT = function (chessPosition) {
         return e + (defended? 10 : 0)
       })
 
-  //////////////////// MOBILITY ///////////////////////
-
-  //Castiga casillas donde atacan peones
-    AI.PIECE_SQUARE_TABLES_MIDGAME[1] = AI.PIECE_SQUARE_TABLES_MIDGAME[1].map((e,i)=>{
-      return e - 20 * pawnXmap[i]
-    })
-
-    AI.PIECE_SQUARE_TABLES_MIDGAME[2] = AI.PIECE_SQUARE_TABLES_MIDGAME[2].map((e,i)=>{
-      return e - 20 * pawnXmap[i]
-    })
-
-    AI.PIECE_SQUARE_TABLES_MIDGAME[3] = AI.PIECE_SQUARE_TABLES_MIDGAME[3].map((e,i)=>{
-      return e - 20 * pawnXmap[i]
-    })
-
-    AI.PIECE_SQUARE_TABLES_MIDGAME[4] = AI.PIECE_SQUARE_TABLES_MIDGAME[4].map((e,i)=>{
-      return e - 20 * pawnXmap[i]
-    })
-
-  // console.log(AI.PIECE_SQUARE_TABLES_MIDGAME[2])
-
   ///////////////////////////// ENDGAME ////////////////////////
 
   AI.PIECE_SQUARE_TABLES_ENDGAME[0] = pawnstructure.map((e,i)=>{
@@ -1368,16 +1347,6 @@ AI.createPSQT = function (chessPosition) {
   if (chessPosition.getMadeMoveCount()>12 && kingposition > 55) {
     AI.PIECE_SQUARE_TABLES_ENDGAME[0][kingposition - 8] +=50 
   }
-
-  //Incentiva captura de peones
-  AI.PIECE_SQUARE_TABLES_ENDGAME[0] = AI.PIECE_SQUARE_TABLES_ENDGAME[0].map((e,i)=>{
-    return e + pawnXmap[i]? 100 : 0
-  })
-
-  //Incentiva bloqueo de peones
-  AI.PIECE_SQUARE_TABLES_ENDGAME[0] = AI.PIECE_SQUARE_TABLES_ENDGAME[0].map((e,i)=>{
-    return e + pawnXmap[i-8]? 50 : 0
-  })
 
   //Caballos al centro
   AI.PIECE_SQUARE_TABLES_ENDGAME[1] = AI.PIECE_SQUARE_TABLES_ENDGAME[1].map((e,i)=>{
