@@ -4,12 +4,12 @@ let Chess = require('./chess.js')
 
 let TESTER, nodes, qsnodes, enodes, ttnodes, iteration, status, fhf, fh
 let totaldepth = 23
-let random = 0
+let random = 40
 let phase = 1
 let htlength = 1 << 30
 let reduceHistoryFactor = 0.1
-let secondspermove = 0.2
-let mindepth = 2
+let secondspermove = 1
+let mindepth = 4
 
 let AI = function() {
 

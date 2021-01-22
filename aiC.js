@@ -4,12 +4,12 @@ let Chess = require('./chess.js')
 
 let TESTER, nodes, qsnodes, enodes, ttnodes, iteration, status, fhf, fh
 let totaldepth = 23
-let random = 0
+let random = 40
 let phase = 1
 let htlength = 1 << 30
 let reduceHistoryFactor = 0.1
-let secondspermove = 0.2
-let mindepth = 2
+let secondspermove = 1
+let mindepth = 4
 
 let AI = function() {
 
@@ -1036,7 +1036,7 @@ AI.createPSQT = function (chessPosition) {
 
   
   let pawnmaskX = Chess.Position.makePawnAttackMask(!color, PX)//.not(PX)
-  let pawnXmap = AI.bin2map(pawnmaskX, color)
+  let pawnXmap = AI.bin2map(PX, color)
 
   let kingmap = AI.bin2map(K, color)
   let kingXmap = AI.bin2map(KX, color)
@@ -1081,6 +1081,19 @@ AI.createPSQT = function (chessPosition) {
     return e + pawnXmap[i-8]? 20 : 0
   })
 
+
+
+
+
+
+
+
+
+
+
+
+
+
   //Princicipalmente, invita a a hacerse cargo de los peones avanzados
   AI.PIECE_SQUARE_TABLES_MIDGAME[0] = AI.PIECE_SQUARE_TABLES_MIDGAME[0].map((e,i)=>{
     if (i < 8) e+=50
@@ -1118,23 +1131,36 @@ AI.createPSQT = function (chessPosition) {
   AI.PIECE_SQUARE_TABLES_MIDGAME[2][58] -= 40
   AI.PIECE_SQUARE_TABLES_MIDGAME[2][61] -= 40
 
-  //Torres en columnas semiabiertas
-  let opencol
+  //Torres en columnas abiertas
 
-  for (let i = 0; i < 8; i++) {
-      opencol = pawnmap[7 - i+32] + 
-                pawnmap[7 - i+40] + 
-                pawnmap[7 - i+48] + 
-                pawnmap[7 - i+56]
+  let pawnXfiles = [0,0,0,0,0,0,0,0]
+  let pawnfiles = [0,0,0,0,0,0,0,0]
 
-    if (opencol == 0) {
-      AI.PIECE_SQUARE_TABLES_MIDGAME[3] = AI.PIECE_SQUARE_TABLES_MIDGAME[3].map((e,j)=>{
-        return e + (j % 8 == i % 8? 100 : 0)
-      })
+  for (let i = 0; i < 64; i++) {
+    if (pawnmap[i]) {
+      let col = i % 8
+
+      pawnfiles[col]++
     }
   }
 
-  AI.PIECE_SQUARE_TABLES_MIDGAME[3].reverse() //Revertir una sola vez
+  for (let i = 0; i < 64; i++) {
+    if (pawnXmap[i]) {
+      let col = i % 8
+
+      pawnXfiles[col]++
+    }
+  }
+
+  AI.PIECE_SQUARE_TABLES_MIDGAME[3] = AI.PIECE_SQUARE_TABLES_MIDGAME[3].map((e,i)=>{
+    let col = i%8
+    return e + (pawnfiles[col]? -10 : 0)
+  })
+
+  AI.PIECE_SQUARE_TABLES_MIDGAME[3] = AI.PIECE_SQUARE_TABLES_MIDGAME[3].map((e,i)=>{
+    let col = i%8
+    return e + (!pawnfiles[col]? 50 : 0) + (!pawnXfiles[col]? 50 : 0)
+  })
 
   //Torres delante del rey enemigo ("torre en séptima")
   for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_MIDGAME[3][i + 8*(kingXposition/8 | 0)] += 27
@@ -1381,22 +1407,25 @@ AI.createPSQT = function (chessPosition) {
 
   //Torres en columnas abiertas
 
-  for (let i = 0; i < 8; i++) {
-      opencol = pawnmap[7 - i+32] + 
-                pawnmap[7 - i+40] + 
-                pawnmap[7 - i+48] + 
-                pawnmap[7 - i+56]
+  pawnfiles = [0,0,0,0,0,0,0,0]
 
-    if (opencol == 0) {
-      AI.PIECE_SQUARE_TABLES_ENDGAME[3] = AI.PIECE_SQUARE_TABLES_ENDGAME[3].map((e,j)=>{
-        return e + (j % 8 == i % 8? 41 : 0)
-      })
+  for (let i = 0; i < 64; i++) {
+    if (pawnmap[i]) {
+      let col = i % 8
+
+      pawnfiles[col]++
     }
   }
 
+  AI.PIECE_SQUARE_TABLES_ENDGAME[3] = AI.PIECE_SQUARE_TABLES_ENDGAME[3].map((e,i)=>{
+    let col = i%8
+    return e + (pawnfiles[col]? -10 : 0)
+  })
 
-
-  AI.PIECE_SQUARE_TABLES_ENDGAME[3].reverse() //Revertir una sola vez
+  AI.PIECE_SQUARE_TABLES_ENDGAME[3] = AI.PIECE_SQUARE_TABLES_ENDGAME[3].map((e,i)=>{
+    let col = i%8
+    return e + (!pawnfiles[col]? 40 : 0)
+  })
 
   //Torres delante del rey enemigo ("torre en séptima")
   for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_ENDGAME[3][i + 8*(kingXposition/8 | 0)] += 27
@@ -1410,11 +1439,13 @@ AI.createPSQT = function (chessPosition) {
   AI.PIECE_SQUARE_TABLES_ENDGAME[5] = AI.PIECE_SQUARE_TABLES_ENDGAME[5].map((e,i)=>{
     return e + 50 - Math.pow(AI.manhattanDistance(28, i), 2) * 2
   })
+
+
+  console.log(AI.PIECE_SQUARE_TABLES_MIDGAME[0])
 }
 
 AI.PSQT2Sigmoid = function () {
   /////////////////// PSQT a sigmoidea ///////////////////////
-
   let limit = 120
 
   for (let i = 0; i <= 5; i++) {
