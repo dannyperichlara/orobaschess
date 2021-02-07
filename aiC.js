@@ -1,14 +1,18 @@
 "use strict"
 
 let Chess = require('./chess.js')
+    Chess.Bitboard = require('./bitboard.js')
+    Chess.Zobrist = require('./zobrist.js')
+    Chess.Move = require('./move.js')
+    Chess.Position = require('./position.js')
 
 let TESTER, nodes, qsnodes, enodes, ttnodes, iteration, status, fhf, fh
-let totaldepth = 23
+let totaldepth = 21
 let random = 40
 let phase = 1
 let htlength = 1 << 30
 let reduceHistoryFactor = 0.1
-let secondspermove = 0.2
+let secondspermove = 1
 let mindepth = 4
 
 let AI = function() {
@@ -169,7 +173,6 @@ let pawnstructures = [[
 AI.pawnstructure = (new Array(64)).fill(0)
 
 for (let i in pawnstructures) {
-  console.log(pawnstructures[i])
   AI.pawnstructure = AI.pawnstructure.map((e,j)=>{
     return e + pawnstructures[i][j]
   })
@@ -368,7 +371,7 @@ AI.randomizePSQT = function () {
   if (phase === 1) {
     //Sólo de caballo a dama
     for (let i = 1; i < 5; i++) {
-      AI.PIECE_SQUARE_TABLES[i] = AI.PIECE_SQUARE_TABLES[i].map(e=>{
+      AI.PIECE_SQUARE_TABLES_APERTURE[i] = AI.PIECE_SQUARE_TABLES_APERTURE[i].map(e=>{
         return e + Math.random() * random - random/2 | 0
       })
     }    
@@ -376,13 +379,13 @@ AI.randomizePSQT = function () {
 }
 
 AI.evaluate = function(chessPosition, hashkey, pvNode) {
-  if (hashkey) {
-    let evalentry = AI.evaltable[hashkey % htlength]
+  // if (hashkey) {
+  //   let evalentry = AI.evaltable[hashkey % htlength]
 
-    if (evalentry) {
-      if (chessPosition.madeMoves.length - evalentry < 5) return evalentry
-    }
-  }
+  //   if (evalentry) {
+  //     if (chessPosition.madeMoves.length - evalentry < 5) return evalentry
+  //   }
+  // }
 
   let color = chessPosition.getTurnColor()
 
@@ -396,20 +399,20 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
 
 
   if (phase === 2 && iteration < 3) {
-      mobility = AI.mobility(chessPosition, color) - AI.mobility(chessPosition, !color)
+      mobility = 0 // AI.mobility(chessPosition, color) - AI.mobility(chessPosition, !color)
   }
 
   psqt = AI.getPieceSquareValue(chessPosition, color) - AI.getPieceSquareValue(chessPosition,  !color)
-  badbishops = AI.getBadBishops(chessPosition, color) - AI.getBadBishops(chessPosition,  !color)
+  badbishops = 0// AI.getBadBishops(chessPosition, color) - AI.getBadBishops(chessPosition,  !color)
 
-  if (phase === 1) pawnsqt = AI.getPawnSquareValue(chessPosition, color) - AI.getPawnSquareValue(chessPosition,  !color)
+  pawnsqt = 0 //phase < 2? AI.getPawnSquareValue(chessPosition, color) - AI.getPawnSquareValue(chessPosition,  !color) : 0
 
   //https://www.r-bloggers.com/2015/06/big-data-and-chess-what-are-the-predictive-point-values-of-chess-pieces/
   // if (colorMaterial.P > notcolorMaterial.P) material += 60
 
-  let score = material + psqt + 4 * pawnsqt - 10 * badbishops + Math.min(50, 5*mobility)
+  let score = material + psqt// + (phase === 1? 120 : 80) * pawnsqt - 10 * badbishops + Math.min(50, 5*mobility)
 
-  AI.evaltable[hashkey % htlength] = {score, n: chessPosition.madeMoves.length}
+  // AI.evaltable[hashkey % htlength] = {score, n: chessPosition.madeMoves.length}
 
   return score
 
@@ -419,7 +422,7 @@ AI.getBadBishops = function(chessPosition, color) {
   let pawns = chessPosition.getPieceColorBitboard(Chess.Piece.PAWN, color).dup()
   let enemypawns = chessPosition.getPieceColorBitboard(0, !color).dup()
   let bishops = chessPosition.getPieceColorBitboard(Chess.Piece.BISHOP, color).dup()
-  let bishopmask = Chess.Position.makeBishopAttackMask(bishops, 0).dup()
+  let bishopmask = chessPosition.makeBishopAttackMask(bishops, 0).dup()
 
   return (bishops.or(bishopmask)).and(pawns.or(enemypawns)).dup().popcnt()
 }
@@ -443,8 +446,8 @@ AI.mobility = function(chessPosition, color) {
 
   let space = enemypawnattackmask.or(enemypawns).or(us)
 
-  mobility += Chess.Position.makeBishopAttackMask(bishops, space).dup().popcnt()
-  mobility += Chess.Position.makeRookAttackMask(rooks, space).dup().popcnt()
+  mobility += chessPosition.makeBishopAttackMask(bishops, space).dup().popcnt()
+  mobility += chessPosition.makeRookAttackMask(rooks, space).dup().popcnt()
 
   return mobility
 }
@@ -476,7 +479,8 @@ AI.getPieceSquareValue = function(chessPosition, color) {
 
       while (!pieces.isEmpty()) {
           let index = pieces.extractLowestBitPosition()
-          value += PSQT[piece][color ? index : (56 ^ index)]
+          let sqvalue = PSQT[piece][color ? index : (56 ^ index)]
+          value += sqvalue
       }
   }
 
@@ -492,7 +496,10 @@ AI.getPawnSquareValue = function(chessPosition, color) {
 
   while (!pawns.isEmpty()) {
       let index = pawns.extractLowestBitPosition()
-      value += PSQT[index]
+
+      if (color === 0 && index > 31) value += PSQT[index]
+
+      if (color === 1 && index <= 31) value += PSQT[index]
   }
   
 
@@ -668,8 +675,10 @@ AI.saveHistory = function(turn, move, depth) {
 AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   let doTheTrick = false
 
+  let pvNode = beta != (alpha + 1)
+
   if ((new Date()).getTime() > AI.timer + 1000 * secondspermove) {
-    if (iteration > mindepth) {
+    if (iteration > mindepth && !pvNode) {
       AI.stop = true
     } else {
       doTheTrick = true
@@ -678,7 +687,6 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
 
   let turn = chessPosition.getTurnColor()
-  let pvNode = beta != (alpha + 1)
 
   var matingValue = AI.MATE - ply
   
@@ -845,7 +853,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   } else {
 
     if (chessPosition.isDraw()) {
-      AI.ttSave(hashkey, AI.DRAW + ply, 1, depth, bestmove)        
+      AI.ttSave(hashkey, AI.DRAW + ply, 1, depth, bestmove)   
       return AI.DRAW + ply
 
     }
@@ -994,9 +1002,9 @@ AI.createPSQT = function (chessPosition) {
     ]
   ]
 
-  for (let i = 0; i < 6; i++) {
-    AI.PIECE_SQUARE_TABLES_APERTURE[i] = AI.PIECE_SQUARE_TABLES_APERTURE[i].map(e=>e/2)
-  }
+  // for (let i = 0; i < 6; i++) {
+  //   AI.PIECE_SQUARE_TABLES_APERTURE[i] = AI.PIECE_SQUARE_TABLES_APERTURE[i].map(e=>e/2)
+  // }
 
   AI.PIECE_SQUARE_TABLES_MIDGAME = [
     Array(64).fill(0),
@@ -1141,15 +1149,25 @@ AI.createPSQT = function (chessPosition) {
     }
   }
 
-  AI.PIECE_SQUARE_TABLES_MIDGAME[3] = AI.PIECE_SQUARE_TABLES_MIDGAME[3].map((e,i)=>{
-    let col = i%8
-    return e + (pawnfiles[col]? -10 : 0)
-  })
+  // AI.PIECE_SQUARE_TABLES_APERTURE[3] = AI.PIECE_SQUARE_TABLES_APERTURE[3].map((e,i)=>{
+  //   let col = i%8
+  //   return e + (pawnfiles[col]? -40 : 0)
+  // })
 
-  AI.PIECE_SQUARE_TABLES_MIDGAME[3] = AI.PIECE_SQUARE_TABLES_MIDGAME[3].map((e,i)=>{
-    let col = i%8
-    return e + (!pawnfiles[col]? 50 : 0) + (!pawnXfiles[col]? 50 : 0)
-  })
+  // AI.PIECE_SQUARE_TABLES_APERTURE[3] = AI.PIECE_SQUARE_TABLES_APERTURE[3].map((e,i)=>{
+  //   let col = i%8
+  //   return e + (!pawnfiles[col]? 80 : 0) + (!pawnXfiles[col]? 50 : 0)
+  // })
+
+  // AI.PIECE_SQUARE_TABLES_MIDGAME[3] = AI.PIECE_SQUARE_TABLES_MIDGAME[3].map((e,i)=>{
+  //   let col = i%8
+  //   return e + (pawnfiles[col]? -10 : 0)
+  // })
+
+  // AI.PIECE_SQUARE_TABLES_MIDGAME[3] = AI.PIECE_SQUARE_TABLES_MIDGAME[3].map((e,i)=>{
+  //   let col = i%8
+  //   return e + (!pawnfiles[col]? 50 : 0) + (!pawnXfiles[col]? 50 : 0)
+  // })
 
   //Torres delante del rey enemigo ("torre en séptima")
   for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_MIDGAME[3][i + 8*(kingXposition/8 | 0)] += 27
@@ -1171,28 +1189,15 @@ AI.createPSQT = function (chessPosition) {
     return e + (4 - AI.manhattanDistance(28, i)) * 10
   })
 
-  //Dama lejos del rey enemigo en mediojuego
-  // AI.PIECE_SQUARE_TABLES_MIDGAME[4] = AI.PIECE_SQUARE_TABLES_MIDGAME[4].map((e,i)=>{
-  //   return e - 10 + 2 * AI.distance(kingXposition, i)
-  // })
+  //Dama lejos del rey enemigo en apertura
+  AI.PIECE_SQUARE_TABLES_APERTURE[4] = AI.PIECE_SQUARE_TABLES_APERTURE[4].map((e,i)=>{
+    return e - 10 + 2 * AI.distance(kingXposition, i)
+  })
 
   //Rey en columnas semiabiertas
-    let Kopencol
-
-    for (let i = 0; i < 8; i++) {
-        Kopencol = pawnmap[7 - i+32] + 
-                  pawnmap[7 - i+40] + 
-                  pawnmap[7 - i+48] + 
-                  pawnmap[7 - i+56]
-
-      if (Kopencol == 0) {
-        AI.PIECE_SQUARE_TABLES_MIDGAME[5] = AI.PIECE_SQUARE_TABLES_MIDGAME[5].map((e,j)=>{
-          return e + (j % 8 == i % 8? -47 : 0)
-        })
-      }
-    }
-
-    AI.PIECE_SQUARE_TABLES_MIDGAME[5].reverse() //Revertir una sola vez
+    AI.PIECE_SQUARE_TABLES_APERTURE[5] = AI.PIECE_SQUARE_TABLES_APERTURE[5].map((e,i)=>{
+      return e + pawnmap[i-8]? -57 : 0
+    })
 
   //Rey lejos del centro
     AI.PIECE_SQUARE_TABLES_MIDGAME[5] = AI.PIECE_SQUARE_TABLES_MIDGAME[5].map((e,i)=>{
@@ -1200,14 +1205,14 @@ AI.createPSQT = function (chessPosition) {
     })
 
   //Premia enrocar
-    if (chessPosition.hasCastlingRight(color, true)) {
+    if (chessPosition.hasCastlingRight(color, true) && pawnmap[kingposition-6]) {
       console.log('KINGSIDE')
       AI.PIECE_SQUARE_TABLES_MIDGAME[5][60]  -= 20
       AI.PIECE_SQUARE_TABLES_MIDGAME[5][61]  -=100
       AI.PIECE_SQUARE_TABLES_MIDGAME[5][62]  +=120
     }
 
-    if (chessPosition.hasCastlingRight(color, false)) {
+    if (chessPosition.hasCastlingRight(color, false) && pawnmap[kingposition-10]) {
       console.log('QUEENSIDE')
       AI.PIECE_SQUARE_TABLES_MIDGAME[5][58]  += 80
       AI.PIECE_SQUARE_TABLES_MIDGAME[5][59]  -= 80
@@ -1304,13 +1309,6 @@ AI.createPSQT = function (chessPosition) {
   })
 
   ////////////////////// PIECE COORDINATION ////////////////////
-    //Alfiles y dama en misma diagonal
-      let myQB = chessPosition.makeBishopAttackMask(Q, false)
-      let myQBmap = AI.bin2map(myQB, color)
-
-      AI.PIECE_SQUARE_TABLES_MIDGAME[2] = AI.PIECE_SQUARE_TABLES_MIDGAME[2].map((e,i)=>{
-        return e + 20*myQBmap[i]
-      })
 
     //Peones a casillas defendidas por otro peón
       AI.PIECE_SQUARE_TABLES_APERTURE[0] = AI.PIECE_SQUARE_TABLES_APERTURE[0].map((e,i)=>{
@@ -1397,9 +1395,6 @@ AI.createPSQT = function (chessPosition) {
   AI.PIECE_SQUARE_TABLES_ENDGAME[5] = AI.PIECE_SQUARE_TABLES_ENDGAME[5].map((e,i)=>{
     return e + 50 - Math.pow(AI.manhattanDistance(28, i), 2) * 2
   })
-
-
-  console.log(AI.PIECE_SQUARE_TABLES_MIDGAME[0])
 }
 
 AI.PSQT2Sigmoid = function () {
@@ -1447,6 +1442,8 @@ AI.setphase = function (chessPosition) {
 
   AI.randomizePSQT()
   AI.PSQT2Sigmoid()
+
+  console.log(AI.PIECE_SQUARE_TABLES)
 }
 
 AI.getPV = function (chessPosition, length) {
@@ -1505,9 +1502,9 @@ AI.getPV = function (chessPosition, length) {
 
 AI.search = function(chessPosition, options) {
 
-  console.log(AI.pawnstructure)
-
   let nmoves = chessPosition.madeMoves.length
+
+  let mindepth = 2.4 * Math.log(secondspermove) + 8
 
   if (nmoves <= 2) {
     AI.createTables()
@@ -1523,6 +1520,8 @@ AI.search = function(chessPosition, options) {
     let color = chessPosition.getTurnColor()
 
     AI.color = color
+
+    // AI.DRAW = AI.evaluate(chessPosition, color) + AI.PIECE_VALUES[0]
 
     let white = color == 0
   
@@ -1589,7 +1588,7 @@ AI.search = function(chessPosition, options) {
         
         fhfperc = Math.round(fhf*100/fh)
 
-        console.log(iteration, depth, AI.PV.map(e=>{ return e? e.getString() : '---'}).join(' '), '     |     FHF ' + fhfperc + '%', score)
+        if (AI.PV) console.log(iteration, depth, AI.PV.map(e=>{ return e && e.getString? e.getString() : '---'}).join(' '), '     |     FHF ' + fhfperc + '%', score)
     }
     
     /*if (!AI.bestmove) {      
@@ -1608,7 +1607,10 @@ AI.search = function(chessPosition, options) {
 
     let sigmoid = 1/(1+Math.pow(10, -lastscore/400))
 
-    resolve({move: AI.bestmove, score: lastscore | 0, sigmoid: (sigmoid * 100 | 0)/100, phase, iteration, nodes, qsnodes, FHF: fhfperc+'%'})
+    resolve({move: AI.bestmove, movestring: AI.bestmove.getString(),
+            score: lastscore | 0, sigmoid: (sigmoid * 100 | 0)/100, phase,
+            iteration, nodes, qsnodes, FHF: fhfperc+'%',
+            pieces: chessPosition.pieces})
   })
 }
 
