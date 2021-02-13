@@ -19,9 +19,6 @@ let Chess = require('./chess.js')
 app.get('/', function (req, res) {
 
   let chessPosition = new Chess.Position()
-
-  console.log('MBAM', chessPosition.makeBishopAttackMask)
-
   
     if (req.query.fen) {
         let fen = req.query.fen.split(' ')
@@ -29,6 +26,7 @@ app.get('/', function (req, res) {
         let board = fen[0]
         let turn = fen[1] === 'w'? 0 : 1
         let castling = fen[2]
+        let movenumber = fen[5]
 
     //  * 1st bit: white can castle kingside
 	  //  * 2nd bit: black can castle kingside
@@ -44,6 +42,7 @@ app.get('/', function (req, res) {
         if (castling.indexOf('q') > -1) castlingRights += 1000
         
         chessPosition.bitboards = fen2bitboards(board)
+        chessPosition.movenumber = parseInt(movenumber)
 
         chessPosition.setTurnColor(turn)
 
