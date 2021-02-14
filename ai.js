@@ -15,7 +15,7 @@ let phase = 1
 let htlength = 1 << 24
 let reduceHistoryFactor = 0.5
 let secondspermove = 0.2
-let mindepth =  6
+let mindepth =  2
 
 let AI = function() {
 
