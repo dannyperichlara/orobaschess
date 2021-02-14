@@ -9,13 +9,13 @@ const { Position } = require('./zobrist.js')
     Chess.Position = require('./position.js')
 
 let TESTER, nodes, qsnodes, enodes, ttnodes, iteration, status, fhf, fh
-let totaldepth = 23
+let totaldepth = 128
 let random = 0
 let phase = 1
-let htlength = 1 << 28
+let htlength = 1 << 24
 let reduceHistoryFactor = 0.5
-let secondspermove = 3
-let mindepth =  10
+let secondspermove = 0.2
+let mindepth =  6
 
 let AI = function() {
 
@@ -374,15 +374,15 @@ AI.randomizePSQT = function () {
 }
 
 AI.evaluate = function(chessPosition, hashkey, pvNode) {
-  if (hashkey) {
-    let evalentry = AI.evaltable[hashkey % htlength]
+  // if (hashkey) {
+  //   let evalentry = AI.evaltable[hashkey % htlength]
 
-    if (evalentry) {
-      if (chessPosition.movenumber - evalentry.n < 5) {
-        return evalentry.score
-      }
-    }
-  }
+  //   if (evalentry) {
+  //     if (chessPosition.movenumber - evalentry.n < 5) {
+  //       return evalentry.score
+  //     }
+  //   }
+  // }
 
   let color = chessPosition.getTurnColor()
 
@@ -410,7 +410,7 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
 
   let score = material + psqt + mobility// + (phase === 1? 120 : 80) * pawnsqt - 10 * badbishops
 
-  AI.evaltable[hashkey % htlength] = {score, n: chessPosition.movenumber}
+  // AI.evaltable[hashkey % htlength] = {score, n: chessPosition.movenumber}
   
   return score
 
@@ -528,9 +528,7 @@ AI.scoreMove = function(move) {
   if (move.tt) { 
     score += 1e8
     return score
-  } 
-  
-  
+  }
   
   if (move.capture) {
     if (move.mvvlva>=6000) {
@@ -1665,6 +1663,7 @@ AI.getPV = function (chessPosition, length) {
 }
 
 AI.search = function(chessPosition, options) {
+  if (options && options.seconds) secondspermove = options.seconds
 
   let nmoves = chessPosition.madeMoves.length
 
@@ -1732,7 +1731,7 @@ AI.search = function(chessPosition, options) {
     let beta = AI.INFINITY
 
     for (let depth = 1; depth <= totaldepth; depth+=1) {
-        // console.log(AI.killers)
+        
 
         if (AI.stop && iteration > mindepth) {
             break
@@ -1756,7 +1755,7 @@ AI.search = function(chessPosition, options) {
         fhfperc = Math.round(fhf*100/fh)
 
         if (AI.PV) console.log(iteration, depth, AI.PV.map(e=>{ return e && e.getString? e.getString() : '---'}).join(' '), '     |     FHF ' + fhfperc + '%', score)
-    }
+      }
     
     // if (!AI.bestmove) {      
     //     AI.search(chessPosition, options)

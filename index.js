@@ -60,9 +60,9 @@ app.get('/', function (req, res) {
 
   let options = req.body.options
   
-
-  
-  Chess.AI.search(chessPosition, options).then(move=>{
+  Chess.AI.search(chessPosition, {
+    seconds: req.query.seconds? req.query.seconds : null
+  }).then(move=>{
   	res.send(move);
   })
 });
