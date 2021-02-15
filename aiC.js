@@ -9,7 +9,7 @@ const { Position } = require('./zobrist.js')
     Chess.Position = require('./position.js')
 
 let TESTER, nodes, qsnodes, enodes, ttnodes, iteration, status, fhf, fh
-let totaldepth = 23
+let totaldepth = 12
 let random = 0
 let phase = 1
 let htlength = 1 << 24
@@ -330,10 +330,6 @@ AI.ENEMY_PSQT = [
 
 AI.createTables = function () {
   console.log('Creating tables.......................................................................')
-  AI.history = [
-    new Array(64).fill(new Array(64).fill(0)), //blancas
-    new Array(64).fill(new Array(64).fill(0)) //negras
-  ]
 
   AI.history = [[],[]]
   AI.butterfly = [[],[]]
@@ -526,7 +522,7 @@ AI.getPawnSquareValue = function(chessPosition, color) {
 AI.scoreMove = function(move) {
   let score = 0
 
-  // if (move.pv) { //Se evalúa mejorcon tt
+  // if (move.pv) { //Se evalúa mejor con tt --> baja fhf
   //   score += 1e9
   //   return score
   // } 
@@ -537,15 +533,17 @@ AI.scoreMove = function(move) {
   }
   
   if (move.capture) {
-    if (move.mvvlva>=6000) {
+    if (move.mvvlva>=20000) { //testeado!! OK
       return 1e7 + move.mvvlva
+    } else if (move.mvvlva >= 6000){
+      return 1e5 + move.mvvlva
     } else {
-      return move.mvvlva
+      return -1e6 + move.mvvlva //Perfecto para fhf
     }
   }
     
   if (move.hvalue) { 
-    score += 1e6 + move.bvalue
+    score += move.hvalue
     
     return score
   } 
@@ -851,7 +849,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
     //REDUCTIONS (LMR)
 
-    if (!incheck) {
+    if (!incheck && depth > 2) {
       if (pvNode) {
         R += Math.log(depth+1) * Math.log(2*i + 1) / 1.95
       } else {
@@ -976,11 +974,12 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     if (bestscore > alphaOrig) {
       // EXACT
       AI.ttSave(hashkey, bestscore, 0, depth, bestmove)
-      AI.saveHistory(turn, bestmove, depth*depth)
+      AI.saveHistory(turn, bestmove, 2)
       return bestscore
     } else {
       //UPPERBOUND value <= alphaorig
       AI.ttSave(hashkey, alphaOrig, 1, depth, bestmove)
+      AI.saveHistory(turn, bestmove, -1)
       return alphaOrig
     }
   }
@@ -1678,6 +1677,7 @@ AI.getPV = function (chessPosition, length) {
 }
 
 AI.search = function(chessPosition, options) {
+
   if (options && options.seconds) secondspermove = options.seconds
 
   let nmoves = chessPosition.madeMoves.length
