@@ -9,13 +9,13 @@ const { Position } = require('./zobrist.js')
     Chess.Position = require('./position.js')
 
 let TESTER, nodes, qsnodes, enodes, ttnodes, iteration, status, fhf, fh
-let totaldepth = 12
+let totaldepth = 14
 let random = 0
 let phase = 1
 let htlength = 1 << 24
 let reduceHistoryFactor = 1 //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
-let secondspermove = 0.2
-let mindepth =  2
+let mindepth =  4
+let secondspermove = 0.5
 
 let AI = function() {
 
@@ -365,13 +365,14 @@ AI.createTables()
 
 //Randomize
 AI.randomizePSQT = function () {
+  console.log('radkaskdasdkasdkaskdaksdaskd')
   if (phase === 1) {
     //Sólo de caballo a dama
     for (let i = 1; i < 5; i++) {
-      AI.PIECE_SQUARE_TABLES_APERTURE[i] = AI.PIECE_SQUARE_TABLES_APERTURE[i].map(e=>{
+      AI.PIECE_SQUARE_TABLES[i] = AI.PIECE_SQUARE_TABLES[i].map(e=>{
         return e + Math.random() * random - random/2 | 0
       })
-    }    
+    }  
   }
 }
 
@@ -398,7 +399,7 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
 
 
 
-  if (phase > 1 && iteration <= 4) {
+  if (phase > 1 && iteration < 4) {
       mobility = AI.getMobility(chessPosition, color) - AI.getMobility(chessPosition, !color)
   }
 
@@ -487,10 +488,17 @@ AI.getPieceSquareValue = function(chessPosition, color) {
           let index = pieces.extractLowestBitPosition()
           let sqvalue
 
+          sqvalue = AI.PIECE_SQUARE_TABLES[piece][color ? index : (56 ^ index)]
+          
           // if (color === AI.color) {
-            sqvalue = AI.PIECE_SQUARE_TABLES[piece][color ? index : (56 ^ index)]
+          //   sqvalue = AI.PIECE_SQUARE_TABLES[piece][color ? index : (56 ^ index)]
           // } else {
-            // sqvalue = AI.ENEMY_PSQT[piece][color ? index : (56 ^ index)]
+          //   if (phase === 1) {
+          //     sqvalue = AI.PIECE_SQUARE_TABLES_APERTURE[piece][color ? index : (56 ^ index)]
+          //   } else {
+          //     sqvalue = AI.ENEMY_PSQT[piece][color ? index : (56 ^ index)]
+
+          //   }
           // }
 
           value += sqvalue
@@ -832,9 +840,9 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
   let initialR = 0
   //FHR
-  if (iteration > 6 && staticeval - 200 * incheck > beta && alpha === beta - 1 && depth > 4) {
-    initialR = 1
-  }
+  // if (iteration > 6 && staticeval - 200 * incheck > beta && alpha === beta - 1 && depth > 4) {
+  //   initialR = 1
+  // }
 
   let noncaptures = 0
 
@@ -1088,7 +1096,7 @@ AI.createPSQT = function (chessPosition) {
       0,  0,  0,  0,  0,  0,  0,  0,
     -80,  0,  0,  0,  0,  0,  0,-80,
     -40,  0,  0,  0,  0,  0,  0,-40,
-    -20,-20, 20, 40, 40, 20,-60,-20,
+    -20,-20, -20, 40, 40, 20,-60,-20,
     ],
 
     // Queen
@@ -1725,20 +1733,16 @@ AI.search = function(chessPosition, options) {
 
     AI.nofpieces = chessPosition.getOccupiedBitboard().popcnt()
 
-    let hashkey = chessPosition.hashKey.getHashKey()
-
-    let staticeval = AI.evaluate(chessPosition, hashkey, true)
-
     AI.timer = (new Date()).getTime()
     AI.stop = false
 
     let score = 0, lastscore = 0
 
-    let status = 0
-
     let fhfperc = 0
 
     AI.setphase(chessPosition)
+
+    console.log('PHASE', phase)
   
     AI.PV = AI.getPV(chessPosition, totaldepth+1)
 

@@ -54,8 +54,6 @@ app.get('/', function (req, res) {
 
     }
 
-    console.log(chessPosition.bitboards)
-
   Chess.AI = require('./aiC.js')
 
   let options = req.body.options
