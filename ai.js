@@ -550,7 +550,7 @@ AI.scoreMove = function(move) {
   }
     
   if (move.hvalue) { 
-    score += move.hvalue
+    score += 1e3 + move.hvalue
     
     return score
   } 
@@ -877,17 +877,11 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     // }
 
     /*futility pruning */
-    // if (!incheck && 1 < depth && depth <= 3+R) {
-    //   if (staticeval + 200 <= alpha) {
-    //     if (isCapture) {
-    //       if (move.getCapturedPiece() <= move.getPiece()) {
-    //         continue
-    //       }
-    //     } else {
-    //       continue
-    //     }
-    //   }
-    // }
+    if (!incheck && 1 < depth && depth <= 3+R && i >= 1) {
+      if (staticeval + 600*depth <= alpha) {
+        continue
+      }
+    }
     
     if (chessPosition.makeMove(move)) {
       legal++
