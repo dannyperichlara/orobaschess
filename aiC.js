@@ -680,11 +680,12 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
     for (let i=0, len=moves.length; i < len; i++) {
 
       let move = moves[i]
-
+      
       /* delta pruning */
-      // if (standpat + 200*ply < alpha && move.getCapturedPiece() < move.getPiece()) {
-      //   return alpha
-      // }
+      if (standpat + AI.PIECE_VALUES[4] < alpha) {
+        // console.log(ply)
+        return alpha
+      }
 
       if (chessPosition.makeMove(move)) {
         legal++
