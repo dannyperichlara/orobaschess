@@ -550,7 +550,7 @@ AI.scoreMove = function(move) {
   }
     
   if (move.hvalue) { 
-    score += move.hvalue
+    score += 1e3 + move.hvalue
     
     return score
   } 
