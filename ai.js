@@ -365,7 +365,6 @@ AI.createTables()
 
 //Randomize
 AI.randomizePSQT = function () {
-  console.log('radkaskdasdkasdkaskdaksdaskd')
   if (phase === 1) {
     //Sólo de caballo a dama
     for (let i = 1; i < 5; i++) {
@@ -785,12 +784,18 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   let hashkey = chessPosition.hashKey.getHashKey()
   let ttEntry = AI.ttGet(hashkey)
 
+  if( depth <= 0 ) {
+    return AI.quiescenceSearch(chessPosition, alpha, beta, depth, ply, pvNode)
+  }
 
+  //Hash table lookup
   if (ttEntry && ttEntry.depth >= depth) {
+    //testear estrictamente mayor 
     ttnodes++
     
     if (ttEntry.flag === 0) {
-      //return ttEntry.score
+      //No exact score because PSQTs change
+      // return ttEntry.score
       alpha = ttEntry.score
     } else if (ttEntry.flag === -1) {
       if (ttEntry.score > alpha) alpha = ttEntry.score
@@ -803,9 +808,6 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     }
   }
 
-  if( depth <= 0 ) {
-    return AI.quiescenceSearch(chessPosition, alpha, beta, depth, ply, pvNode)
-  }
   
   //IID (for ordering moves)
   if (!ttEntry && depth >= 4) {
@@ -1190,14 +1192,22 @@ AI.createPSQT = function (chessPosition) {
   //Castiga captura y maniobras con peón frontal del rey
   if (kingposition >= 61 || (kingposition>=56 && kingposition<=58)) {
     AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 7] +=200
+    AI.PIECE_SQUARE_TABLES_APERTURE[0][kingposition - 7] +=200
     AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 8] +=40
+    AI.PIECE_SQUARE_TABLES_APERTURE[0][kingposition - 8] +=40
     AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 9] +=200
+    AI.PIECE_SQUARE_TABLES_APERTURE[0][kingposition - 9] +=200
 
     AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 15] -=100
+    AI.PIECE_SQUARE_TABLES_APERTURE[0][kingposition - 15] -=100
     AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 17] -=100
+    AI.PIECE_SQUARE_TABLES_APERTURE[0][kingposition - 17] -=100
     AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 23] -=200    
+    AI.PIECE_SQUARE_TABLES_APERTURE[0][kingposition - 23] -=200    
     AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 24] -=200    
+    AI.PIECE_SQUARE_TABLES_APERTURE[0][kingposition - 24] -=200    
     AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 25] -=200    
+    AI.PIECE_SQUARE_TABLES_APERTURE[0][kingposition - 25] -=200    
   }
 
   //Caballos al centro
@@ -1231,6 +1241,11 @@ AI.createPSQT = function (chessPosition) {
   AI.PIECE_SQUARE_TABLES_MIDGAME[1] = AI.PIECE_SQUARE_TABLES_MIDGAME[1].map((e,i)=>{
     return e + pawnmask[i]? 60 : -20
   })
+
+  AI.PIECE_SQUARE_TABLES_MIDGAME[1] = AI.PIECE_SQUARE_TABLES_MIDGAME[1].map((e,i)=>{
+    return e + pawnmask[i]? 20 : -20
+  })
+  
 
   //Alfiles al centro
   AI.PIECE_SQUARE_TABLES_MIDGAME[2] = [

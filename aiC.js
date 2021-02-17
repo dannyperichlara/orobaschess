@@ -784,12 +784,18 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   let hashkey = chessPosition.hashKey.getHashKey()
   let ttEntry = AI.ttGet(hashkey)
 
+  if( depth <= 0 ) {
+    return AI.quiescenceSearch(chessPosition, alpha, beta, depth, ply, pvNode)
+  }
 
+  //Hash table lookup
   if (ttEntry && ttEntry.depth >= depth) {
+    //testear estrictamente mayor 
     ttnodes++
     
     if (ttEntry.flag === 0) {
-      //return ttEntry.score
+      //No exact score because PSQTs change
+      // return ttEntry.score
       alpha = ttEntry.score
     } else if (ttEntry.flag === -1) {
       if (ttEntry.score > alpha) alpha = ttEntry.score
@@ -802,9 +808,6 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     }
   }
 
-  if( depth <= 0 ) {
-    return AI.quiescenceSearch(chessPosition, alpha, beta, depth, ply, pvNode)
-  }
   
   //IID (for ordering moves)
   if (!ttEntry && depth >= 4) {
