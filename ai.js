@@ -10,7 +10,11 @@ const { Position } = require('./zobrist.js')
 
 let TESTER, nodes, qsnodes, enodes, ttnodes, iteration, status, fhf, fh
 let totaldepth = 20
+
+
+Math.seedrandom((new Date()).toTimeString())
 let random = 50
+
 let phase = 1
 let htlength = 1 << 26
 let reduceHistoryFactor = 1 //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
@@ -241,7 +245,13 @@ AI.MOBILITY_VALUES = [
 ]
 
 AI.MATE = AI.MIDGAME_PIECE_VALUES[5]
-AI.DRAW = 0//-AI.MIDGAME_PIECE_VALUES[0] //Contempt factor of 1 pawn
+
+//Contempt factor of 1 knight
+AI.DRAW = 0
+// AI.DRAW = -AI.MIDGAME_PIECE_VALUES[1] //avoids draw
+// AI.DRAW = +AI.MIDGAME_PIECE_VALUES[1] //prefers draw
+
+
 AI.INFINITY = AI.MIDGAME_PIECE_VALUES[5]*4
 
 AI.PIECE_SQUARE_TABLES = [
@@ -330,6 +340,11 @@ AI.ENEMY_PSQT = [
 
 AI.createTables = function () {
   console.log('Creating tables.......................................................................')
+
+  delete AI.history
+  delete AI.butterfly
+  delete AI.hashtable
+  delete AI.evaltable
 
   AI.history = [[],[]]
   AI.butterfly = [[],[]]
