@@ -381,7 +381,7 @@ AI.createTables()
 //Randomize
 AI.randomizePSQT = function () {
   Math.seedrandom((new Date()).getTime().toString())
-  
+
   if (phase === 1) {
     //Sólo de caballo a dama
     for (let i = 1; i < 5; i++) {
