@@ -9,10 +9,10 @@ const { Position } = require('./zobrist.js')
     Chess.Position = require('./position.js')
 
 let TESTER, nodes, qsnodes, enodes, ttnodes, iteration, status, fhf, fh
-let totaldepth = 14
+let totaldepth = 20
 let random = 0
 let phase = 1
-let htlength = 1 << 24
+let htlength = 1 << 26
 let reduceHistoryFactor = 1 //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
 let mindepth =  4
 let secondspermove = 0.5
@@ -228,7 +228,7 @@ AI.distance = function (sq1,sq2) {
 // AI.MIDGAME_PIECE_VALUES = [140, 300, 330, 520, 850, 20000]
 
 //128, 782, 830, 1289, and 2529 in the opening and 213, 865, 918, 1378, and 2687 in the endgame. (Stockfish)
-AI.MIDGAME_PIECE_VALUES = [128, 800, 800,  1289, 2529, 20000]
+AI.MIDGAME_PIECE_VALUES = [128, 782, 830,  1289, 2529, 20000]
 AI.ENDGAME_PIECE_VALUES = [213, 865, 918,  1378, 2687, 20000]
 
 AI.MOBILITY_VALUES = [
@@ -857,12 +857,8 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
     //REDUCTIONS (LMR)
 
-    if (!incheck && depth > 2) {
-      if (pvNode) {
-        R += Math.log(depth+1) * Math.log(2*i + 1) / 1.95
-      } else {
-        R += Math.log(depth+1) * Math.log(2*i + 1) * Math.log(depth+1) * Math.log(2*i + 1) / 1.95
-      }
+    if (!incheck) {
+      R += Math.log(depth+1) * Math.log(i + 1) / 1.95
     }
 
     //History pruning & reduction (no funciona, ralentiza)
@@ -1073,7 +1069,7 @@ AI.createPSQT = function (chessPosition) {
     -100,  0, 40, 40, 40, 40,  0,-100,
     -100,  0, 20, 20, 20, 20,  0,-100,
     -100,  0,  0, 20, 20,  0,  0,-100,
-    -100,-20,-20,-40,-40,-20,-20,-100,
+    -100,-80,-20,-40,-40,-20,-80,-100,
       
       ],
       // Bishop
@@ -1085,7 +1081,7 @@ AI.createPSQT = function (chessPosition) {
       0,  0, 40, 40, 40, 40,  0,  0,
     -40, 40,-20,-20,-20,-20, 20,-40,
       0, 40,  0, 20, 20,  0, 40,  0,
-      0,  0,-20,  0,  0,-20,  0,  0,
+      0,  0,-80,  0,  0,-80,  0,  0,
     ],
     // Rook
     [ 

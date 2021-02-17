@@ -12,11 +12,10 @@ let TESTER, nodes, qsnodes, enodes, ttnodes, iteration, status, fhf, fh
 let totaldepth = 20
 let random = 0
 let phase = 1
-let htlength = 1 << 24
+let htlength = 1 << 26
 let reduceHistoryFactor = 1 //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
 let mindepth =  4
 let secondspermove = 0.5
-let futilitymargin = 200
 
 let AI = function() {
 
@@ -229,7 +228,7 @@ AI.distance = function (sq1,sq2) {
 // AI.MIDGAME_PIECE_VALUES = [140, 300, 330, 520, 850, 20000]
 
 //128, 782, 830, 1289, and 2529 in the opening and 213, 865, 918, 1378, and 2687 in the endgame. (Stockfish)
-AI.MIDGAME_PIECE_VALUES = [128, 800, 800,  1289, 2529, 20000]
+AI.MIDGAME_PIECE_VALUES = [128, 782, 830,  1289, 2529, 20000]
 AI.ENDGAME_PIECE_VALUES = [213, 865, 918,  1378, 2687, 20000]
 
 AI.MOBILITY_VALUES = [
@@ -332,11 +331,6 @@ AI.ENEMY_PSQT = [
 AI.createTables = function () {
   console.log('Creating tables.......................................................................')
 
-  delete AI.hashtable
-  delete AI.evaltable
-  delete AI.history
-  delete AI.butterfly
-
   AI.history = [[],[]]
   AI.butterfly = [[],[]]
 
@@ -371,7 +365,7 @@ AI.createTables()
 
 //Randomize
 AI.randomizePSQT = function () {
-  console.log('PSQT randomization')
+  console.log('radkaskdasdkasdkaskdaksdaskd')
   if (phase === 1) {
     //Sólo de caballo a dama
     for (let i = 1; i < 5; i++) {
@@ -661,11 +655,6 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
       return beta
     }
 
-    /* delta pruning HORRIBLEEEEEE caga el fhf */
-    // if (standpat + futilitymargin*depth < alpha) {
-    //   return alpha
-    // }
-
     if ( standpat > alpha) alpha = standpat;
 
     let moves
@@ -678,7 +667,10 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
 
       let move = moves[i]
 
-
+      /* delta pruning */
+      // if (standpat + 200*ply < alpha && move.getCapturedPiece() < move.getPiece()) {
+      //   return alpha
+      // }
 
       if (chessPosition.makeMove(move)) {
         legal++
@@ -708,10 +700,7 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
     return alpha
 }
 
-AI.ttSave = function (hashkey, score, flag, depth, move, pruned) {
-  
-  if (pruned) flag = 1
-
+AI.ttSave = function (hashkey, score, flag, depth, move) {
   AI.hashtable[hashkey % htlength] = {
     hashkey,
     score,
@@ -739,24 +728,11 @@ AI.reduceHistory = function () {
       }
     }
   }
-
-  for (let color = 0; color < 2; color++) {
-    for (let from = 0; from < 64; from++) {      
-      for (let to = 0; to < 64; to++) {
-        AI.butterfly[color][from][to] = ((1 - reduceHistoryFactor) * AI.butterfly[color][from][to]) | 0
-      }
-    }
-  }
 }
 
 AI.saveHistory = function(turn, move, value) {
   //according to The_Relative_History_Heuristic.pdf, no much difference if it's 1 or 1 << depth
-  try {
-    if (move && move.isCapture()) return
-
-  } catch (err) {
-    console.log('err',move)
-  }
+  if (move.isCapture()) return
 
   let to = move.getTo()
   
@@ -809,13 +785,13 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   let hashkey = chessPosition.hashKey.getHashKey()
   let ttEntry = AI.ttGet(hashkey)
 
-  //hash table lookup
+
   if (ttEntry && ttEntry.depth >= depth) {
     ttnodes++
     
     if (ttEntry.flag === 0) {
-      // return ttEntry.score
-      alpha = ttEntry.score //--->because the psqt change
+      //return ttEntry.score
+      alpha = ttEntry.score
     } else if (ttEntry.flag === -1) {
       if (ttEntry.score > alpha) alpha = ttEntry.score
     } else if (ttEntry.flag === 1) {
@@ -837,17 +813,15 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     ttEntry = AI.ttGet(hashkey)
   }
   
-  
+  let bestmove = {value: 2080,  getString() {return '-'}}
+
   let pvMoveValue = AI.PV[ply]? AI.PV[ply].value : null
-  
+
   if (AI.stop && iteration > mindepth) return alpha
-  
+
   let moves = chessPosition.getMoves(false, false)
-  
-  
+
   moves = AI.sortMoves(moves, turn, ply, chessPosition, ttEntry, pvMoveValue)
-  
-  let bestmove = moves[0]
 
   let legal = 0
   let bestscore = -Infinity
@@ -860,19 +834,17 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   let staticeval = AI.evaluate(chessPosition, hashkey, pvNode)
 
   //Reverse Futility pruning ????????
-  // if (!incheck && depth <= 3 && staticeval - futilitymargin*depth >= beta) {
-  //   return eval - futilitymargin*depth
+  // if (!incheck && depth <= 3 && staticeval - 200 >= beta) {
+  //   return eval - 200
   // }
 
   let initialR = 0
   //FHR
-  // if (iteration > 6 && staticeval - futilitymargin * incheck > beta && alpha === beta - 1 && depth > 4) {
+  // if (iteration > 6 && staticeval - 200 * incheck > beta && alpha === beta - 1 && depth > 4) {
   //   initialR = 1
   // }
 
   let noncaptures = 0
-
-  let fpruned = false
 
   for (let i=0, len=moves.length; i < len; i++) {
     let move = moves[i]
@@ -886,44 +858,45 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     //REDUCTIONS (LMR)
 
     if (!incheck) {
-      if (pvNode) {
-        R += Math.log(depth+1) * Math.log(2*i + 1) / 1.95
-      } else {
-        R += Math.log(depth+1) * Math.log(2*i + 1) * Math.log(depth+1) * Math.log(2*i + 1) / 1.95
-      }
+      //stockfish formula TESTED
+      R += Math.log(depth+1) * Math.log(i + 1) / 1.95
     }
 
-    
-    //History pruning & reduction ???????????????
-    if (!incheck && !pvNode && noncaptures > 2 && depth > 6) {
-      let hscore = AI.history[turn][move.getPiece()][move.getTo()]
-      if (hscore < 0 && noncaptures > 5) {
-        continue
-      }
+    //History pruning & reduction (no funciona, ralentiza)
+    // if (!incheck && !pvNode && noncaptures > 5) {
+    //   let hscore = AI.history[turn][move.getPiece()][move.getTo()]
+    //   if (hscore < 500 && depth > R) {
+    //     R++
+    //   }
       
-      if (hscore < 100) {
-        R++
-      }
-      
-    }
+    //   if (hscore < 0 && noncaptures > 10) {
+    //     // console.log(hscore)
+    //     continue
+    //   }
+    // }
 
     /*futility pruning */
-    if (!incheck && 1 < depth && depth <= 3+R && legal > 1) {
-      if (staticeval <= alpha - futilitymargin*depth) {
-        fpruned = true
-        continue
-      }
-    }
+    // if (!incheck && 1 < depth && depth <= 3+R) {
+    //   if (staticeval + 200 <= alpha) {
+    //     if (isCapture) {
+    //       if (move.getCapturedPiece() <= move.getPiece()) {
+    //         continue
+    //       }
+    //     } else {
+    //       continue
+    //     }
+    //   }
+    // }
     
     if (chessPosition.makeMove(move)) {
       legal++
 
 
-      //LMP     ??????????????????  
-      if (!isCapture && i > 320/depth) {
-        chessPosition.unmakeMove()
-        continue
-      }
+      //LMP      
+      // if (!isCapture && i > 400/depth && iteration > 4) {
+      //   chessPosition.unmakeMove()
+      //   continue
+      // }
 
       //EXTENSIONS
       if (incheck && depth < 3 && pvNode) {
@@ -958,23 +931,22 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
             }
             
             fh++
-
             
             //LOWERBOUND
             AI.ttSave(hashkey, score, -1, depth, move)
             AI.saveHistory(turn, move, 2)
-            
+
             return score
           }
           
           AI.ttSave(hashkey, score, 1, depth, move) //Sí, probado
           AI.saveHistory(turn, move, 1)
-          
-          
+
+            
           alpha = score
           //AI.PV[ply] = move //No aporta
         }       
-        
+
         bestscore = score
         bestmove  = move
       } else {
@@ -982,40 +954,37 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
       }
     }
   }
-  
+
   if (ply === 1 && legal === 1) AI.stop = true
 
   if (legal === 0) {
       // stalemate, draw
       if (!chessPosition.isKingInCheck()) {
-        AI.ttSave(hashkey, AI.DRAW + ply, 0, depth, bestmove, fpruned)
+        AI.ttSave(hashkey, AI.DRAW + ply, 0, depth, bestmove)
         return AI.DRAW + ply
 
       }
       
-      AI.ttSave(hashkey, -AI.MATE + ply, 0, depth, bestmove, fpruned)
+      AI.ttSave(hashkey, -AI.MATE + ply, 0, depth, bestmove)
       return -AI.MATE + ply
       
   } else {
 
     if (chessPosition.isDraw()) {
-      AI.ttSave(hashkey, AI.DRAW + ply, 1, depth, bestmove, fpruned)   
+      AI.ttSave(hashkey, AI.DRAW + ply, 1, depth, bestmove)   
       return AI.DRAW + ply
 
     }
 
     if (bestscore > alphaOrig) {
       // EXACT
-      AI.ttSave(hashkey, bestscore, 0, depth, bestmove, fpruned)
-
+      AI.ttSave(hashkey, bestscore, 0, depth, bestmove)
       AI.saveHistory(turn, bestmove, 2)
       return bestscore
     } else {
       //UPPERBOUND value <= alphaorig
-      if (bestmove) {
-        AI.saveHistory(turn, bestmove, -1)
-        AI.ttSave(hashkey, alphaOrig, 1, depth, bestmove, fpruned)
-      }
+      AI.ttSave(hashkey, alphaOrig, 1, depth, bestmove)
+      AI.saveHistory(turn, bestmove, -1)
       return alphaOrig
     }
   }
@@ -1101,7 +1070,7 @@ AI.createPSQT = function (chessPosition) {
     -100,  0, 40, 40, 40, 40,  0,-100,
     -100,  0, 20, 20, 20, 20,  0,-100,
     -100,  0,  0, 20, 20,  0,  0,-100,
-    -100,-20,-20,-40,-40,-20,-20,-100,
+    -100,-80,-20,-40,-40,-20,-80,-100,
       
       ],
       // Bishop
@@ -1113,7 +1082,7 @@ AI.createPSQT = function (chessPosition) {
       0,  0, 40, 40, 40, 40,  0,  0,
     -40, 40,-20,-20,-20,-20, 20,-40,
       0, 40,  0, 20, 20,  0, 40,  0,
-      0,  0,-20,  0,  0,-20,  0,  0,
+      0,  0,-80,  0,  0,-80,  0,  0,
     ],
     // Rook
     [ 
@@ -1132,8 +1101,8 @@ AI.createPSQT = function (chessPosition) {
       -20,-20,-20,-20,-20,-20,-20,-20,
       -20,-20,-20,-20,-20,-20,-20,-20,
       -20,-20,-20,-20,-20,-20,-20,-20,
-      -20,-20,-20,-80,-80,-20,-20,-20,
-      -20,-20,-20,-80,-80,-20,-20,-20,
+      -20,-20,-20,-20,-20,-20,-20,-20,
+      -20,-20,-20,-20,-20,-20,-20,-20,
       -20,-20,-20, 10, 10,-20,-20,-20,
         0,  0, 10, 10,-10,  0,  0,  0,
         0,  0,  0,-10,  0,  0,  0,  0,
@@ -1486,7 +1455,7 @@ AI.createPSQT = function (chessPosition) {
 
   //Rey apuntando a torres enemigas
   AI.PIECE_SQUARE_TABLES_MIDGAME[5] = AI.PIECE_SQUARE_TABLES_MIDGAME[5].map((e,i)=>{
-    return e - 40*RRmapx[i]
+    return e - 20*RRmapx[i]
   })
 
   ////////////////////// pawn structure ////////////////////
@@ -1632,7 +1601,7 @@ AI.setphase = function (chessPosition) {
 
   let queens = chessPosition.getPieceColorBitboard(4, color).popcnt() + chessPosition.getPieceColorBitboard(4, !color).popcnt()
 
-  if (AI.nofpieces <= 16 && queens === 0) {
+  if (AI.nofpieces <= 20 && queens === 0) {
     phase = 3 //endgame
   }
   
