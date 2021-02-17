@@ -10,11 +10,11 @@ const { Position } = require('./zobrist.js')
 
 let TESTER, nodes, qsnodes, enodes, ttnodes, iteration, status, fhf, fh
 let totaldepth = 20
-let random = 0
+let random = 50
 let phase = 1
 let htlength = 1 << 26
 let reduceHistoryFactor = 1 //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
-let mindepth =  4
+let mindepth =  6
 let secondspermove = 0.5
 
 let AI = function() {
@@ -1184,7 +1184,7 @@ AI.createPSQT = function (chessPosition) {
     10, 30, 30, 30, 30, 30, 30, 10,
     20, 20, 20, 20, 20, 20, 20, 20,
     10, 10, 10, 10, 10, 10, 10, 10,
-    80, 80, 80, 80, 80, 80, 80, 80,
+     0,  0,  0,  0,  0,  0,  0,  0,
   ]
 
   //Castiga captura y maniobras con peón frontal del rey
@@ -1217,15 +1217,15 @@ AI.createPSQT = function (chessPosition) {
     return e + 10 - 2 * AI.distance(kingXposition, i)
   })
 
-  //Castiga caballos en las orillas
-  AI.PIECE_SQUARE_TABLES_MIDGAME[1] = AI.PIECE_SQUARE_TABLES_MIDGAME[1].map((e,i)=>{
-    let mod = i % 8
-    return e - (mod === 0 || mod === 7? 80 : 0)
-  })
+  //Castiga caballos en las orillas (Arriba)
+  // AI.PIECE_SQUARE_TABLES_MIDGAME[1] = AI.PIECE_SQUARE_TABLES_MIDGAME[1].map((e,i)=>{
+  //   let mod = i % 8
+  //   return e - (mod === 0 || mod === 7? 80 : 0)
+  // })
 
   //Castiga caballos sin desarrollar
-  AI.PIECE_SQUARE_TABLES_MIDGAME[1][57] -= 40
-  AI.PIECE_SQUARE_TABLES_MIDGAME[1][62] -= 40
+  // AI.PIECE_SQUARE_TABLES_MIDGAME[1][57] -= 40
+  // AI.PIECE_SQUARE_TABLES_MIDGAME[1][62] -= 40
 
   //Premia caballos en Outposts
   AI.PIECE_SQUARE_TABLES_MIDGAME[1] = AI.PIECE_SQUARE_TABLES_MIDGAME[1].map((e,i)=>{
@@ -1244,9 +1244,9 @@ AI.createPSQT = function (chessPosition) {
     -100,-100,-100,-100,-100,-100,-100,-100,
   ]
 
-  //Castiga alfiles sin desarrollar
-  AI.PIECE_SQUARE_TABLES_MIDGAME[2][58] -= 100
-  AI.PIECE_SQUARE_TABLES_MIDGAME[2][61] -= 100
+  //Castiga alfiles sin desarrollar (arriba)
+  // AI.PIECE_SQUARE_TABLES_MIDGAME[2][58] -= 100
+  // AI.PIECE_SQUARE_TABLES_MIDGAME[2][61] -= 100
 
   //Premia alfiles en Outposts
   AI.PIECE_SQUARE_TABLES_MIDGAME[2] = AI.PIECE_SQUARE_TABLES_MIDGAME[2].map((e,i)=>{
@@ -1310,20 +1310,27 @@ AI.createPSQT = function (chessPosition) {
   AI.PIECE_SQUARE_TABLES_MIDGAME[2][63] -=100
 
   //Dama al centro
-  AI.PIECE_SQUARE_TABLES_MIDGAME[2] = AI.PIECE_SQUARE_TABLES_MIDGAME[2].map((e,i)=>{
-    return e + (4 - AI.manhattanDistance(28, i)) * 10
-  })
+  AI.PIECE_SQUARE_TABLES_MIDGAME[2] = [
+   -20, -20, -20, -20, -20, -20, -20, -20,
+   -20,   0,   0,   0,   0,   0,   0, -20,
+   -20,   0,  20,  20,  20,  20,   0, -20,
+   -20,   0,  20,  20,  20,  20,   0, -20,
+   -20,   0,  20,  20,  20,  20,   0, -20,
+   -20,   0,  20,  20,  20,  20,   0, -20,
+   -20,   0,   0,   0,   0,   0,   0, -20,
+   -20, -20, -20, -20, -20, -20, -20, -20,
+]
 
   //Rey lejos del centro
     AI.PIECE_SQUARE_TABLES_MIDGAME[5] = [ 
-      -90,-90,-90,-90,-90,-90,-90,-90,
-      -90,-90,-90,-90,-90,-90,-90,-90,
-      -90,-90,-90,-90,-90,-90,-90,-90,
-      -90,-90,-90,-90,-90,-90,-90,-90,
-      -90,-90,-90,-90,-90,-90,-90,-90, 
-      -90,-90,-90,-90,-90,-90,-90,-90,
+       -90, -90, -90, -90, -90, -90, -90, -90,
+       -90, -90, -90, -90, -90, -90, -90, -90,
+       -90, -90, -90, -90, -90, -90, -90, -90,
+       -90, -90, -90, -90, -90, -90, -90, -90,
+       -90, -90, -90, -90, -90, -90, -90, -90, 
+       -90, -90, -90, -90, -90, -90, -90, -90,
       -50,-50,-80,-80,-80,-80,-50,-90,
-      -20,-20,-20,-20,-20,-20,-20,-20
+     -120,  0,-20,-20,-20,-20,  0,-120
     ]
 
   //Premia enrocar
@@ -1346,11 +1353,11 @@ AI.createPSQT = function (chessPosition) {
       AI.PIECE_SQUARE_TABLES_MIDGAME[5][60]  -= 20
     }
 
-  //Rey fuera de las esquinas por poca movilidad y riesgo de mate de pasillo
-    AI.PIECE_SQUARE_TABLES_MIDGAME[5][0]  -= 100
-    AI.PIECE_SQUARE_TABLES_MIDGAME[5][7]  -= 100
-    AI.PIECE_SQUARE_TABLES_MIDGAME[5][56] -= 100
-    AI.PIECE_SQUARE_TABLES_MIDGAME[5][63] -= 100
+  //Rey fuera de las esquinas por poca movilidad y riesgo de mate de pasillo (arriba)
+    // AI.PIECE_SQUARE_TABLES_MIDGAME[5][0]  -= 100
+    // AI.PIECE_SQUARE_TABLES_MIDGAME[5][7]  -= 100
+    // AI.PIECE_SQUARE_TABLES_MIDGAME[5][56] -= 100
+    // AI.PIECE_SQUARE_TABLES_MIDGAME[5][63] -= 100
 
   //////////////// Rayos X ///////////////////////
   let KB = chessPosition.makeBishopAttackMask(KX, false)
@@ -1462,33 +1469,31 @@ AI.createPSQT = function (chessPosition) {
     //Peones a casillas defendidas por otro peón
       AI.PIECE_SQUARE_TABLES_APERTURE[0] = AI.PIECE_SQUARE_TABLES_APERTURE[0].map((e,i)=>{
         let defended = pawnmask[i]
-        return e + (defended? 20 : -20)
+        return e + (defended? 40 : -20)
       })
 
       AI.PIECE_SQUARE_TABLES_MIDGAME[0] = AI.PIECE_SQUARE_TABLES_MIDGAME[0].map((e,i)=>{
         let defended = pawnmask[i]
-        return e + (defended? 20 : -10)
+        return e + (defended? 40 : -10)
       })
 
       AI.PIECE_SQUARE_TABLES_ENDGAME[0] = AI.PIECE_SQUARE_TABLES_ENDGAME[0].map((e,i)=>{
         let defended = pawnmask[i]
-        return e + (defended? 10 : 0)
+        return e + (defended? 20 : 0)
       })
 
   ///////////////////////////// ENDGAME ////////////////////////
 
-  AI.PIECE_SQUARE_TABLES_ENDGAME[0] = pawnstructure.map((e,i)=>{
-    if (i === kingposition) return 0
-
-    return (64 - i) * 4 - 100  | 0
-  })
-
-  AI.PIECE_SQUARE_TABLES_ENDGAME[0] = AI.PIECE_SQUARE_TABLES_ENDGAME[0].map((e,i)=>{
-    if (i < 8) e+=100
-    if (i < 16) e+=100
-
-    return e
-  })
+  AI.PIECE_SQUARE_TABLES_ENDGAME[0] = [
+     0,  0,  0,  0,  0,  0,  0,  0,
+   600,600,600,400,400,600,600,600,
+   400,400,400,200,200,400,400,400,
+   200,200,200,100,100,200,200,200,
+    40,-20,-20,-20,-20,-20,-20, 40,
+   -40,-40,-40,-40,-40,-40,-40,-40,
+   -80,-80,-80,-80,-80,-80,-80,-80,
+     0,  0,  0,  0,  0,  0,  0,  0,
+  ]
 
   //Castiga captura y maniobras con peón frontal del rey
   if (chessPosition.getMadeMoveCount()>12 && kingposition > 55) {
@@ -1559,15 +1564,22 @@ AI.createPSQT = function (chessPosition) {
   //Torres delante del rey enemigo ("torre en séptima")
   for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_ENDGAME[3][i + 8*(kingXposition/8 | 0)] += 27
 
-  //Dama cerca del rey enemigo
-  AI.PIECE_SQUARE_TABLES_ENDGAME[4] = AI.PIECE_SQUARE_TABLES_ENDGAME[4].map((e,i)=>{
+  //Torre cerca del rey enemigo
+  AI.PIECE_SQUARE_TABLES_ENDGAME[3] = AI.PIECE_SQUARE_TABLES_ENDGAME[3].map((e,i)=>{
     return 4 * (8 - AI.manhattanDistance(kingXposition, i))
   })
 
   //Rey cerca del centro
-  AI.PIECE_SQUARE_TABLES_ENDGAME[5] = AI.PIECE_SQUARE_TABLES_ENDGAME[5].map((e,i)=>{
-    return e + 50 - Math.pow(AI.manhattanDistance(28, i), 2) * 2
-  })
+  AI.PIECE_SQUARE_TABLES_ENDGAME[5] = [
+    -200,-150,-100,-100,-100,-100,-150,-200,
+    -150, -40, -40, -40, -40, -40, -40,-100,
+    -100, -40,  40,  40,  40,  40, -40,-100,
+    -100, -40,  40,  40,  40,  40, -40,-100,
+    -100, -40,  40,  40,  40,  40, -40,-100,
+    -100, -40,  40,  40,  40,  40, -40,-100,
+    -150, -40, -40, -40, -40, -40, -40,-150,
+    -200,-150,-100,-100,-100,-100,-150,-200,
+  ]
 }
 
 AI.PSQT2Sigmoid = function () {
