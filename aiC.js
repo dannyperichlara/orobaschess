@@ -12,13 +12,13 @@ let TESTER, nodes, qsnodes, enodes, ttnodes, iteration, status, fhf, fh
 let totaldepth = 20
 
 
-Math.seedrandom((new Date()).toTimeString())
+// Math.seedrandom((new Date()).toTimeString())
 let random = 50
 
 let phase = 1
 let htlength = 1 << 26
 let reduceHistoryFactor = 1 //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
-let mindepth =  6
+let mindepth =  2
 let secondspermove = 0.5
 
 let AI = function() {
@@ -380,6 +380,8 @@ AI.createTables()
 
 //Randomize
 AI.randomizePSQT = function () {
+  Math.seedrandom((new Date()).getTime().toString())
+  
   if (phase === 1) {
     //Sólo de caballo a dama
     for (let i = 1; i < 5; i++) {
