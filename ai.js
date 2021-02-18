@@ -1242,8 +1242,8 @@ AI.createPSQT = function (chessPosition) {
   if (kingposition >= 61 || (kingposition>=56 && kingposition<=58)) {
     AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 7] +=200
     AI.PIECE_SQUARE_TABLES_APERTURE[0][kingposition - 7] +=200
-    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 8] +=40
-    AI.PIECE_SQUARE_TABLES_APERTURE[0][kingposition - 8] +=40
+    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 8] +=120
+    AI.PIECE_SQUARE_TABLES_APERTURE[0][kingposition - 8] +=120
     AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 9] +=200
     AI.PIECE_SQUARE_TABLES_APERTURE[0][kingposition - 9] +=200
 
