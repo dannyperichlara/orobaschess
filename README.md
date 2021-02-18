@@ -1,9 +1,9 @@
 # Orobas Chess AI
 v1.1.0
 
-Orobas is a chess engine A.I. created in 2020 using only javascript. The move generator is an old but beautifully written javascript project from @kbjorklu (https://github.com/kbjorklu/chess).
+Orobas is a Chess AI created in 2020 using pure javascript. The move generator is an old but beautifully written javascript project from @kbjorklu (https://github.com/kbjorklu/chess).
 
-Orobas is a Shanon's Type-B A.I. based on these human thinking ideas:
+Orobas is a Shanon's Type-B AI (https://www.chessprogramming.org/Type_B_Strategy) based on these ideas:
 
 1. Positional moves are evaluated diligently only at the first one or two plies for every piece. Chess maneuvers of 3 or more moves are very rare.
 2. Depth is important only if we are counting moves. So, a deep analysis must be made only in case of tactic moves (ie. checks, captures, promotions, pinning moves, erratic moves from the opponent, etc.).
