@@ -21,7 +21,7 @@ let totaldepth = 20
 //20->2894
 
 // Math.seedrandom((new Date()).toTimeString())
-let random = 40
+let random = 100
 
 let phase = 1
 let htlength = 1e8
@@ -423,7 +423,7 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
   let defendedpawns = 0
 
 
-  if (phase > 1/* && iteration <= 4*/) {
+  if (phase > 1 && iteration <= 2) {
       mobility = AI.getMobility(chessPosition, color) - AI.getMobility(chessPosition, !color)
       defendedpawns = AI.getDefendedPawns(chessPosition, color) - AI.getDefendedPawns(chessPosition, !color)
   }
@@ -452,7 +452,9 @@ AI.getDefendedPawns = function(chessPosition, color) {
 
   let protectedpawns = mask.and(pawns).popcnt()
 
-  return 80 * protectedpawns
+  let protectedvalues = [0,10, 40, 20,-10, -20,-40,-80]
+
+  return protectedvalues[protectedpawns]
 }
 
 AI.getBadBishops = function(chessPosition, color) {
@@ -896,9 +898,10 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
     if (!isCapture) noncaptures++
 
+    //Positional pruning (name???????)
     if (depth > 2 && isPositional && noncaptures > 4) continue
 
-    // if (chessPosition.movenumber == 1 && i > 0) continue // CHEQUEA ORDENB PSQT
+    // if (chessPosition.movenumber == 1 && i > 0) continue // CHEQUEA ORDEN PSQT
 
     //REDUCTIONS (LMR)
 
@@ -1101,9 +1104,9 @@ AI.createPSQT = function (chessPosition) {
       0,  0,  0,  0,  0,  0,  0,  0,
       0,  0,  0,120,120,  0,  0,  0, 
       0,  0,  0,100,100,  0,  0,  0,
-      0,  0,  0, 80, 80,  0,  0,  0,
-      0,  0, 40, 60, 60,  0,  0,  0,
-      0,  0, 20, 20, 20,  0,  0,  0,
+      0,  0,  0, 80, 80,  0,-80,-80,
+      0,  0, 40, 60, 60,  0,-80,-80,
+      0,  0, 20, 20, 20,-120,-80,  0,
      60, 60,-40,-40,-40, 60,120, 60,
       0,  0,  0,  0,  0,  0,  0,  0,
       ],
