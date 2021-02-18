@@ -1,6 +1,21 @@
 var express = require('express')
 var cors = require('cors')
 var app = express()
+// const fs = require("fs");
+
+// const ChessTools = require('chess-tools');
+// const OpeningBook = ChessTools.EPD
+// const book = new OpeningBook();
+// const fen = "rnbqkbnr/pppp1ppp/8/4p3/8/8/PPPPPPPP/RNBQKBNR w KQkq";
+// const EPD_FILE_PATH = process.cwd() + "/perfect2017.epd"
+// stream = fs.createReadStream(EPD_FILE_PATH)
+
+// stream.on('open', function () {
+//   // This just pipes the read stream to the response object (which goes to the client)
+//   stream.pipe(res);
+// });
+
+// book.load_stream(stream);
 
 // Parse URL-encoded bodies (as sent by HTML forms)
 app.use(express.urlencoded());
@@ -21,6 +36,7 @@ app.get('/', function (req, res) {
   let chessPosition = new Chess.Position()
   
     if (req.query.fen) {
+
         let fen = req.query.fen.split(' ')
 
         let board = fen[0]

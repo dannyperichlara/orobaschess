@@ -21,7 +21,7 @@ let totaldepth = 20
 //20->2894
 
 // Math.seedrandom((new Date()).toTimeString())
-let random = 50
+let random = 40
 
 let phase = 1
 let htlength = 1e8
@@ -423,7 +423,7 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
   let defendedpawns = 0
 
 
-  if (phase > 1 && iteration <= 4) {
+  if (phase > 1/* && iteration <= 4*/) {
       mobility = AI.getMobility(chessPosition, color) - AI.getMobility(chessPosition, !color)
       defendedpawns = AI.getDefendedPawns(chessPosition, color) - AI.getDefendedPawns(chessPosition, !color)
   }
@@ -651,7 +651,7 @@ AI.sortMoves = function(moves, turn, ply, chessPosition, ttEntry, pvMoveValue) {
       move.bvalue = bvalue
     }
 
-    move.psqtvalue = AI.PIECE_SQUARE_TABLES[piece][turn == 0? 56^to : to]
+    move.psqtvalue = AI.PIECE_SQUARE_TABLES[piece][turn === 0? 56^to : to]
 
   }
 
@@ -873,7 +873,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   
   let staticeval = AI.evaluate(chessPosition, hashkey, pvNode)
 
-  //Reverse Futility pruning ????????
+  //Reverse Futility pruning
   if (!incheck && depth <= 3 && staticeval - 600 >= beta) {
     return staticeval - 600
   }
@@ -892,8 +892,11 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     let E = 0
 
     let isCapture = move.isCapture()
+    let isPositional = move.getKind() === 0 && !incheck
 
     if (!isCapture) noncaptures++
+
+    if (depth > 2 && isPositional && noncaptures > 4) continue
 
     // if (chessPosition.movenumber == 1 && i > 0) continue // CHEQUEA ORDENB PSQT
 
@@ -901,8 +904,10 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
     if (!incheck) {
       if (pvNode) {
+        //stockfish
         R += Math.log(depth+1)*Math.log(i+1)/1.95
       } else {
+        //fruit
         R += Math.sqrt(depth+1) + Math.sqrt(i+1)
       }
     }
@@ -1094,25 +1099,25 @@ AI.createPSQT = function (chessPosition) {
   // Pawn
       [ 
       0,  0,  0,  0,  0,  0,  0,  0,
-     80, 80, 80, 80, 80, 80, 80, 80, 
-     60, 40, 20, 50, 50, 20, 40, 60, 
-     10,  0,  0, 40, 40,  0,  0, 20, 
-    -20,-20, 10, 30, 30, 10,-40,-20, 
-     20, 20, 10, 10, 10,-10, 20, 20, 
-     20, 20,  0,-20,-20, 50, 50, 20,
-      0,  0,  0,  0,  0,  0,  0,  0
+      0,  0,  0,120,120,  0,  0,  0, 
+      0,  0,  0,100,100,  0,  0,  0,
+      0,  0,  0, 80, 80,  0,  0,  0,
+      0,  0, 40, 60, 60,  0,  0,  0,
+      0,  0, 20, 20, 20,  0,  0,  0,
+     60, 60,-40,-40,-40, 60,120, 60,
+      0,  0,  0,  0,  0,  0,  0,  0,
       ],
 
       // Knight
       [ 
     -100,-20,-20,-20,-20,-20,-20,-100,
-    -100,  0,  0,  0,  0,  0,  0,-100,
-    -100,  0, 20, 20, 20, 20,  0,-100,
-    -100,  0, 40, 40, 40, 40,  0,-100,
-    -100,  0, 40, 40, 40, 40,  0,-100,
-    -100,  0, 20, 20, 20, 20,  0,-100,
-    -100,  0,  0, 20, 20,  0,  0,-100,
-    -100,-80,-20,-40,-40,-20,-80,-100,
+    -100,-20,-20,-20,-20,-20,-20,-100,
+    -100,-20,-20,-20,-20,-20,-20,-100,
+    -100,-20,-20,-20,-20,-20,-20,-100,
+    -100,-20,-20,-20,-20,-20,-20,-100,
+    -100,-20, 60,-80,-80, 60, 20,-100,
+    -100,-20,-20, 20, 20,-20,-20,-100,
+    -100,-80,-80,-80,-80,-80,-80,-100,
       
       ],
       // Bishop
@@ -1120,22 +1125,22 @@ AI.createPSQT = function (chessPosition) {
       0,  0,  0,  0,  0,  0,  0,  0,
       0,  0,  0,  0,  0,  0,  0,  0,
       0,  0,  0,  0,  0,  0,  0,  0,
-      0,  0,  0, 40, 40,  0,  0,  0,
-      0,  0, 40, 40, 40, 40,  0,  0,
+      0, 20,  0,  0,  0,  0, 20,  0,
+      0,  0, 40,  0,  0, 40,  0,  0,
     -40, 40,-20,-20,-20,-20, 20,-40,
-      0, 40,  0, 20, 20,  0, 40,  0,
+      0,120,  0, 20, 20,  0,120,  0,
       0,  0,-80,  0,  0,-80,  0,  0,
     ],
     // Rook
     [ 
-     40, 40, 40, 40, 40, 40, 40, 40,
-     30, 30, 30, 30, 30, 30, 30, 30,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
       0,  0,-20,-20,-20,-20,  0,  0,
       0,  0,-20,-20,-20,-20,  0,  0,
       0,  0,-20,-20,-20,-20,  0,  0,
-    -80,  0,-20,-20,-20,-20,  0,-80,
-    -40,  0,  0,  0,  0,  0,  0,-40,
-    -20,-20, -20, 40, 40, 20,-60,-20,
+    -80,  0,-20,-20,-20,-20,  0,  0,
+    -40,-20, -20,-20,-20,-20,-20,-80,
+    -20,-20, -20, 80, 80, 60,-80,-60,
     ],
 
     // Queen
@@ -1147,7 +1152,7 @@ AI.createPSQT = function (chessPosition) {
       -20,-20,-20,-20,-20,-20,-20,-20,
       -20,-20,-20, 10, 10,-20,-20,-20,
         0,  0, 10, 10,-10,  0,  0,  0,
-        0,  0,  0,-10,  0,  0,  0,  0,
+      -60,-40,-20,-10,-20,-30,-40,-60,
     ],
 
     // King
@@ -1159,7 +1164,7 @@ AI.createPSQT = function (chessPosition) {
       -90,-90,-90,-90,-90,-90,-90,-90, 
       -90,-90,-90,-90,-90,-90,-90,-90,
       -50,-50,-50,-50,-50,-80, 20,  0,
-      -50,-20,-40,-80,-20,-30,100, 50
+      -50,-20,-40,-80,-20,-30,120, 50
 
     ]
   ]
@@ -1715,7 +1720,7 @@ AI.getPV = function (chessPosition, length) {
     let hashkey = chessPosition.hashKey.getHashKey()
     ttEntry = AI.ttGet(hashkey)
 
-    if (ttEntry/* && ttEntry.depth > 0*/) {
+    if (ttEntry && ttEntry.depth > 0) {
       let moves = chessPosition.getMoves(false, false).filter(move=>{
         return move.value === ttEntry.move.value
       })
