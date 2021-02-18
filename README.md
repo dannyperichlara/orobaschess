@@ -9,7 +9,7 @@ Orobas is a Shanon's Type-B A.I. based on these human thinking ideas:
 2. Depth is important only if we are counting moves. So, a deep analysis must be made only in case of tactic moves (ie. checks, captures, promotions, pinning moves, erratic moves from the opponent, etc.).
 3. Human analysis of chess positions is mostly based on the recognition of patterns. The next step in Orobas is to capture the sense of intuitiveness by adding an extra layer of analysis based on pattern recognition using machine learning.
 
-With Orobas I'm not looking for playing better than other chess engines; not even to play better than humans. The main goal of Orobas is to play LIKE humans do; this doesn't mean blunder by randomness once in a while; this means that if the engine eventually make mistakes, they emerge from the analysis the same way that mistakes emerge from the human thinking process, and not by programming it.
+With Orobas I'm not trying to create an AI that plays better than other chess engines nor even better than humans. The main goal of Orobas is to play LIKE humans do; this doesn't mean blunder by randomness once in a while; this means that if the engine eventually make mistakes, it's because they emerge from the analysis, the same way that mistakes emerge from the human thinking process, and not by programming it.
 
 The main goal is to achieve the maximum ELO at the least depth possible. The opposite of what AIs like Stockfish, Komodo or Alpha Zero do. Betters moves; not more moves.
 
@@ -41,7 +41,7 @@ The main goal is to achieve the maximum ELO at the least depth possible. The opp
 * **History heuristic, only applied to the actual move**, with negative values on low-fails, and valuation not based on depth.
 * **Piece-Square-Table for the opening**, with the obvious moves. The idea is to achieve one move per-piece at the opening the same ways that humans do: Moving the obvious piece to the obvious place.
 * **A maximum depth of 20** (according to Magnus Carlsen, the maximum number of moves he can see ahead).
-* Limiting the number of moves that the engine can see in long road. The idea is to emulate human thinking again. How many times a knight will move continously at the midgame? ¿10 times? No. Grandmasters can see a lot of moves ahead, but actually these moves are a combination of a few possible moves that are in front of their heads: one or two moves per piece; eventually a third move, but no more than that.
-* Analysis of common patterns (not implemented yet). The idea is to evaluate positions based on common patterns like 6P1/5PBP/6K1L; humans recognize very quickly positions they're familiar with, even if they are not exactly the same.
+* **Limiting the number of moves that the engine can see ahead** in long road (in development). The idea is to emulate human thinking again. How many times a knight will move continously at the midgame? ¿10 times? No. Grandmasters can see a lot of moves ahead, but actually these moves are a combination of a few possible moves that are in front of their heads: one or two moves per piece; eventually a third move, but no more than that.
+* **Analysis of common patterns** (not implemented yet). The idea is to evaluate positions based on common patterns like 6P1/5PBP/6K1L; humans recognize very quickly positions they're familiar with, even if they are not exactly the same.
 
 
