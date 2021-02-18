@@ -21,10 +21,10 @@ let totaldepth = 20
 //20->2894
 
 // Math.seedrandom((new Date()).toTimeString())
-let random = 0
+let random = 50
 
 let phase = 1
-let htlength = 1 << 26
+let htlength = 1e8
 let reduceHistoryFactor = 1 //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
 let mindepth =  2
 let secondspermove = 3
@@ -420,12 +420,12 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
   let pawnsqt = 0
   let mobility = 0
   let badbishops = 0
-  let pawnstructure = 0
+  let defendedpawns = 0
 
 
   if (phase > 1 && iteration <= 4) {
       mobility = AI.getMobility(chessPosition, color) - AI.getMobility(chessPosition, !color)
-      pawnstructure = AI.getPawnStructure(chessPosition, color) - AI.getPawnStructure(chessPosition, !color)
+      defendedpawns = AI.getDefendedPawns(chessPosition, color) - AI.getDefendedPawns(chessPosition, !color)
   }
 
   psqt = AI.getPieceSquareValue(chessPosition, color) - AI.getPieceSquareValue(chessPosition,  !color)
@@ -438,7 +438,7 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
 
   
 
-  let score = material + psqt + mobility + pawnstructure// + (phase === 1? 120 : 80) * pawnsqt - 10 * badbishops
+  let score = material + psqt + mobility + defendedpawns// + (phase === 1? 120 : 80) * pawnsqt - 10 * badbishops
 
   // AI.evaltable[hashkey % htlength] = {score, n: chessPosition.movenumber}
   
@@ -446,7 +446,7 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
 
 }
 
-AI.getPawnStructure = function(chessPosition, color) {
+AI.getDefendedPawns = function(chessPosition, color) {
   let pawns = chessPosition.getPieceColorBitboard(Chess.Piece.PAWN, color).dup()
   let mask = Chess.Position.makePawnAttackMask(color, pawns).dup()
 
@@ -651,7 +651,7 @@ AI.sortMoves = function(moves, turn, ply, chessPosition, ttEntry, pvMoveValue) {
       move.bvalue = bvalue
     }
 
-    move.psqtvalue = AI.PIECE_SQUARE_TABLES[piece][to]
+    move.psqtvalue = AI.PIECE_SQUARE_TABLES[piece][turn == 0? 56^to : to]
 
   }
 
@@ -737,7 +737,7 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
     return alpha
 }
 
-AI.ttSave = function (hashkey, score, flag, depth, move) {
+AI.ttSave = async function (hashkey, score, flag, depth, move) {
   AI.hashtable[hashkey % htlength] = {
     hashkey,
     score,
@@ -757,7 +757,7 @@ AI.ttGet = function (hashkey) {
   }
 }
 
-AI.reduceHistory = function () {
+AI.reduceHistory = async function () {
   for (let color = 0; color < 2; color++) {
     for (let piece = 0; piece < 6; piece++) {      
       for (let to = 0; to < 64; to++) {
@@ -767,7 +767,7 @@ AI.reduceHistory = function () {
   }
 }
 
-AI.saveHistory = function(turn, move, value) {
+AI.saveHistory = async function(turn, move, value) {
   //according to The_Relative_History_Heuristic.pdf, no much difference if it's 1 or 1 << depth
   if (move.isCapture()) return
 
@@ -833,8 +833,8 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     
     if (ttEntry.flag === 0) {
       //No exact score because PSQTs change
-      return ttEntry.score
-      // alpha = ttEntry.score
+      // return ttEntry.score
+      alpha = ttEntry.score
     } else if (ttEntry.flag === -1) {
       if (ttEntry.score > alpha) alpha = ttEntry.score
     } else if (ttEntry.flag === 1) {
@@ -895,10 +895,16 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
     if (!isCapture) noncaptures++
 
+    // if (chessPosition.movenumber == 1 && i > 0) continue // CHEQUEA ORDENB PSQT
+
     //REDUCTIONS (LMR)
 
     if (!incheck) {
-      R += Math.log(depth+1) * Math.log(i + 1) / 1.95
+      if (pvNode) {
+        R += Math.log(depth+1)*Math.log(i+1)/1.95
+      } else {
+        R += Math.sqrt(depth+1) + Math.sqrt(i+1)
+      }
     }
 
     //History pruning & reduction (no funciona, ralentiza)
@@ -914,8 +920,9 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     //   }
     // }
 
-    let near2mate = alpha > AI.PIECE_VALUES[4] || beta < -AI.PIECE_VALUES[4]
+    let near2mate = alpha > 2*AI.PIECE_VALUES[4] || beta < -2*AI.PIECE_VALUES[4]
 
+    
     /*futility pruning */
     if (!near2mate && !incheck && 1 < depth && depth <= 3+R && i >= 1) {
       if (staticeval + 600*depth <= alpha) {
@@ -1660,7 +1667,7 @@ AI.PSQT2Sigmoid = function () {
   // console.log(AI.PIECE_SQUARE_TABLES)
 }
 
-AI.setphase = function (chessPosition) {
+AI.setphase = async function (chessPosition) {
   phase = 1 //Apertura
   let color = chessPosition.getTurnColor()
 
