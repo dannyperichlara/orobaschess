@@ -1098,7 +1098,7 @@ AI.bin2map = function(bin, color) {
 AI.createPSQT = function (chessPosition) {
   console.log('CREATE PSQT')
 
-  let bm = -200 //badmove
+  let bm = -100 //badmove
 
   AI.PIECE_SQUARE_TABLES_APERTURE = [
   // Pawn
