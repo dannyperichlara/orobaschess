@@ -423,7 +423,7 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
   let defendedpawns = 0
 
 
-  if (phase > 1 && iteration <= 2) {
+  if (iteration <= 4) {
       mobility = AI.getMobility(chessPosition, color) - AI.getMobility(chessPosition, !color)
       defendedpawns = AI.getDefendedPawns(chessPosition, color) - AI.getDefendedPawns(chessPosition, !color)
   }
@@ -452,7 +452,7 @@ AI.getDefendedPawns = function(chessPosition, color) {
 
   let protectedpawns = mask.and(pawns).popcnt()
 
-  let protectedvalues = [0,10, 40, 20,-10, -20,-40,-80]
+  let protectedvalues = [0,20, 40, 20,-10, -20,-40,-80]
 
   return protectedvalues[protectedpawns]
 }
@@ -899,7 +899,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     if (!isCapture) noncaptures++
 
     //Positional pruning (name???????)
-    if (depth > 2 && isPositional && noncaptures > 4) continue
+    if (depth > 4 && isPositional && noncaptures > 4) continue
 
     // if (chessPosition.movenumber == 1 && i > 0) continue // CHEQUEA ORDEN PSQT
 
@@ -1098,76 +1098,78 @@ AI.bin2map = function(bin, color) {
 AI.createPSQT = function (chessPosition) {
   console.log('CREATE PSQT')
 
+  let bm = -200 //badmove
+
   AI.PIECE_SQUARE_TABLES_APERTURE = [
   // Pawn
       [ 
-      0,  0,  0,  0,  0,  0,  0,  0,
-      0,  0,  0,120,120,  0,  0,  0, 
-      0,  0,  0,100,100,  0,  0,  0,
-      0,  0,  0, 80, 80,  0,-80,-80,
-      0,  0, 40, 60, 60,  0,-80,-80,
-      0,  0, 20, 20, 20,-120,-80,  0,
-     60, 60,-40,-40,-40, 60,120, 60,
-      0,  0,  0,  0,  0,  0,  0,  0,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm,120,120, bm, bm, bm, 
+     bm, bm, bm,100,100, bm, bm, bm,
+     bm, bm, bm, 80, 80, bm,-80,-80,
+     bm, bm, 40, 60, 60, bm,-80,-80,
+     bm, bm, 20, 40, 40,-120,-80,bm,
+     60, 60,-40,-60,-40, 60,120, 60,
+     bm, bm, bm, bm, bm, bm, bm, bm,
       ],
 
       // Knight
       [ 
-    -100,-20,-20,-20,-20,-20,-20,-100,
-    -100,-20,-20,-20,-20,-20,-20,-100,
-    -100,-20,-20,-20,-20,-20,-20,-100,
-    -100,-20,-20,-20,-20,-20,-20,-100,
-    -100,-20,-20,-20,-20,-20,-20,-100,
-    -100,-20, 60,-80,-80, 60, 20,-100,
-    -100,-20,-20, 20, 20,-20,-20,-100,
-    -100,-80,-80,-80,-80,-80,-80,-100,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, 40, 40, bm, bm, bm,
+     bm, bm, 60, bm, bm, 60, 20, bm,
+     bm, bm, bm, 60, 60, bm, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
       
       ],
       // Bishop
     [ 
-      0,  0,  0,  0,  0,  0,  0,  0,
-      0,  0,  0,  0,  0,  0,  0,  0,
-      0,  0,  0,  0,  0,  0,  0,  0,
-      0, 20,  0,  0,  0,  0, 20,  0,
-      0,  0, 40,  0,  0, 40,  0,  0,
-    -40, 40,-20,-20,-20,-20, 20,-40,
-      0,120,  0, 20, 20,  0,120,  0,
-      0,  0,-80,  0,  0,-80,  0,  0,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, 20, bm, bm, bm, bm, 20, bm,
+     bm, bm, 60, bm, bm, 60, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, 80, bm, 20, 20, bm, 80, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
     ],
     // Rook
     [ 
-      0,  0,  0,  0,  0,  0,  0,  0,
-      0,  0,  0,  0,  0,  0,  0,  0,
-      0,  0,-20,-20,-20,-20,  0,  0,
-      0,  0,-20,-20,-20,-20,  0,  0,
-      0,  0,-20,-20,-20,-20,  0,  0,
-    -80,  0,-20,-20,-20,-20,  0,  0,
-    -40,-20, -20,-20,-20,-20,-20,-80,
-    -20,-20, -20, 80, 80, 60,-80,-60,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, 80, 80, 60, bm, bm,
     ],
 
     // Queen
     [ 
-      -20,-20,-20,-20,-20,-20,-20,-20,
-      -20,-20,-20,-20,-20,-20,-20,-20,
-      -20,-20,-20,-20,-20,-20,-20,-20,
-      -20,-20,-20,-20,-20,-20,-20,-20,
-      -20,-20,-20,-20,-20,-20,-20,-20,
-      -20,-20,-20, 10, 10,-20,-20,-20,
-        0,  0, 10, 10,-10,  0,  0,  0,
-      -60,-40,-20,-10,-20,-30,-40,-60,
+      bm, bm, bm, bm, bm, bm, bm, bm,
+      bm, bm, bm, bm, bm, bm, bm, bm,
+      bm, bm, bm, bm, bm, bm, bm, bm,
+      bm, bm, bm, bm, bm, bm, bm, bm,
+      bm, bm, bm, bm, bm, bm, bm, bm,
+      bm, bm, bm, 10, 10, bm, bm, bm,
+      bm, bm, 10, 10, bm, bm, bm, bm,
+      bm, bm, bm, bm, bm, bm, bm, bm,
     ],
 
     // King
     [ 
-      -90,-90,-90,-90,-90,-90,-90,-90,
-      -90,-90,-90,-90,-90,-90,-90,-90,
-      -90,-90,-90,-90,-90,-90,-90,-90,
-      -90,-90,-90,-90,-90,-90,-90,-90,
-      -90,-90,-90,-90,-90,-90,-90,-90, 
-      -90,-90,-90,-90,-90,-90,-90,-90,
-      -50,-50,-50,-50,-50,-80, 20,  0,
-      -50,-20,-40,-80,-20,-30,120, 50
+       bm, bm, bm, bm, bm, bm, bm, bm,
+       bm, bm, bm, bm, bm, bm, bm, bm,
+       bm, bm, bm, bm, bm, bm, bm, bm,
+       bm, bm, bm, bm, bm, bm, bm, bm,
+       bm, bm, bm, bm, bm, bm, bm, bm, 
+       bm, bm, bm, bm, bm, bm, bm, bm,
+       bm, bm, bm, bm, bm, bm, bm, bm,
+       bm, bm, 20, bm, bm, bm,120, 50
 
     ]
   ]
@@ -1240,12 +1242,12 @@ AI.createPSQT = function (chessPosition) {
 
   //Castiga captura y maniobras con peón frontal del rey
   if (kingposition >= 61 || (kingposition>=56 && kingposition<=58)) {
-    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 7] +=200
-    AI.PIECE_SQUARE_TABLES_APERTURE[0][kingposition - 7] +=200
+    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 7] +=160
+    AI.PIECE_SQUARE_TABLES_APERTURE[0][kingposition - 7] +=160
     AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 8] +=120
     AI.PIECE_SQUARE_TABLES_APERTURE[0][kingposition - 8] +=120
-    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 9] +=200
-    AI.PIECE_SQUARE_TABLES_APERTURE[0][kingposition - 9] +=200
+    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 9] +=160
+    AI.PIECE_SQUARE_TABLES_APERTURE[0][kingposition - 9] +=160
 
     AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 15] -=100
     AI.PIECE_SQUARE_TABLES_APERTURE[0][kingposition - 15] -=100
@@ -1262,12 +1264,12 @@ AI.createPSQT = function (chessPosition) {
   //Caballos al centro
   AI.PIECE_SQUARE_TABLES_MIDGAME[1] = [
     -100,-100,-100,-100,-100,-100,-100,-100,
-    -100,   0,   0,   0,   0,   0,   0,-100,
-    -100,   0,  40,  40,  40,  40,   0,-100,
-    -100,   0,  40,  40,  40,  40,   0,-100,
-    -100,   0,  40,  40,  40,  40,   0,-100,
-    -100,   0,  40,  40,  40,  40,   0,-100,
-    -100,   0,   0,   0,   0,   0,   0,-100,
+    -100, -80, -80, -80, -80, -80, -80,-100,
+    -100, -60,   0,   0,   0,   0, -60,-100,
+    -100, -60,   0,   0,   0,   0, -60,-100,
+    -100, -60,  40,  40,  40,  40, -60,-100,
+    -100, -60,  40,  40,  40,  40, -60,-100,
+    -100, -60, -60,   0,   0, -60, -60,-100,
     -100,-100,-100,-100,-100,-100,-100,-100,
   ]
 
