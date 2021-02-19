@@ -65,8 +65,8 @@ app.get('/', function (req, res) {
   })
 });
 
-app.listen(3011, function () {
-  console.log('Example app listening on port 3011!');
+app.listen(3667, function () {
+  console.log('Example app listening on port 3667!');
 });
 
 let fen2bitboards = function (board) {

@@ -21,7 +21,7 @@ let totaldepth = 20
 //20->2894
 
 // Math.seedrandom((new Date()).toTimeString())
-let random = 100
+let random = 0
 
 let phase = 1
 let htlength = 1e8
@@ -441,7 +441,6 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
   let score = material + psqt + mobility + defendedpawns// + (phase === 1? 120 : 80) * pawnsqt - 10 * badbishops
 
   // AI.evaltable[hashkey % htlength] = {score, n: chessPosition.movenumber}
-  
   return score
 
 }
@@ -850,7 +849,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
   
   //IID (for ordering moves)
-  if (!ttEntry && depth >= 4) {
+  if (!ttEntry && depth >= 2) {
     AI.PVS(chessPosition, alpha, beta, depth - 2, ply)
     ttEntry = AI.ttGet(hashkey)
   }
@@ -898,13 +897,17 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
     if (!isCapture) noncaptures++
 
-    //Positional pruning (name???????)
-    if (depth > 4 && isPositional && noncaptures > 4) continue
-
+    
     // if (chessPosition.movenumber == 1 && i > 0) continue // CHEQUEA ORDEN PSQT
+    
+    //Positional pruning (name???????)
+    if (depth > 4 && isPositional && noncaptures > 4) {
+      //console.log('PR')
+      continue
+    }
 
     //REDUCTIONS (LMR)
-
+    
     if (!incheck) {
       if (pvNode) {
         //stockfish
@@ -914,15 +917,13 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
         R += Math.sqrt(depth+1) + Math.sqrt(i+1)
       }
     }
+    
 
     //History pruning & reduction (no funciona, ralentiza)
-    // if (!incheck && !pvNode && noncaptures > 5) {
+    // if (!incheck && !pvNode && noncaptures > 4) {
     //   let hscore = AI.history[turn][move.getPiece()][move.getTo()]
-    //   if (hscore < 500 && depth > R) {
-    //     R++
-    //   }
       
-    //   if (hscore < 0 && noncaptures > 10) {
+    //   if (hscore < 0) {
     //     // console.log(hscore)
     //     continue
     //   }
@@ -942,11 +943,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
       legal++
 
 
-      //LMP      
-      // if (!isCapture && i > 400/depth && iteration > 4) {
-      //   chessPosition.unmakeMove()
-      //   continue
-      // }
+      
 
       //EXTENSIONS
       if (incheck && depth < 3 && pvNode) {
@@ -967,7 +964,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
       chessPosition.unmakeMove()
       nodes++
 
-      if (AI.stop) return alpha
+      // if (AI.stop) return alpha
       // if (AI.stop) return alphaOrig
 
 
@@ -992,9 +989,12 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
           AI.ttSave(hashkey, score, 1, depth, move) //Sí, probado
           AI.saveHistory(turn, move, 1)
 
+          //Traspaso directo de PV destraba posiciones y evita blunders
+          //(ej. rnr3k1/p2bbppp/4pn2/6N1/2q1N2Q/4P3/PB3PPP/R4RK1 b - - 1 16)
+          //AI.PV[ply] = move //testear
             
           alpha = score
-          //AI.PV[ply] = move //No aporta
+
         }       
 
         bestscore = score
@@ -1098,7 +1098,7 @@ AI.bin2map = function(bin, color) {
 AI.createPSQT = function (chessPosition) {
   console.log('CREATE PSQT')
 
-  let bm = -100 //badmove
+  let bm = -60 //badmove
 
   AI.PIECE_SQUARE_TABLES_APERTURE = [
   // Pawn
@@ -1109,7 +1109,7 @@ AI.createPSQT = function (chessPosition) {
      bm, bm, bm, 80, 80, bm,-80,-80,
      bm, bm, 40, 60, 60, bm,-80,-80,
      bm, bm, 20, 40, 40,-120,-80,bm,
-     60, 60,-40,-60,-40, 60,120, 60,
+     60, 60,-40,-60,-40,  60,120,60,
      bm, bm, bm, bm, bm, bm, bm, bm,
       ],
 
@@ -1120,8 +1120,8 @@ AI.createPSQT = function (chessPosition) {
      bm, bm, bm, bm, bm, bm, bm, bm,
      bm, bm, bm, bm, bm, bm, bm, bm,
      bm, bm, bm, 40, 40, bm, bm, bm,
-     bm, bm, 60, bm, bm, 60, 20, bm,
-     bm, bm, bm, 60, 60, bm, bm, bm,
+     bm, bm, 60, bm, bm, 60, bm, bm,
+     bm, bm, bm, 20, 20, bm, bm, bm,
      bm, bm, bm, bm, bm, bm, bm, bm,
       
       ],
