@@ -43,7 +43,7 @@ The main goal is to achieve the maximum ELO at the least depth possible. The opp
 * Recognize the areas of the pawn structures when the action is going on, in order to achieve a better piece coordination 
 
 ### Orobas main ideas
-* **Positional moves pruning**. If the pre-processor is complex enough and well tuned, the best positional move won't require a deep depth analysis (Capablanca once said "I see only one move ahead, but it is always the correct one"). The main idea is not to move a piece because the evaluation function return a good score 20 plies ahead, but because it's very likely, given the experience and previuos knowledge, that this move will give an advantage to the plater later in the game. Human intuition, even if the move it's a blunder.
+* **Positional moves pruning**. If the pre-processor is complex enough and well tuned, the best positional move won't require a deep depth analysis (Capablanca once said "I see only one move ahead, but it is always the correct one"). The main idea is not to move a piece because the evaluation function return a good score 20 plies ahead, but because it's very likely, given the experience and previuos knowledge, that this move gives an advantage later in the game. Human intuition, even if the move it's a blunder.
 * **History heuristic, only applied to the actual move**, with negative values on low-fails, and valuation not based on depth.
 * **Piece-Square-Table for the opening**, with the obvious moves. The idea is to achieve one move per-piece at the opening the same ways that humans do: Moving the obvious piece to the obvious place.
 * **A maximum depth of 20** (according to Magnus Carlsen, 20 is the maximum number of moves he can see ahead).
