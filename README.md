@@ -22,26 +22,32 @@ The main goal is to achieve the maximum ELO at the least depth possible. The opp
 * Extensions when king is in check
 * Futile pruning
 * Delta pruning on Quiescense Search
-* Reverse futility pruning (soft implementation of the null-move observation pruning)
-* Pre-processed Piece Square Tables (PSQT) for the opening, midgame and endgame
-* Mobility analysis, limited to first moves
-* General pawn structure analysis, limited to first moves
-* Material evaluation
+* Reverse futility pruning (soft implementation of the null-move pruning)
+* Pre-processed Piece Square Tables (PSQT) at the begining of every search; there are 3 PSQTs, for the opening, midgame and endgame
+* Mobility analysis, limited only to first plies
+* General pawn structure analysis, limited only to first plies
+* Material evaluation, including valuation of pieces asymmetry
 * History heuristic, only applied to the actual position. No need for killer moves.
-* Move ordering (hash moves, MVV-LVA, history and PSQT)
+* Move ordering (hash moves, good captures (MVV-LVA), history, PSQT & bad captures)
 * Trasposition table with no exact scores (because PSQT change from move to move)
 * Iterative deepening
-* Internal Iterative deepening
-* Phase detector with no tapered evaluation
-* Principal variation generator
+* Internal Iterative deepening for reordering moves
+* Phase detector without tapered eval
 * History reduction (actually set to 100%)
 
+### To Do
+* Passed/doubled/hanging pawns detection
+* Improve king safety
+* Tuning of parameters
+* Recognition/valuation of popular pawn structures (like Maroczy Bind or Benoni's)
+* Recognize the areas of the pawn structures when the action is going on, in order to achieve a better piece coordination 
+
 ### Orobas main ideas
-* **Positional moves pruning**. If the pre-processor is complex enough and well tuned, the best positional move won't require a deep depth analysis (Capablanca once said "I see only one move ahead, but it is always the correct one"). The main idea is not to move a piece because it will be generate an advantage 48 plies ahead, but because it's very likely, given the experience and previuos knowledge, that this move will give me an advantage later. When? We don't know, and that's not a problem.  It's human intuition, even if this move it's a blunder.
+* **Positional moves pruning**. If the pre-processor is complex enough and well tuned, the best positional move won't require a deep depth analysis (Capablanca once said "I see only one move ahead, but it is always the correct one"). The main idea is not to move a piece because the evaluation function return a good score 20 plies ahead, but because it's very likely, given the experience and previuos knowledge, that this move will give an advantage to the plater later in the game. Human intuition, even if the move it's a blunder.
 * **History heuristic, only applied to the actual move**, with negative values on low-fails, and valuation not based on depth.
 * **Piece-Square-Table for the opening**, with the obvious moves. The idea is to achieve one move per-piece at the opening the same ways that humans do: Moving the obvious piece to the obvious place.
-* **A maximum depth of 20** (according to Magnus Carlsen, the maximum number of moves he can see ahead).
-* **Limiting the number of moves that the engine can see ahead** in long run (now in development). The idea is to emulate human thinking again. How many times a knight will move continously at the midgame? ¿10 times? No. Grandmasters can see a lot of moves ahead, but actually these moves are a combination of a few possible moves that are in front of their heads: one or two continous moves per piece; eventually a third move, but no more than that.
+* **A maximum depth of 20** (according to Magnus Carlsen, 20 is the maximum number of moves he can see ahead).
+* **Limiting the number of moves that the engine can see ahead** in long run (now in development). The idea is to emulate human thinking again. How many times a knight will move continously at the midgame? ¿10 times? No. Grandmasters can see a lot of moves ahead, but actually these moves are a combination of a few possible moves that are in front of their heads: one or two continous moves per piece; eventually a third move, but no more than that (at least in the midgame).
 * **Analysis of common patterns** (not implemented yet). The idea is to evaluate positions based on common patterns like 6P1/5PBP/6K1L; humans recognize very quickly positions they're familiar with, even if they are not exactly the same.
 
 
