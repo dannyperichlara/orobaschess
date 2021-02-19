@@ -14,24 +14,24 @@ The main intention is not to create an AI that plays better than other chess eng
 --------------
 ## Features
 ### Common features
-* Principal Variation Search (negamax + alpha-beta pruning + null window search)
-* Quiescense Search with stand-pat pruning
-* Late move reductions
-* Extensions
-* Futile pruning
-* Delta pruning on Quiescense Search
-* Reverse futility pruning (soft implementation of the null-move pruning)
-* Pre-processed Piece Square Tables (PSQT) at the begining of every search
-* Mobility analysis, limited only to first plies
-* General pawn structure analysis, limited only to first plies
-* Material evaluation, including valuation of pieces asymmetry
+* Principal Variation Search (negamax + alpha-beta pruning + null window search).
+* Quiescense Search with stand-pat pruning.
+* Late move reductions.
+* Extensions.
+* Futile pruning.
+* Delta pruning on Quiescense Search.
+* Reverse futility pruning (soft implementation of the null-move pruning).
+* Pre-processed Piece Square Tables (PSQT) at the begining of every search.
+* Mobility analysis, limited only to first plies.
+* General pawn structure analysis, limited only to first plies.
+* Material evaluation, including valuation of pieces asymmetry (in order to avoid the exchange of 3 pawns for a knight).
 * History heuristic, only applied to the actual position. No need for killer moves.
 * Move ordering based on hash moves, good captures (MVV-LVA), history, PSQT & bad captures.
-* Trasposition table with no exact scores (because PSQT change from move to move)
-* Iterative deepening
-* Internal Iterative deepening for reordering moves
-* Phase detector without tapered eval
-* History reduction (actually set to 100%)
+* Trasposition table with no exact scores (because PSQT change from move to move).
+* Iterative deepening.
+* Internal Iterative deepening for reordering moves.
+* Phase detector without tapered eval.
+* History reduction (actually set to 100%).
 
 ### Orobas main ideas
 * **Positional moves pruning**. If the pre-processor is complex enough and well tuned, the best positional move won't require a deep depth analysis (Capablanca once said "I see only one move ahead, but it is always the correct one"). The main idea is not to move a piece because the evaluation function returns a good score 20 plies ahead, but because it's very likely, given the experience and previuos knowledge, that this move gives an advantage later in the game. Human intuition, even if the move it's a blunder.
