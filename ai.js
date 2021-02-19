@@ -21,7 +21,7 @@ let totaldepth = 20
 //20->2894
 
 // Math.seedrandom((new Date()).toTimeString())
-let random = 0
+let random = 50
 
 let phase = 1
 let htlength = 1e8
