@@ -434,7 +434,7 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
   //pawnsqt = phase < 2? AI.getPawnSquareValue(chessPosition, color) - AI.getPawnSquareValue(chessPosition,  !color) : 0
 
   //https://www.r-bloggers.com/2015/06/big-data-and-chess-what-are-the-predictive-point-values-of-chess-pieces/
-  //material += 60 * (colorMaterial.P - notcolorMaterial.P)
+  material += 60 * (colorMaterial.P - notcolorMaterial.P) //asymmetry of pawns
 
   
 
@@ -898,8 +898,12 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
     if (!isCapture) noncaptures++
 
+    //Late bad captures pruning (name????????)
+    if (isCapture && depth > 6 && move.getPiece() > move.getCapturedPiece() && i > 0) continue
+
     //Positional pruning (name???????)
     if (depth > 4 && isPositional && noncaptures > 4) continue
+
 
     // if (chessPosition.movenumber == 1 && i > 0) continue // CHEQUEA ORDEN PSQT
 
