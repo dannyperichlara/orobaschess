@@ -13,7 +13,6 @@ The main intention is not to create an AI that plays better than other chess eng
 
 --------------
 ## Features
-### Common features
 * Principal Variation Search (negamax + alpha-beta pruning + null window search).
 * Quiescense Search with stand-pat pruning.
 * Late move reductions.
