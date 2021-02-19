@@ -51,4 +51,4 @@ The main intention is not to create an AI that plays better than other chess eng
 * Remove stupid blunders like 1k3b1r/pppb1ppp/4p3/1Nr4n/2P5/1P1P1B1P/P1K2PPB/4R2R b - - 1 21 (in some iterations, the engine sacrifices a knight for nothing)
 * Programming of anti-human and anti-computer strategies
 * Some way to soften the effect of the pre-processor in the hash table in order to avoid jumps in the score.
-* Some way to emulate human focus. For example, suppose that white's king is reasonably safe; suddenly, black makes a greek sacrifice exposing white's king; on the next 2 or 3 moves, the last of white's concerns will be the under-development of rook on a1, because the actual concern is to put the white king in a safe position again.
+* Some way to emulate human focus. For example, the greek gift sacrifice (rnbq1rk1/pppn1ppB/4p3/3pP3/1b1P4/2N2N2/PPP2PPP/R1BQK2R b KQ - 0 7); on the next 2 or 3 moves, the last of black's concerns will be the development of rook on a8, because the actual concern is to put black king in a safe position again.
