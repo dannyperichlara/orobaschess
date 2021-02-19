@@ -46,6 +46,7 @@ The main intention is not to create an AI that plays better than other chess eng
 * Improve king safety
 * Automated tuning of parameters
 * Recognition of en-passant captures from FEN
+* Book openings implementation
 * Recognition/valuation of popular pawn structures (like Maroczy Bind or Benoni's)
 * Recognize the areas of the pawn structures when the action is going on, in order to achieve a better piece coordination
 * Improve move ordering even more
