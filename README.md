@@ -7,7 +7,8 @@ Orobas is a Shanon's Type-B AI (https://www.chessprogramming.org/Type_B_Strategy
 
 1. Positional moves are evaluated diligently only at the first one or two plies for every piece. Chess maneuvers of 3 or more moves are very rare.
 2. Depth is important only if we are counting moves. So, a deep analysis must be made only in case of tactic moves (ie. checks, captures, promotions, pinning moves, etc.).
-3. Human analysis of chess positions is mostly based on the recognition of patterns. The next step in Orobas is to capture the sense of intuitiveness by adding an extra layer of analysis based on pattern recognition.
+3. From 1 & 2, Orobas applies a massive prune of the tree based on the unlikelihood of making certain moves, and not based on the evaluation of the move itself. Although this behaviour is risky, Orobas hasn't show significant differences with these moves pruned or not.
+4. Human analysis of chess positions is mostly based on the recognition of patterns. The next step in Orobas is to capture the sense of intuitiveness by adding an extra layer of analysis based on pattern recognition.
 
 The main intention is not to create an AI that plays better than other chess engines nor even better than humans. The main goal of Orobas is to play LIKE humans do; this doesn't mean blunder by randomness once in a while; this means that if the engine eventually makes mistakes, it's because these errors emerge from the analysis, the same way mistakes emerge from the human thinking process, and not by programming it. The main goal is to achieve the maximum ELO at the least depth possible, the opposite of what engines like Stockfish, Komodo or Alpha Zero do.
 
@@ -24,9 +25,9 @@ The main intention is not to create an AI that plays better than other chess eng
 * Mobility analysis, limited only to first plies.
 * General pawn structure analysis, limited only to first plies.
 * Material evaluation, including valuation of pieces asymmetry (in order to avoid the exchange of 3 pawns for a knight).
-* History heuristic, only applied to the actual position. No need for killer moves.
+* History heuristic, applied only to the actual position. No need for killer moves.
 * Move ordering based on hash moves, good captures (MVV-LVA), history, PSQT & bad captures.
-* Trasposition table with no exact scores (because PSQT change from move to move).
+* Trasposition table with no exact scores (because PSQT change with every move).
 * Iterative deepening.
 * Internal Iterative deepening for reordering moves.
 * Phase detector without tapered eval.
@@ -55,3 +56,4 @@ The main intention is not to create an AI that plays better than other chess eng
 * Some way to soften the effect of the pre-processor in the hash table in order to avoid jumps in the score.
 * Some way to emulate human focus. For example, the greek gift sacrifice (rnbq1rk1/pppn1ppB/4p3/3pP3/1b1P4/2N2N2/PPP2PPP/R1BQK2R b KQ - 0 7); on the next 2 or 3 moves, the last of black's concerns will be the development of rook on a8, because the actual concern is to put black king in a safe position again.
 * Some clever and cheap way to evaluate the loss of castling rights.
+* Implementation of Best Node Search (https://en.wikipedia.org/wiki/Best_node_search)
