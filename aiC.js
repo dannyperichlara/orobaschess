@@ -390,7 +390,7 @@ AI.createTables()
 AI.randomizePSQT = function () {
   Math.seedrandom((new Date()).getTime().toString())
   
-  if (phase === 1) {
+  if (phase < 3) {
     //Sólo de caballo a dama
     for (let i = 1; i < 5; i++) {
       AI.PIECE_SQUARE_TABLES[i] = AI.PIECE_SQUARE_TABLES[i].map(e=>{
@@ -401,7 +401,7 @@ AI.randomizePSQT = function () {
 }
 
 AI.evaluate = function(chessPosition, hashkey, pvNode) {
-  // if (hashkey) {
+  // if (hashkey) { //SIN CAMBIOS IMPORTANTES
   //   let evalentry = AI.evaltable[hashkey % htlength]
 
   //   if (evalentry) {
@@ -421,20 +421,25 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
   let mobility = 0
   let badbishops = 0
   let defendedpawns = 0
-
-
+  
   if (iteration <= 4) {
+    //Al dejar PSQT en iteration<=4, pierde un poco de ELO pero profundiza más
+    //(-10 ELO, 342 juegos a 1 segundo)
+    psqt = AI.getPieceSquareValue(chessPosition, color) - AI.getPieceSquareValue(chessPosition,  !color)
+    
+    if (phase > 1) {
       mobility = AI.getMobility(chessPosition, color) - AI.getMobility(chessPosition, !color)
       defendedpawns = AI.getDefendedPawns(chessPosition, color) - AI.getDefendedPawns(chessPosition, !color)
+
+    }
   }
 
-  psqt = AI.getPieceSquareValue(chessPosition, color) - AI.getPieceSquareValue(chessPosition,  !color)
   //badbishops = AI.getBadBishops(chessPosition, color) - AI.getBadBishops(chessPosition,  !color)
 
   //pawnsqt = phase < 2? AI.getPawnSquareValue(chessPosition, color) - AI.getPawnSquareValue(chessPosition,  !color) : 0
 
   //https://www.r-bloggers.com/2015/06/big-data-and-chess-what-are-the-predictive-point-values-of-chess-pieces/
-  material += 60 * (colorMaterial.P - notcolorMaterial.P) //asymmetry of pawns
+  // material += 50 * (colorMaterial.P - notcolorMaterial.P)
 
   
 
@@ -898,16 +903,8 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
     if (!isCapture) noncaptures++
 
-    //Late bad captures pruning (name????????)
-    if (isCapture && depth > 6 && move.mvvlva < 6000 && i > 0) {
-      continue
-    }
-
     //Positional pruning (name???????)
-    if (depth > 4 && isPositional && noncaptures > 4) {
-      continue
-    }
-
+    if (depth > 4 && isPositional && noncaptures > 4) continue
 
     // if (chessPosition.movenumber == 1 && i > 0) continue // CHEQUEA ORDEN PSQT
 
