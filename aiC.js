@@ -426,12 +426,13 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
     //Al dejar PSQT en iteration<=4, pierde un poco de ELO pero profundiza más
     //(-10 ELO, 342 juegos a 1 segundo)
     psqt = AI.getPieceSquareValue(chessPosition, color) - AI.getPieceSquareValue(chessPosition,  !color)
+    defendedpawns = AI.getDefendedPawns(chessPosition, color) - AI.getDefendedPawns(chessPosition, !color)
     
     if (phase > 1) {
       mobility = AI.getMobility(chessPosition, color) - AI.getMobility(chessPosition, !color)
-      defendedpawns = AI.getDefendedPawns(chessPosition, color) - AI.getDefendedPawns(chessPosition, !color)
-
     }
+    
+
   }
 
   //badbishops = AI.getBadBishops(chessPosition, color) - AI.getBadBishops(chessPosition,  !color)
@@ -457,7 +458,7 @@ AI.getDefendedPawns = function(chessPosition, color) {
 
   let protectedpawns = mask.and(pawns).popcnt()
 
-  let protectedvalues = [0,20, 40, 20,-10, -20,-40,-80]
+  let protectedvalues = [0,20,40,40,-10,-20,-40,-80]
 
   return protectedvalues[protectedpawns]
 }
@@ -1700,7 +1701,7 @@ AI.setphase = async function (chessPosition) {
 
   let queens = chessPosition.getPieceColorBitboard(4, color).popcnt() + chessPosition.getPieceColorBitboard(4, !color).popcnt()
 
-  if (AI.nofpieces <= 20 && queens === 0) {
+  if (AI.nofpieces <= 20 && queens === 0) { // ¿Debería ser queens < 2? Hay que testearlo
     phase = 3 //endgame
   }
   
