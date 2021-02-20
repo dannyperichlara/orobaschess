@@ -897,14 +897,15 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     let move = moves[i]
     let R = initialR
     let E = 0
+    let piece = move.getPiece()
 
     let isCapture = move.isCapture()
     let isPositional = move.getKind() === 0 && !incheck
 
-    if (!isCapture) noncaptures++
+    if (!isCapture && phase < 3 && piece > 0 && piece < 5) noncaptures++
 
     //Late bad captures pruning (name????????)
-    if (isCapture && depth > 6 && move.mvvlva < 6000 && i > 0) {
+    if (isCapture && phase < 3 && depth > 6 && move.mvvlva < 6000 && i > 0) {
       continue
     }
 
