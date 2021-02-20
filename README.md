@@ -13,7 +13,6 @@ The main intention is not to create an AI that plays better than other chess eng
 
 --------------
 ## Features
-### Common features
 * Principal Variation Search (negamax + alpha-beta pruning + null window search).
 * Quiescense Search with stand-pat pruning.
 * Late move reductions.
@@ -35,17 +34,19 @@ The main intention is not to create an AI that plays better than other chess eng
 
 ### Orobas main ideas
 * **Positional moves pruning**. If the pre-processor is complex enough and well tuned, the best positional move won't require a deep depth analysis (Capablanca once said "I see only one move ahead, but it is always the correct one"). The main idea is not to move a piece because the evaluation function returns a good score 20 plies ahead, but because it's very likely, given the experience and previuos knowledge, that this move gives an advantage later in the game. Human intuition, even if the move it's a blunder.
+* **Late-bad-captures pruning**. Analyze bad captures near the horizon only.
 * **History heuristic, only applied to the actual position**, with negative values on low-fails, and valuation not based on depth.
 * **Piece-Square-Table for the opening**, with the obvious moves. The idea is to achieve one move per-piece at the opening the same ways that humans do: Moving the obvious piece to the obvious place.
 * **A maximum depth of 20** (according to Magnus Carlsen, 20 is the maximum number of moves he can see ahead).
 * **Prune of unlikely moves** (in development). The idea is to emulate human thinking. Grandmasters can see a lot of moves ahead, but actually these moves are a combination of a few possible moves that are in front of their heads: one or two continous moves per piece; eventually a third move, but no more than that (at least in the midgame).
-* **Analysis of common patterns** (not implemented yet). The idea is to evaluate positions based on common patterns like 6P1/5PBP/6K1L; humans recognize positions very quickly, even if they are not exactly the same.
+* **Analysis of common patterns** (not implemented yet). The idea is to evaluate positions based on common patterns like 6P1/5PBP/6K1L; GMs recognize chess positions and patterns very quickly, even if they are not exactly the same.
 
 ### To Do
 * Passed/doubled/hanging pawns detection
 * Improve king safety
 * Automated tuning of parameters
 * Recognition of en-passant captures from FEN
+* Book openings implementation
 * Recognition/valuation of popular pawn structures (like Maroczy Bind or Benoni's)
 * Recognize the areas of the pawn structures when the action is going on, in order to achieve a better piece coordination
 * Improve move ordering even more
