@@ -55,3 +55,4 @@ The main intention is not to create an AI that plays better than other chess eng
 * Some way to soften the effect of the pre-processor in the hash table in order to avoid jumps in the score.
 * Some way to emulate human focus. For example, the greek gift sacrifice (rnbq1rk1/pppn1ppB/4p3/3pP3/1b1P4/2N2N2/PPP2PPP/R1BQK2R b KQ - 0 7); on the next 2 or 3 moves, the last of black's concerns will be the development of rook on a8, because the actual concern is to put black king in a safe position again.
 * Some clever and cheap way to evaluate the loss of castling rights.
+* Implementation of Best Node Search (https://en.wikipedia.org/wiki/Best_node_search)
