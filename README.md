@@ -27,7 +27,7 @@ The main intention is not to create an AI that plays better than other chess eng
 * Material evaluation, including valuation of pieces asymmetry (in order to avoid the exchange of 3 pawns for a knight).
 * History heuristic, applied only to the actual position. No need for killer moves.
 * Move ordering based on hash moves, good captures (MVV-LVA), history, PSQT & bad captures.
-* Trasposition table with no exact scores (because PSQT change from move to move).
+* Trasposition table with no exact scores (because PSQT change with every move).
 * Iterative deepening.
 * Internal Iterative deepening for reordering moves.
 * Phase detector without tapered eval.
