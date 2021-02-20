@@ -25,7 +25,7 @@ The main intention is not to create an AI that plays better than other chess eng
 * Mobility analysis, limited only to first plies.
 * General pawn structure analysis, limited only to first plies.
 * Material evaluation, including valuation of pieces asymmetry (in order to avoid the exchange of 3 pawns for a knight).
-* History heuristic, only applied to the actual position. No need for killer moves.
+* History heuristic, applied only to the actual position. No need for killer moves.
 * Move ordering based on hash moves, good captures (MVV-LVA), history, PSQT & bad captures.
 * Trasposition table with no exact scores (because PSQT change from move to move).
 * Iterative deepening.
