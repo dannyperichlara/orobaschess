@@ -58,3 +58,4 @@ The main intention is not to create an AI that plays better than other chess eng
 * Some clever and cheap way to evaluate the loss of castling rights.
 * Implementation of Best Node Search (https://en.wikipedia.org/wiki/Best_node_search)
 * Implementation of deep neural network for evaluation and move ordering
+* Parallel tree search ("Parallel Randomized Best-First Minimax Search". Yaron Shoham, Sivan Toledo)
