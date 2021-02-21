@@ -425,12 +425,14 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
   let mobility = 0
   let defendedpawns = 0
   
+  psqt = AI.getPieceSquareValue(P,N,B,R,Q,K, color) -
+         AI.getPieceSquareValue(Px,Nx,Bx,Rx,Qx,Kx, !color)
+         
   if (iteration <= 4) {
-    psqt = AI.getPieceSquareValue(P,N,B,R,Q,K, color) -
-           AI.getPieceSquareValue(Px,Nx,Bx,Rx,Qx,Kx, !color)
     //Al dejar PSQT en iteration<=4, pierde un poco de ELO pero profundiza más
     //(-10 ELO, 342 juegos a 1 segundo)
-    defendedpawns = AI.getDefendedPawns(chessPosition, color) - AI.getDefendedPawns(chessPosition, !color)
+    defendedpawns = AI.getDefendedPawns(P, color)-
+                    AI.getDefendedPawns(Px, !color)
     
     if (phase > 0) {
       mobility = AI.getMobility(P,N,B,R,Q,Px,chessPosition, color) -
@@ -458,11 +460,10 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
 
 }
 
-AI.getDefendedPawns = function(chessPosition, color) {
-  let pawns = chessPosition.getPieceColorBitboard(Chess.Piece.PAWN, color).dup()
-  let mask = Chess.Position.makePawnAttackMask(color, pawns).dup()
+AI.getDefendedPawns = function(P, color) {
+  let mask = Chess.Position.makePawnAttackMask(color, P).dup()
 
-  let protectedpawns = mask.and(pawns).popcnt()
+  let protectedpawns = mask.and(P).popcnt()
 
   let protectedvalues = [0,20,40,40,-10,-20,-40,-80]
 
@@ -496,6 +497,8 @@ AI.getMobility = function(P,N,B,R,Q,Px,chessPosition, color) {
   mobility += AI.MOBILITY_VALUES[3][chessPosition.makeRookAttackMask(R, space).dup().popcnt() / R.popcnt() | 0]
   
   mobility += AI.MOBILITY_VALUES[4][(chessPosition.makeBishopAttackMask(Q, space).dup().popcnt() + chessPosition.makeRookAttackMask(Q, space).dup().popcnt()) / Q.popcnt() | 0]
+
+  //if (!mobility) console.log(mobility)
 
   return mobility
 }
