@@ -425,10 +425,11 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
   let mobility = 0
   let defendedpawns = 0
   
-  psqt = AI.getPieceSquareValue(P,N,B,R,Q,K, color) -
-         AI.getPieceSquareValue(Px,Nx,Bx,Rx,Qx,Kx, !color)
-         
+  
   if (iteration <= 4) {
+    psqt = AI.getPieceSquareValue(P,N,B,R,Q,K, color) -
+           AI.getPieceSquareValue(Px,Nx,Bx,Rx,Qx,Kx, !color)
+           
     //Al dejar PSQT en iteration<=4, pierde un poco de ELO pero profundiza más
     //(-10 ELO, 342 juegos a 1 segundo)
     defendedpawns = AI.getDefendedPawns(P, color)-
@@ -1004,6 +1005,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
         bestmove  = move
       } else {
         AI.saveHistory(turn, move, -1)
+        AI.ttSave(hashkey, bestscore, 1, depth, bestmove) //TESTING!!!!
       }
     }
   }
