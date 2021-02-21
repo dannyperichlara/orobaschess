@@ -426,19 +426,20 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
   let defendedpawns = 0
   
   if (iteration <= 4) {
+    psqt = AI.getPieceSquareValue(P,N,B,R,Q,K, color) -
+           AI.getPieceSquareValue(Px,Nx,Bx,Rx,Qx,Kx, !color)
     //Al dejar PSQT en iteration<=4, pierde un poco de ELO pero profundiza más
     //(-10 ELO, 342 juegos a 1 segundo)
     defendedpawns = AI.getDefendedPawns(chessPosition, color) - AI.getDefendedPawns(chessPosition, !color)
     
-    if (phase > 1) {
-      mobility = AI.getMobility(chessPosition, color) - AI.getMobility(chessPosition, !color)
+    if (phase > 0) {
+      mobility = AI.getMobility(P,N,B,R,Q,Px,chessPosition, color) -
+                 AI.getMobility(Px,Nx,Bx,Rx,Qx,P,chessPosition, !color)
     }
     
     
   }
 
-  psqt = AI.getPieceSquareValue(P,N,B,R,Q,K, color) -
-         AI.getPieceSquareValue(Px,Nx,Bx,Rx,Qx,Kx, !color)
 
   //badbishops = AI.getBadBishops(chessPosition, color) - AI.getBadBishops(chessPosition,  !color)
 
@@ -478,29 +479,23 @@ AI.getBadBishops = function(chessPosition, color) {
 }
 
 
-AI.getMobility = function(chessPosition, color) {
+AI.getMobility = function(P,N,B,R,Q,Px,chessPosition, color) {
   let us = chessPosition.getColorBitboard(color).dup()
-  let pawns = chessPosition.getPieceColorBitboard(Chess.Piece.PAWN, color).dup()
-  let knights = chessPosition.getPieceColorBitboard(Chess.Piece.KNIGHT, color).dup()
-  let bishops = chessPosition.getPieceColorBitboard(Chess.Piece.BISHOP, color).dup()
-  let rooks = chessPosition.getPieceColorBitboard(Chess.Piece.ROOK, color).dup()
-  let queens = chessPosition.getPieceColorBitboard(Chess.Piece.QUEEN, color).dup()
   
-  let enemypawns = chessPosition.getPieceColorBitboard(0, !color).dup()
-  let enemypawnattackmask = Chess.Position.makePawnAttackMask(!color, enemypawns).dup()
+  let enemypawnattackmask = Chess.Position.makePawnAttackMask(!color, Px).dup()
 
   let mobility = 0
 
-  while (!knights.isEmpty()) {
-      mobility += AI.MOBILITY_VALUES[1][Chess.Bitboard.KNIGHT_MOVEMENTS[knights.extractLowestBitPosition()].dup().and_not(enemypawnattackmask).and_not(pawns).popcnt()]
+  while (!N.isEmpty()) {
+      mobility += AI.MOBILITY_VALUES[1][Chess.Bitboard.KNIGHT_MOVEMENTS[N.extractLowestBitPosition()].dup().and_not(enemypawnattackmask).and_not(P).popcnt()]
   }
 
-  let space = enemypawnattackmask.or(enemypawns).or(us)
+  let space = enemypawnattackmask.or(Px).or(us)
 
-  mobility += AI.MOBILITY_VALUES[2][chessPosition.makeBishopAttackMask(bishops, space).dup().popcnt() / bishops.popcnt() | 0]
-  mobility += AI.MOBILITY_VALUES[3][chessPosition.makeRookAttackMask(rooks, space).dup().popcnt() / rooks.popcnt() | 0]
+  mobility += AI.MOBILITY_VALUES[2][chessPosition.makeBishopAttackMask(B, space).dup().popcnt() / B.popcnt() | 0]
+  mobility += AI.MOBILITY_VALUES[3][chessPosition.makeRookAttackMask(R, space).dup().popcnt() / R.popcnt() | 0]
   
-  mobility += AI.MOBILITY_VALUES[4][(chessPosition.makeBishopAttackMask(queens, space).dup().popcnt() + chessPosition.makeRookAttackMask(queens, space).dup().popcnt()) / rooks.popcnt() | 0]
+  mobility += AI.MOBILITY_VALUES[4][(chessPosition.makeBishopAttackMask(Q, space).dup().popcnt() + chessPosition.makeRookAttackMask(Q, space).dup().popcnt()) / Q.popcnt() | 0]
 
   return mobility
 }
