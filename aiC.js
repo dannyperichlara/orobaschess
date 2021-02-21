@@ -21,12 +21,12 @@ let totaldepth = 20
 //20->2894
 
 // Math.seedrandom((new Date()).toTimeString())
-let random = 50
+let random = 20
 
 let phase = 1
 let htlength = 1e8
 let reduceHistoryFactor = 1 //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
-let mindepth =  2
+let mindepth =  4
 let secondspermove = 3
 
 let AI = function() {
@@ -427,11 +427,10 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
   
   
   if (iteration <= 4) {
+    //PSQT en iteration<=4 +100 ELO)
     psqt = AI.getPieceSquareValue(P,N,B,R,Q,K, color) -
            AI.getPieceSquareValue(Px,Nx,Bx,Rx,Qx,Kx, !color)
            
-    //Al dejar PSQT en iteration<=4, pierde un poco de ELO pero profundiza más
-    //(-10 ELO, 342 juegos a 1 segundo)
     defendedpawns = AI.getDefendedPawns(P, color)-
                     AI.getDefendedPawns(Px, !color)
     
@@ -1005,7 +1004,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
         bestmove  = move
       } else {
         AI.saveHistory(turn, move, -1)
-        AI.ttSave(hashkey, bestscore, 1, depth, bestmove) //TESTING!!!!
+        // AI.ttSave(hashkey, bestscore, 1, depth, bestmove) //No difference at low secs
       }
     }
   }
@@ -1124,9 +1123,9 @@ AI.createPSQT = function (chessPosition) {
      bm, bm, bm, bm, bm, bm, bm, bm,
      bm, bm, bm, bm, bm, bm, bm, bm,
      bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm, 40, 40, bm, bm, bm,
-     bm, bm, 60, bm, bm, 60, 20, bm,
-     bm, bm, bm, 60, 60, bm, bm, bm,
+     bm, bm, 20, 40, 40, 20, bm, bm,
+     bm, bm, 80, bm, bm, 80, 20, bm,
+     bm, bm, bm, 20, 20, bm, bm, bm,
      bm, bm, bm, bm, bm, bm, bm, bm,
       
       ],
@@ -1136,9 +1135,9 @@ AI.createPSQT = function (chessPosition) {
      bm, bm, bm, bm, bm, bm, bm, bm,
      bm, bm, bm, bm, bm, bm, bm, bm,
      bm, 20, bm, bm, bm, bm, 20, bm,
-     bm, bm, 60, bm, bm, 60, bm, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, 80, bm, 20, 20, bm, 80, bm,
+     bm, bm, 80, bm, bm, 80, bm, bm,
+     bm, 20, bm, bm, bm, bm, 20, bm,
+     bm, 80, bm, bm, 40, bm, 80, bm,
      bm, bm, bm, bm, bm, bm, bm, bm,
     ],
     // Rook
@@ -1160,9 +1159,9 @@ AI.createPSQT = function (chessPosition) {
       bm, bm, bm, bm, bm, bm, bm, bm,
       bm, bm, bm, bm, bm, bm, bm, bm,
       bm, bm, bm, bm, bm, bm, bm, bm,
-      bm, bm, bm, 10, 10, bm, bm, bm,
-      bm, bm, 10, 10, bm, bm, bm, bm,
       bm, bm, bm, bm, bm, bm, bm, bm,
+      bm, bm, bm, bm, bm, bm, bm, bm,
+      bm, bm, bm, 40, bm, bm, bm, bm,
     ],
 
     // King
@@ -1174,7 +1173,7 @@ AI.createPSQT = function (chessPosition) {
        bm, bm, bm, bm, bm, bm, bm, bm, 
        bm, bm, bm, bm, bm, bm, bm, bm,
        bm, bm, bm, bm, bm, bm, bm, bm,
-       bm, bm, 20, bm, bm, bm,120, 50
+       bm, bm, bm, bm, bm,2*bm,200,bm
 
     ]
   ]
@@ -1236,11 +1235,11 @@ AI.createPSQT = function (chessPosition) {
   //Estructura básica peones
   AI.PIECE_SQUARE_TABLES_MIDGAME[0] = [
      0,  0,  0,  0,  0,  0,  0,  0,
-   120,120, 80, 80, 80, 80,120,120,
-    80, 60, 60, 60, 60, 60, 60, 80,
-    60, 20, 50, 60, 60, 20, 10, 60,
-   -20,  0, 40, 40, 40, 30,-20,-20,
-     0, 20, 20,  0, 20, 20, 20,  0,
+    60, 60, 60, 60, 60, 60,-80, 60,
+    40, 40, 40, 40, 40, 40,-80, 40,
+     0,  0, 20, 40, 40, 20,-80,  0,
+   -20,  0, 40, 40, 40, 20,-40,-20,
+    20, 20, 20,  0, 20, 20,-20, 20,
     60, 60, 20,-20,-20, 40, 60, 60,
      0,  0,  0,  0,  0,  0,  0,  0,
   ]
@@ -1268,14 +1267,14 @@ AI.createPSQT = function (chessPosition) {
 
   //Caballos al centro
   AI.PIECE_SQUARE_TABLES_MIDGAME[1] = [
-    -100,-100,-100,-100,-100,-100,-100,-100,
-    -100, -80, -80, -80, -80, -80, -80,-100,
-    -100, -60,   0,   0,   0,   0, -60,-100,
-    -100, -60,   0,   0,   0,   0, -60,-100,
-    -100, -60,  40,  40,  40,  40, -60,-100,
-    -100, -60,  40,  40,  40,  40, -60,-100,
-    -100, -60, -60,   0,   0, -60, -60,-100,
-    -100,-100,-100,-100,-100,-100,-100,-100,
+     -40, -40, -40, -40, -40, -40, -40, -40,
+     -40,   0,   0,   0,   0,   0,   0, -40,
+     -40,   0,  40,  40,  40,  40,   0, -40,
+     -40,   0,  40,  40,  40,  40,   0, -40,
+     -40,   0,  40,  40,  40,  40,   0, -40,
+     -40,   0,  40,  40,  40,  40,   0, -40,
+     -40,   0,   0,   0,   0,   0,   0, -40,
+     -40,-100, -40, -40, -40, -40,-100, -40,
   ]
 
   //Caballos cerca del rey enemigo
@@ -1305,30 +1304,42 @@ AI.createPSQT = function (chessPosition) {
 
   //Alfiles al centro
   AI.PIECE_SQUARE_TABLES_MIDGAME[2] = [
-    -100,-100,-100,-100,-100,-100,-100,-100,
-    -100, -40, -40, -40, -40, -40, -40,-100,
-    -100, -40,  40,  40,  40,  40, -40,-100,
-    -100, -40,  40,  60,  60,  40, -40,-100,
-    -100, -40,  40,  60,  60,  40, -40,-100,
-    -100, -40,  40,  40,  40,  40, -40,-100,
-    -100,  40, -40,  40,  40, -40,  40,-100,
-    -100,-100,-100,-100,-100,-100,-100,-100,
+    -40, -40, -40, -40, -40, -40, -40, -40,
+    -40,   0,   0,   0,   0,   0,   0, -40,
+    -40,   0,  40,  40,  40,  40,   0, -40,
+    -40,   0,  40,  40,  40,  40,   0, -40,
+    -40,   0,  40,  40,  40,  40,   0, -40,
+    -40,   0,  40,  40,  40,  40,   0, -40,
+    -40,   0,   0,   0,   0,   0,   0, -40,
+    -40, -40,-100, -40, -40,-100, -40, -40,
   ]
-
+  
   //Castiga alfiles sin desarrollar (arriba)
   // AI.PIECE_SQUARE_TABLES_MIDGAME[2][58] -= 100
   // AI.PIECE_SQUARE_TABLES_MIDGAME[2][61] -= 100
-
+  
   //Premia alfiles en Outposts
   AI.PIECE_SQUARE_TABLES_MIDGAME[2] = AI.PIECE_SQUARE_TABLES_MIDGAME[2].map((e,i)=>{
     return e + pawnmask[i]? 20 : -20
   })
+  
+  AI.PIECE_SQUARE_TABLES_MIDGAME[3] = [ 
+    -40, -40, -40, -40, -40, -40, -40, -40,
+     60,  60,  60,  60,  60,  60,  60,  60,
+    -40, -40, -40, -40, -40, -40, -40, -40,
+    -40, -40, -40, -40, -40, -40, -40, -40,
+    -40, -40, -40, -40, -40, -40, -40, -40,
+    -40, -40, -40, -40, -40, -40, -40, -40,
+    -40, -40, -40, -40, -40, -40, -40, -40,
+    -40, -40, -40,  40,  40,  20,-400,-400,
+   ]
+
 
   //Torres en columnas abiertas
-
+  
   let pawnXfiles = [0,0,0,0,0,0,0,0]
   let pawnfiles = [0,0,0,0,0,0,0,0]
-
+  
   for (let i = 0; i < 64; i++) {
     if (pawnmap[i]) {
       let col = i % 8
@@ -1372,8 +1383,6 @@ AI.createPSQT = function (chessPosition) {
     return e + (!pawnfiles[col]? 50 : 0) + (!pawnXfiles[col]? 50 : 0)
   })
   
-  console.log(AI.PIECE_SQUARE_TABLES_MIDGAME[3])
-
   //Torres delante del rey enemigo ("torre en séptima")
   for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_MIDGAME[3][i + 8*(kingXposition/8 | 0)] += 27
 
@@ -1397,20 +1406,20 @@ AI.createPSQT = function (chessPosition) {
      0,   0,   0,   0,   0,   0,   0,   0,
      0,   0,   0,   0,   0,   0,   0,   0,
      0,   0,   0,   0,   0,   0,   0,   0,
-   -80, -80, -80, -80, -80, -80, -80, -80,
+   -20, -20, -20, -20, -20, -20, -20, -20,
    -80, -80, -80, -80, -80, -80, -80, -80,
 ]
 
   //Rey lejos del centro
     AI.PIECE_SQUARE_TABLES_MIDGAME[5] = [ 
-       -95, -95, -95, -95, -95, -95, -95, -95,
-       -95, -95, -95, -95, -95, -95, -95, -95,
-       -95, -95, -95, -95, -95, -95, -95, -95,
-       -95, -95, -95, -95, -95, -95, -95, -95,
-       -95, -95, -95, -95, -95, -95, -95, -95, 
-       -95, -95, -95, -95, -95, -95, -95, -95,
-       -90, -80, -80, -80, -80, -80, -80, -90,
-         0,  20, -60, -60, -60, -60,  20,   0
+      -30,-40,-40,-50,-50,-40,-40,-30,
+      -30,-40,-40,-50,-50,-40,-40,-30,
+      -30,-40,-40,-50,-50,-40,-40,-30,
+      -30,-40,-40,-50,-50,-40,-40,-30,
+      -20,-30,-30,-40,-40,-30,-30,-20,
+      -10,-20,-20,-20,-20,-20,-20,-10,
+       20, 20,  0,  0,  0,  0, 20, 20,
+       20, 30, 10,  0,  0, 10, 30, 20
     ]
 
   //Premia enrocar
@@ -1651,14 +1660,14 @@ AI.createPSQT = function (chessPosition) {
 
   //Rey cerca del centro
   AI.PIECE_SQUARE_TABLES_ENDGAME[5] = [
-    -200,-150,-100,-100,-100,-100,-150,-200,
-    -150,  30,  30,  30,  30,  30,  30,-100,
-    -100,  30,  80,  80,  80,  80,  30,-100,
-    -100,  30,  80, 120, 120,  80,  30,-100,
-    -100,  30,  80, 120, 120,  80,  30,-100,
-    -100,  30,  80,  80,  80,  80,  30,-100,
-    -150,  30,  30,  30,  30,  30,  30,-150,
-    -200,-150,-100,-100,-100,-100,-150,-200,
+    -50,-40,-30,-20,-20,-30,-40,-50,
+    -30,-20,-10,  0,  0,-10,-20,-30,
+    -30,-10, 20, 30, 30, 20,-10,-30,
+    -30,-10, 30, 40, 40, 30,-10,-30,
+    -30,-10, 30, 40, 40, 30,-10,-30,
+    -30,-10, 20, 30, 30, 20,-10,-30,
+    -30,-30,  0,  0,  0,  0,-30,-30,
+    -50,-30,-30,-30,-30,-30,-30,-50
   ]
 }
 
@@ -1768,13 +1777,17 @@ AI.getPV = function (chessPosition, length) {
   for (let i = 0; i < legal; i++) {
     chessPosition.unmakeMove()
   }
-
+  
   return PV
 }
 
 AI.search = function(chessPosition, options) {
-
+  
   if (options && options.seconds) secondspermove = options.seconds
+
+  AI.nofpieces = chessPosition.getOccupiedBitboard().popcnt()
+
+  // mindepth = 51.774*Math.pow(AI.nofpieces, -0.478)
 
   let nmoves = chessPosition.madeMoves.length
 
@@ -1819,7 +1832,6 @@ AI.search = function(chessPosition, options) {
     ttnodes = 0
     iteration = 0
 
-    AI.nofpieces = chessPosition.getOccupiedBitboard().popcnt()
 
     AI.timer = (new Date()).getTime()
     AI.stop = false
