@@ -929,7 +929,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     if (isPositional && phase < 3 && piece > 0 && piece < 5) noncaptures++
 
     // //Late bad captures pruning (name????????)
-    if (isCapture && phase < 3 && depth > 10 && move.mvvlva < 6000 && i > 0) {
+    if (isCapture && phase < 3 && depth > 10 && move.mvvlva < 6000 && i > 4) {
       // return alpha
       continue
     }
