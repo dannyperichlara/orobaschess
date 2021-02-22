@@ -1,4 +1,4 @@
-# Orobas Chess AI
+# ♘ Orobas Chess AI
 v1.1.0
 
 Orobas is a Chess AI created in 2020 using pure javascript. The move generator is an old but beautifully written javascript project from @kbjorklu (https://github.com/kbjorklu/chess).
@@ -10,7 +10,7 @@ Orobas is a Shanon's Type-B AI (https://www.chessprogramming.org/Type_B_Strategy
 3. From 1 & 2, Orobas applies a massive prune of the tree based on the unlikelihood of making certain moves, and not based on the evaluation of the move itself. Although this behaviour is risky, Orobas hasn't show significant differences with these moves pruned or not.
 4. Human analysis of chess positions is mostly based on the recognition of patterns. The next step in Orobas is to capture the sense of intuitiveness by adding an extra layer of analysis based on pattern recognition.
 
-The main intention is not to create an AI that plays better than other chess engines nor even better than humans. The main goal of Orobas is to play LIKE humans do; this doesn't mean blunder by randomness once in a while; this means that if the engine eventually makes mistakes, it's because these errors emerge from the analysis, the same way mistakes emerge from the human thinking process, and not by programming it. The main goal is to achieve the maximum ELO at the least depth possible, the opposite of what engines like Stockfish, Komodo or Alpha Zero do.
+The main intention is not to create an AI that plays better than other chess engines nor even better than humans. The main goal of Orobas is to play LIKE humans do; this doesn't mean blunder by randomness once in a while; this means that if the engine eventually makes mistakes, it's because these errors emerge from the analysis, the same way mistakes emerge from the human thinking process, and not by programming it. A second goal is to achieve the maximum ELO at the least depth possible; better thinking, not more thinking.
 
 --------------
 ## Features
@@ -38,7 +38,7 @@ The main intention is not to create an AI that plays better than other chess eng
 * **Late-bad-captures pruning**. Analyze bad captures near the horizon only.
 * **History heuristic, only applied to the actual position**, with negative values on low-fails, and valuation not based on depth.
 * **Piece-Square-Table for the opening**, with the obvious moves. The idea is to achieve one move per-piece at the opening the same ways that humans do: Moving the obvious piece to the obvious place.
-* **A maximum depth of 20** (according to Magnus Carlsen, 20 is the maximum number of moves he can see ahead).
+* **A maximum depth of 20 in the midgame**. According to Magnus Carlsen, 20 is the maximum number of moves he can see ahead. (This is coherent with: Ferreira, D. (2013). The Impact of the Search Depth on Chess Playing Strength. J. Int. Comput. Games Assoc., 36, 67-80).
 * **Prune of unlikely moves** (in development). The idea is to emulate human thinking. Grandmasters can see a lot of moves ahead, but actually these moves are a combination of a few possible moves that are in front of their heads: one or two continous moves per piece; eventually a third move, but no more than that (at least in the midgame).
 * **Analysis of common patterns** (not implemented yet). The idea is to evaluate positions based on common patterns like 6P1/5PBP/6K1L; GMs recognize chess positions and patterns very quickly, even if they are not exactly the same.
 
@@ -57,3 +57,5 @@ The main intention is not to create an AI that plays better than other chess eng
 * Some way to emulate human focus. For example, the greek gift sacrifice (rnbq1rk1/pppn1ppB/4p3/3pP3/1b1P4/2N2N2/PPP2PPP/R1BQK2R b KQ - 0 7); on the next 2 or 3 moves, the last of black's concerns will be the development of rook on a8, because the actual concern is to put black king in a safe position again.
 * Some clever and cheap way to evaluate the loss of castling rights.
 * Implementation of Best Node Search (https://en.wikipedia.org/wiki/Best_node_search)
+* Implementation of deep neural network for evaluation and move ordering
+* Parallel tree search ("Parallel Randomized Best-First Minimax Search". Yaron Shoham, Sivan Toledo)
