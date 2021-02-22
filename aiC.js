@@ -1327,12 +1327,21 @@ AI.createPSQT = function (chessPosition) {
   // AI.PIECE_SQUARE_TABLES_MIDGAME[1][62] -= 40
 
   //Premia caballos en Outposts
+  AI.PIECE_SQUARE_TABLES_APERTURE[1] = AI.PIECE_SQUARE_TABLES_APERTURE[1].map((e,i)=>{
+    let ranks456 = i >= 16 && i <= 39 ? 40 : 0
+    return e + (pawnmap[i]? 60 + ranks456 : -20)
+  })
+
+  console.log('Caballitos', AI.PIECE_SQUARE_TABLES_APERTURE[1])
+
   AI.PIECE_SQUARE_TABLES_MIDGAME[1] = AI.PIECE_SQUARE_TABLES_MIDGAME[1].map((e,i)=>{
-    return e + pawnmask[i]? 60 : -20
+    let ranks456 = pawnmap[i] >= 16 && pawnmap[i] <= 39 ? 40 : 0
+    return e + (pawnmap[i]? 60 + ranks456 : -20)
   })
 
   AI.PIECE_SQUARE_TABLES_MIDGAME[1] = AI.PIECE_SQUARE_TABLES_MIDGAME[1].map((e,i)=>{
-    return e + pawnmask[i]? 20 : -20
+    let ranks456 = pawnmap[i] >= 16 && pawnmap[i] <= 39 ? 20 : 0
+    return e + (pawnmap[i]? 20 + ranks456 : -20)
   })
   
 
@@ -1352,10 +1361,10 @@ AI.createPSQT = function (chessPosition) {
   // AI.PIECE_SQUARE_TABLES_MIDGAME[2][58] -= 100
   // AI.PIECE_SQUARE_TABLES_MIDGAME[2][61] -= 100
   
-  //Premia alfiles en Outposts
-  AI.PIECE_SQUARE_TABLES_MIDGAME[2] = AI.PIECE_SQUARE_TABLES_MIDGAME[2].map((e,i)=>{
-    return e + pawnmask[i]? 20 : -20
-  })
+  // //Premia alfiles en Outposts
+  // AI.PIECE_SQUARE_TABLES_MIDGAME[2] = AI.PIECE_SQUARE_TABLES_MIDGAME[2].map((e,i)=>{
+  //   return e + pawnmap[i]? 20 : -20
+  // })
   
   AI.PIECE_SQUARE_TABLES_MIDGAME[3] = [ 
     -40, -40, -40, -40, -40, -40, -40, -40,
@@ -1591,17 +1600,17 @@ AI.createPSQT = function (chessPosition) {
 
     //Peones a casillas defendidas por otro peón
       AI.PIECE_SQUARE_TABLES_APERTURE[0] = AI.PIECE_SQUARE_TABLES_APERTURE[0].map((e,i)=>{
-        let defended = pawnmask[i]
+        let defended = pawnmap[i]
         return e + (defended? 80 : -20)
       })
 
       AI.PIECE_SQUARE_TABLES_MIDGAME[0] = AI.PIECE_SQUARE_TABLES_MIDGAME[0].map((e,i)=>{
-        let defended = pawnmask[i]
+        let defended = pawnmap[i]
         return e + (defended? 80 : -40)
       })
 
       AI.PIECE_SQUARE_TABLES_ENDGAME[0] = AI.PIECE_SQUARE_TABLES_ENDGAME[0].map((e,i)=>{
-        let defended = pawnmask[i]
+        let defended = pawnmap[i]
         return e + (defended? 40 : 0)
       })
 
@@ -1642,7 +1651,7 @@ AI.createPSQT = function (chessPosition) {
 
   //Premia caballos en Outposts
   AI.PIECE_SQUARE_TABLES_ENDGAME[2] = AI.PIECE_SQUARE_TABLES_ENDGAME[2].map((e,i)=>{
-    return e + pawnmask[i]? 40 : -20
+    return e + pawnmap[i]? 40 : -20
   })
 
   //Alfiles al centro
@@ -1657,10 +1666,10 @@ AI.createPSQT = function (chessPosition) {
     -200,-150,-100,-100,-100,-100,-150,-200,
   ]
 
-  //Premia alfiles en Outposts
-  AI.PIECE_SQUARE_TABLES_ENDGAME[2] = AI.PIECE_SQUARE_TABLES_ENDGAME[2].map((e,i)=>{
-    return e + pawnmask[i]? 20 : -20
-  })
+  // //Premia alfiles en Outposts
+  // AI.PIECE_SQUARE_TABLES_ENDGAME[2] = AI.PIECE_SQUARE_TABLES_ENDGAME[2].map((e,i)=>{
+  //   return e + pawnmap[i]? 20 : -20
+  // })
 
   //Torres en columnas abiertas
 
