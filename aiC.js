@@ -1824,7 +1824,7 @@ AI.search = function(chessPosition, options) {
         
         score = (white? 1 : -1) * AI.PVS(chessPosition, alpha, beta, depth, 1)
 
-        // alpha = score
+        // alpha = score //HORRIBLEEEEE
 
         AI.PV = AI.getPV(chessPosition, totaldepth+1)
 
