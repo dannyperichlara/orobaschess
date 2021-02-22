@@ -563,6 +563,9 @@ AI.getPawnSquareValue = function(chessPosition, color) {
 AI.scoreMove = function(move) {
   let score = 0
 
+  if (move.castle) return 1e9
+  if (move.kingmove) return -1e8
+
   // if (move.pv) { //Se evalúa mejor con tt --> baja fhf
   //   score += 1e9
   //   return score
@@ -619,6 +622,15 @@ AI.sortMoves = function(moves, turn, ply, chessPosition, ttEntry, pvMoveValue) {
     let move = moves[i]
     let piece = move.getPiece()
     let to = move.getTo()
+    let kind = move.getKind()
+
+    if (piece === 5) {
+      if (kind === 2 || kind === 3) {
+        move.castle = true
+      } else {
+        move.kingmove = true
+      }
+    }
     
     if (pvMoveValue === move.value) {
       move.pv = true
@@ -634,7 +646,6 @@ AI.sortMoves = function(moves, turn, ply, chessPosition, ttEntry, pvMoveValue) {
       move.capture = true
     }
     
-    let kind = move.getKind()
     
     if (kind > 2) {
       move.special = kind
@@ -690,9 +701,13 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
 
     if ( standpat > alpha) alpha = standpat;
 
-    let moves
+    let moves = chessPosition.getMoves(false, !chessPosition.isKingInCheck())
 
-    moves = chessPosition.getMoves(false, !chessPosition.isKingInCheck())
+    // if (!chessPosition.isKingInCheck()) {
+    //   moves = moves.filter(m=>{
+    //     m.getKind() >= 2
+    //   })
+    // }
 
     moves = AI.sortMoves(moves, turn, ply, chessPosition, null, null)
 
@@ -714,6 +729,7 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
         chessPosition.unmakeMove()
 
         if( score >= beta ) {
+          AI.saveHistory(turn, move, 2)
           return beta
         }
 
@@ -722,6 +738,10 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
 
           bestscore = score
           bestmove = move
+
+          AI.saveHistory(turn, move, 1)
+        } else {
+          AI.saveHistory(turn, move, -1)
         }
       }
     }
@@ -766,9 +786,15 @@ AI.reduceHistory = async function () {
 
 AI.saveHistory = async function(turn, move, value) {
   //according to The_Relative_History_Heuristic.pdf, no much difference if it's 1 or 1 << depth
-  if (move.isCapture()) return
 
-  let to = move.getTo()
+  let to
+
+  if (move.isCapture()) {
+    to = move.getFrom()
+  } else {
+    to = move.getTo()
+  }
+
   
   AI.history[turn][move.getPiece()][to] += value | 0
   AI.butterfly[turn][move.getFrom()][to] += value | 0
