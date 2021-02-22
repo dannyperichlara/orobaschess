@@ -21,7 +21,7 @@ let totaldepth = 20
 //20->2894
 
 // Math.seedrandom((new Date()).toTimeString())
-let random = 80
+let random = 40
 
 let phase = 1
 let htlength = 1e8
@@ -791,7 +791,7 @@ AI.saveHistory = function(turn, move, value) {
   let to
 
   if (move.isCapture()) { 
-    to = move.getFrom() //TESTING
+    to = move.getFrom() //NOT TESTED (the idea is to save previous (quiet or not) move of the piece to that square)
   } else {
     to = move.getTo()
     AI.butterfly[turn][move.getFrom()][to] += value | 0
@@ -876,15 +876,15 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     ttEntry = AI.ttGet(hashkey)
   }
   
-  let bestmove = {value: 2080,  getString() {return '-'}}
-
+  
   let pvMoveValue = AI.PV[ply]? AI.PV[ply].value : null
-
+  
   if (AI.stop && iteration > mindepth) return alpha
-
+  
   let moves = chessPosition.getMoves(false, false)
-
+  
   moves = AI.sortMoves(moves, turn, ply, chessPosition, ttEntry, pvMoveValue)
+  let bestmove = moves[0]
 
   let legal = 0
   let bestscore = -Infinity
@@ -898,7 +898,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     let lastmove = chessPosition.getLastMove()
 
     if (lastmove) {
-      AI.saveHistory(!turn, lastmove, 2000) //check moves up in move ordering
+      AI.saveHistory(!turn, lastmove, 20) //moves that give check up in move ordering TESTED
     }
   }
   
@@ -1006,8 +1006,6 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
       if (AI.stop) return alpha
       // if (AI.stop) return alphaOrig
-
-
 
       if (score > bestscore) {
         if (score > alpha) {
