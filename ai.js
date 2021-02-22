@@ -21,7 +21,7 @@ let totaldepth = 20
 //20->2894
 
 // Math.seedrandom((new Date()).toTimeString())
-let random = 20
+let random = 80
 
 let phase = 1
 let htlength = 1e8
@@ -790,6 +790,7 @@ AI.saveHistory = async function(turn, move, value) {
   let to
 
   if (move.isCapture()) {
+    return
     to = move.getFrom()
   } else {
     to = move.getTo()

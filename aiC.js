@@ -21,7 +21,7 @@ let totaldepth = 20
 //20->2894
 
 // Math.seedrandom((new Date()).toTimeString())
-let random = 20
+let random = 80
 
 let phase = 1
 let htlength = 1e8
@@ -786,19 +786,19 @@ AI.reduceHistory = async function () {
 
 AI.saveHistory = async function(turn, move, value) {
   //according to The_Relative_History_Heuristic.pdf, no much difference if it's 1 or 1 << depth
+  turn = turn | 0
 
   let to
 
-  if (move.isCapture()) {
-    to = move.getFrom()
+  if (move.isCapture()) { 
+    to = move.getFrom() //TESTING
   } else {
     to = move.getTo()
+    AI.butterfly[turn][move.getFrom()][to] += value | 0
   }
 
-  
   AI.history[turn][move.getPiece()][to] += value | 0
-  AI.butterfly[turn][move.getFrom()][to] += value | 0
-  
+   
 }
 
 //History-ADS
@@ -893,6 +893,14 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
 
   let incheck = chessPosition.isKingInCheck()
+
+  if (incheck) {
+    let lastmove = chessPosition.getLastMove()
+
+    if (lastmove) {
+      AI.saveHistory(!turn, lastmove, 2000) //TESTING
+    }
+  }
   
   let staticeval = AI.evaluate(chessPosition, hashkey, pvNode)
 
