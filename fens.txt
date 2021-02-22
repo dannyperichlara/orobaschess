@@ -4,3 +4,5 @@ rnr3k1/p2bbppp/4pn2/6N1/2q1N2Q/4P3/PB3PPP/R4RK1 b - - 1 16 (el caballo se deja y
 1k3b1r/pppb1ppp/4p3/1Nr4n/2P5/1P1P1B1P/P1K2PPB/4R2R b - - 1 21 (sacrifica caballo por nada)
 r2q1rk1/ppp1ppbp/2np1np1/8/2BPPBb1/1PN2N2/P1P2PPP/R2QK2R w KQ - 4 8 (el rey sale a cazar moscas)
         ----->Es problema con orden dado por ttEntry; no es IID
+
+8/4pk2/1bP4p/8/2p1q2B/5pP1/5P1P/Q5K1 w - - 2 40 (regala la dama)

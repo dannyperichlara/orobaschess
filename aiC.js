@@ -930,11 +930,13 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
     // //Late bad captures pruning (name????????)
     if (isCapture && phase < 3 && depth > 10 && move.mvvlva < 6000 && i > 0) {
+      // return alpha
       continue
     }
 
     //  //Positional pruning (name???????)
     if (depth > 6 && isPositional && noncaptures > 4) {
+      // return alpha
       continue
     }
 
@@ -971,6 +973,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     /*futility pruning */
     if (!near2mate && !incheck && 1 < depth && depth <= 3+R && i >= 1) {
       if (staticeval + 600*depth <= alpha) {
+        return alpha
         continue
       }
     }

@@ -971,6 +971,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     /*futility pruning */
     if (!near2mate && !incheck && 1 < depth && depth <= 3+R && i >= 1) {
       if (staticeval + 600*depth <= alpha) {
+        return alpha
         continue
       }
     }
