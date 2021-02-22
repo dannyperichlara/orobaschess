@@ -754,7 +754,7 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
     return alpha
 }
 
-AI.ttSave = async function (hashkey, score, flag, depth, move) {
+AI.ttSave = function (hashkey, score, flag, depth, move) {
   AI.hashtable[hashkey % htlength] = {
     hashkey,
     score,
@@ -774,7 +774,7 @@ AI.ttGet = function (hashkey) {
   }
 }
 
-AI.reduceHistory = async function () {
+AI.reduceHistory = function () {
   for (let color = 0; color < 2; color++) {
     for (let piece = 0; piece < 6; piece++) {      
       for (let to = 0; to < 64; to++) {
@@ -784,7 +784,7 @@ AI.reduceHistory = async function () {
   }
 }
 
-AI.saveHistory = async function(turn, move, value) {
+AI.saveHistory = function(turn, move, value) {
   //according to The_Relative_History_Heuristic.pdf, no much difference if it's 1 or 1 << depth
   turn = turn | 0
 
@@ -898,7 +898,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     let lastmove = chessPosition.getLastMove()
 
     if (lastmove) {
-      AI.saveHistory(!turn, lastmove, 2000) //TESTING
+      AI.saveHistory(!turn, lastmove, 2000) //check moves up in move ordering
     }
   }
   
@@ -1725,7 +1725,7 @@ AI.PSQT2Sigmoid = function () {
   // console.log(AI.PIECE_SQUARE_TABLES)
 }
 
-AI.setphase = async function (chessPosition) {
+AI.setphase = function (chessPosition) {
   phase = 1 //Apertura
   let color = chessPosition.getTurnColor()
 
