@@ -1139,7 +1139,7 @@ AI.createPSQT = function (chessPosition) {
 
   let bm = -40 //badmove
 
-  AI.PIECE_SQUARE_TABLES_APERTURE = [
+  AI.PIECE_SQUARE_TABLES_OPENING = [
   // Pawn
       [ 
      bm, bm, bm, bm, bm, bm, bm, bm,
@@ -1214,7 +1214,7 @@ AI.createPSQT = function (chessPosition) {
   ]
 
   // for (let i = 0; i < 6; i++) {
-  //   AI.PIECE_SQUARE_TABLES_APERTURE[i] = AI.PIECE_SQUARE_TABLES_APERTURE[i].map(e=>e/2)
+  //   AI.PIECE_SQUARE_TABLES_OPENING[i] = AI.PIECE_SQUARE_TABLES_OPENING[i].map(e=>e/2)
   // }
 
   AI.PIECE_SQUARE_TABLES_MIDGAME = [
@@ -1235,8 +1235,8 @@ AI.createPSQT = function (chessPosition) {
     Array(64).fill(0),
   ]
 
-  // AI.PIECE_SQUARE_TABLES_MIDGAME = [...AI.PIECE_SQUARE_TABLES_APERTURE]
-  // AI.PIECE_SQUARE_TABLES_ENDGAME = [...AI.PIECE_SQUARE_TABLES_APERTURE]
+  // AI.PIECE_SQUARE_TABLES_MIDGAME = [...AI.PIECE_SQUARE_TABLES_OPENING]
+  // AI.PIECE_SQUARE_TABLES_ENDGAME = [...AI.PIECE_SQUARE_TABLES_OPENING]
 
   let color = chessPosition.getTurnColor()
 
@@ -1282,22 +1282,22 @@ AI.createPSQT = function (chessPosition) {
   //Castiga captura y maniobras con peón frontal del rey
   if (kingposition >= 61 || (kingposition>=56 && kingposition<=58)) {
     AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 7] +=160
-    AI.PIECE_SQUARE_TABLES_APERTURE[0][kingposition - 7] +=160
+    AI.PIECE_SQUARE_TABLES_OPENING[0][kingposition - 7] +=160
     AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 8] +=120
-    AI.PIECE_SQUARE_TABLES_APERTURE[0][kingposition - 8] +=120
+    AI.PIECE_SQUARE_TABLES_OPENING[0][kingposition - 8] +=120
     AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 9] +=160
-    AI.PIECE_SQUARE_TABLES_APERTURE[0][kingposition - 9] +=160
+    AI.PIECE_SQUARE_TABLES_OPENING[0][kingposition - 9] +=160
 
     AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 15] -=100
-    AI.PIECE_SQUARE_TABLES_APERTURE[0][kingposition - 15] -=100
+    AI.PIECE_SQUARE_TABLES_OPENING[0][kingposition - 15] -=100
     AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 17] -=100
-    AI.PIECE_SQUARE_TABLES_APERTURE[0][kingposition - 17] -=100
+    AI.PIECE_SQUARE_TABLES_OPENING[0][kingposition - 17] -=100
     AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 23] -=200    
-    AI.PIECE_SQUARE_TABLES_APERTURE[0][kingposition - 23] -=200    
+    AI.PIECE_SQUARE_TABLES_OPENING[0][kingposition - 23] -=200    
     AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 24] -=200    
-    AI.PIECE_SQUARE_TABLES_APERTURE[0][kingposition - 24] -=200    
+    AI.PIECE_SQUARE_TABLES_OPENING[0][kingposition - 24] -=200    
     AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 25] -=200    
-    AI.PIECE_SQUARE_TABLES_APERTURE[0][kingposition - 25] -=200    
+    AI.PIECE_SQUARE_TABLES_OPENING[0][kingposition - 25] -=200    
   }
 
   //Caballos al centro
@@ -1328,12 +1328,12 @@ AI.createPSQT = function (chessPosition) {
   // AI.PIECE_SQUARE_TABLES_MIDGAME[1][62] -= 40
 
   //Premia caballos en Outposts
-  AI.PIECE_SQUARE_TABLES_APERTURE[1] = AI.PIECE_SQUARE_TABLES_APERTURE[1].map((e,i)=>{
+  AI.PIECE_SQUARE_TABLES_OPENING[1] = AI.PIECE_SQUARE_TABLES_OPENING[1].map((e,i)=>{
     let ranks456 = i >= 16 && i <= 39 ? 40 : 0
     return e + (pawnmap[i]? 60 + ranks456 : -20)
   })
 
-  console.log('Caballitos', AI.PIECE_SQUARE_TABLES_APERTURE[1])
+  console.log('Caballitos', AI.PIECE_SQUARE_TABLES_OPENING[1])
 
   AI.PIECE_SQUARE_TABLES_MIDGAME[1] = AI.PIECE_SQUARE_TABLES_MIDGAME[1].map((e,i)=>{
     let ranks456 = pawnmap[i] >= 16 && pawnmap[i] <= 39 ? 40 : 0
@@ -1405,13 +1405,13 @@ AI.createPSQT = function (chessPosition) {
   }
 
   
-  AI.PIECE_SQUARE_TABLES_APERTURE[3] = AI.PIECE_SQUARE_TABLES_APERTURE[3].map((e,i)=>{
+  AI.PIECE_SQUARE_TABLES_OPENING[3] = AI.PIECE_SQUARE_TABLES_OPENING[3].map((e,i)=>{
     let col = i%8
     return e + (pawnfiles[col]? -40 : 0)
   })
   
   
-  AI.PIECE_SQUARE_TABLES_APERTURE[3] = AI.PIECE_SQUARE_TABLES_APERTURE[3].map((e,i)=>{
+  AI.PIECE_SQUARE_TABLES_OPENING[3] = AI.PIECE_SQUARE_TABLES_OPENING[3].map((e,i)=>{
     let col = i%8
     return e + (!pawnfiles[col]? 80 : 0) + (!pawnXfiles[col]? 50 : 0)
   })
@@ -1606,7 +1606,7 @@ AI.createPSQT = function (chessPosition) {
   ////////////////////// pawn structure ////////////////////
 
     //Peones a casillas defendidas por otro peón
-      AI.PIECE_SQUARE_TABLES_APERTURE[0] = AI.PIECE_SQUARE_TABLES_APERTURE[0].map((e,i)=>{
+      AI.PIECE_SQUARE_TABLES_OPENING[0] = AI.PIECE_SQUARE_TABLES_OPENING[0].map((e,i)=>{
         let defended = pawnmap[i]
         return e + (defended? 80 : -20)
       })
@@ -1757,7 +1757,7 @@ AI.setphase = function (chessPosition) {
   
   AI.createPSQT(chessPosition)
 
-  if (phase == 1) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_APERTURE]
+  if (phase == 1) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_OPENING]
 
   if (phase == 2) {
     AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_MIDGAME]
