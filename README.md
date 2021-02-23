@@ -1,9 +1,9 @@
 # ♘ Orobas Chess AI
 v1.1.0
 
-Orobas is a Chess AI created in 2020 using pure javascript. The move generator is an old but beautifully written javascript project from @kbjorklu (https://github.com/kbjorklu/chess).
+Orobas is a Chess AI created in 2020 for research and educational purposes, using pure javascript. The move generator is an old but beautifully written javascript project from @kbjorklu (https://github.com/kbjorklu/chess).
 
-Orobas is a Shanon's Type-B AI (https://www.chessprogramming.org/Type_B_Strategy) based on these ideas:
+Orobas is itendend to be a Shanon's Type-B AI (https://www.chessprogramming.org/Type_B_Strategy) based on these ideas:
 
 1. Positional moves are evaluated diligently only at the first one or two plies for every piece. Chess maneuvers of 3 or more moves are very rare.
 2. Depth is important only if we are counting moves. So, a deep analysis must be made only in case of tactic moves (ie. checks, captures, promotions, pinning moves, etc.).
@@ -22,8 +22,8 @@ The main intention is not to create an AI that plays better than other chess eng
 * Delta pruning on Quiescense Search.
 * Reverse futility pruning (soft implementation of the null-move pruning).
 * Pre-processed Piece Square Tables (PSQT) at the begining of every search.
-* Mobility analysis, limited only to first plies.
-* General pawn structure analysis, limited only to first plies.
+* Mobility analysis.
+* General pawn structure analysis.
 * Material evaluation, including valuation of pieces asymmetry (in order to avoid the exchange of 3 pawns for a knight).
 * History heuristic, applied only to the actual position. No need for killer moves.
 * Move ordering based on hash moves, good captures (MVV-LVA), history, PSQT & bad captures.
