@@ -21,7 +21,7 @@ let totaldepth = 20
 //20->2894
 
 // Math.seedrandom((new Date()).toTimeString())
-let random = 0//80
+let random = 80
 
 let phase = 1
 let htlength = 1e8
@@ -425,11 +425,23 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
   let mobility = 0
   let defendedpawns = 0
   
-  mobility = AI.getMobility(P,N,B,R,Q,Px,chessPosition, color) -
-             AI.getMobility(Px,Nx,Bx,Rx,Qx,P,chessPosition, !color)
-             
-  psqt = AI.getPieceSquareValue(P,N,B,R,Q,K, color) -
-        AI.getPieceSquareValue(Px,Nx,Bx,Rx,Qx,Kx, !color)
+  
+  if (iteration <= 4 || AI.changeinPV) {
+    //PSQT en iteration<=4 +100 ELO)
+    psqt = AI.getPieceSquareValue(P,N,B,R,Q,K, color) -
+           AI.getPieceSquareValue(Px,Nx,Bx,Rx,Qx,Kx, !color)
+           
+    // defendedpawns = AI.getDefendedPawns(P, color)-
+    //                 AI.getDefendedPawns(Px, !color)
+    
+    if (phase > 0) {
+      mobility = AI.getMobility(P,N,B,R,Q,Px,chessPosition, color) -
+                 AI.getMobility(Px,Nx,Bx,Rx,Qx,P,chessPosition, !color)
+    }
+    
+    
+  }
+
 
   //badbishops = AI.getBadBishops(chessPosition, color) - AI.getBadBishops(chessPosition,  !color)
 
@@ -470,35 +482,22 @@ AI.getBadBishops = function(chessPosition, color) {
 
 AI.getMobility = function(P,N,B,R,Q,Px,chessPosition, color) {
   let us = chessPosition.getColorBitboard(color).dup()
+  let them = chessPosition.getColorBitboard(color).dup()
   
   let enemypawnattackmask = Chess.Position.makePawnAttackMask(!color, Px).dup()
 
-
-  //Chess.Bitboard.RANKS[0].dup().or(Chess.Bitboard.RANKS[1])
-
-  let nmobility = 0
+  let mobility = 0
 
   while (!N.isEmpty()) {
-      nmobility = AI.MOBILITY_VALUES[1][Chess.Bitboard.KNIGHT_MOVEMENTS[N.extractLowestBitPosition()].dup().and_not(enemypawnattackmask).and_not(P).popcnt()]
+      mobility += AI.MOBILITY_VALUES[1][Chess.Bitboard.KNIGHT_MOVEMENTS[N.extractLowestBitPosition()].dup().and_not(enemypawnattackmask).and_not(P).popcnt()]
   }
 
-  let space = enemypawnattackmask.or(Px).or(us)
+  let space = them.or(us)
 
-  let bmobility = AI.MOBILITY_VALUES[2][chessPosition.makeBishopAttackMask(B, space)
-                  .and_not(us).and_not(enemypawnattackmask)
-                  .dup().popcnt() / B.popcnt() | 0]
-  let rmobility = AI.MOBILITY_VALUES[3][chessPosition.makeRookAttackMask(R, space)
-                  .and_not(us).and_not(enemypawnattackmask)
-                  .dup().popcnt() / R.popcnt() | 0]
-  let qmobility = AI.MOBILITY_VALUES[4][(chessPosition.makeBishopAttackMask(Q, space)
-                  .and_not(us).and_not(enemypawnattackmask)
-                  .dup().popcnt()
-
-                  + chessPosition.makeRookAttackMask(Q, space)
-                  .and_not(us).and_not(enemypawnattackmask)
-                  .dup().popcnt()) / Q.popcnt() | 0]
-
-  let mobility = nmobility + bmobility + rmobility + qmobility
+  mobility += AI.MOBILITY_VALUES[2][chessPosition.makeBishopAttackMask(B, space).and_not(us).dup().popcnt() / B.popcnt() | 0]
+  mobility += AI.MOBILITY_VALUES[3][chessPosition.makeRookAttackMask(R, space).and_not(us).dup().popcnt() / R.popcnt() | 0]
+  
+  mobility += AI.MOBILITY_VALUES[4][(chessPosition.makeBishopAttackMask(Q, space).and_not(us).dup().popcnt() + chessPosition.makeRookAttackMask(Q, space).dup().popcnt()) / Q.popcnt() | 0]
 
   //if (!mobility) console.log(mobility)
 
@@ -527,16 +526,14 @@ AI.getPieceSquareValue = function(P,B,N,R,Q,K,color) {
 
   let value = 0
 
-  let analizeonly = [0,5]
-
-  for (let i in analizeonly) {
-      let pieces = allpieces[analizeonly[i]].dup()
+  for (let i = 0; i <= 5; i++) {
+      let pieces = allpieces[i].dup()
 
       while (!pieces.isEmpty()) {
           let index = pieces.extractLowestBitPosition()
           let sqvalue
 
-          sqvalue = AI.PIECE_SQUARE_TABLES[analizeonly[i]][color ? index : (56 ^ index)]
+          sqvalue = AI.PIECE_SQUARE_TABLES[i][color ? index : (56 ^ index)]
 
           value += sqvalue
       }
@@ -590,18 +587,13 @@ AI.scoreMove = function(move) {
     }
   }
     
-  if (move.hvalue > 0) { 
+  if (move.hvalue) { 
     score += 1e3 + move.hvalue
     
     return score
-  } else {
-    if (move.hvalue <= 0) {
-      return move.psqtvalue - 600
-    } else {
-      return -1e4 + move.hvalue
-    }
-  }
+  } 
 
+  return move.psqtvalue - 10000
   
 }
 
@@ -1150,210 +1142,99 @@ AI.createPSQT = function (chessPosition) {
 
   AI.PIECE_SQUARE_TABLES_OPENING = [
   // Pawn
-    [ 
-      0,  0,  0,  0,  0,  0,  0,  0,
-      0,  0,  0,  0,  0,  0,  0,  0,
-      0,  0,  0,  0,  0,  0,  0,  0,
-      0,  0,  0,  0,  0,  0,  0,  0,
-      0,  0, 20, 20, 20,  0,  0,  0,
-      0,  0,-10,-20,  0,  0,  0,  0,
-     80, 80,-20,-20,-20, 80, 80, 80,
-      0,  0,  0,  0,  0,  0,  0,  0,
-    ],
+      [ 
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm,120,120, bm, bm, bm, 
+     bm, bm, bm,100,100, bm, bm, bm,
+     bm, bm, bm, 80, 80, bm,-80,-80,
+     bm, bm, 40, 60, 60, bm,-80,-80,
+     bm, bm, 20, 20, 20,-120,-80,bm,
+     60, 60,-40,-60,-40, 60,120, 60,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+      ],
 
-    // Knight
-    [
-      -50,-40,-30,-30,-30,-30,-40,-50,
-      -40,-20,  0,  0,  0,  0,-20,-40,
-      -30,  0, 10, 15, 15, 10,  0,-30,
-      -30,  5, 15, 20, 20, 15,  5,-30,
-      -30,  0, 15, 20, 20, 15,  0,-30,
-      -30,  5, 10, 15, 15, 10,  5,-30,
-      -40,-20,  0,  5,  5,  0,-20,-40,
-      -50,-40,-30,-30,-30,-30,-40,-50,
-    ],
-    // Bishop
-    [
-      -20,-10,-10,-10,-10,-10,-10,-20,
-      -10,  0,  0,  0,  0,  0,  0,-10,
-      -10,  0,  5, 10, 10,  5,  0,-10,
-      -10,  5,  5, 10, 10,  5,  5,-10,
-      -10,  0, 10, 10, 10, 10,  0,-10,
-      -10, 10, 10, 10, 10, 10, 10,-10,
-      -10,  5,  0,  0,  0,  0,  5,-10,
-      -20,-10,-80,-10,-10,-80,-10,-20,
+      // Knight
+      [ 
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, 20, 40, 40, 20, bm, bm,
+     bm, bm, 80, bm, bm, 80, 20, bm,
+     bm, bm, bm, 20, 20, bm, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+      
+      ],
+      // Bishop
+    [ 
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, 20, bm, bm, bm, bm, 20, bm,
+     bm, bm, 80, bm, bm, 80, bm, bm,
+     bm, 20, bm, bm, bm, bm, 20, bm,
+     bm, 80, bm, bm, 40, bm, 80, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
     ],
     // Rook
-    [
-      0,  0,  0,  0,  0,  0,  0,  0,
-      5, 10, 10, 10, 10, 10, 10,  5,
-     -5,  0,  0,  0,  0,  0,  0, -5,
-     -5,  0,  0,  0,  0,  0,  0, -5,
-     -5,  0,  0,  0,  0,  0,  0, -5,
-     -5,  0,  0,  0,  0,  0,  0, -5,
-     -5,  0,  0,  0,  0,  0,  0, -5,
-      0,-20,-20, 20, 20, 10,-40,  0
+    [ 
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, 80, 80, 60, bm, bm,
     ],
+
     // Queen
-    [
-      -20,-10,-10, -5, -5,-10,-10,-20,
-      -10,  0,  0,  0,  0,  0,  0,-10,
-      -10,  0,  5,  5,  5,  5,  0,-10,
-      -5,  0,  5,  5,  5,  5,  0, -5,
-        0,  0,  5,  5,  5,  5,  0, -5,
-      -10,  5,  5,  5,  5,  5,  0,-10,
-      -10,  0,  5,  0,  0,  0,  0,-10,
-      -20,-10,-10, -5, -5,-10,-10,-20,
+    [ 
+      bm, bm, bm, bm, bm, bm, bm, bm,
+      bm, bm, bm, bm, bm, bm, bm, bm,
+      bm, bm, bm, bm, bm, bm, bm, bm,
+      bm, bm, bm, bm, bm, bm, bm, bm,
+      bm, bm, bm, bm, bm, bm, bm, bm,
+      bm, bm, bm, bm, bm, bm, bm, bm,
+      bm, bm, bm, bm, bm, bm, bm, bm,
+      bm, bm, bm, 40, bm, bm, bm, bm,
     ],
 
     // King
     [ 
-      -90,-90,-90,-90,-90,-90,-90,-90,
-      -88,-88,-88,-88,-88,-88,-88,-88,
-      -86,-86,-86,-86,-86,-86,-86,-86,
-      -84,-84,-84,-84,-84,-84,-84,-84,
-      -82,-82,-82,-82,-82,-82,-82,-82,
-      -80,-80,-80,-80,-80,-80,-80,-80,
-      -60,-60,-60,-60,-60,-60,-60,-60,
-       20, 30,-40,-60,-20,-40,200, 20,
+       bm, bm, bm, bm, bm, bm, bm, bm,
+       bm, bm, bm, bm, bm, bm, bm, bm,
+       bm, bm, bm, bm, bm, bm, bm, bm,
+       bm, bm, bm, bm, bm, bm, bm, bm,
+       bm, bm, bm, bm, bm, bm, bm, bm, 
+       bm, bm, bm, bm, bm, bm, bm, bm,
+       bm, bm, bm, bm, bm, bm, bm, bm,
+       bm, bm, bm, bm, bm,2*bm,200,bm
+
     ]
   ]
 
+  // for (let i = 0; i < 6; i++) {
+  //   AI.PIECE_SQUARE_TABLES_OPENING[i] = AI.PIECE_SQUARE_TABLES_OPENING[i].map(e=>e/2)
+  // }
+
   AI.PIECE_SQUARE_TABLES_MIDGAME = [
-    [ 
-      0,  0,  0,  0,  0,  0,  0,  0,
-      0,  0,  0,  0,  0,  0,  0,  0,
-      0,  0,  0,  0,  0,  0,  0,  0,
-      0,  0,  0,  0,  0,  0,  0,  0,
-      0,  0,  0,  0,  0,  0,  0,  0,
-      0,  0,  0,  0,  0,  0,  0,  0,
-     80, 80,-20,-20,-20, 80, 80, 80,
-      0,  0,  0,  0,  0,  0,  0,  0,
-    ],
-    // Knight
-    [
-      -50,-40,-30,-30,-30,-30,-40,-50,
-      -40,-20,  0,  0,  0,  0,-20,-40,
-      -30,  0, 10, 15, 15, 10,  0,-30,
-      -30,  5, 15, 20, 20, 15,  5,-30,
-      -30,  0, 15, 20, 20, 15,  0,-30,
-      -30,  5, 10, 15, 15, 10,  5,-30,
-      -40,-20,  0,  5,  5,  0,-20,-40,
-      -50,-40,-30,-30,-30,-30,-40,-50,
-    ],
-    // Bishop
-    [
-      -20,-10,-10,-10,-10,-10,-10,-20,
-      -10,  0,  0,  0,  0,  0,  0,-10,
-      -10,  0,  5, 10, 10,  5,  0,-10,
-      -10,  5,  5, 10, 10,  5,  5,-10,
-      -10,  0, 10, 10, 10, 10,  0,-10,
-      -10, 10, 10, 10, 10, 10, 10,-10,
-      -10,  5,  0,  0,  0,  0,  5,-10,
-      -20,-10,-10,-10,-10,-10,-10,-20,
-    ],
-    // Rook
-    [
-      0,  0,  0,  0,  0,  0,  0,  0,
-      5, 10, 10, 10, 10, 10, 10,  5,
-     -5,  0,  0,  0,  0,  0,  0, -5,
-     -5,  0,  0,  0,  0,  0,  0, -5,
-     -5,  0,  0,  0,  0,  0,  0, -5,
-     -5,  0,  0,  0,  0,  0,  0, -5,
-     -5,  0,  0,  0,  0,  0,  0, -5,
-      0,  0,  0,  5,  5,  0,  0,  0
-    ],
-    // Queen
-    [
-      -20,-10,-10, -5, -5,-10,-10,-20,
-      -10,  0,  0,  0,  0,  0,  0,-10,
-      -10,  0,  5,  5,  5,  5,  0,-10,
-      -5,  0,  5,  5,  5,  5,  0, -5,
-        0,  0,  5,  5,  5,  5,  0, -5,
-      -10,  5,  5,  5,  5,  5,  0,-10,
-      -10,  0,  5,  0,  0,  0,  0,-10,
-      -20,-10,-10, -5, -5,-10,-10,-20,
-    ],
-    [ 
-      -90,-90,-90,-90,-90,-90,-90,-90,
-      -88,-88,-88,-88,-88,-88,-88,-88,
-      -86,-86,-86,-86,-86,-86,-86,-86,
-      -84,-84,-84,-84,-84,-84,-84,-84,
-      -82,-82,-82,-82,-82,-82,-82,-82,
-      -80,-80,-80,-80,-80,-80,-80,-80,
-      -60,-60,-60,-60,-60,-60,-60,-60,
-       20, 30,-40,-60,-20,-40,200, 20,
-    ],
+    Array(64).fill(0),
+    Array(64).fill(0),
+    Array(64).fill(0),
+    Array(64).fill(0),
+    Array(64).fill(0),
+    Array(64).fill(0),
   ]
 
   AI.PIECE_SQUARE_TABLES_ENDGAME = [
-    [
-      60,60,60,60,60,60,60,60,
-      50,50,50,50,50,50,50,50,
-      40,40,40,40,40,40,40,40,
-      30,30,30,30,30,30,30,30,
-      20,20,20,20,20,20,20,20,
-      10,10,10,10,10,10,10,10,
-       0, 0, 0, 0, 0, 0, 0, 0,
-       0, 0, 0, 0, 0, 0, 0, 0,
-    ],
-    // Knight
-    [
-      -50,-40,-30,-30,-30,-30,-40,-50,
-      -40,-20,  0,  0,  0,  0,-20,-40,
-      -30,  0, 10, 15, 15, 10,  0,-30,
-      -30,  5, 15, 20, 20, 15,  5,-30,
-      -30,  0, 15, 20, 20, 15,  0,-30,
-      -30,  5, 10, 15, 15, 10,  5,-30,
-      -40,-20,  0,  5,  5,  0,-20,-40,
-      -50,-40,-30,-30,-30,-30,-40,-50,
-    ],
-    // Bishop
-    [
-      -20,-10,-10,-10,-10,-10,-10,-20,
-      -10,  0,  0,  0,  0,  0,  0,-10,
-      -10,  0,  5, 10, 10,  5,  0,-10,
-      -10,  5,  5, 10, 10,  5,  5,-10,
-      -10,  0, 10, 10, 10, 10,  0,-10,
-      -10, 10, 10, 10, 10, 10, 10,-10,
-      -10,  5,  0,  0,  0,  0,  5,-10,
-      -20,-10,-10,-10,-10,-10,-10,-20,
-    ],
-    // Rook
-    [
-      0,  0,  0,  0,  0,  0,  0,  0,
-      5, 10, 10, 10, 10, 10, 10,  5,
-     -5,  0,  0,  0,  0,  0,  0, -5,
-     -5,  0,  0,  0,  0,  0,  0, -5,
-     -5,  0,  0,  0,  0,  0,  0, -5,
-     -5,  0,  0,  0,  0,  0,  0, -5,
-     -5,  0,  0,  0,  0,  0,  0, -5,
-      0,  0,  0,  5,  5,  0,  0,  0
-    ],
-    // Queen
-    [
-      -20,-10,-10, -5, -5,-10,-10,-20,
-      -10,  0,  0,  0,  0,  0,  0,-10,
-      -10,  0,  5,  5,  5,  5,  0,-10,
-      -5,  0,  5,  5,  5,  5,  0, -5,
-        0,  0,  5,  5,  5,  5,  0, -5,
-      -10,  5,  5,  5,  5,  5,  0,-10,
-      -10,  0,  5,  0,  0,  0,  0,-10,
-      -20,-10,-10, -5, -5,-10,-10,-20,
-    ],
-    [
-      -120,-80,-40,-20,-20,-40,-80,-120,
-       -80,-40,-20,10,10,-20,-40,-80,
-      -40,10,20,30,30,20,10,-40,
-      -20,20,30,40,40,30,20,-20,
-      -20,20,30,40,40,30,20,-20,
-      -40,10,20,30,30,20,10,-40,
-      -80,-40,-20,10,10,-20,-40,-80,
-      -120,-80,-40,-20,-20,-40,-80,-120,
-    ],
+    Array(64).fill(0),
+    Array(64).fill(0),
+    Array(64).fill(0),
+    Array(64).fill(0),
+    Array(64).fill(0),
+    Array(64).fill(0),
   ]
-
-  return
 
   // AI.PIECE_SQUARE_TABLES_MIDGAME = [...AI.PIECE_SQUARE_TABLES_OPENING]
   // AI.PIECE_SQUARE_TABLES_ENDGAME = [...AI.PIECE_SQUARE_TABLES_OPENING]
@@ -1452,8 +1333,6 @@ AI.createPSQT = function (chessPosition) {
     let ranks456 = i >= 16 && i <= 39 ? 40 : 0
     return e + (pawnmap[i]? 60 + ranks456 : -20)
   })
-
-  console.log('Caballitos', AI.PIECE_SQUARE_TABLES_OPENING[1])
 
   AI.PIECE_SQUARE_TABLES_MIDGAME[1] = AI.PIECE_SQUARE_TABLES_MIDGAME[1].map((e,i)=>{
     let ranks456 = pawnmap[i] >= 16 && pawnmap[i] <= 39 ? 40 : 0
@@ -1583,7 +1462,7 @@ AI.createPSQT = function (chessPosition) {
       -20,-30,-30,-40,-40,-30,-30,-20,
       -10,-20,-20,-20,-20,-20,-20,-10,
        20, 20,  0,  0,  0,  0, 20, 20,
-       20, 30, 10,  0,  0, 10, 30, 20
+       20, 30, 10,  0,  0, 10, 80, 20
     ]
 
   //Premia enrocar
@@ -1952,14 +1831,6 @@ AI.getPV = function (chessPosition, length) {
 }
 
 AI.search = function(chessPosition, options) {
-  let Px = chessPosition.getPieceColorBitboard(0, 1).dup()
-  let us = chessPosition.getColorBitboard(0).dup()
-  let enemypawnattackmask = Chess.Position.makePawnAttackMask(1, Px).dup()
-  let space = enemypawnattackmask.or(Px).or(us)
-
-  let B = chessPosition.getPieceColorBitboard(2, 0).dup()
-  let mask = chessPosition.makeBishopAttackMask(B, space).and_not(us).and_not(enemypawnattackmask).dup().popcnt()
-  console.log('BISHOP MASK', mask)
   
   if (options && options.seconds) secondspermove = options.seconds
 
