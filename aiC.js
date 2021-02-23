@@ -426,7 +426,7 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
   let defendedpawns = 0
   
   
-  if (iteration <= 4) {
+  if (iteration <= 4 || AI.changeinPV) {
     //PSQT en iteration<=4 +100 ELO)
     psqt = AI.getPieceSquareValue(P,N,B,R,Q,K, color) -
            AI.getPieceSquareValue(Px,Nx,Bx,Rx,Qx,Kx, !color)
@@ -1895,6 +1895,7 @@ AI.search = function(chessPosition, options) {
     console.log('PHASE', phase)
   
     AI.PV = AI.getPV(chessPosition, totaldepth+1)
+    AI.changeinPV = true
 
     let alpha = -AI.INFINITY
     let beta = AI.INFINITY
@@ -1916,9 +1917,14 @@ AI.search = function(chessPosition, options) {
         
         score = (white? 1 : -1) * AI.PVS(chessPosition, alpha, beta, depth, 1)
 
-        // alpha = score
-
         AI.PV = AI.getPV(chessPosition, totaldepth+1)
+
+        if ([...AI.PV][1] && AI.bestmove && [...AI.PV][1].value !== AI.bestmove.value) {
+          console.log('CAMBIO!!!!!!!!!!!')
+          AI.changeinPV = true
+        } else {
+          AI.changeinPV = false
+        }
 
         let strmove = AI.PV[1]? AI.PV[1].getString() : '----'
         
