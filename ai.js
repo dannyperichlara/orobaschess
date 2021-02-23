@@ -426,13 +426,13 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
   let defendedpawns = 0
   
   
-  if (iteration <= 4) {
+  if (iteration <= 4 || AI.changeinPV) {
     //PSQT en iteration<=4 +100 ELO)
     psqt = AI.getPieceSquareValue(P,N,B,R,Q,K, color) -
            AI.getPieceSquareValue(Px,Nx,Bx,Rx,Qx,Kx, !color)
            
-    defendedpawns = AI.getDefendedPawns(P, color)-
-                    AI.getDefendedPawns(Px, !color)
+    // defendedpawns = AI.getDefendedPawns(P, color)-
+    //                 AI.getDefendedPawns(Px, !color)
     
     if (phase > 0) {
       mobility = AI.getMobility(P,N,B,R,Q,Px,chessPosition, color) -
@@ -1710,14 +1710,14 @@ AI.createPSQT = function (chessPosition) {
 
   //Rey cerca del centro
   AI.PIECE_SQUARE_TABLES_ENDGAME[5] = [
-    -50,-40,-30,-20,-20,-30,-40,-50,
-    -30,-20,-10,  0,  0,-10,-20,-30,
-    -30,-10, 20, 30, 30, 20,-10,-30,
-    -30,-10, 30, 40, 40, 30,-10,-30,
-    -30,-10, 30, 40, 40, 30,-10,-30,
-    -30,-10, 20, 30, 30, 20,-10,-30,
-    -30,-30,  0,  0,  0,  0,-30,-30,
-    -50,-30,-30,-30,-30,-30,-30,-50
+    -120,-80,-40,-20,-20,-40,-80,-120,
+    -80,-40,-20,10,10,-20,-40,-80,
+    -40,10,20,30,30,20,10,-40,
+    -20,20,30,40,40,30,20,-20,
+    -20,20,30,40,40,30,20,-20,
+    -40,10,20,30,30,20,10,-40,
+    -80,-40,-20,10,10,-20,-40,-80,
+    -120,-80,-40,-20,-20,-40,-80,-120,
   ]
 }
 
@@ -1895,6 +1895,7 @@ AI.search = function(chessPosition, options) {
     console.log('PHASE', phase)
   
     AI.PV = AI.getPV(chessPosition, totaldepth+1)
+    AI.changeinPV = true
 
     let alpha = -AI.INFINITY
     let beta = AI.INFINITY
@@ -1916,9 +1917,14 @@ AI.search = function(chessPosition, options) {
         
         score = (white? 1 : -1) * AI.PVS(chessPosition, alpha, beta, depth, 1)
 
-        // alpha = score
-
         AI.PV = AI.getPV(chessPosition, totaldepth+1)
+
+        if ([...AI.PV][1] && AI.bestmove && [...AI.PV][1].value !== AI.bestmove.value) {
+          console.log('CAMBIO!!!!!!!!!!!')
+          AI.changeinPV = true
+        } else {
+          AI.changeinPV = false
+        }
 
         let strmove = AI.PV[1]? AI.PV[1].getString() : '----'
         

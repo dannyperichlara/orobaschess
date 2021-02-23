@@ -425,23 +425,11 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
   let mobility = 0
   let defendedpawns = 0
   
-  
-  if (iteration <= 4 || AI.changeinPV) {
-    //PSQT en iteration<=4 +100 ELO)
-    psqt = AI.getPieceSquareValue(P,N,B,R,Q,K, color) -
-           AI.getPieceSquareValue(Px,Nx,Bx,Rx,Qx,Kx, !color)
-           
-    defendedpawns = AI.getDefendedPawns(P, color)-
-                    AI.getDefendedPawns(Px, !color)
-    
-    if (phase > 0) {
-      mobility = AI.getMobility(P,N,B,R,Q,Px,chessPosition, color) -
-                 AI.getMobility(Px,Nx,Bx,Rx,Qx,P,chessPosition, !color)
-    }
-    
-    
-  }
-
+  mobility = AI.getMobility(P,N,B,R,Q,Px,chessPosition, color) -
+             AI.getMobility(Px,Nx,Bx,Rx,Qx,P,chessPosition, !color)
+             
+  psqt = AI.getPieceSquareValue(P,N,B,R,Q,K, color) -
+        AI.getPieceSquareValue(Px,Nx,Bx,Rx,Qx,Kx, !color)
 
   //badbishops = AI.getBadBishops(chessPosition, color) - AI.getBadBishops(chessPosition,  !color)
 
@@ -525,14 +513,16 @@ AI.getPieceSquareValue = function(P,B,N,R,Q,K,color) {
 
   let value = 0
 
-  for (let i = 0; i <= 5; i++) {
-      let pieces = allpieces[i].dup()
+  let analizeonly = [0,5]
+
+  for (let i in analizeonly) {
+      let pieces = allpieces[analizeonly[i]].dup()
 
       while (!pieces.isEmpty()) {
           let index = pieces.extractLowestBitPosition()
           let sqvalue
 
-          sqvalue = AI.PIECE_SQUARE_TABLES[i][color ? index : (56 ^ index)]
+          sqvalue = AI.PIECE_SQUARE_TABLES[analizeonly[i]][color ? index : (56 ^ index)]
 
           value += sqvalue
       }
@@ -1141,99 +1131,94 @@ AI.createPSQT = function (chessPosition) {
 
   AI.PIECE_SQUARE_TABLES_OPENING = [
   // Pawn
-      [ 
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm,120,120, bm, bm, bm, 
-     bm, bm, bm,100,100, bm, bm, bm,
-     bm, bm, bm, 80, 80, bm,-80,-80,
-     bm, bm, 40, 60, 60, bm,-80,-80,
-     bm, bm, 20, 20, 20,-120,-80,bm,
-     60, 60,-40,-60,-40, 60,120, 60,
-     bm, bm, bm, bm, bm, bm, bm, bm,
-      ],
-
-      // Knight
-      [ 
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, 20, 40, 40, 20, bm, bm,
-     bm, bm, 80, bm, bm, 80, 20, bm,
-     bm, bm, bm, 20, 20, bm, bm, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
-      
-      ],
-      // Bishop
     [ 
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, 20, bm, bm, bm, bm, 20, bm,
-     bm, bm, 80, bm, bm, 80, bm, bm,
-     bm, 20, bm, bm, bm, bm, 20, bm,
-     bm, 80, bm, bm, 40, bm, 80, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+     80, 80,-20,-20,-20, 80, 80, 80,
+      0,  0,  0,  0,  0,  0,  0,  0,
     ],
+
+    // Knight
+    Array(64).fill(0),
+    // Bishop
+    Array(64).fill(0),
     // Rook
-    [ 
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm, 80, 80, 60, bm, bm,
-    ],
-
+    Array(64).fill(0),
     // Queen
-    [ 
-      bm, bm, bm, bm, bm, bm, bm, bm,
-      bm, bm, bm, bm, bm, bm, bm, bm,
-      bm, bm, bm, bm, bm, bm, bm, bm,
-      bm, bm, bm, bm, bm, bm, bm, bm,
-      bm, bm, bm, bm, bm, bm, bm, bm,
-      bm, bm, bm, bm, bm, bm, bm, bm,
-      bm, bm, bm, bm, bm, bm, bm, bm,
-      bm, bm, bm, 40, bm, bm, bm, bm,
-    ],
+    Array(64).fill(0),
 
     // King
     [ 
-       bm, bm, bm, bm, bm, bm, bm, bm,
-       bm, bm, bm, bm, bm, bm, bm, bm,
-       bm, bm, bm, bm, bm, bm, bm, bm,
-       bm, bm, bm, bm, bm, bm, bm, bm,
-       bm, bm, bm, bm, bm, bm, bm, bm, 
-       bm, bm, bm, bm, bm, bm, bm, bm,
-       bm, bm, bm, bm, bm, bm, bm, bm,
-       bm, bm, bm, bm, bm,2*bm,200,bm
-
+      -90,-90,-90,-90,-90,-90,-90,-90,
+      -88,-88,-88,-88,-88,-88,-88,-88,
+      -86,-86,-86,-86,-86,-86,-86,-86,
+      -84,-84,-84,-84,-84,-84,-84,-84,
+      -82,-82,-82,-82,-82,-82,-82,-82,
+      -80,-80,-80,-80,-80,-80,-80,-80,
+      -60,-60,-60,-60,-60,-60,-60,-60,
+       20, 30,-40,-60,-20,-40,200, 20,
     ]
   ]
 
-  // for (let i = 0; i < 6; i++) {
-  //   AI.PIECE_SQUARE_TABLES_OPENING[i] = AI.PIECE_SQUARE_TABLES_OPENING[i].map(e=>e/2)
-  // }
-
   AI.PIECE_SQUARE_TABLES_MIDGAME = [
+    [ 
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+     80, 80,-20,-20,-20, 80, 80, 80,
+      0,  0,  0,  0,  0,  0,  0,  0,
+    ],
     Array(64).fill(0),
     Array(64).fill(0),
     Array(64).fill(0),
     Array(64).fill(0),
-    Array(64).fill(0),
-    Array(64).fill(0),
+    [ 
+      -90,-90,-90,-90,-90,-90,-90,-90,
+      -88,-88,-88,-88,-88,-88,-88,-88,
+      -86,-86,-86,-86,-86,-86,-86,-86,
+      -84,-84,-84,-84,-84,-84,-84,-84,
+      -82,-82,-82,-82,-82,-82,-82,-82,
+      -80,-80,-80,-80,-80,-80,-80,-80,
+      -60,-60,-60,-60,-60,-60,-60,-60,
+       20, 30,-40,-60,-20,-40,200, 20,
+    ],
   ]
 
   AI.PIECE_SQUARE_TABLES_ENDGAME = [
+    [
+      6,6,6,6,6,6,6,6,
+      5,5,5,5,5,5,5,5,
+      4,4,4,4,4,4,4,4,
+      3,3,3,3,3,3,3,3,
+      2,2,2,2,2,2,2,2,
+      1,1,1,1,1,1,1,1,
+      0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,
+    ],
     Array(64).fill(0),
     Array(64).fill(0),
     Array(64).fill(0),
     Array(64).fill(0),
-    Array(64).fill(0),
-    Array(64).fill(0),
+    [
+      -120,-80,-40,-20,-20,-40,-80,-120,
+       -80,-40,-20,10,10,-20,-40,-80,
+      -40,10,20,30,30,20,10,-40,
+      -20,20,30,40,40,30,20,-20,
+      -20,20,30,40,40,30,20,-20,
+      -40,10,20,30,30,20,10,-40,
+      -80,-40,-20,10,10,-20,-40,-80,
+      -120,-80,-40,-20,-20,-40,-80,-120,
+    ],
   ]
+
+  return
 
   // AI.PIECE_SQUARE_TABLES_MIDGAME = [...AI.PIECE_SQUARE_TABLES_OPENING]
   // AI.PIECE_SQUARE_TABLES_ENDGAME = [...AI.PIECE_SQUARE_TABLES_OPENING]
@@ -1710,14 +1695,14 @@ AI.createPSQT = function (chessPosition) {
 
   //Rey cerca del centro
   AI.PIECE_SQUARE_TABLES_ENDGAME[5] = [
-    -50,-40,-30,-20,-20,-30,-40,-50,
-    -30,-20,-10,  0,  0,-10,-20,-30,
-    -30,-10, 20, 30, 30, 20,-10,-30,
-    -30,-10, 30, 40, 40, 30,-10,-30,
-    -30,-10, 30, 40, 40, 30,-10,-30,
-    -30,-10, 20, 30, 30, 20,-10,-30,
-    -30,-30,  0,  0,  0,  0,-30,-30,
-    -50,-30,-30,-30,-30,-30,-30,-50
+    -120,-80,-40,-20,-20,-40,-80,-120,
+    -80,-40,-20,10,10,-20,-40,-80,
+    -40,10,20,30,30,20,10,-40,
+    -20,20,30,40,40,30,20,-20,
+    -20,20,30,40,40,30,20,-20,
+    -40,10,20,30,30,20,10,-40,
+    -80,-40,-20,10,10,-20,-40,-80,
+    -120,-80,-40,-20,-20,-40,-80,-120,
   ]
 }
 
