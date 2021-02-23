@@ -929,7 +929,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     if (isPositional && phase < 3 && piece > 0 && piece < 5) noncaptures++
 
     // //Late bad captures pruning (name????????)
-    if (isCapture && phase < 3 && depth > 10 && move.mvvlva < 6000 && i > 0) {
+    if (isCapture && phase < 3 && depth > 10 && move.mvvlva < 6000 && i > 4) {
       continue
     }
 
@@ -971,7 +971,8 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     /*futility pruning */
     if (!near2mate && !incheck && 1 < depth && depth <= 3+R && i >= 1) {
       if (staticeval + 600*depth <= alpha) {
-        continue
+        return alpha
+        // continue
       }
     }
     
@@ -1476,6 +1477,9 @@ AI.createPSQT = function (chessPosition) {
       AI.PIECE_SQUARE_TABLES_MIDGAME[5][60]  -= 20
       AI.PIECE_SQUARE_TABLES_MIDGAME[5][61]  -= 20
       AI.PIECE_SQUARE_TABLES_MIDGAME[5][62]  +=120
+    } else {
+      AI.PIECE_SQUARE_TABLES_MIDGAME[5][62]  -=200
+      AI.PIECE_SQUARE_TABLES_OPENING[5][62]  -=200 //Evita enroque al vacío
     }
 
     if (chessPosition.hasCastlingRight(color, false) && pawnmap[kingposition-10] && pawnmap[kingposition-11]) {
@@ -1483,6 +1487,9 @@ AI.createPSQT = function (chessPosition) {
       AI.PIECE_SQUARE_TABLES_MIDGAME[5][58]  += 40
       AI.PIECE_SQUARE_TABLES_MIDGAME[5][59]  -= 40
       AI.PIECE_SQUARE_TABLES_MIDGAME[5][60]  -= 20
+    }  else {
+      AI.PIECE_SQUARE_TABLES_MIDGAME[5][58]  -=200
+      AI.PIECE_SQUARE_TABLES_OPENING[5][58]  -=200 //Evita enroque al vacío
     }
 
   //Rey fuera de las esquinas por poca movilidad y riesgo de mate de pasillo (arriba)
