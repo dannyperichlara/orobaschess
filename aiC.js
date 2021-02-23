@@ -21,7 +21,7 @@ let totaldepth = 20
 //20->2894
 
 // Math.seedrandom((new Date()).toTimeString())
-let random = 80
+let random = 0//80
 
 let phase = 1
 let htlength = 1e8
@@ -473,18 +473,32 @@ AI.getMobility = function(P,N,B,R,Q,Px,chessPosition, color) {
   
   let enemypawnattackmask = Chess.Position.makePawnAttackMask(!color, Px).dup()
 
-  let mobility = 0
+
+  //Chess.Bitboard.RANKS[0].dup().or(Chess.Bitboard.RANKS[1])
+
+  let nmobility = 0
 
   while (!N.isEmpty()) {
-      mobility += AI.MOBILITY_VALUES[1][Chess.Bitboard.KNIGHT_MOVEMENTS[N.extractLowestBitPosition()].dup().and_not(enemypawnattackmask).and_not(P).popcnt()]
+      nmobility = AI.MOBILITY_VALUES[1][Chess.Bitboard.KNIGHT_MOVEMENTS[N.extractLowestBitPosition()].dup().and_not(enemypawnattackmask).and_not(P).popcnt()]
   }
 
   let space = enemypawnattackmask.or(Px).or(us)
 
-  mobility += AI.MOBILITY_VALUES[2][chessPosition.makeBishopAttackMask(B, space).dup().popcnt() / B.popcnt() | 0]
-  mobility += AI.MOBILITY_VALUES[3][chessPosition.makeRookAttackMask(R, space).dup().popcnt() / R.popcnt() | 0]
-  
-  mobility += AI.MOBILITY_VALUES[4][(chessPosition.makeBishopAttackMask(Q, space).dup().popcnt() + chessPosition.makeRookAttackMask(Q, space).dup().popcnt()) / Q.popcnt() | 0]
+  let bmobility = AI.MOBILITY_VALUES[2][chessPosition.makeBishopAttackMask(B, space)
+                  .and_not(us).and_not(enemypawnattackmask)
+                  .dup().popcnt() / B.popcnt() | 0]
+  let rmobility = AI.MOBILITY_VALUES[3][chessPosition.makeRookAttackMask(R, space)
+                  .and_not(us).and_not(enemypawnattackmask)
+                  .dup().popcnt() / R.popcnt() | 0]
+  let qmobility = AI.MOBILITY_VALUES[4][(chessPosition.makeBishopAttackMask(Q, space)
+                  .and_not(us).and_not(enemypawnattackmask)
+                  .dup().popcnt()
+
+                  + chessPosition.makeRookAttackMask(Q, space)
+                  .and_not(us).and_not(enemypawnattackmask)
+                  .dup().popcnt()) / Q.popcnt() | 0]
+
+  let mobility = nmobility + bmobility + rmobility + qmobility
 
   //if (!mobility) console.log(mobility)
 
@@ -576,13 +590,18 @@ AI.scoreMove = function(move) {
     }
   }
     
-  if (move.hvalue) { 
+  if (move.hvalue > 0) { 
     score += 1e3 + move.hvalue
     
     return score
-  } 
+  } else {
+    if (move.hvalue <= 0) {
+      return move.psqtvalue - 600
+    } else {
+      return -1e4 + move.hvalue
+    }
+  }
 
-  return move.psqtvalue - 10000
   
 }
 
@@ -1136,20 +1155,56 @@ AI.createPSQT = function (chessPosition) {
       0,  0,  0,  0,  0,  0,  0,  0,
       0,  0,  0,  0,  0,  0,  0,  0,
       0,  0,  0,  0,  0,  0,  0,  0,
-      0,  0,  0,  0,  0,  0,  0,  0,
-      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0, 20, 20, 20,  0,  0,  0,
+      0,  0,-10,-20,  0,  0,  0,  0,
      80, 80,-20,-20,-20, 80, 80, 80,
       0,  0,  0,  0,  0,  0,  0,  0,
     ],
 
     // Knight
-    Array(64).fill(0),
+    [
+      -50,-40,-30,-30,-30,-30,-40,-50,
+      -40,-20,  0,  0,  0,  0,-20,-40,
+      -30,  0, 10, 15, 15, 10,  0,-30,
+      -30,  5, 15, 20, 20, 15,  5,-30,
+      -30,  0, 15, 20, 20, 15,  0,-30,
+      -30,  5, 10, 15, 15, 10,  5,-30,
+      -40,-20,  0,  5,  5,  0,-20,-40,
+      -50,-40,-30,-30,-30,-30,-40,-50,
+    ],
     // Bishop
-    Array(64).fill(0),
+    [
+      -20,-10,-10,-10,-10,-10,-10,-20,
+      -10,  0,  0,  0,  0,  0,  0,-10,
+      -10,  0,  5, 10, 10,  5,  0,-10,
+      -10,  5,  5, 10, 10,  5,  5,-10,
+      -10,  0, 10, 10, 10, 10,  0,-10,
+      -10, 10, 10, 10, 10, 10, 10,-10,
+      -10,  5,  0,  0,  0,  0,  5,-10,
+      -20,-10,-80,-10,-10,-80,-10,-20,
+    ],
     // Rook
-    Array(64).fill(0),
+    [
+      0,  0,  0,  0,  0,  0,  0,  0,
+      5, 10, 10, 10, 10, 10, 10,  5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+      0,-20,-20, 20, 20, 10,-40,  0
+    ],
     // Queen
-    Array(64).fill(0),
+    [
+      -20,-10,-10, -5, -5,-10,-10,-20,
+      -10,  0,  0,  0,  0,  0,  0,-10,
+      -10,  0,  5,  5,  5,  5,  0,-10,
+      -5,  0,  5,  5,  5,  5,  0, -5,
+        0,  0,  5,  5,  5,  5,  0, -5,
+      -10,  5,  5,  5,  5,  5,  0,-10,
+      -10,  0,  5,  0,  0,  0,  0,-10,
+      -20,-10,-10, -5, -5,-10,-10,-20,
+    ],
 
     // King
     [ 
@@ -1175,10 +1230,50 @@ AI.createPSQT = function (chessPosition) {
      80, 80,-20,-20,-20, 80, 80, 80,
       0,  0,  0,  0,  0,  0,  0,  0,
     ],
-    Array(64).fill(0),
-    Array(64).fill(0),
-    Array(64).fill(0),
-    Array(64).fill(0),
+    // Knight
+    [
+      -50,-40,-30,-30,-30,-30,-40,-50,
+      -40,-20,  0,  0,  0,  0,-20,-40,
+      -30,  0, 10, 15, 15, 10,  0,-30,
+      -30,  5, 15, 20, 20, 15,  5,-30,
+      -30,  0, 15, 20, 20, 15,  0,-30,
+      -30,  5, 10, 15, 15, 10,  5,-30,
+      -40,-20,  0,  5,  5,  0,-20,-40,
+      -50,-40,-30,-30,-30,-30,-40,-50,
+    ],
+    // Bishop
+    [
+      -20,-10,-10,-10,-10,-10,-10,-20,
+      -10,  0,  0,  0,  0,  0,  0,-10,
+      -10,  0,  5, 10, 10,  5,  0,-10,
+      -10,  5,  5, 10, 10,  5,  5,-10,
+      -10,  0, 10, 10, 10, 10,  0,-10,
+      -10, 10, 10, 10, 10, 10, 10,-10,
+      -10,  5,  0,  0,  0,  0,  5,-10,
+      -20,-10,-10,-10,-10,-10,-10,-20,
+    ],
+    // Rook
+    [
+      0,  0,  0,  0,  0,  0,  0,  0,
+      5, 10, 10, 10, 10, 10, 10,  5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+      0,  0,  0,  5,  5,  0,  0,  0
+    ],
+    // Queen
+    [
+      -20,-10,-10, -5, -5,-10,-10,-20,
+      -10,  0,  0,  0,  0,  0,  0,-10,
+      -10,  0,  5,  5,  5,  5,  0,-10,
+      -5,  0,  5,  5,  5,  5,  0, -5,
+        0,  0,  5,  5,  5,  5,  0, -5,
+      -10,  5,  5,  5,  5,  5,  0,-10,
+      -10,  0,  5,  0,  0,  0,  0,-10,
+      -20,-10,-10, -5, -5,-10,-10,-20,
+    ],
     [ 
       -90,-90,-90,-90,-90,-90,-90,-90,
       -88,-88,-88,-88,-88,-88,-88,-88,
@@ -1193,19 +1288,59 @@ AI.createPSQT = function (chessPosition) {
 
   AI.PIECE_SQUARE_TABLES_ENDGAME = [
     [
-      6,6,6,6,6,6,6,6,
-      5,5,5,5,5,5,5,5,
-      4,4,4,4,4,4,4,4,
-      3,3,3,3,3,3,3,3,
-      2,2,2,2,2,2,2,2,
-      1,1,1,1,1,1,1,1,
-      0,0,0,0,0,0,0,0,
-      0,0,0,0,0,0,0,0,
+      60,60,60,60,60,60,60,60,
+      50,50,50,50,50,50,50,50,
+      40,40,40,40,40,40,40,40,
+      30,30,30,30,30,30,30,30,
+      20,20,20,20,20,20,20,20,
+      10,10,10,10,10,10,10,10,
+       0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0,
     ],
-    Array(64).fill(0),
-    Array(64).fill(0),
-    Array(64).fill(0),
-    Array(64).fill(0),
+    // Knight
+    [
+      -50,-40,-30,-30,-30,-30,-40,-50,
+      -40,-20,  0,  0,  0,  0,-20,-40,
+      -30,  0, 10, 15, 15, 10,  0,-30,
+      -30,  5, 15, 20, 20, 15,  5,-30,
+      -30,  0, 15, 20, 20, 15,  0,-30,
+      -30,  5, 10, 15, 15, 10,  5,-30,
+      -40,-20,  0,  5,  5,  0,-20,-40,
+      -50,-40,-30,-30,-30,-30,-40,-50,
+    ],
+    // Bishop
+    [
+      -20,-10,-10,-10,-10,-10,-10,-20,
+      -10,  0,  0,  0,  0,  0,  0,-10,
+      -10,  0,  5, 10, 10,  5,  0,-10,
+      -10,  5,  5, 10, 10,  5,  5,-10,
+      -10,  0, 10, 10, 10, 10,  0,-10,
+      -10, 10, 10, 10, 10, 10, 10,-10,
+      -10,  5,  0,  0,  0,  0,  5,-10,
+      -20,-10,-10,-10,-10,-10,-10,-20,
+    ],
+    // Rook
+    [
+      0,  0,  0,  0,  0,  0,  0,  0,
+      5, 10, 10, 10, 10, 10, 10,  5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+      0,  0,  0,  5,  5,  0,  0,  0
+    ],
+    // Queen
+    [
+      -20,-10,-10, -5, -5,-10,-10,-20,
+      -10,  0,  0,  0,  0,  0,  0,-10,
+      -10,  0,  5,  5,  5,  5,  0,-10,
+      -5,  0,  5,  5,  5,  5,  0, -5,
+        0,  0,  5,  5,  5,  5,  0, -5,
+      -10,  5,  5,  5,  5,  5,  0,-10,
+      -10,  0,  5,  0,  0,  0,  0,-10,
+      -20,-10,-10, -5, -5,-10,-10,-20,
+    ],
     [
       -120,-80,-40,-20,-20,-40,-80,-120,
        -80,-40,-20,10,10,-20,-40,-80,
@@ -1817,6 +1952,14 @@ AI.getPV = function (chessPosition, length) {
 }
 
 AI.search = function(chessPosition, options) {
+  let Px = chessPosition.getPieceColorBitboard(0, 1).dup()
+  let us = chessPosition.getColorBitboard(0).dup()
+  let enemypawnattackmask = Chess.Position.makePawnAttackMask(1, Px).dup()
+  let space = enemypawnattackmask.or(Px).or(us)
+
+  let B = chessPosition.getPieceColorBitboard(2, 0).dup()
+  let mask = chessPosition.makeBishopAttackMask(B, space).and_not(us).and_not(enemypawnattackmask).dup().popcnt()
+  console.log('BISHOP MASK', mask)
   
   if (options && options.seconds) secondspermove = options.seconds
 
