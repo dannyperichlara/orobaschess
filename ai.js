@@ -263,87 +263,12 @@ AI.DRAW = 0
 AI.INFINITY = AI.MIDGAME_PIECE_VALUES[5]*4
 
 AI.PIECE_SQUARE_TABLES = [
-    Array(64).fill(0),
-    Array(64).fill(0),
-    Array(64).fill(0),
-    Array(64).fill(0),
-    Array(64).fill(0),
-    Array(64).fill(0)
-  ]
-
-AI.ENEMY_PSQT = [
-// Pawn
-    [ 
-    0,  0,  0,  0,  0,  0,  0,  0,
-  200,200,200,200,200,200,200,200, 
-  100,200,200,200,200,200,200,100, 
-   80,100, 40, 20, 20, 80,100, 80, 
-  -20, 30, 20, 10, 10, 20, 30,-20,
-  -10,  0,  0,  0,  0,  0,  0,-10, 
-    0,  0,  0,  0,  0,  0,  0,  0,
-    0,  0,  0,  0,  0,  0,  0,  0
-    ],
-
-    // Knight
-    [ 
-  -100,-20,-20,-20,-20,-20,-20,-100,
-  -100,  0,  0,  0,  0,  0,  0,-100,
-  -100, 60, 80, 80, 80, 80, 60,-100,
-  -100, 80, 80, 40, 40, 80, 80,-100,
-  -100,  0, 40, 40, 40, 40,  0,-100,
-  -100,  0, 20, 20, 20, 20,  0,-100,
-  -100,  0,  0, 20, 20,  0,  0,-100,
-  -100,-20,-20,-40,-40,-20,-20,-100,
-    
-    ],
-    // Bishop
-  [ 
-    0,  0,  0,  0,  0,  0,  0,  0,
-    0,  0,  0,  0,  0,  0,  0,  0,
-    0, 40,  0,  0,  0,  0, 40,  0,
-    0,  0, 40, 40, 40, 40,  0,  0,
-    0,  0, 40, 40, 40, 40,  0,  0,
-    0,  0,  0,  0,  0,  0,  0,  0,
-    0, 80,  0, 20, 20,  0, 80,  0,
-    0,  0,-20,  0,  0,-20,  0,  0,
-  ],
-  // Rook
-  [ 
-   80, 80, 80, 80, 80, 80, 80, 80,
-   80, 80, 80, 80, 80, 80, 80, 80,
-    0,  0,  0, 40, 40,  0,  0,  0,
-    0,  0,  0, 40, 40,  0,  0,  0,
-    0,  0,  0, 40, 40,  0,  0,  0,
-  -80,  0,  0, 40, 40,  0,  0,  0,
-  -40,  0,  0, 40, 40,  0,  0,  0,
- -100,-60,-20, 80, 80, 20,-80,-200,
-  ],
-
-  // Queen
-  [ 
-  200,200,200,200,200,200,200,200, 
-  150,150,150,150,150,150,150,150, 
-  120,120,120,120,120,120,120,120, 
-  120,100, 80, 40, 40, 80,100,120,
-   40, 30, 20, 10, 10, 20, 30, 40, 
-    0,  0,  0,  0,  0,  0,  0,  0, 
-    0,  0,  0,  0,  0,  0,  0,  0,
-    0,  0,  0,  0,  0,  0,  0,  0,
-    0,  0,  0,  0,  0,  0,  0,  0
-  ],
-
-  // King
-  [ 
-    0,  0,  0,-200,-100,  0,  0,  0,
-    0,  0,  0,-100,-100,  0,  0,  0,
-    0,  0,  0, -80, -80,  0,  0,  0,
-    0,  0,  0, -20, -20,  0,  0,  0,
-    0,  0,  0,  0,  0,  0,  0,  0,
-    0,  0,  0,  0,  0,  0,  0,  0,
-    0,  0,  0,  0,  0,  0,  0,  0,
-    0,  0,  0,  0,  0,  0,  0,  0,
-
-  ]
+  Array(64).fill(0),
+  Array(64).fill(0),
+  Array(64).fill(0),
+  Array(64).fill(0),
+  Array(64).fill(0),
+  Array(64).fill(0)
 ]
 
 AI.createTables = function () {
@@ -434,12 +359,8 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
     // defendedpawns = AI.getDefendedPawns(P, color)-
     //                 AI.getDefendedPawns(Px, !color)
     
-    if (phase > 0) {
       mobility = AI.getMobility(P,N,B,R,Q,Px,chessPosition, color) -
                  AI.getMobility(Px,Nx,Bx,Rx,Qx,P,chessPosition, !color)
-    }
-    
-    
   }
 
 
@@ -482,8 +403,9 @@ AI.getBadBishops = function(chessPosition, color) {
 
 AI.getMobility = function(P,N,B,R,Q,Px,chessPosition, color) {
   let us = chessPosition.getColorBitboard(color).dup()
-  let them = chessPosition.getColorBitboard(color).dup()
+  let them = chessPosition.getColorBitboard(!color).dup()
   
+  let pawnattackmask = Chess.Position.makePawnAttackMask(color, P).dup()
   let enemypawnattackmask = Chess.Position.makePawnAttackMask(!color, Px).dup()
 
   let mobility = 0
@@ -492,14 +414,12 @@ AI.getMobility = function(P,N,B,R,Q,Px,chessPosition, color) {
       mobility += AI.MOBILITY_VALUES[1][Chess.Bitboard.KNIGHT_MOVEMENTS[N.extractLowestBitPosition()].dup().and_not(enemypawnattackmask).and_not(P).popcnt()]
   }
 
-  let space = them.or(us)
+  let space = enemypawnattackmask.or(them).or(us)
 
   mobility += AI.MOBILITY_VALUES[2][chessPosition.makeBishopAttackMask(B, space).and_not(us).dup().popcnt() / B.popcnt() | 0]
   mobility += AI.MOBILITY_VALUES[3][chessPosition.makeRookAttackMask(R, space).and_not(us).dup().popcnt() / R.popcnt() | 0]
   
   mobility += AI.MOBILITY_VALUES[4][(chessPosition.makeBishopAttackMask(Q, space).and_not(us).dup().popcnt() + chessPosition.makeRookAttackMask(Q, space).dup().popcnt()) / Q.popcnt() | 0]
-
-  //if (!mobility) console.log(mobility)
 
   return mobility
 }
@@ -531,9 +451,7 @@ AI.getPieceSquareValue = function(P,B,N,R,Q,K,color) {
 
       while (!pieces.isEmpty()) {
           let index = pieces.extractLowestBitPosition()
-          let sqvalue
-
-          sqvalue = AI.PIECE_SQUARE_TABLES[i][color ? index : (56 ^ index)]
+          let sqvalue = AI.PIECE_SQUARE_TABLES[i][color ? index : (56 ^ index)]
 
           value += sqvalue
       }
@@ -930,14 +848,14 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     if (isPositional && phase < 3 && piece > 0 && piece < 5) noncaptures++
 
     // //Late bad captures pruning (name????????)
-    if (isCapture && phase < 3 && depth > 10 && move.mvvlva < 6000 && i > 4) {
-      continue
-    }
+    // if (isCapture && phase < 3 && depth > 10 && move.mvvlva < 6000 && i > 4) {
+    //   continue
+    // }
 
-    //  //Positional pruning (name???????)
-    if (depth > 6 && isPositional && noncaptures > 4) {
-      continue
-    }
+    // //  //Positional pruning (name???????)
+    // if (depth > 6 && isPositional && noncaptures > 4) {
+    //   continue
+    // }
 
     // if (chessPosition.movenumber == 1 && i > 0) continue // CHEQUEA ORDEN PSQT
 
@@ -1138,80 +1056,76 @@ AI.bin2map = function(bin, color) {
 AI.createPSQT = function (chessPosition) {
   console.log('CREATE PSQT')
 
-  let bm = -40 //badmove
-
   AI.PIECE_SQUARE_TABLES_OPENING = [
   // Pawn
       [ 
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm,120,120, bm, bm, bm, 
-     bm, bm, bm,100,100, bm, bm, bm,
-     bm, bm, bm, 80, 80, bm,-80,-80,
-     bm, bm, 40, 60, 60, bm,-80,-80,
-     bm, bm, 20, 20, 20,-120,-80,bm,
-     60, 60,-40,-60,-40, 60,120, 60,
-     bm, bm, bm, bm, bm, bm, bm, bm,
+        0,  0,  0,  0,  0,  0,  0,  0,
+        0,  0,  0,  0,  0,  0,  0,  0,
+        0,  0,  0,  0,  0,  0,  0,  0,
+        0,  0,  0,  0,  0,  0,  0,  0,
+        0,  0,  0, 20, 20,  0,  0,  0,
+        0,  0,  0,  0,  0,  0,  0,  0,
+       80, 80,-20,-20,-20, 80, 80, 80,
+        0,  0,  0,  0,  0,  0,  0,  0,
       ],
 
       // Knight
       [ 
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, 20, 40, 40, 20, bm, bm,
-     bm, bm, 80, bm, bm, 80, 20, bm,
-     bm, bm, bm, 20, 20, bm, bm, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
-      
+        -80,  0,  0,  0,  0,  0,  0,-80,
+        -80,  0,  0,  0,  0,  0,  0,-80,
+        -80,  0,  0,  0,  0,  0,  0,-80,
+        -80,  0,  0,  0,  0,  0,  0,-80,
+        -80,  0,  0,  0,  0,  0,  0,-80,
+        -80,  0,  0,  0,  0,  0,  0,-80,
+        -80,  0,  0,  0,  0,  0,  0,-80,
+        -80,-40,  0,  0,  0,  0,-40,-80,
       ],
       // Bishop
     [ 
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, 20, bm, bm, bm, bm, 20, bm,
-     bm, bm, 80, bm, bm, 80, bm, bm,
-     bm, 20, bm, bm, bm, bm, 20, bm,
-     bm, 80, bm, bm, 40, bm, 80, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,-20,  0,  0,-20,  0,  0,
     ],
     // Rook
     [ 
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm, bm, bm, bm, bm, bm,
-     bm, bm, bm, 80, 80, 60, bm, bm,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0, 40, 40,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+    -20,-30,-40, 20, 20,-40,-30,-20,
     ],
 
     // Queen
     [ 
-      bm, bm, bm, bm, bm, bm, bm, bm,
-      bm, bm, bm, bm, bm, bm, bm, bm,
-      bm, bm, bm, bm, bm, bm, bm, bm,
-      bm, bm, bm, bm, bm, bm, bm, bm,
-      bm, bm, bm, bm, bm, bm, bm, bm,
-      bm, bm, bm, bm, bm, bm, bm, bm,
-      bm, bm, bm, bm, bm, bm, bm, bm,
-      bm, bm, bm, 40, bm, bm, bm, bm,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,120,  0,  0,  0,  0,
     ],
 
     // King
     [ 
-       bm, bm, bm, bm, bm, bm, bm, bm,
-       bm, bm, bm, bm, bm, bm, bm, bm,
-       bm, bm, bm, bm, bm, bm, bm, bm,
-       bm, bm, bm, bm, bm, bm, bm, bm,
-       bm, bm, bm, bm, bm, bm, bm, bm, 
-       bm, bm, bm, bm, bm, bm, bm, bm,
-       bm, bm, bm, bm, bm, bm, bm, bm,
-       bm, bm, bm, bm, bm,2*bm,200,bm
-
-    ]
+      -90,-90,-90,-90,-90,-90,-90,-90,
+      -80,-80,-80,-80,-80,-80,-80,-80,
+      -70,-70,-70,-70,-70,-70,-70,-70,
+      -60,-60,-60,-60,-60,-60,-60,-60,
+      -50,-50,-50,-50,-50,-50,-50,-50,
+      -40,-40,-40,-40,-40,-40,-40,-40,
+      -30,-30,-30,-30,-30,-30,-30,-30,
+      -20, 40, 20,-20,-20,-20, 80,-20,
+      ]
   ]
 
   // for (let i = 0; i < 6; i++) {
@@ -1219,25 +1133,148 @@ AI.createPSQT = function (chessPosition) {
   // }
 
   AI.PIECE_SQUARE_TABLES_MIDGAME = [
-    Array(64).fill(0),
-    Array(64).fill(0),
-    Array(64).fill(0),
-    Array(64).fill(0),
-    Array(64).fill(0),
-    Array(64).fill(0),
-  ]
+    // Pawn
+        [ 
+          0,  0,  0,  0,  0,  0,  0,  0,
+          0,  0,  0,  0,  0,  0,  0,  0,
+          0,  0,  0,  0,  0,  0,  0,  0,
+          0,  0,  0, 20, 20,  0,  0,  0,
+        -20,-20, 20, 20, 20,-20,-20,-20,
+         20, 20, 20,  0,  0,  0, 20, 20,
+         80, 80,  0,  0,  0, 80, 80, 80,
+          0,  0,  0,  0,  0,  0,  0,  0,
+        ],
+  
+        // Knight
+        [ 
+          2,  3,  4,  4,  4,  4,  3,  2,
+          3,  4,  6,  6,  6,  6,  4,  2,
+          3,  4,  6,  6,  6,  6,  4,  2,
+          3,  3,  4,  4,  4,  4,  3,  2,
+          3,  3,  4,  4,  4,  4,  3,  3,
+          1,  2,  2,  2,  2,  2,  2,  1,
+          0,  0,  0,  0,  0,  0,  0,  0,
+          0,  0,  0,  0,  0,  0,  0,  0,
+        ],
+        // Bishop
+      [ 
+        3,  4,  5,  6,  6,  5,  4,  3,
+        3,  5,  6,  6,  6,  6,  5,  3,
+        3,  5,  6,  6,  6,  6,  5,  3,
+        3,  4,  5,  6,  6,  5,  4,  3,
+        4,  5,  6,  7,  7,  6,  5,  4,
+        4,  4,  5,  5,  5,  5,  4,  4,
+        4,  4,  3,  3,  3,  3,  4,  4,
+        4,  3,  2,  1,  1,  2,  3,  4,
+      ],
+      // Rook
+      [ 
+       10, 10, 10, 10, 10, 10, 10, 10,
+       10, 10, 10, 10, 10, 10, 10, 10,
+       10, 10, 10, 10, 10, 10, 10, 10,
+       10, 10, 10, 10, 10, 10, 10, 10,
+        4,  4,  4,  4,  4,  4,  4,  4,
+        4,  4,  4,  4,  4,  4,  4,  4,
+        4,  4,  4,  4,  4,  4,  4,  4,
+        4,  4,  4,  4,  4,  4,  4,  4,
+      ],
+  
+      // Queen
+      [ 
+       13, 14, 15, 16, 16, 15, 14, 13,
+       13, 15, 16, 16, 16, 16, 15, 13,
+       13, 15, 16, 16, 16, 16, 15, 13,
+       13, 14, 15, 16, 16, 15, 14, 13,
+        8,  9, 10, 11, 11, 10,  9,  8,
+        8,  8,  9, 10, 10,  9,  8,  8,
+        8,  8,  7,  7,  7,  7,  8,  8,
+        8,  7,  6,  5,  5,  6,  7,  8,
+      ],
+  
+      // King
+      [ 
+      -90,-90,-90,-90,-90,-90,-90,-90,
+      -80,-80,-80,-80,-80,-80,-80,-80,
+      -70,-70,-70,-70,-70,-70,-70,-70,
+      -60,-60,-60,-60,-60,-60,-60,-60,
+      -50,-50,-50,-50,-50,-50,-50,-50,
+      -40,-40,-40,-40,-40,-40,-40,-40,
+      -30,-30,-30,-30,-30,-30,-30,-30,
+      -20, 40, 20,-20,-20,-20, 80,-20,
+      ]
+    ]
 
   AI.PIECE_SQUARE_TABLES_ENDGAME = [
-    Array(64).fill(0),
-    Array(64).fill(0),
-    Array(64).fill(0),
-    Array(64).fill(0),
-    Array(64).fill(0),
-    Array(64).fill(0),
-  ]
-
-  // AI.PIECE_SQUARE_TABLES_MIDGAME = [...AI.PIECE_SQUARE_TABLES_OPENING]
-  // AI.PIECE_SQUARE_TABLES_ENDGAME = [...AI.PIECE_SQUARE_TABLES_OPENING]
+    // Pawn
+        [ 
+             0,   0,   0,   0,   0,   0,   0,   0,
+            80,  80,  80,  80,  80,  80,  80,  80,
+            40,  40,  40,  40,  40,  40,  40,  40,
+            20,  20,  20,  20,  20,  20,  20,  20,
+            10,  10,  10,  10,  10,  10,  10,  10,
+             0,   0,   0,   0,   0,   0,   0,   0,
+             0,   0,   0,   0,   0,   0,   0,   0,
+             0,   0,   0,   0,   0,   0,   0,   0,
+        ],
+  
+        // Knight
+        [ 
+          2,  3,  4,  4,  4,  4,  3,  2,
+          3,  4,  6,  6,  6,  6,  4,  2,
+          3,  4,  6,  6,  6,  6,  4,  2,
+          3,  3,  4,  4,  4,  4,  3,  2,
+          3,  3,  4,  4,  4,  4,  3,  3,
+          1,  2,  2,  2,  2,  2,  2,  1,
+          0,  0,  0,  0,  0,  0,  0,  0,
+          0,  0,  0,  0,  0,  0,  0,  0,
+        ],
+        // Bishop
+      [ 
+        3,  4,  5,  6,  6,  5,  4,  3,
+        3,  5,  6,  6,  6,  6,  5,  3,
+        3,  5,  6,  6,  6,  6,  5,  3,
+        3,  4,  5,  6,  6,  5,  4,  3,
+        4,  5,  6,  7,  7,  6,  5,  4,
+        4,  4,  5,  5,  5,  5,  4,  4,
+        4,  4,  3,  3,  3,  3,  4,  4,
+        4,  3,  2,  1,  1,  2,  3,  4,
+      ],
+      // Rook
+      [ 
+       10, 10, 10, 10, 10, 10, 10, 10,
+       10, 10, 10, 10, 10, 10, 10, 10,
+       10, 10, 10, 10, 10, 10, 10, 10,
+       10, 10, 10, 10, 10, 10, 10, 10,
+        4,  4,  4,  4,  4,  4,  4,  4,
+        4,  4,  4,  4,  4,  4,  4,  4,
+        4,  4,  4,  4,  4,  4,  4,  4,
+        4,  4,  4,  4,  4,  4,  4,  4,
+      ],
+  
+      // Queen
+      [ 
+       13, 14, 15, 16, 16, 15, 14, 13,
+       13, 15, 16, 16, 16, 16, 15, 13,
+       13, 15, 16, 16, 16, 16, 15, 13,
+       13, 14, 15, 16, 16, 15, 14, 13,
+        8,  9, 10, 11, 11, 10,  9,  8,
+        8,  8,  9, 10, 10,  9,  8,  8,
+        8,  8,  7,  7,  7,  7,  8,  8,
+        8,  7,  6,  5,  5,  6,  7,  8,
+      ],
+  
+      // King
+      [ 
+        3,  5,  5,  5,  5,  5,  5,  3,
+        5,  8,  8,  8,  8,  8,  8,  5,
+        5,  8,  8,  8,  8,  8,  8,  5,
+        3,  5,  5,  5,  5,  5,  5,  3,
+        2,  3,  3,  3,  3,  3,  3,  2,
+        0,  0,  0,  0,  0,  0,  0,  0,
+       -1, -1, -1, -1, -1, -1, -1, -1,
+       -2, -2, -2, -2, -2, -2, -2, -2,
+      ]
+    ]
 
   let color = chessPosition.getTurnColor()
 
