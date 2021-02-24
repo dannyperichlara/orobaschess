@@ -21,12 +21,12 @@ let totaldepth = 20
 //20->2894
 
 // Math.seedrandom((new Date()).toTimeString())
-let random = 80
+let random = 40
 
 let phase = 1
-let htlength = 1e8
+let htlength = 1 << 24
 let reduceHistoryFactor = 1 //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
-let mindepth =  4
+let mindepth =  2
 let secondspermove = 3
 
 let AI = function() {
@@ -351,7 +351,7 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
   let defendedpawns = 0
   
   
-  if (iteration <= 4 || AI.changeinPV) {
+  if (iteration <= 4) {
     //PSQT en iteration<=4 +100 ELO)
     psqt = AI.getPieceSquareValue(P,N,B,R,Q,K, color) -
            AI.getPieceSquareValue(Px,Nx,Bx,Rx,Qx,Kx, !color)
@@ -359,9 +359,10 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
     // defendedpawns = AI.getDefendedPawns(P, color)-
     //                 AI.getDefendedPawns(Px, !color)
     
-      mobility = AI.getMobility(P,N,B,R,Q,Px,chessPosition, color) -
-                 AI.getMobility(Px,Nx,Bx,Rx,Qx,P,chessPosition, !color)
   }
+  
+  mobility = AI.getMobility(P,N,B,R,Q,Px,chessPosition, color) -
+             AI.getMobility(Px,Nx,Bx,Rx,Qx,P,chessPosition, !color)
 
 
   //badbishops = AI.getBadBishops(chessPosition, color) - AI.getBadBishops(chessPosition,  !color)
@@ -369,7 +370,7 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
   //pawnsqt = phase < 2? AI.getPawnSquareValue(chessPosition, color) - AI.getPawnSquareValue(chessPosition,  !color) : 0
 
   //https://www.r-bloggers.com/2015/06/big-data-and-chess-what-are-the-predictive-point-values-of-chess-pieces/
-  // material += 50 * (colorMaterial.P - notcolorMaterial.P)
+  material += 60 * (P.popcnt() - Px.popcnt())
 
   
 
@@ -531,7 +532,7 @@ let mvvlvascores = [
   [4750,4975,6006,20150,20550,26650],
   [4600,4825,4850,6008,20400,26500],
   [4200,4425,4450,4600,6010,26100],
-  [3100,3325,3350,3500,3900,26000],
+  // [3100,3325,3350,3500,3900,26000],
   [0,1,2,3,4,26000],
 ]
 
@@ -862,7 +863,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     //REDUCTIONS (LMR)
 
     if (!incheck) {
-      if (true || pvNode && depth < 10) {
+      if (true) {
         //stockfish
         R += Math.log(depth+1)*Math.log(i+1)/1.95
       } else {
@@ -1112,7 +1113,7 @@ AI.createPSQT = function (chessPosition) {
       0,  0,  0,  0,  0,  0,  0,  0,
       0,  0,  0,  0,  0,  0,  0,  0,
       0,  0,  0,  0,  0,  0,  0,  0,
-      0,  0,  0,120,  0,  0,  0,  0,
+      0,  0,  0,200,  0,  0,  0,  0,
     ],
 
     // King

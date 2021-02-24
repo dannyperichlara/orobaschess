@@ -21,12 +21,12 @@ let totaldepth = 20
 //20->2894
 
 // Math.seedrandom((new Date()).toTimeString())
-let random = 80
+let random = 40
 
 let phase = 1
 let htlength = 1e8
 let reduceHistoryFactor = 1 //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
-let mindepth =  4
+let mindepth =  2
 let secondspermove = 3
 
 let AI = function() {
