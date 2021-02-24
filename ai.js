@@ -482,6 +482,7 @@ AI.getBadBishops = function(chessPosition, color) {
 
 AI.getMobility = function(P,N,B,R,Q,Px,chessPosition, color) {
   let us = chessPosition.getColorBitboard(color).dup()
+  let them = chessPosition.getColorBitboard(color).dup()
   
   let enemypawnattackmask = Chess.Position.makePawnAttackMask(!color, Px).dup()
 
@@ -491,12 +492,12 @@ AI.getMobility = function(P,N,B,R,Q,Px,chessPosition, color) {
       mobility += AI.MOBILITY_VALUES[1][Chess.Bitboard.KNIGHT_MOVEMENTS[N.extractLowestBitPosition()].dup().and_not(enemypawnattackmask).and_not(P).popcnt()]
   }
 
-  let space = enemypawnattackmask.or(Px).or(us)
+  let space = them.or(us)
 
-  mobility += AI.MOBILITY_VALUES[2][chessPosition.makeBishopAttackMask(B, space).dup().popcnt() / B.popcnt() | 0]
-  mobility += AI.MOBILITY_VALUES[3][chessPosition.makeRookAttackMask(R, space).dup().popcnt() / R.popcnt() | 0]
+  mobility += AI.MOBILITY_VALUES[2][chessPosition.makeBishopAttackMask(B, space).and_not(us).dup().popcnt() / B.popcnt() | 0]
+  mobility += AI.MOBILITY_VALUES[3][chessPosition.makeRookAttackMask(R, space).and_not(us).dup().popcnt() / R.popcnt() | 0]
   
-  mobility += AI.MOBILITY_VALUES[4][(chessPosition.makeBishopAttackMask(Q, space).dup().popcnt() + chessPosition.makeRookAttackMask(Q, space).dup().popcnt()) / Q.popcnt() | 0]
+  mobility += AI.MOBILITY_VALUES[4][(chessPosition.makeBishopAttackMask(Q, space).and_not(us).dup().popcnt() + chessPosition.makeRookAttackMask(Q, space).dup().popcnt()) / Q.popcnt() | 0]
 
   //if (!mobility) console.log(mobility)
 
@@ -1333,8 +1334,6 @@ AI.createPSQT = function (chessPosition) {
     return e + (pawnmap[i]? 60 + ranks456 : -20)
   })
 
-  console.log('Caballitos', AI.PIECE_SQUARE_TABLES_OPENING[1])
-
   AI.PIECE_SQUARE_TABLES_MIDGAME[1] = AI.PIECE_SQUARE_TABLES_MIDGAME[1].map((e,i)=>{
     let ranks456 = pawnmap[i] >= 16 && pawnmap[i] <= 39 ? 40 : 0
     return e + (pawnmap[i]? 60 + ranks456 : -20)
@@ -1463,7 +1462,7 @@ AI.createPSQT = function (chessPosition) {
       -20,-30,-30,-40,-40,-30,-30,-20,
       -10,-20,-20,-20,-20,-20,-20,-10,
        20, 20,  0,  0,  0,  0, 20, 20,
-       20, 30, 10,  0,  0, 10, 30, 20
+       20, 30, 10,  0,  0, 10, 80, 20
     ]
 
   //Premia enrocar
@@ -1606,20 +1605,20 @@ AI.createPSQT = function (chessPosition) {
   ////////////////////// pawn structure ////////////////////
 
     //Peones a casillas defendidas por otro peón
-      AI.PIECE_SQUARE_TABLES_OPENING[0] = AI.PIECE_SQUARE_TABLES_OPENING[0].map((e,i)=>{
-        let defended = pawnmap[i]
-        return e + (defended? 80 : -20)
-      })
+      // AI.PIECE_SQUARE_TABLES_OPENING[0] = AI.PIECE_SQUARE_TABLES_OPENING[0].map((e,i)=>{
+      //   let defended = pawnmap[i]
+      //   return e + (defended? 80 : -20)
+      // })
 
-      AI.PIECE_SQUARE_TABLES_MIDGAME[0] = AI.PIECE_SQUARE_TABLES_MIDGAME[0].map((e,i)=>{
-        let defended = pawnmap[i]
-        return e + (defended? 80 : -40)
-      })
+      // AI.PIECE_SQUARE_TABLES_MIDGAME[0] = AI.PIECE_SQUARE_TABLES_MIDGAME[0].map((e,i)=>{
+      //   let defended = pawnmap[i]
+      //   return e + (defended? 80 : -40)
+      // })
 
-      AI.PIECE_SQUARE_TABLES_ENDGAME[0] = AI.PIECE_SQUARE_TABLES_ENDGAME[0].map((e,i)=>{
-        let defended = pawnmap[i]
-        return e + (defended? 40 : 0)
-      })
+      // AI.PIECE_SQUARE_TABLES_ENDGAME[0] = AI.PIECE_SQUARE_TABLES_ENDGAME[0].map((e,i)=>{
+      //   let defended = pawnmap[i]
+      //   return e + (defended? 40 : 0)
+      // })
 
   ///////////////////////////// ENDGAME ////////////////////////
 
@@ -1832,6 +1831,14 @@ AI.getPV = function (chessPosition, length) {
 }
 
 AI.search = function(chessPosition, options) {
+  let Px = chessPosition.getPieceColorBitboard(0, 1).dup()
+  let us = chessPosition.getColorBitboard(0).dup()
+  let enemypawnattackmask = Chess.Position.makePawnAttackMask(1, Px).dup()
+  let space = enemypawnattackmask.or(Px).or(us)
+
+  let B = chessPosition.getPieceColorBitboard(2, 0).dup()
+  let mask = chessPosition.makeBishopAttackMask(B, space).and_not(us).and_not(enemypawnattackmask).dup().popcnt()
+  console.log('BISHOP MASK', mask)
   
   if (options && options.seconds) secondspermove = options.seconds
 

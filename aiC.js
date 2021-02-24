@@ -1605,20 +1605,20 @@ AI.createPSQT = function (chessPosition) {
   ////////////////////// pawn structure ////////////////////
 
     //Peones a casillas defendidas por otro peón
-      AI.PIECE_SQUARE_TABLES_OPENING[0] = AI.PIECE_SQUARE_TABLES_OPENING[0].map((e,i)=>{
-        let defended = pawnmap[i]
-        return e + (defended? 80 : -20)
-      })
+      // AI.PIECE_SQUARE_TABLES_OPENING[0] = AI.PIECE_SQUARE_TABLES_OPENING[0].map((e,i)=>{
+      //   let defended = pawnmap[i]
+      //   return e + (defended? 80 : -20)
+      // })
 
-      AI.PIECE_SQUARE_TABLES_MIDGAME[0] = AI.PIECE_SQUARE_TABLES_MIDGAME[0].map((e,i)=>{
-        let defended = pawnmap[i]
-        return e + (defended? 80 : -40)
-      })
+      // AI.PIECE_SQUARE_TABLES_MIDGAME[0] = AI.PIECE_SQUARE_TABLES_MIDGAME[0].map((e,i)=>{
+      //   let defended = pawnmap[i]
+      //   return e + (defended? 80 : -40)
+      // })
 
-      AI.PIECE_SQUARE_TABLES_ENDGAME[0] = AI.PIECE_SQUARE_TABLES_ENDGAME[0].map((e,i)=>{
-        let defended = pawnmap[i]
-        return e + (defended? 40 : 0)
-      })
+      // AI.PIECE_SQUARE_TABLES_ENDGAME[0] = AI.PIECE_SQUARE_TABLES_ENDGAME[0].map((e,i)=>{
+      //   let defended = pawnmap[i]
+      //   return e + (defended? 40 : 0)
+      // })
 
   ///////////////////////////// ENDGAME ////////////////////////
 
@@ -1831,6 +1831,14 @@ AI.getPV = function (chessPosition, length) {
 }
 
 AI.search = function(chessPosition, options) {
+  let Px = chessPosition.getPieceColorBitboard(0, 1).dup()
+  let us = chessPosition.getColorBitboard(0).dup()
+  let enemypawnattackmask = Chess.Position.makePawnAttackMask(1, Px).dup()
+  let space = enemypawnattackmask.or(Px).or(us)
+
+  let B = chessPosition.getPieceColorBitboard(2, 0).dup()
+  let mask = chessPosition.makeBishopAttackMask(B, space).and_not(us).and_not(enemypawnattackmask).dup().popcnt()
+  console.log('BISHOP MASK', mask)
   
   if (options && options.seconds) secondspermove = options.seconds
 
