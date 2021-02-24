@@ -930,14 +930,14 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     if (isPositional && phase < 3 && piece > 0 && piece < 5) noncaptures++
 
     // //Late bad captures pruning (name????????)
-    if (isCapture && phase < 3 && depth > 10 && move.mvvlva < 6000 && i > 4) {
-      continue
-    }
+    // if (isCapture && phase < 3 && depth > 10 && move.mvvlva < 6000 && i > 4) {
+    //   continue
+    // }
 
-    //  //Positional pruning (name???????)
-    if (depth > 6 && isPositional && noncaptures > 4) {
-      continue
-    }
+    // //  //Positional pruning (name???????)
+    // if (depth > 6 && isPositional && noncaptures > 4) {
+    //   continue
+    // }
 
     // if (chessPosition.movenumber == 1 && i > 0) continue // CHEQUEA ORDEN PSQT
 
