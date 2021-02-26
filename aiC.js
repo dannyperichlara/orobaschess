@@ -21,12 +21,12 @@ let totaldepth = 20
 //20->2894
 
 // Math.seedrandom((new Date()).toTimeString())
-let random = 0
+let random = 40
 
 let phase = 1
 let htlength = 1 << 24
 let reduceHistoryFactor = 1 //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
-let mindepth =  4
+let mindepth =  2
 let secondspermove = 3
 
 let AI = function() {
@@ -377,8 +377,8 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
   // if (iteration <= 4 || AI.changeinPV) {
   //   //PSQT en iteration<=4 +100 ELO)
            
-  //   // defendedpawns = AI.getDefendedPawns(P, color)-
-  //   //                 AI.getDefendedPawns(Px, !color)
+    defendedpawns = AI.getDefendedPawns(P, color)-
+                    AI.getDefendedPawns(Px, !color)
     
   // }
 
@@ -392,7 +392,7 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
 
   
 
-  let score = material + 0.7*psqt + 1.2*mobility + defendedpawns// + (phase === 1? 120 : 80) * pawnsqt - 10 * badbishops
+  let score = material + 0.7*psqt + 1.2*mobility + 1*defendedpawns// + (phase === 1? 120 : 80) * pawnsqt - 10 * badbishops
 
   // AI.evaltable[hashkey % htlength] = {score, n: chessPosition.movenumber}
   
@@ -654,10 +654,10 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
       let move = moves[i]
       
       /* delta pruning */
-      if (standpat + AI.PIECE_VALUES[4] < alpha) {
-        // console.log(ply)
-        return alpha
-      }
+      // if (standpat + AI.PIECE_VALUES[4] < alpha) {
+      //   // console.log(ply)
+      //   return alpha
+      // }
 
       if (chessPosition.makeMove(move)) {
         legal++
@@ -843,9 +843,9 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   let staticeval = AI.evaluate(chessPosition, hashkey, pvNode)
 
   //Reverse Futility pruning
-  if (!incheck && depth <= 3 && staticeval - 600 >= beta) {
-    return staticeval - 600
-  }
+  // if (!incheck && depth <= 3 && staticeval - 600 >= beta) {
+  //   return staticeval - 600
+  // }
 
   let initialR = 0
   //FHR
@@ -881,7 +881,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     //REDUCTIONS (LMR)
 
     if (!incheck) {
-      if (pvNode && depth < 10) {
+      if (true || pvNode && depth < 10) {
         //stockfish
         R += Math.log(depth+1)*Math.log(i+1)/1.95
       } else {
