@@ -392,7 +392,7 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
 
   
 
-  let score = material + psqt + mobility + defendedpawns// + (phase === 1? 120 : 80) * pawnsqt - 10 * badbishops
+  let score = material + 0.7*psqt + mobility + defendedpawns// + (phase === 1? 120 : 80) * pawnsqt - 10 * badbishops
 
   // AI.evaltable[hashkey % htlength] = {score, n: chessPosition.movenumber}
   
@@ -935,7 +935,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
         score = -AI.PVS(chessPosition, -alpha-1, -alpha, depth-R-1, ply+1)
 
-        if (score > alpha && score < beta) { //https://www.chessprogramming.org/Principal_Variation_Search
+        if (!AI.stop && score > alpha/* && score < beta*/) { //https://www.chessprogramming.org/Principal_Variation_Search
           score = -AI.PVS(chessPosition, -beta, -alpha, depth+E-1, ply+1)
         }
       }
