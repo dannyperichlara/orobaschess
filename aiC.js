@@ -21,12 +21,12 @@ let totaldepth = 20
 //20->2894
 
 // Math.seedrandom((new Date()).toTimeString())
-let random = 40
+let random = 0
 
 let phase = 1
 let htlength = 1 << 24
 let reduceHistoryFactor = 1 //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
-let mindepth =  2
+let mindepth =  4
 let secondspermove = 3
 
 let AI = function() {
@@ -392,7 +392,7 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
 
   
 
-  let score = material + 0.7*psqt + mobility + defendedpawns// + (phase === 1? 120 : 80) * pawnsqt - 10 * badbishops
+  let score = material + 0.7*psqt + 1.2*mobility + defendedpawns// + (phase === 1? 120 : 80) * pawnsqt - 10 * badbishops
 
   // AI.evaltable[hashkey % htlength] = {score, n: chessPosition.movenumber}
   
@@ -1698,7 +1698,7 @@ AI.setphase = function (chessPosition) {
 
   let queens = chessPosition.getPieceColorBitboard(4, color).popcnt() + chessPosition.getPieceColorBitboard(4, !color).popcnt()
 
-  if (AI.nofpieces <= 20 && queens === 0) { // ¿Debería ser queens < 2? Hay que testearlo
+  if (AI.nofpieces <= 20 && queens === 0 || AI.nofpieces <= 12) { // ¿Debería ser queens < 2? Hay que testearlo
     phase = 3 //endgame
   }
   
