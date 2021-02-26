@@ -24,7 +24,7 @@ let totaldepth = 20
 let random = 40
 
 let phase = 1
-let htlength = 1e8
+let htlength = 1 << 24
 let reduceHistoryFactor = 1 //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
 let mindepth =  2
 let secondspermove = 3
@@ -240,8 +240,26 @@ AI.distance = function (sq1,sq2) {
 // AI.MIDGAME_PIECE_VALUES = [140, 300, 330, 520, 850, 20000]
 
 //128, 782, 830, 1289, and 2529 in the opening and 213, 865, 918, 1378, and 2687 in the endgame. (Stockfish)
-AI.MIDGAME_PIECE_VALUES = [200, 782, 830,  1289, 2529, 20000]
-AI.ENDGAME_PIECE_VALUES = [330, 865, 918,  1378, 2687, 20000]
+// AI.MIDGAME_PIECE_VALUES = [200, 782, 830,  1289, 2529, 20000]
+// AI.ENDGAME_PIECE_VALUES = [330, 865, 918,  1378, 2687, 20000]
+
+//calibration of piece values
+// AI.MIDGAME_PIECE_VALUES = [100, 404, 406,  609, 1066, 20000]
+// AI.ENDGAME_PIECE_VALUES = [100, 404, 406,  609, 1066, 20000]
+
+// AI.MIDGAME_PIECE_VALUES = [100, 323, 470,  778, 1375, 20000]
+// AI.ENDGAME_PIECE_VALUES = [100, 323, 470,  778, 1375, 20000]
+
+// AI.MIDGAME_PIECE_VALUES = [142, 323, 470,  778, 1375, 20000]
+// AI.ENDGAME_PIECE_VALUES = [142, 323, 470,  778, 1375, 20000]
+
+// AI.MIDGAME_PIECE_VALUES = [142, 350, 467,  797, 1378, 20000]
+// AI.ENDGAME_PIECE_VALUES = [142, 350, 467,  797, 1378, 20000]
+
+AI.MIDGAME_PIECE_VALUES = [142, 350, 467,  797, 1378, 20000] // TESTEADO OK
+AI.ENDGAME_PIECE_VALUES = [124, 370, 365, 1093, 1378, 20000] // TESTEADO OK
+
+AI.BISHOP_PAIR = 82
 
 AI.MOBILITY_VALUES = [
   [],
@@ -354,8 +372,8 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
   psqt = AI.getPieceSquareValue(P,N,B,R,Q,K, color) -
          AI.getPieceSquareValue(Px,Nx,Bx,Rx,Qx,Kx, !color)
   
-  // mobility = AI.getMobility(P,N,B,R,Q,Px,chessPosition, color) -
-  //   AI.getMobility(Px,Nx,Bx,Rx,Qx,P,chessPosition, !color)
+  mobility = AI.getMobility(P,N,B,R,Q,Px,chessPosition, color) -
+             AI.getMobility(Px,Nx,Bx,Rx,Qx,P,chessPosition, !color)
   // if (iteration <= 4 || AI.changeinPV) {
   //   //PSQT en iteration<=4 +100 ELO)
            
@@ -374,7 +392,7 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
 
   
 
-  let score = material + psqt + mobility/2 + defendedpawns// + (phase === 1? 120 : 80) * pawnsqt - 10 * badbishops
+  let score = material + psqt + mobility + defendedpawns// + (phase === 1? 120 : 80) * pawnsqt - 10 * badbishops
 
   // AI.evaltable[hashkey % htlength] = {score, n: chessPosition.movenumber}
   
@@ -435,7 +453,7 @@ AI.getMaterialValue = function(P,N,B,R,Q) {
             Q.popcnt()*AI.PIECE_VALUES[4]
 
     //Bishop pair: https://www.r-bloggers.com/2015/06/big-data-and-chess-what-are-the-predictive-point-values-of-chess-pieces/
-    value += B > 1? 60 : 0
+    value += B.popcnt() > 1? AI.BISHOP_PAIR : 0
     // value += R > 1? -40 : 0
 
     return {value, P, N, B, R, Q}
@@ -863,7 +881,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     //REDUCTIONS (LMR)
 
     if (!incheck) {
-      if (true || pvNode && depth < 10) {
+      if (pvNode && depth < 10) {
         //stockfish
         R += Math.log(depth+1)*Math.log(i+1)/1.95
       } else {
@@ -889,12 +907,12 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
     
     /*futility pruning */
-    if (!near2mate && !incheck && 1 < depth && depth <= 3+R && i >= 1) {
-      if (staticeval + 600*depth <= alpha) {
-        return alpha
-        // continue
-      }
-    }
+    // if (!near2mate && !incheck && 1 < depth && depth <= 3+R && i >= 1) {
+    //   if (staticeval + 600*depth <= alpha) {
+    //     return alpha
+    //     // continue
+    //   }
+    // }
     
     if (chessPosition.makeMove(move)) {
       legal++
@@ -1761,6 +1779,9 @@ AI.getPV = function (chessPosition, length) {
 }
 
 AI.search = function(chessPosition, options) {
+
+  if (AI.lastscore) AI.DRAW = 2*AI.lastscore
+
   let Px = chessPosition.getPieceColorBitboard(0, 1).dup()
   let us = chessPosition.getColorBitboard(0).dup()
   let enemypawnattackmask = Chess.Position.makePawnAttackMask(1, Px).dup()
