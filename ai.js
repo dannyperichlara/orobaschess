@@ -25,7 +25,7 @@ let random = 40
 
 let phase = 1
 let htlength = 1 << 24
-let reduceHistoryFactor = 1 //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
+let reduceHistoryFactor = 0 //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
 let mindepth =  2
 let secondspermove = 3
 
@@ -803,7 +803,8 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     }
 
     if (alpha >= beta) {
-      return alpha
+      // return alpha //Aparentemente éste sería el origen del famoso bug
+      return ttEntry.score
     }
   }
 
@@ -814,16 +815,17 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     ttEntry = AI.ttGet(hashkey)
   }
   
-  let bestmove = {value: 2080,  getString() {return '-'}}
-
+  
   let pvMoveValue = AI.PV[ply]? AI.PV[ply].value : null
-
+  
   if (AI.stop && iteration > mindepth) return alpha
-
+  
   let moves = chessPosition.getMoves(false, false)
-
+  
   moves = AI.sortMoves(moves, turn, ply, chessPosition, ttEntry, pvMoveValue)
-
+  
+  let bestmove = moves[0]
+  
   let legal = 0
   let bestscore = -Infinity
   let score
@@ -843,9 +845,9 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   let staticeval = AI.evaluate(chessPosition, hashkey, pvNode)
 
   //Reverse Futility pruning
-  // if (!incheck && depth <= 3 && staticeval - 600 >= beta) {
-  //   return staticeval - 600
-  // }
+  if (!incheck && depth <= 3 && staticeval - AI.PIECE_VALUES[1]*depth > beta) {
+    return beta //después tester return staticeval
+  }
 
   let initialR = 0
   //FHR
@@ -883,10 +885,10 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     if (!incheck) {
       if (true || pvNode && depth < 10) {
         //stockfish
-        R += Math.log(depth+1)*Math.log(i+1)/1.95
+        R += Math.log(depth+1)*Math.log(i+1)/1.95 | 0 // | 0 + 66 ELO???
       } else {
         //~fruit
-        R += Math.sqrt(depth+1) + Math.sqrt(i+1)
+        R += Math.sqrt(depth+1) + Math.sqrt(i+1) | 0
       }
     }
 
@@ -933,7 +935,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
         score = -AI.PVS(chessPosition, -beta, -alpha, depth+E-1, ply+1)
       } else {
 
-        score = -AI.PVS(chessPosition, -alpha-1, -alpha, depth-R-1, ply+1)
+        score = -AI.PVS(chessPosition, -alpha-1, -alpha, depth+E-R-1, ply+1)
 
         if (!AI.stop && score > alpha/* && score < beta*/) { //https://www.chessprogramming.org/Principal_Variation_Search
           score = -AI.PVS(chessPosition, -beta, -alpha, depth+E-1, ply+1)
@@ -943,8 +945,8 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
       chessPosition.unmakeMove()
       nodes++
 
-      if (AI.stop) return alpha
-      // if (AI.stop) return alphaOrig
+      // if (AI.stop) return alpha
+      if (AI.stop) return alphaOrig //tested ok
 
 
 
@@ -965,7 +967,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
             return score
           }
           
-          AI.ttSave(hashkey, score, 1, depth, move) //Sí, probado
+          // AI.ttSave(hashkey, score, 1, depth, move) //Sí, probado
           AI.saveHistory(turn, move, 1)
 
             

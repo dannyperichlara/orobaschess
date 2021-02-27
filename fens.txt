@@ -6,3 +6,5 @@ r2q1rk1/ppp1ppbp/2np1np1/8/2BPPBb1/1PN2N2/P1P2PPP/R2QK2R w KQ - 4 8 (el rey sale
         ----->Es problema con orden dado por ttEntry; no es IID
 
 8/4pk2/1bP4p/8/2p1q2B/5pP1/5P1P/Q5K1 w - - 2 40 (regala la dama)
+
+r1b1r1k1/ppp2ppp/1b1p4/3n4/2B5/5NB1/PP3PPP/2R2RK1 b - - 3 16 (Ne3???)
