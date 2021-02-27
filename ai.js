@@ -9,7 +9,7 @@ const { Position } = require('./zobrist.js')
     Chess.Position = require('./position.js')
 
 let TESTER, nodes, qsnodes, enodes, ttnodes, iteration, status, fhf, fh
-let totaldepth = 20
+let totaldepth = 4
 //ELO = 1570 + 66*depth
 // 6->1966
 // 7->2033
@@ -21,12 +21,12 @@ let totaldepth = 20
 //20->2894
 
 // Math.seedrandom((new Date()).toTimeString())
-let random = 40
+let random = 20
 
 let phase = 1
 let htlength = 1 << 24
 let reduceHistoryFactor = 0 //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
-let mindepth =  2
+let mindepth =  4
 let secondspermove = 3
 
 let AI = function() {
@@ -470,6 +470,7 @@ AI.getPieceSquareValue = function(P,B,N,R,Q,K,color) {
 
       while (!pieces.isEmpty()) {
           let index = pieces.extractLowestBitPosition()
+          // blancas: 56^index // negras: index
           let sqvalue = AI.PIECE_SQUARE_TABLES[i][color ? index : (56 ^ index)]
 
           value += sqvalue
@@ -541,7 +542,6 @@ AI.scoreMove = function(move) {
 //   [4600,4825,4850,6008,20400,26500],
 //   [4200,4425,4450,4600,6010,26100],
 //   [3100,3325,3350,3500,3900,26000],
-//   [3100,3325,3350,3500,3900,26000],
 // ]
 
 let mvvlvascores = [
@@ -550,11 +550,11 @@ let mvvlvascores = [
   [4750,4975,6006,20150,20550,26650],
   [4600,4825,4850,6008,20400,26500],
   [4200,4425,4450,4600,6010,26100],
-  [3100,3325,3350,3500,3900,26000],
+  // [3100,3325,3350,3500,3900,26000],
   [0,1,2,3,4,26000],
 ]
 
-AI.sortMoves = function(moves, turn, ply, chessPosition, ttEntry, pvMoveValue) {
+AI.sortMoves = function(moves, turn, ply, chessPosition, ttEntry) {
 
   for (let i = 0, len = moves.length; i < len; i++) {
     let move = moves[i]
@@ -568,10 +568,6 @@ AI.sortMoves = function(moves, turn, ply, chessPosition, ttEntry, pvMoveValue) {
       } else {
         move.kingmove = true
       }
-    }
-    
-    if (pvMoveValue === move.value) {
-      move.pv = true
     }
     
     if (ttEntry && move.value === ttEntry.move.value) {
@@ -647,7 +643,7 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
     //   })
     // }
 
-    moves = AI.sortMoves(moves, turn, ply, chessPosition, null, null)
+    moves = AI.sortMoves(moves, turn, ply, chessPosition, null)
 
     for (let i=0, len=moves.length; i < len; i++) {
 
@@ -794,8 +790,8 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     
     if (ttEntry.flag === 0) {
       //No exact score because PSQTs change
-      // return ttEntry.score
-      alpha = ttEntry.score
+      return ttEntry.score
+      // alpha = ttEntry.score
     } else if (ttEntry.flag === -1) {
       if (ttEntry.score > alpha) alpha = ttEntry.score
     } else if (ttEntry.flag === 1) {
@@ -810,19 +806,16 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
   
   //IID (for ordering moves)
-  if (!ttEntry && depth >= 4) {
+  if (!ttEntry && depth >= 2) {
     AI.PVS(chessPosition, alpha, beta, depth - 2, ply)
     ttEntry = AI.ttGet(hashkey)
   }
-  
-  
-  let pvMoveValue = AI.PV[ply]? AI.PV[ply].value : null
-  
+    
   if (AI.stop && iteration > mindepth) return alpha
   
   let moves = chessPosition.getMoves(false, false)
   
-  moves = AI.sortMoves(moves, turn, ply, chessPosition, ttEntry, pvMoveValue)
+  moves = AI.sortMoves(moves, turn, ply, chessPosition, ttEntry)
   
   let bestmove = moves[0]
   
@@ -850,10 +843,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   }
 
   let initialR = 0
-  //FHR
-  // if (iteration > 6 && staticeval - 200 * incheck > beta && alpha === beta - 1 && depth > 4) {
-  //   initialR = 1
-  // }
+  let doFHR = staticeval - 200 * incheck > beta && alpha === beta - 1
 
   let noncaptures = 0
 
@@ -883,12 +873,12 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     //REDUCTIONS (LMR)
 
     if (!incheck) {
-      if (true || pvNode && depth < 10) {
-        //stockfish
-        R += Math.log(depth+1)*Math.log(i+1)/1.95 | 0 // | 0 + 66 ELO???
-      } else {
+      if (doFHR) {
         //~fruit
         R += Math.sqrt(depth+1) + Math.sqrt(i+1) | 0
+      } else {
+        //stockfish
+        R += Math.log(depth+1)*Math.log(i+1)/1.95 | 0 // | 0 + 66 ELO???
       }
     }
 
@@ -1262,20 +1252,17 @@ AI.createPSQT = function (chessPosition) {
   // AI.PIECE_SQUARE_TABLES_MIDGAME[1][57] -= 40
   // AI.PIECE_SQUARE_TABLES_MIDGAME[1][62] -= 40
 
+  let outpostbonus = 0
+
   //Premia caballos en Outposts
   AI.PIECE_SQUARE_TABLES_OPENING[1] = AI.PIECE_SQUARE_TABLES_OPENING[1].map((e,i)=>{
     let ranks456 = i >= 16 && i <= 39 ? 40 : 0
-    return e + (pawnmap[i]? 60 + ranks456 : -20)
+    return e + (pawnmap[i]? outpostbonus + ranks456 : -20)
   })
 
   AI.PIECE_SQUARE_TABLES_MIDGAME[1] = AI.PIECE_SQUARE_TABLES_MIDGAME[1].map((e,i)=>{
     let ranks456 = pawnmap[i] >= 16 && pawnmap[i] <= 39 ? 40 : 0
-    return e + (pawnmap[i]? 60 + ranks456 : -20)
-  })
-
-  AI.PIECE_SQUARE_TABLES_MIDGAME[1] = AI.PIECE_SQUARE_TABLES_MIDGAME[1].map((e,i)=>{
-    let ranks456 = pawnmap[i] >= 16 && pawnmap[i] <= 39 ? 20 : 0
-    return e + (pawnmap[i]? 20 + ranks456 : -20)
+    return e + (pawnmap[i]? outpostbonus + ranks456 : -20)
   })
   
 
