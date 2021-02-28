@@ -9,7 +9,7 @@ const { Position } = require('./zobrist.js')
     Chess.Position = require('./position.js')
 
 let TESTER, nodes, qsnodes, enodes, ttnodes, iteration, status, fhf, fh
-let totaldepth = 48
+let totaldepth = 20
 //ELO = 1570 + 66*depth
 // 6->1966
 // 7->2033
@@ -21,7 +21,7 @@ let totaldepth = 48
 //20->2894
 
 // Math.seedrandom((new Date()).toTimeString())
-let random = 20
+let random = 40
 
 let phase = 1
 let htlength = 1 << 24
@@ -258,6 +258,8 @@ AI.distance = function (sq1,sq2) {
 
 AI.MIDGAME_PIECE_VALUES = [142, 350, 467,  797, 1378, 20000] // TESTEADO OK
 AI.ENDGAME_PIECE_VALUES = [124, 370, 365, 1093, 1378, 20000] // TESTEADO OK
+
+AI.FUTILITY_MARGIN = 2 * AI.MIDGAME_PIECE_VALUES[0]
 
 AI.BISHOP_PAIR = 82
 
@@ -514,8 +516,11 @@ AI.scoreMove = function(move) {
     score += 1e8
     return score
   }
+
+  if (iteration < 4 && move.hvalue > 20000) return 1e7 + move.hvalue
   
   if (move.capture) {
+    // return 1e7 + move.mvvlva // + Math.random()*1000
     if (move.mvvlva>=20000) { //testeado!! OK
       return 1e7 + move.mvvlva
     } else if (move.mvvlva >= 6000){
@@ -550,8 +555,7 @@ let mvvlvascores = [
   [4750,4975,6006,20150,20550,26650],
   [4600,4825,4850,6008,20400,26500],
   [4200,4425,4450,4600,6010,26100],
-  // [3100,3325,3350,3500,3900,26000],
-  [0,1,2,3,4,26000],
+  [3100,3325,3350,3500,3900,26000],
 ]
 
 AI.sortMoves = function(moves, turn, ply, chessPosition, ttEntry) {
@@ -608,42 +612,46 @@ AI.sortMoves = function(moves, turn, ply, chessPosition, ttEntry) {
 
 AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
 
-    var matingValue = -AI.MATE + ply
+  let matingValue
+
+  matingValue = AI.MATE - ply
+
+  if (matingValue < beta) {
+      beta = matingValue
+      if (alpha >= matingValue)
+        return matingValue
+  }
   
-    if (matingValue > alpha) {
-       alpha = matingValue;
-       if (beta <= matingValue)
-         return matingValue;
-    }
+  matingValue = -AI.MATE + ply
+  
+  if (matingValue > alpha) {
+      alpha = matingValue
+      if (beta <= matingValue)
+        return matingValue
+  }
 
     let turn = chessPosition.getTurnColor()
 
     let legal = 0
     let standpat
-    let bestmove
     let bestscore = -Infinity
     let incheck
     let hashkey = chessPosition.hashKey.getHashKey()
-
+    
     qsnodes++
-
+    
     standpat = AI.evaluate(chessPosition, hashkey, pvNode)
-
+    
     if (standpat >= beta ) {
       return beta
     }
-
+    
     if ( standpat > alpha) alpha = standpat;
-
+    
     let moves = chessPosition.getMoves(false, !chessPosition.isKingInCheck())
-
-    // if (!chessPosition.isKingInCheck()) {
-    //   moves = moves.filter(m=>{
-    //     m.getKind() >= 2
-    //   })
-    // }
-
+    
     moves = AI.sortMoves(moves, turn, ply, chessPosition, null)
+    let bestmove = moves[0]
 
     for (let i=0, len=moves.length; i < len; i++) {
 
@@ -681,6 +689,7 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
     }
 
     if (chessPosition.isKingInCheck() && legal === 0) {
+        AI.ttSave(hashkey, -AI.MATE + ply, 0, Infinity, bestmove)
        return -AI.MATE + ply;
     }
 
@@ -756,6 +765,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   }
 
   let turn = chessPosition.getTurnColor()
+  let hashkey = chessPosition.hashKey.getHashKey()
   
   let matingValue
 
@@ -763,20 +773,21 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
   if (matingValue < beta) {
       beta = matingValue
-      if (alpha >= matingValue)
+      if (alpha >= matingValue){
         return matingValue
+      }
   }
   
   matingValue = -AI.MATE + ply
   
   if (matingValue > alpha) {
       alpha = matingValue
-      if (beta <= matingValue)
+      if (beta <= matingValue){
         return matingValue
+      }
   }
 
   let alphaOrig = alpha
-  let hashkey = chessPosition.hashKey.getHashKey()
   let ttEntry = AI.ttGet(hashkey)
 
   if( depth <= 0 ) {
@@ -789,8 +800,8 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     ttnodes++
     
     if (ttEntry.flag === 0) {
-      //No exact score because PSQTs change
       return ttEntry.score
+      //No exact score because PSQTs change
       // alpha = ttEntry.score
     } else if (ttEntry.flag === -1) {
       if (ttEntry.score > alpha) alpha = ttEntry.score
@@ -799,7 +810,6 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     }
 
     if (alpha >= beta) {
-      // return alpha //Aparentemente éste sería el origen del famoso bug
       return ttEntry.score
     }
   }
@@ -808,13 +818,14 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   //IID (for ordering moves)
   if (!ttEntry && depth >= 2) {
     AI.PVS(chessPosition, alpha, beta, depth - 2, ply)
+    // AI.PVS(chessPosition, alpha, beta, 4, ply)
     ttEntry = AI.ttGet(hashkey)
   }
     
   if (AI.stop && iteration > mindepth) return alpha
   
   let moves = chessPosition.getMoves(false, false)
-  
+
   moves = AI.sortMoves(moves, turn, ply, chessPosition, ttEntry)
   
   let bestmove = moves[0]
@@ -831,7 +842,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     let lastmove = chessPosition.getLastMove()
 
     if (lastmove) {
-      AI.saveHistory(!turn, lastmove, 2000) //check moves up in move ordering
+      AI.saveHistory(!turn, lastmove, 20) //check moves up in move ordering
     }
   }
   
@@ -859,23 +870,23 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     if (isPositional && phase < 3 && piece > 0 && piece < 5) noncaptures++
 
     // //Late bad captures pruning (name????????)
-    // if (isCapture && phase < 3 && depth > 10 && move.mvvlva < 6000 && i > 4) {
-    //   continue
-    // }
+    if (isCapture && phase < 3 && depth > 8 && move.mvvlva < 6000 && legal > 4) {
+      continue
+    }
 
     // //  //Positional pruning (name???????)
-    // if (depth > 6 && isPositional && noncaptures > 4) {
-    //   continue
-    // }
+    if (depth > 6 && isPositional && noncaptures > 4) {
+      continue
+    }
 
     // if (chessPosition.movenumber == 1 && i > 0) continue // CHEQUEA ORDEN PSQT
 
     //REDUCTIONS (LMR)
 
     if (!incheck) {
-      if (doFHR) {
+      if ((doFHR || !pvNode) && depth > 1 && i > 1) {
         //~fruit
-        R += Math.sqrt(depth+1) + Math.sqrt(i+1) | 0
+        R += 1 + Math.sqrt(depth+1) + Math.sqrt(i+1) | 0
       } else {
         //stockfish
         R += Math.log(depth+1)*Math.log(i+1)/1.95 | 0 // | 0 + 66 ELO???
@@ -899,22 +910,22 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
     
     /*futility pruning */
-    // if (!near2mate && !incheck && 1 < depth && depth <= 3+R && i >= 1) {
-    //   if (staticeval + 600*depth <= alpha) {
-    //     return alpha
-    //     // continue
-    //   }
-    // }
+    if (!near2mate && !incheck && 1 < depth && depth <= 3+R && legal >= 1) {
+      if (staticeval + AI.FUTILITY_MARGIN*depth <= alpha) {
+        // return alpha
+        continue
+      }
+    }
     
     if (chessPosition.makeMove(move)) {
       legal++
 
 
       //LMP      
-      // if (!isCapture && i > 400/depth && iteration > 4) {
-      //   chessPosition.unmakeMove()
-      //   continue
-      // }
+      if (!isCapture && i > 100/depth && iteration <= 4) {
+        chessPosition.unmakeMove()
+        continue
+      }
 
       //EXTENSIONS
       if (incheck && depth < 3 && pvNode) {
@@ -981,10 +992,10 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
       if (!chessPosition.isKingInCheck()) {
         AI.ttSave(hashkey, AI.DRAW + ply, 0, depth, bestmove)
         return AI.DRAW + ply
-
+        
       }
       
-      AI.ttSave(hashkey, -AI.MATE + ply, 0, depth, bestmove)
+      AI.ttSave(hashkey, -AI.MATE + ply, 0, Infinity, bestmove)
       return -AI.MATE + ply
       
   } else {
@@ -1374,7 +1385,7 @@ AI.createPSQT = function (chessPosition) {
   AI.PIECE_SQUARE_TABLES_MIDGAME[2][63] -=100
 
   //Dama
-  AI.PIECE_SQUARE_TABLES_MIDGAME[2] = [
+  AI.PIECE_SQUARE_TABLES_MIDGAME[4] = [
     0,   0,   0,   0,   0,   0,   0,   0,
     0,   0,   0,   0,   0,   0,   0,   0,
     0,   0,   0,   0,   0,   0,   0,   0,
@@ -1382,7 +1393,7 @@ AI.createPSQT = function (chessPosition) {
     0,   0,   0,   0,   0,   0,   0,   0,
     0,   0,   0,   0,   0,   0,   0,   0,
     0,   0,   0,   0,   0,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   0,   0,
+  -90, -80, -40, -20, -20, -40, -80, -90,
   ]
 
   //Rey lejos del centro
@@ -1725,7 +1736,7 @@ AI.getPV = function (chessPosition, length) {
     let hashkey = chessPosition.hashKey.getHashKey()
     ttEntry = AI.ttGet(hashkey)
 
-    if (ttEntry && ttEntry.depth > 0) {
+    if (ttEntry /*&& ttEntry.depth > 0*/) {
       let moves = chessPosition.getMoves(false, false).filter(move=>{
         return move.value === ttEntry.move.value
       })
