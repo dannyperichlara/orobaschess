@@ -9,7 +9,7 @@ const { Position } = require('./zobrist.js')
     Chess.Position = require('./position.js')
 
 let TESTER, nodes, qsnodes, enodes, ttnodes, iteration, status, fhf, fh
-let totaldepth = 4
+let totaldepth = 48
 //ELO = 1570 + 66*depth
 // 6->1966
 // 7->2033
@@ -392,7 +392,7 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
 
   
 
-  let score = material + 0.7*psqt + 1.2*mobility + 1*defendedpawns// + (phase === 1? 120 : 80) * pawnsqt - 10 * badbishops
+  let score = material + 0.7*psqt + 1.2*mobility + 1*defendedpawns | 0
 
   // AI.evaltable[hashkey % htlength] = {score, n: chessPosition.movenumber}
   

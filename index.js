@@ -77,13 +77,15 @@ app.get('/', function (req, res) {
         castlingRights = parseInt(castlingRights.toString(), 2)
         chessPosition.castlingRights = castlingRights
 
-        chessPosition.enPassantSquare = fromto.indexOf(enpassantsquare)
-
-        //En passant squares are defined different from FEN in the move generator:
-        if (turn === 0) chessPosition.enPassantSquare -= 8
-        if (turn === 1) chessPosition.enPassantSquare += 8
-
-        console.log('aksdasdsakasdkaskdasdkaskdsa', chessPosition.enPassantSquare)
+        
+        if (enpassantsquare !== '-') {
+          chessPosition.enPassantSquare = fromto.indexOf(enpassantsquare)
+          console.log('enpassant', chessPosition.enPassantSquare)
+  
+          //En passant squares are defined different from FEN in the move generator:
+          if (turn === 0) chessPosition.enPassantSquare -= 8
+          if (turn === 1) chessPosition.enPassantSquare += 8
+        }
 
         chessPosition.fillPiecesFromBitboards();
 	      chessPosition.updateHashKey();
