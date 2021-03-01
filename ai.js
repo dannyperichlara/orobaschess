@@ -802,8 +802,8 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     
     if (ttEntry.flag === 0) {
       return ttEntry.score
-      //No exact score because PSQTs change
-      // alpha = ttEntry.score
+      
+      // alpha = ttEntry.score //No exact score because PSQTs change
     } else if (ttEntry.flag === -1) {
       if (ttEntry.score > alpha) alpha = ttEntry.score
     } else if (ttEntry.flag === 1) {
@@ -817,10 +817,11 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
   
   //IID (for ordering moves)
-  if (!ttEntry && depth >= 2) {
-    AI.PVS(chessPosition, alpha, beta, depth - 2, ply)
+  if (!ttEntry && depth > 2) {
+    AI.PVS(chessPosition, alpha, beta, 2, ply)
     // AI.PVS(chessPosition, alpha, beta, 4, ply)
     ttEntry = AI.ttGet(hashkey)
+    // console.log('IID', !!ttEntry)
   }
     
   if (AI.stop && iteration > mindepth) return alpha
@@ -851,17 +852,17 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
   //Reverse Futility pruning
   if (!incheck && depth <= 3 && staticeval - AI.PIECE_VALUES[1]*depth > beta) {
+    AI.ttSave(hashkey, beta, -1, depth, moves[0])
     return beta //después tester return staticeval
   }
 
-  let initialR = 0
   let doFHR = staticeval - 200 * incheck > beta && alpha === beta - 1
 
   let noncaptures = 0
 
   for (let i=0, len=moves.length; i < len; i++) {
     let move = moves[i]
-    let R = initialR
+    let R = 0
     let E = 0
     let piece = move.getPiece()
 
@@ -1786,6 +1787,9 @@ AI.MTDF = function (chessPosition, f, d) {
   let upperBound =  Infinity
   let lowerBound = -Infinity
 
+  //Esta línea permite que el algoritmo funcione como PVS normal
+  return AI.PVS(chessPosition, lowerBound, upperBound, d, 1) 
+
   while (lowerBound < upperBound) {
     let beta = Math.max(g, lowerBound + 1)
 
@@ -1803,7 +1807,7 @@ AI.MTDF = function (chessPosition, f, d) {
 
 AI.search = function(chessPosition, options) {
 
-  if (AI.lastscore) AI.DRAW = 2*AI.lastscore
+  // if (AI.lastscore) AI.DRAW = 2*AI.lastscore
 
   let Px = chessPosition.getPieceColorBitboard(0, 1).dup()
   let us = chessPosition.getColorBitboard(0).dup()
@@ -1833,70 +1837,77 @@ AI.search = function(chessPosition, options) {
   if (!AI.PIECE_VALUES || nmoves < 2) {
     AI.PIECE_VALUES = AI.MIDGAME_PIECE_VALUES
   }
-
+  
   //Creates killers
   //AI.killers = new Array(totaldepth)
   //for (let i = 0; i < totaldepth;  i++) AI.killers[i] = {killer1: {value:0}, killer2: {value:0}}
-
+  
   return new Promise((resolve, reject) => {
     let color = chessPosition.getTurnColor()
-
+    
     AI.color = color
-
+    
     // AI.DRAW = AI.evaluate(chessPosition, color) + AI.PIECE_VALUES[0]
-
+    
     // console.log(AI.history[0])
-
+    
     let white = color == 0
-  
+    
     if (white) {
-        TESTER = true
+      TESTER = true
     } else {
-        TESTER = false
+      TESTER = false
     }
-
+    
     phase = 1 //Apertura
-
+    
     nodes = 0
     qsnodes = 0
     enodes = 0
     ttnodes = 0
     iteration = 0
-
-
+    
+    
     AI.timer = (new Date()).getTime()
     AI.stop = false
-
-    let score = 0, lastscore = 0
-
+    
+    let score = 0
+    
     let fhfperc = 0
-
+    
     AI.setphase(chessPosition)
-
+    
     console.log('PHASE', phase)
-  
+    
     AI.PV = AI.getPV(chessPosition, totaldepth+1)
     AI.changeinPV = true
-
+    
     let alpha = -AI.INFINITY
     let beta = AI.INFINITY
+    
+    let f =  AI.PVS(chessPosition, alpha, beta, 1, 1)
+    console.log('FFFFFFFFF', f)
 
-    for (let depth = 1; depth <= totaldepth; depth+=1) {
-        
+    for (let depth = 0; depth <= totaldepth; depth+=1) {
+      
+      
+      if (AI.stop && iteration > mindepth) {
+        break
+      }
 
-        if (AI.stop && iteration > mindepth) {
-            break
-        }
-
-        if (!AI.stop) lastscore = score
+        if (!AI.stop) AI.lastscore = score
 
         AI.bestmove = [...AI.PV][1]
 
         iteration++
 
         fh = fhf = 0.001
+
+        f = AI.lastscore
+
         
-        score = (white? 1 : -1) * AI.PVS(chessPosition, alpha, beta, depth, 1)
+        // score = (white? 1 : -1) * AI.PVS(chessPosition, alpha, beta, depth, 1)
+        score = (white? 1 : -1) * AI.MTDF(chessPosition, f, depth)
 
         AI.PV = AI.getPV(chessPosition, totaldepth+1)
 
@@ -1929,12 +1940,12 @@ AI.search = function(chessPosition, options) {
 
     console.log(AI.bestmove)
 
-    let sigmoid = 1/(1+Math.pow(10, -lastscore/400))
+    let sigmoid = 1/(1+Math.pow(10, -AI.lastscore/400))
 
     AI.lastmove = AI.bestmove
 
     resolve({n: chessPosition.movenumber, phase, depth: iteration-1, from: AI.bestmove.getFrom(), to: AI.bestmove.getTo(), movestring: AI.bestmove.getString(),
-            score: lastscore | 0, sigmoid: (sigmoid * 100 | 0)/100, phase,
+            score: AI.lastscore | 0, sigmoid: (sigmoid * 100 | 0)/100, phase,
             nodes, qsnodes, FHF: fhfperc+'%',
             pieces: chessPosition.pieces})
   })
