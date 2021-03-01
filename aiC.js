@@ -1,8 +1,9 @@
 "use strict"
 
-const { assignIn } = require('lodash')
-let Chess = require('./chess.js')
-const { Position } = require('./zobrist.js')
+/* IMPORTA GENERADOR DE MOVIMIENTOS */
+const Chess = require('./chess.js')
+
+// const { Position } = require('./zobrist.js')
     Chess.Bitboard = require('./bitboard.js')
     Chess.Zobrist = require('./zobrist.js')
     Chess.Move = require('./move.js')
@@ -373,17 +374,17 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
   
   psqt = AI.getPieceSquareValue(P,N,B,R,Q,K, color) -
          AI.getPieceSquareValue(Px,Nx,Bx,Rx,Qx,Kx, !color)
-  
-  mobility = AI.getMobility(P,N,B,R,Q,Px,chessPosition, color) -
-             AI.getMobility(Px,Nx,Bx,Rx,Qx,P,chessPosition, !color)
-  // if (iteration <= 4 || AI.changeinPV) {
-  //   //PSQT en iteration<=4 +100 ELO)
-           
-    defendedpawns = AI.getDefendedPawns(P, color)-
-                    AI.getDefendedPawns(Px, !color)
-    
-  // }
 
+  if (iteration < 4 || changeinPV) {
+    mobility = AI.getMobility(P,N,B,R,Q,Px,chessPosition, color) -
+               AI.getMobility(Px,Nx,Bx,Rx,Qx,P,chessPosition, !color)
+             
+      defendedpawns = AI.getDefendedPawns(P, color)-
+                      AI.getDefendedPawns(Px, !color)
+
+  }
+  
+    
 
   //badbishops = AI.getBadBishops(chessPosition, color) - AI.getBadBishops(chessPosition,  !color)
 
@@ -870,12 +871,12 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     if (isPositional && phase < 3 && piece > 0 && piece < 5) noncaptures++
 
     // //Late bad captures pruning (name????????)
-    if (isCapture && phase < 3 && depth > 8 && move.mvvlva < 6000 && legal > 4) {
+    if (phase < 3 && isCapture && depth > 8 && move.mvvlva < 6000 && legal > 4) {
       continue
     }
 
     // //  //Positional pruning (name???????)
-    if (depth > 6 && isPositional && noncaptures > 4) {
+    if (phase < 3 && depth > 6 && isPositional && noncaptures > 4) {
       continue
     }
 
@@ -912,6 +913,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     /*futility pruning */
     if (!near2mate && !incheck && 1 < depth && depth <= 3+R && legal >= 1) {
       if (staticeval + AI.FUTILITY_MARGIN*depth <= alpha) {
+        // console.log('fut')
         // return alpha
         continue
       }
@@ -922,7 +924,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
 
       //LMP      
-      if (!isCapture && i > 100/depth && iteration <= 4) {
+      if (!isCapture && i > 100/depth/* && iteration <= 4*/) {
         chessPosition.unmakeMove()
         continue
       }
@@ -1776,6 +1778,27 @@ AI.getPV = function (chessPosition, length) {
   }
   
   return PV
+}
+
+AI.MTDF = function (chessPosition, f, d) {
+  let g = f
+
+  let upperBound =  Infinity
+  let lowerBound = -Infinity
+
+  while (lowerBound < upperBound) {
+    let beta = Math.max(g, lowerBound + 1)
+
+    g = AI.PVS(chessPosition, beta - 1, beta, d, 1)
+
+    if (g < beta) {
+      upperBound = g
+    } else {
+      lowerBound = g
+    }
+  }
+
+  return g
 }
 
 AI.search = function(chessPosition, options) {
