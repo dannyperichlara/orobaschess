@@ -375,7 +375,7 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
   psqt = AI.getPieceSquareValue(P,N,B,R,Q,K, color) -
          AI.getPieceSquareValue(Px,Nx,Bx,Rx,Qx,Kx, !color)
 
-  if (iteration < 4 || changeinPV) {
+  if (iteration < 4 || AI.changeinPV) {
     mobility = AI.getMobility(P,N,B,R,Q,Px,chessPosition, color) -
                AI.getMobility(Px,Nx,Bx,Rx,Qx,P,chessPosition, !color)
              
