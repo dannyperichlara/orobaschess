@@ -649,7 +649,7 @@ AI.quiescenceSearch = function(chessPosition, alpha, beta, depth, ply, pvNode) {
     
     if ( standpat > alpha) alpha = standpat;
     
-    let moves = chessPosition.getMoves(true, !chessPosition.isKingInCheck())
+    let moves = chessPosition.getMoves(false, !chessPosition.isKingInCheck())
     
     moves = AI.sortMoves(moves, turn, ply, chessPosition, null)
     let bestmove = moves[0]
@@ -869,15 +869,15 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     let isCapture = move.isCapture()
     let isPositional = move.getKind() < 4 && !incheck
 
-    if (isPositional && phase < 3 && piece > 0 && piece < 5) noncaptures++
+    if (isPositional && phase < 4 && piece > 0 && piece < 5) noncaptures++
 
     // //Late bad captures pruning (name????????)
-    if (phase < 3 && isCapture && depth > 8 && move.mvvlva < 6000 && legal > 4) {
+    if (phase < 4 && isCapture && depth > 8 && move.mvvlva < 6000 && legal > 4) {
       continue
     }
 
     // //  //Positional pruning (name???????)
-    if (phase < 3 && depth > 6 && isPositional && noncaptures > 4) {
+    if (phase < 4 && depth > 6 && isPositional && noncaptures > 4) {
       continue
     }
 
@@ -1701,9 +1701,11 @@ AI.setphase = function (chessPosition) {
 
   let queens = chessPosition.getPieceColorBitboard(4, color).popcnt() + chessPosition.getPieceColorBitboard(4, !color).popcnt()
 
-  if (AI.nofpieces <= 20 && queens === 0 || AI.nofpieces <= 12) { // ¿Debería ser queens < 2? Hay que testearlo
-    phase = 3 //endgame
+  if (AI.nofpieces <= 20 && queens === 0) { // ¿Debería ser queens < 2? Hay que testearlo
+    phase = 3 //late midgame (the king enters)
   }
+
+  if (AI.nofpieces <= 12) phase = 4 //endgame
   
   AI.createPSQT(chessPosition)
 
