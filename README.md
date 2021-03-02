@@ -36,7 +36,7 @@ The main intention is not to create an AI that plays better than other chess eng
 * MTD(f), but inactive due to some buggy behaviours related to the hash table. See https://www.chessprogramming.org/MTD(f)
 
 ### Orobas main ideas
-* **Positional moves pruning**. If the pre-processor is complex enough and well tuned, the best positional move won't require a deep depth analysis (Capablanca once said "I see only one move ahead, but it is always the correct one"). The main idea is not to move a piece because the evaluation function returns a good score 20 plies ahead, but because it's very likely, given the experience and previuos knowledge, that this move gives an advantage later in the game. Human intuition, even if the move it's a evantually a bad move.
+* **Positional moves pruning**. If the pre-processor is complex enough and well tuned, the best positional move won't require a deep depth analysis (Capablanca once said "I see only one move ahead, but it is always the correct one"). The main idea is not to move a piece because the evaluation function returns a good score 20 plies ahead, but because it's very likely, given the experience and previuos knowledge, that this move gives an advantage later in the game. Human intuition, even if the move it's eventually a bad move.
 * **Late-bad-captures pruning**. Analyze bad captures near the root only.
 * **History heuristic, only applied to the actual position**, with negative values on low-fails, and valuation not based on depth.
 * **Piece-Square-Table for the opening**, with the most common moves. The idea is to achieve one move per-piece at the opening the same way humans do: Moving the obvious piece to the obvious place.
