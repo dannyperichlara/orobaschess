@@ -869,7 +869,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     let isCapture = move.isCapture()
     let isPositional = move.getKind() < 4 && !incheck
 
-    if (isPositional && phase < 3 && piece > 0 && piece < 5) noncaptures++
+    if (isPositional && phase < 4 && piece > 0 && piece < 5) noncaptures++
 
     // //Late bad captures pruning (name????????)
     if (phase < 3 && isCapture && depth > 8 && move.mvvlva < 6000 && legal > 4) {
@@ -1701,9 +1701,11 @@ AI.setphase = function (chessPosition) {
 
   let queens = chessPosition.getPieceColorBitboard(4, color).popcnt() + chessPosition.getPieceColorBitboard(4, !color).popcnt()
 
-  if (AI.nofpieces <= 20 && queens === 0 || AI.nofpieces <= 12) { // ¿Debería ser queens < 2? Hay que testearlo
-    phase = 3 //endgame
+  if (AI.nofpieces <= 20 && queens === 0) { // ¿Debería ser queens < 2? Hay que testearlo
+    phase = 3 //late midgame (the king enters)
   }
+
+  if (AI.nofpieces <= 12) phase = 4 //endgame
   
   AI.createPSQT(chessPosition)
 
@@ -1788,7 +1790,9 @@ AI.MTDF = function (chessPosition, f, d) {
   let lowerBound = -Infinity
 
   //Esta línea permite que el algoritmo funcione como PVS normal
-  return AI.PVS(chessPosition, lowerBound, upperBound, d, 1) 
+  // return AI.PVS(chessPosition, lowerBound, upperBound, d, 1) 
+  console.log('INICIO DE MTDF')
+  let i = 0
 
   while (lowerBound < upperBound) {
     let beta = Math.max(g, lowerBound + 1)
@@ -1800,6 +1804,10 @@ AI.MTDF = function (chessPosition, f, d) {
     } else {
       lowerBound = g
     }
+
+    i++
+    
+    console.log('Pass ' + i)
   }
 
   return g
