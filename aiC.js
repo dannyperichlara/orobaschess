@@ -976,7 +976,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
             
           alpha = score
-          //AI.PV[ply] = move //No aporta
+          // AI.PV[ply] = move //No aporta
         }       
 
         bestscore = score
