@@ -47,6 +47,7 @@ The main intention is not to create an AI that plays better than other chess eng
 ### To Do
 * Passed/doubled/hanging pawns detection.
 * Improve king safety.
+* Move generation by stages (hash moves / tactival moves / killer moves? / quiet moves).
 * Automated tuning of parameters.
 * Book openings implementation.
 * Recognition/valuation of popular pawn structures (like Maroczy Bind or Benoni's).
