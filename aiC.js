@@ -872,12 +872,12 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     if (isPositional && phase < 4 && piece > 0 && piece < 5) noncaptures++
 
     // //Late bad captures pruning (name????????)
-    if (phase < 3 && isCapture && depth > 8 && move.mvvlva < 6000 && legal > 4) {
+    if (phase < 4 && isCapture && depth > 8 && move.mvvlva < 6000 && legal > 4) {
       continue
     }
 
     // //  //Positional pruning (name???????)
-    if (phase < 3 && depth > 6 && isPositional && noncaptures > 4) {
+    if (phase < 4 && depth > 6 && isPositional && noncaptures > 4) {
       continue
     }
 
@@ -1790,12 +1790,14 @@ AI.MTDF = function (chessPosition, f, d) {
   let lowerBound = -Infinity
 
   //Esta línea permite que el algoritmo funcione como PVS normal
-  // return AI.PVS(chessPosition, lowerBound, upperBound, d, 1) 
+  return AI.PVS(chessPosition, lowerBound, upperBound, d, 1) 
   console.log('INICIO DE MTDF')
   let i = 0
 
-  while (lowerBound < upperBound) {
+  while (lowerBound < upperBound && i < 100) {
     let beta = Math.max(g, lowerBound + 1)
+
+    i++
 
     g = AI.PVS(chessPosition, beta - 1, beta, d, 1)
 
@@ -1805,7 +1807,6 @@ AI.MTDF = function (chessPosition, f, d) {
       lowerBound = g
     }
 
-    i++
     
     console.log('Pass ' + i)
   }
