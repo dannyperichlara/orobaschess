@@ -818,8 +818,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   
   //IID (for ordering moves)
   if (!ttEntry && depth > 2) {
-    AI.PVS(chessPosition, alpha, beta, 2, ply)
-    // AI.PVS(chessPosition, alpha, beta, 4, ply)
+    AI.PVS(chessPosition, alpha, beta, depth - 2, ply) //depth - 2 tested ok + 31 ELO
     ttEntry = AI.ttGet(hashkey)
     // console.log('IID', !!ttEntry)
   }
