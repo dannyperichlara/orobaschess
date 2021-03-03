@@ -346,6 +346,8 @@ AI.randomizePSQT = function () {
   }
 }
 
+let minpositional = Infinity
+
 AI.evaluate = function(chessPosition, hashkey, pvNode) {
   let color = chessPosition.getTurnColor()
 
@@ -384,7 +386,11 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
 
   }
   
-    
+  let positional = 0.7*psqt + 1.2*mobility + 1*defendedpawns
+
+  positional = (positional - 78)/5 //Fixes excess of positional valuation (sigmoid is too slow)
+  // minpositional = Math.min(positional, minpositional)
+  // console.log(minpositional)
 
   //badbishops = AI.getBadBishops(chessPosition, color) - AI.getBadBishops(chessPosition,  !color)
 
@@ -395,7 +401,7 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
 
   
 
-  let score = material + 0.7*psqt + 1.2*mobility + 1*defendedpawns | 0
+  let score = material + positional | 0
 
   // AI.evaltable[hashkey % htlength] = {score, n: chessPosition.movenumber}
   
@@ -818,8 +824,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   
   //IID (for ordering moves)
   if (!ttEntry && depth > 2) {
-    AI.PVS(chessPosition, alpha, beta, 2, ply)
-    // AI.PVS(chessPosition, alpha, beta, 4, ply)
+    AI.PVS(chessPosition, alpha, beta, depth - 2, ply) //depth - 2 tested ok + 31 ELO
     ttEntry = AI.ttGet(hashkey)
     // console.log('IID', !!ttEntry)
   }
@@ -887,6 +892,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
     if (!incheck) {
       if ((doFHR || !pvNode) && depth > 1 && i > 1) {
+        //depth >=3 tested / no difference
         //~fruit
         R += 1 + Math.sqrt(depth+1) + Math.sqrt(i+1) | 0
       } else {
