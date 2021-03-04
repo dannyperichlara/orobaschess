@@ -1,5 +1,5 @@
 # ♘ Orobas Chess AI
-v1.1.0
+v1.1.1
 
 Orobas is a Chess AI created in 2020 for research and educational purposes, using pure javascript. The move generator is an old but beautifully written javascript project from @kbjorklu (https://github.com/kbjorklu/chess).
 
@@ -45,16 +45,20 @@ The main intention is not to create an AI that plays better than other chess eng
 * **Analysis of common patterns** (not implemented yet). The idea is to evaluate positions based on common patterns like 6P1/5PBP/6K1L; GMs recognize chess positions and patterns very quickly, even if they are not exactly the same.
 
 ### To Do
+* Mate detection
+* Free pawn advance 
 * Passed/doubled/hanging pawns detection.
 * Improve king safety.
-* Static Exchange Evaluation.
+* King tropism.
+* Static Exchange Evaluation (SEE).
 * Move generation by stages (hash moves / tactival moves / killer moves? / quiet moves).
 * Automated tuning of parameters.
 * Book openings implementation.
 * Recognition/valuation of popular pawn structures (like Maroczy Bind or Benoni's).
 * Recognize the areas of the pawn structures when the action is going on, in order to achieve a better piece coordination.
-* Improve move ordering even more.
+* Improve move ordering even more (with SEE).
 * Remove stupid blunders like 1k3b1r/pppb1ppp/4p3/1Nr4n/2P5/1P1P1B1P/P1K2PPB/4R2R b - - 1 21 (in some iterations, the engine sacrifices a knight for nothing).
+* Fix overvaluation of PSQT that can lead to absurd sacrifices (maybe related to the previous issue).
 * Programming of anti-human and anti-computer strategies.
 * Some way to soften the effect of the pre-processor in the hash table in order to avoid jumps in the score.
 * Some way to reduce the odd-even effect.
