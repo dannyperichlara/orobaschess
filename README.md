@@ -1,5 +1,5 @@
 # ♘ Orobas Chess AI
-v1.1.0
+v1.1.1
 
 Orobas is a Chess AI created in 2020 for research and educational purposes, using pure javascript. The move generator is an old but beautifully written javascript project from @kbjorklu (https://github.com/kbjorklu/chess).
 
