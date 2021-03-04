@@ -265,12 +265,12 @@ AI.FUTILITY_MARGIN = 2 * AI.MIDGAME_PIECE_VALUES[0]
 AI.BISHOP_PAIR = 82
 
 AI.MOBILITY_VALUES = [
-  [],
+  [-75, -56,  -9,  -2,   6,  15,  22,  30,  36],
   [-75, -56,  -9,  -2,   6,  15,  22,  30,  36],
   [-48, -21,  16,  26,  37,  51,  54,  63,  65,  71,  79,  81,  92,  97],
   [-56, -25, -11,  -5,  -4,  -1,   8,  14,  21,  23,  31,  32,  43,  49,  59],
   [-40, -25,   2,   4,  14,  24,  25,  40,  43,  47,  54,  56,  60,  70,  72,  73,  75,  77,  85,  94,  99, 108, 112, 113, 118, 119, 123, 128],
-  []
+  [-90, -60, 0, 0, 0, 0, 0, 0]
 ]
 
 AI.MATE = AI.MIDGAME_PIECE_VALUES[5]
@@ -363,7 +363,7 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
   let Bx = chessPosition.getPieceColorBitboard(2, !color).dup()
   let Rx = chessPosition.getPieceColorBitboard(3, !color).dup()
   let Qx = chessPosition.getPieceColorBitboard(4, !color).dup()
-  let Kx = chessPosition.getPieceColorBitboard(4, !color).dup()
+  let Kx = chessPosition.getPieceColorBitboard(5, !color).dup()
 
   let colorMaterial = AI.getMaterialValue(P,N,B,R,Q)
   let notcolorMaterial = AI.getMaterialValue(Px,Nx,Bx,Rx,Qx)
@@ -381,9 +381,9 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
     mobility = AI.getMobility(P,N,B,R,Q,Px,chessPosition, color) -
                AI.getMobility(Px,Nx,Bx,Rx,Qx,P,chessPosition, !color)
              
-      defendedpawns = AI.getDefendedPawns(P, color)-
-                      AI.getDefendedPawns(Px, !color)
-
+      // defendedpawns = AI.getDefendedPawns(P, color)-
+      //                 AI.getDefendedPawns(Px, !color)
+    
   }
   
   let positional = 0.7*psqt + 1.2*mobility + 1*defendedpawns
@@ -435,6 +435,7 @@ AI.getMobility = function(P,N,B,R,Q,Px,chessPosition, color) {
   
   let pawnattackmask = Chess.Position.makePawnAttackMask(color, P).dup()
   let enemypawnattackmask = Chess.Position.makePawnAttackMask(!color, Px).dup()
+  let pawnadvancemask = P.shiftLeft(color === 0 ? 8 : -8);
 
   let mobility = 0
 
@@ -443,6 +444,10 @@ AI.getMobility = function(P,N,B,R,Q,Px,chessPosition, color) {
   }
 
   let space = enemypawnattackmask.or(them).or(us)
+
+  // console.log(P.popcnt(), pawnadvancemask.and(space).popcnt())
+
+  mobility += AI.MOBILITY_VALUES[0][pawnadvancemask.popcnt()]
 
   mobility += AI.MOBILITY_VALUES[2][chessPosition.makeBishopAttackMask(B, space).and_not(us).dup().popcnt() / B.popcnt() | 0]
   mobility += AI.MOBILITY_VALUES[3][chessPosition.makeRookAttackMask(R, space).and_not(us).dup().popcnt() / R.popcnt() | 0]
@@ -592,8 +597,8 @@ AI.sortMoves = function(moves, turn, ply, chessPosition, ttEntry) {
     }
     
     
-    if (kind > 2) {
-      move.special = kind
+    if (kind & 8) {
+      move.promotion = kind
     }
 
     let hvalue = AI.history[turn][piece][to]
@@ -856,7 +861,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
   let staticeval = AI.evaluate(chessPosition, hashkey, pvNode)
 
   //Reverse Futility pruning
-  if (!incheck && depth <= 3 && staticeval - AI.PIECE_VALUES[1]*depth > beta) {
+  if (!incheck && depth <= 3 && staticeval - AI.PIECE_VALUES[1]*depth > beta && phase < 4) {
     AI.ttSave(hashkey, beta, -1, depth, moves[0])
     return beta //después tester return staticeval
   }
@@ -891,7 +896,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
     //REDUCTIONS (LMR)
 
     if (!incheck) {
-      if ((doFHR || !pvNode) && depth > 1 && i > 1) {
+      if (phase < 4 && (doFHR || !pvNode) && depth > 1 && i > 1) {
         //depth >=3 tested / no difference
         //~fruit
         R += 1 + Math.sqrt(depth+1) + Math.sqrt(i+1) | 0
@@ -918,7 +923,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
     
     /*futility pruning */
-    if (!near2mate && !incheck && 1 < depth && depth <= 3+R && legal >= 1) {
+    if (!near2mate && !incheck && 1 < depth && depth <= 3+R && legal >= 1 && phase < 4) {
       if (staticeval + AI.FUTILITY_MARGIN*depth <= alpha) {
         // console.log('fut')
         // return alpha
@@ -931,7 +936,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
 
       //LMP      
-      if (!isCapture && i > 100/depth/* && iteration <= 4*/) {
+      if (!isCapture && i > 100/depth && phase < 4) {
         chessPosition.unmakeMove()
         continue
       }
@@ -940,7 +945,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
       if (incheck && depth < 3 && pvNode) {
         E = 1
       }
-
+      
       if (legal === 1) {
         score = -AI.PVS(chessPosition, -beta, -alpha, depth+E-1, ply+1)
       } else {
