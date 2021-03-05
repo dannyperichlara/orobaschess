@@ -25,11 +25,11 @@ app.use(express.json());
 
 app.use(cors())
 
-let Chess = require('./chess.js')
-    Chess.Bitboard = require('./bitboard.js')
-    Chess.Zobrist = require('./zobrist.js')
-    Chess.Move = require('./move.js')
-    Chess.Position = require('./position.js')
+let Chess = require('./chess/chess.js')
+    Chess.Bitboard = require('./chess/bitboard.js')
+    Chess.Zobrist = require('./chess/zobrist.js')
+    Chess.Move = require('./chess/move.js')
+    Chess.Position = require('./chess/position.js')
 
 let fromto = [
   'a1','b1','c1','d1','e1','f1','g1','h1',
@@ -92,7 +92,7 @@ app.get('/', function (req, res) {
 
     }
 
-  Chess.AI = require('./ai.js')
+  Chess.AI = require('./orobas/ai.js')
 
   let options = req.body.options
   
