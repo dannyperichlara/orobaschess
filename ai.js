@@ -10,7 +10,7 @@ const Chess = require('./chess.js')
     Chess.Position = require('./position.js')
 
 let TESTER, nodes, qsnodes, enodes, ttnodes, iteration, status, fhf, fh
-let totaldepth = 20
+let totaldepth = 30
 //ELO = 1570 + 66*depth
 // 6->1966
 // 7->2033
@@ -377,7 +377,7 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
   psqt = AI.getPieceSquareValue(P,N,B,R,Q,K, color) -
          AI.getPieceSquareValue(Px,Nx,Bx,Rx,Qx,Kx, !color)
 
-  if (iteration < 4 || AI.changeinPV) {
+  if (iteration === 1 || AI.changeinPV) {
     mobility = AI.getMobility(P,N,B,R,Q,Px,chessPosition, color) -
                AI.getMobility(Px,Nx,Bx,Rx,Qx,P,chessPosition, !color)
              
@@ -386,9 +386,9 @@ AI.evaluate = function(chessPosition, hashkey, pvNode) {
 
   }
   
-  let positional = 0.7*psqt + 1.2*mobility + 1*defendedpawns
+  let positional = 0.2*psqt //+ mobility + defendedpawns
 
-  positional = (positional - 78)/5 //Fixes excess of positional valuation (sigmoid is too slow)
+  // positional = (positional - 78)/5 //Fixes excess of positional valuation (sigmoid is too slow)
   // minpositional = Math.min(positional, minpositional)
   // console.log(minpositional)
 
@@ -931,7 +931,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
 
       //LMP      
-      if (!isCapture && i > 100/depth/* && iteration <= 4*/) {
+      if (!isCapture && i > 200/depth/* && iteration <= 4*/) {
         chessPosition.unmakeMove()
         continue
       }
@@ -1612,10 +1612,12 @@ AI.createPSQT = function (chessPosition) {
     return e + 40 - 8 * AI.distance(kingXposition, i)
   })
 
-  //Premia caballos en Outposts
-  AI.PIECE_SQUARE_TABLES_ENDGAME[2] = AI.PIECE_SQUARE_TABLES_ENDGAME[2].map((e,i)=>{
-    return e + pawnmap[i]? 40 : -20
-  })
+  
+
+  // //Premia caballos en Outposts
+  // AI.PIECE_SQUARE_TABLES_ENDGAME[2] = AI.PIECE_SQUARE_TABLES_ENDGAME[2].map((e,i)=>{
+  //   return e + pawnmap[i]? 40 : -20
+  // })
 
   //Alfiles al centro
   AI.PIECE_SQUARE_TABLES_ENDGAME[2] = [
@@ -1629,10 +1631,16 @@ AI.createPSQT = function (chessPosition) {
     -200,-150,-100,-100,-100,-100,-150,-200,
   ]
 
+  //Alfiles cerca del rey enemigo
+  AI.PIECE_SQUARE_TABLES_ENDGAME[2] = AI.PIECE_SQUARE_TABLES_ENDGAME[2].map((e,i)=>{
+    return e + 4 * (8 - AI.manhattanDistance(kingXposition, i))
+  })
+
   // //Premia alfiles en Outposts
   // AI.PIECE_SQUARE_TABLES_ENDGAME[2] = AI.PIECE_SQUARE_TABLES_ENDGAME[2].map((e,i)=>{
   //   return e + pawnmap[i]? 20 : -20
   // })
+
 
   //Torres en columnas abiertas
 
@@ -1661,7 +1669,12 @@ AI.createPSQT = function (chessPosition) {
 
   //Torre cerca del rey enemigo
   AI.PIECE_SQUARE_TABLES_ENDGAME[3] = AI.PIECE_SQUARE_TABLES_ENDGAME[3].map((e,i)=>{
-    return 4 * (8 - AI.manhattanDistance(kingXposition, i))
+    return e + 4 * (8 - AI.manhattanDistance(kingXposition, i))
+  })
+
+  //Dama cerca del rey enemigo
+  AI.PIECE_SQUARE_TABLES_ENDGAME[4] = AI.PIECE_SQUARE_TABLES_ENDGAME[4].map((e,i)=>{
+    return e + 4 * (8 - AI.manhattanDistance(kingXposition, i))
   })
 
   //Rey cerca del centro
@@ -1903,7 +1916,7 @@ AI.search = function(chessPosition, options) {
     let f =  AI.PVS(chessPosition, alpha, beta, 1, 1)
     console.log('FFFFFFFFF', f)
 
-    for (let depth = 0; depth <= totaldepth; depth+=1) {
+    for (let depth = 1; depth <= totaldepth; depth+=1) {
       
       
       if (AI.stop && iteration > mindepth) {
