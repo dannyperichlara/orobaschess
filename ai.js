@@ -890,14 +890,24 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
 
     //REDUCTIONS (LMR)
 
+    // if (!incheck) {
+    //   if ((doFHR || !pvNode) && depth > 1 && i > 1) {
+    //     //depth >=3 tested / no difference
+    //     //~fruit
+    //     R += 1 + Math.sqrt(depth+1) + Math.sqrt(i+1) | 0
+    //   } else {
+    //     //stockfish
+    //     R += Math.log(depth+1)*Math.log(i+1)/1.95 | 0 // | 0 + 66 ELO???
+    //   }
+    // }
+
     if (!incheck) {
-      if ((doFHR || !pvNode) && depth > 1 && i > 1) {
-        //depth >=3 tested / no difference
-        //~fruit
+      if (doFHR) {
         R += 1 + Math.sqrt(depth+1) + Math.sqrt(i+1) | 0
       } else {
-        //stockfish
-        R += Math.log(depth+1)*Math.log(i+1)/1.95 | 0 // | 0 + 66 ELO???
+        if (depth > 0 && i > 0) {
+          R += Math.log(depth)*Math.log(i)/1.95 | 0 // | 0 + 66 ELO???
+        }
       }
     }
 
@@ -977,7 +987,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
             return score
           }
           
-          // AI.ttSave(hashkey, score, 1, depth, move) //Sí, probado
+          AI.ttSave(hashkey, score, 1, depth, move) //TESTED AT HIGH DEPTH
           AI.saveHistory(turn, move, 1)
 
             
@@ -989,7 +999,7 @@ AI.PVS = function(chessPosition, alpha, beta, depth, ply) {
         bestmove  = move
       } else {
         AI.saveHistory(turn, move, -1)
-        // AI.ttSave(hashkey, bestscore, 1, depth, bestmove) //No difference at low secs
+        AI.ttSave(hashkey, bestscore, 1, depth, bestmove) //TESTED AT HIGH DEPTH
       }
     }
   }
