@@ -31,7 +31,7 @@ AI.MATE = AI.MIDGAME_PIECE_VALUES[5]
 AI.DRAW = 0
 AI.INFINITY = AI.MIDGAME_PIECE_VALUES[5]*4
 
-//Idea and value from Stockfish. Not fully tested.
+//Idea and values from Stockfish. Not fully tested.
 AI.MOBILITY_VALUES = [
   [],
   [-75, -56,  -9,  -2,   6,  15,  22,  30,  36],

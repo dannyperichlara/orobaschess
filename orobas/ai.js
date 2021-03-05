@@ -31,6 +31,7 @@ AI.MATE = AI.MIDGAME_PIECE_VALUES[5]
 AI.DRAW = 0
 AI.INFINITY = AI.MIDGAME_PIECE_VALUES[5]*4
 
+//Idea and values from Stockfish. Not fully tested.
 AI.MOBILITY_VALUES = [
   [],
   [-75, -56,  -9,  -2,   6,  15,  22,  30,  36],
@@ -40,6 +41,7 @@ AI.MOBILITY_VALUES = [
   []
 ]
 
+//https://open-chess.org/viewtopic.php?t=3058
 AI.MVVLVASCORES = [
   [6002,20225,20250,20400,20800,26900],
   [4775,6004,20025,20175,20575,26675],
@@ -184,7 +186,7 @@ AI.evaluate = function(board) {
   
   let positional = 0.8*psqt + 1.2*mobility + structure
 
-  positional = (positional - 78)/5 //Fixes excess of positional valuation (sigmoid is too slow)
+  positional = (positional - 78)/5 //Reduces excess of positional valuation (sigmoid is too slow)
 
   let score = material + positional | 0
   
@@ -500,7 +502,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     if (ttEntry.flag === 0) {
       return ttEntry.score
       
-      // alpha = ttEntry.score //No exact score because PSQTs change
+      // alpha = ttEntry.score //No exact score because PSQTs change?
     } else if (ttEntry.flag === -1) {
       if (ttEntry.score > alpha) alpha = ttEntry.score
     } else if (ttEntry.flag === 1) {
@@ -610,7 +612,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
         //Next moves are searched with reductions
         score = -AI.PVS(board, -alpha-1, -alpha, depth+E-R-1, ply+1)
 
-        //If the result look promising, we do a research at full depth.
+        //If the result looks promising, we do a research at full depth.
         //Remember we are trying to get the score at depth D, but we just get the score at depth D - R
         if (!AI.stop && score > alpha/* && score < beta*/) { //https://www.chessprogramming.org/Principal_Variation_Search
           score = -AI.PVS(board, -beta, -alpha, depth+E-1, ply+1)
