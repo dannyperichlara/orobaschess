@@ -41,6 +41,9 @@ AI.MOBILITY_VALUES = [
   []
 ]
 
+//Values not full tested
+AI.SAFETY_VALUES = [-20, -10,  0, 20, 20,-20,-40,-60]
+
 //https://open-chess.org/viewtopic.php?t=3058
 AI.MVVLVASCORES = [
   [6002,20225,20250,20400,20800,26900],
@@ -153,21 +156,25 @@ AI.randomizePSQT = function () {
 let minpositional = Infinity //Used for tests
 
 AI.evaluate = function(board) {
-  let color = board.getTurnColor()
+  let turn = board.getTurnColor()
+  let white = (turn === 0)
 
-  let P = board.getPieceColorBitboard(0, color).dup()
-  let N = board.getPieceColorBitboard(1, color).dup()
-  let B = board.getPieceColorBitboard(2, color).dup()
-  let R = board.getPieceColorBitboard(3, color).dup()
-  let Q = board.getPieceColorBitboard(4, color).dup()
-  let K = board.getPieceColorBitboard(5, color).dup()
+  let P = board.getPieceColorBitboard(0, turn).dup()
+  let N = board.getPieceColorBitboard(1, turn).dup()
+  let B = board.getPieceColorBitboard(2, turn).dup()
+  let R = board.getPieceColorBitboard(3, turn).dup()
+  let Q = board.getPieceColorBitboard(4, turn).dup()
+  let K = board.getPieceColorBitboard(5, turn).dup()
 
-  let Px = board.getPieceColorBitboard(0, !color).dup()
-  let Nx = board.getPieceColorBitboard(1, !color).dup()
-  let Bx = board.getPieceColorBitboard(2, !color).dup()
-  let Rx = board.getPieceColorBitboard(3, !color).dup()
-  let Qx = board.getPieceColorBitboard(4, !color).dup()
-  let Kx = board.getPieceColorBitboard(5, !color).dup()
+  let Px = board.getPieceColorBitboard(0, !turn).dup()
+  let Nx = board.getPieceColorBitboard(1, !turn).dup()
+  let Bx = board.getPieceColorBitboard(2, !turn).dup()
+  let Rx = board.getPieceColorBitboard(3, !turn).dup()
+  let Qx = board.getPieceColorBitboard(4, !turn).dup()
+  let Kx = board.getPieceColorBitboard(5, !turn).dup()
+
+  let us = board.getColorBitboard(turn).dup()
+  let usx = board.getColorBitboard(!turn).dup()
 
   let colorMaterial = AI.getMaterialValue(P,N,B,R,Q)
   let notcolorMaterial = AI.getMaterialValue(Px,Nx,Bx,Rx,Qx)
@@ -176,22 +183,32 @@ AI.evaluate = function(board) {
   let psqt = 0
   let mobility = 0
   let structure = 0
+  let safety = 0
   
-  psqt = AI.getPSQT(P,N,B,R,Q,K, color) - AI.getPSQT(Px,Nx,Bx,Rx,Qx,Kx, !color)
+  psqt = AI.getPSQT(P,N,B,R,Q,K, turn) - AI.getPSQT(Px,Nx,Bx,Rx,Qx,Kx, !turn)
 
   if (AI.iteration === 1 || AI.changeinPV) {
-    mobility = AI.getMOB(P,N,B,R,Q,Px,board, color) - AI.getMOB(Px,Nx,Bx,Rx,Qx,P,board, !color)
+    mobility = AI.getMOB(P,N,B,R,Q,Px,board, turn) - AI.getMOB(Px,Nx,Bx,Rx,Qx,P,board, !turn)
+    structure = AI.getSTR(P, turn) - AI.getSTR(Px, !turn)
   }
-  
-  structure = AI.getSTR(P, color) - AI.getSTR(Px, !color)
-  
-  let positional = psqt/5 + mobility/2 + structure
 
+  if (AI.phase === 2) safety = AI.getKS(board, K, us, turn) - AI.getKS(board, Kx, usx, !turn)
+
+  
+  let positional = psqt/5 + mobility/2 + structure + safety
+  
   // positional = (positional - 78)/5 //Reduces excess of positional valuation (sigmoid is too slow)
-
+  
   let score = material + positional | 0
   
   return score
+}
+
+AI.getKS = function (board, K, us, turn) {
+  let mask = Chess.Position.makeKingDefenseMask(turn, K).and(us)
+  let safety = AI.SAFETY_VALUES[mask.popcnt()]
+  
+  return safety
 }
 
 
