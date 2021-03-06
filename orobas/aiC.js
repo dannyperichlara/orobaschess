@@ -18,13 +18,13 @@ let AI = {
   phase: 1,
   htlength: 1 << 24,
   reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
-  mindepth:  4,
+  mindepth:  1,
   secondspermove: 3,
   lastmove: null
 }
 
-AI.MIDGAME_PIECE_VALUES = [142, 350, 467,  797, 1378, 20000] // TESTEADO OK
-AI.ENDGAME_PIECE_VALUES = [124, 370, 365, 1093, 1378, 20000] // TESTEADO OK
+AI.MIDGAME_PIECE_VALUES = [124, 781, 825, 1276, 2538, 20000] // TESTEADO OK
+AI.ENDGAME_PIECE_VALUES = [206, 854, 915, 1380, 2682, 20000] // TESTEADO OK
 AI.FUTILITY_MARGIN = 2 * AI.MIDGAME_PIECE_VALUES[0]
 AI.BISHOP_PAIR = 82
 AI.MATE = AI.MIDGAME_PIECE_VALUES[5]
@@ -33,12 +33,22 @@ AI.INFINITY = AI.MIDGAME_PIECE_VALUES[5]*4
 
 //Idea and values from Stockfish. Not fully tested.
 AI.MOBILITY_VALUES = [
-  [],
-  [-75, -56,  -9,  -2,   6,  15,  22,  30,  36],
-  [-48, -21,  16,  26,  37,  51,  54,  63,  65,  71,  79,  81,  92,  97],
-  [-56, -25, -11,  -5,  -4,  -1,   8,  14,  21,  23,  31,  32,  43,  49,  59],
-  [-40, -25,   2,   4,  14,  24,  25,  40,  43,  47,  54,  56,  60,  70,  72,  73,  75,  77,  85,  94,  99, 108, 112, 113, 118, 119, 123, 128],
-  []
+  [
+    [],
+    [-62,-53,-12,-4,3,13,22,28,33],
+    [-48,-20,16,26,38,51,55,63,63,68,81,81,91,98],
+    [-60,-20,2,3,3,11,22,31,40,40,41,48,57,57,62],
+    [-30,-12,-8,-9,20,23,23,35,38,53,64,65,65,66,67,67,72,72,77,79,93,108,108,108,110,114,114,116],
+    []
+  ],
+  [
+    [],
+    [-81,-56,-31,-16,5,11,17,20,25],
+    [-59,-23,-3,13,24,42,54,57,65,73,78,86,88,97],
+    [-78,-17,23,39,70,99,103,121,134,139,158,164,168,169,172],
+    [-48,-30,-7,19,40,55,59,75,78,96,96,100,121,127,131,133,136,141,147,150,151,168,168,171,182,182,192,219],
+    []
+  ]
 ]
 
 //Values not full tested
@@ -187,24 +197,26 @@ AI.evaluate = function(board) {
   
   psqt = AI.getPSQT(P,N,B,R,Q,K, turn) - AI.getPSQT(Px,Nx,Bx,Rx,Qx,Kx, !turn)
 
-  if (AI.iteration === 1 || AI.changeinPV) {
-    mobility = AI.getMOB(P,N,B,R,Q,Px,board, turn) - AI.getMOB(Px,Nx,Bx,Rx,Qx,P,board, !turn)
+  if (AI.iteration < 4 || AI.changeinPV) {
+    mobility = AI.getMOB(P,N,B,R,Q,K,Px,board, turn) - AI.getMOB(Px,Nx,Bx,Rx,Qx,Kx,P,board, !turn)
     structure = AI.getSTR(P, turn) - AI.getSTR(Px, !turn)
   }
-
-  if (AI.phase === 2) safety = AI.getKS(board, K, us, turn) - AI.getKS(board, Kx, usx, !turn)
-
   
+
+  if (AI.phase === 2) safety = AI.getKS(K, us, turn) - AI.getKS(Kx, usx, !turn)
+
   let positional = psqt/5 + mobility/2 + structure + safety
-  
-  // positional = (positional - 78)/5 //Reduces excess of positional valuation (sigmoid is too slow)
-  
+    
   let score = material + positional | 0
   
   return score
 }
 
-AI.getKS = function (board, K, us, turn) {
+AI.getPassed = function (P, Px) {
+  
+}
+
+AI.getKS = function (K, us, turn) {
   let mask = Chess.Position.makeKingDefenseMask(turn, K).and(us)
   let safety = AI.SAFETY_VALUES[mask.popcnt()]
   
@@ -220,21 +232,42 @@ AI.getSTR = function(P, color) {
   return protectedvalues[protectedpawns]
 }
 
-AI.getMOB = function(P,N,B,R,Q,Px,board, color) {
+AI.getMOB = function(P,N,B,R,Q,K,Px,board, color) {
   let us = board.getColorBitboard(color).dup()
   let them = board.getColorBitboard(!color).dup()
   let enemypawnattackmask = Chess.Position.makePawnAttackMask(!color, Px).dup()
-  let space = enemypawnattackmask.or(them).or(us)
+  let space = P.dup().or(Q).or(K).or(enemypawnattackmask)
+  // let space = them.or(us).or(enemypawnattackmask)
   let mobility = 0
+  let phaseindex = AI.phase < 3? 0 : 1 //which values for mobility. 0: midgame. 1: endgame
 
+  
   while (!N.isEmpty()) {
-      mobility += AI.MOBILITY_VALUES[1][Chess.Bitboard.KNIGHT_MOVEMENTS[N.extractLowestBitPosition()].dup().and_not(enemypawnattackmask).and_not(P).popcnt()]
+    mobility += AI.MOBILITY_VALUES[phaseindex][1][Chess.Bitboard.KNIGHT_MOVEMENTS[N.extractLowestBitPosition()].dup().and_not(enemypawnattackmask).and_not(us).popcnt()]
   }
-
-  mobility += AI.MOBILITY_VALUES[2][board.makeBishopAttackMask(B, space).and_not(us).dup().popcnt() / B.popcnt() | 0]
-  mobility += AI.MOBILITY_VALUES[3][board.makeRookAttackMask(R, space).and_not(us).dup().popcnt() / R.popcnt() | 0]  
-  mobility += AI.MOBILITY_VALUES[4][(board.makeBishopAttackMask(Q, space).and_not(us).dup().popcnt() + board.makeRookAttackMask(Q, space).dup().popcnt()) / Q.popcnt() | 0]
-
+  
+  while (!B.isEmpty()) {
+    let index = B.extractLowestBitPosition()
+    let bishop = (new Chess.Bitboard).setBit(index)
+    mobility += AI.MOBILITY_VALUES[phaseindex][2][board.makeBishopAttackMask(bishop, space).and_not(us).popcnt()]
+  }
+  
+  while (!R.isEmpty()) {
+    let index = R.extractLowestBitPosition()
+    let rook = (new Chess.Bitboard).setBit(index)
+    mobility += AI.MOBILITY_VALUES[phaseindex][3][board.makeRookAttackMask(rook, space).and_not(us).popcnt()]
+  }
+  
+  while (!Q.isEmpty()) {
+    let index = Q.extractLowestBitPosition()
+    let queen = (new Chess.Bitboard).setBit(index)
+    let qcount  = board.makeBishopAttackMask(queen, space).or(board.makeRookAttackMask(queen, space)).and_not(us).popcnt()
+    
+    mobility += AI.MOBILITY_VALUES[phaseindex][4][qcount]
+  }
+  
+  if (isNaN(mobility)) return 0
+  
   return mobility
 }
 
@@ -967,60 +1000,60 @@ AI.createPSQT = function (board) {
 
   //Torres en columnas abiertas
   
-  let pawnXfiles = [0,0,0,0,0,0,0,0]
-  let pawnfiles = [0,0,0,0,0,0,0,0]
+  // let pawnXfiles = [0,0,0,0,0,0,0,0]
+  // let pawnfiles = [0,0,0,0,0,0,0,0]
   
-  for (let i = 0; i < 64; i++) {
-    if (pawnmap[i]) {
-      let col = i % 8
+  // for (let i = 0; i < 64; i++) {
+  //   if (pawnmap[i]) {
+  //     let col = i % 8
 
-      pawnfiles[col]++
-    }
-  }
+  //     pawnfiles[col]++
+  //   }
+  // }
 
-  for (let i = 0; i < 64; i++) {
-    if (pawnXmap[i]) {
-      let col = i % 8
+  // for (let i = 0; i < 64; i++) {
+  //   if (pawnXmap[i]) {
+  //     let col = i % 8
 
-      if (pawnfiles[col]) {
-        //Si las columnas están abiertas en mi lado, cuento las del otro lado (antes no)
-        pawnXfiles[col]++
-      }
+  //     if (pawnfiles[col]) {
+  //       //Si las columnas están abiertas en mi lado, cuento las del otro lado (antes no)
+  //       pawnXfiles[col]++
+  //     }
 
-    }
-  }
+  //   }
+  // }
 
   
-  AI.PIECE_SQUARE_TABLES_OPENING[3] = AI.PIECE_SQUARE_TABLES_OPENING[3].map((e,i)=>{
-    let col = i%8
-    return e + (pawnfiles[col]? -40 : 0)
-  })
+  // AI.PIECE_SQUARE_TABLES_OPENING[3] = AI.PIECE_SQUARE_TABLES_OPENING[3].map((e,i)=>{
+  //   let col = i%8
+  //   return e + (pawnfiles[col]? -40 : 0)
+  // })
   
-  AI.PIECE_SQUARE_TABLES_OPENING[3] = AI.PIECE_SQUARE_TABLES_OPENING[3].map((e,i)=>{
-    let col = i%8
-    return e + (!pawnfiles[col]? 80 : 0) + (!pawnXfiles[col]? 50 : 0)
-  })
+  // AI.PIECE_SQUARE_TABLES_OPENING[3] = AI.PIECE_SQUARE_TABLES_OPENING[3].map((e,i)=>{
+  //   let col = i%8
+  //   return e + (!pawnfiles[col]? 80 : 0) + (!pawnXfiles[col]? 50 : 0)
+  // })
   
-  AI.PIECE_SQUARE_TABLES_MIDGAME[3] = AI.PIECE_SQUARE_TABLES_MIDGAME[3].map((e,i)=>{
-    let col = i%8
-    return e + (pawnfiles[col]? -20 : 0)
-  })
+  // AI.PIECE_SQUARE_TABLES_MIDGAME[3] = AI.PIECE_SQUARE_TABLES_MIDGAME[3].map((e,i)=>{
+  //   let col = i%8
+  //   return e + (pawnfiles[col]? -20 : 0)
+  // })
   
-  AI.PIECE_SQUARE_TABLES_MIDGAME[3] = AI.PIECE_SQUARE_TABLES_MIDGAME[3].map((e,i)=>{
-    let col = i%8
-    return e + (!pawnfiles[col]? 50 : 0) + (!pawnXfiles[col]? 50 : 0)
-  })
+  // AI.PIECE_SQUARE_TABLES_MIDGAME[3] = AI.PIECE_SQUARE_TABLES_MIDGAME[3].map((e,i)=>{
+  //   let col = i%8
+  //   return e + (!pawnfiles[col]? 50 : 0) + (!pawnXfiles[col]? 50 : 0)
+  // })
   
   //Torres delante del rey enemigo ("torre en séptima")
-  for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_MIDGAME[3][i + 8*(kingXposition/8 | 0)] += 27
+  // for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_MIDGAME[3][i + 8*(kingXposition/8 | 0)] += 27
 
-  //Torres conectadas
-  let RR = board.makeRookAttackMask(R, P.or(PX))
-  let RRmap = AI.bin2map(RR, color)
+  // //Torres conectadas
+  // let RR = board.makeRookAttackMask(R, P.or(PX))
+  // let RRmap = AI.bin2map(RR, color)
 
-  AI.PIECE_SQUARE_TABLES_MIDGAME[3] = AI.PIECE_SQUARE_TABLES_MIDGAME[3].map((e,i)=>{
-    return e + 10*RRmap[i]
-  })
+  // AI.PIECE_SQUARE_TABLES_MIDGAME[3] = AI.PIECE_SQUARE_TABLES_MIDGAME[3].map((e,i)=>{
+  //   return e + 10*RRmap[i]
+  // })
 
   //Castiga torres sin desarrollar
   AI.PIECE_SQUARE_TABLES_MIDGAME[2][56] -= 40
@@ -1240,28 +1273,28 @@ AI.createPSQT = function (board) {
 
   //Torres en columnas abiertas
 
-  pawnfiles = [0,0,0,0,0,0,0,0]
+  // pawnfiles = [0,0,0,0,0,0,0,0]
 
-  for (let i = 0; i < 64; i++) {
-    if (pawnmap[i]) {
-      let col = i % 8
+  // for (let i = 0; i < 64; i++) {
+  //   if (pawnmap[i]) {
+  //     let col = i % 8
 
-      pawnfiles[col]++
-    }
-  }
+  //     pawnfiles[col]++
+  //   }
+  // }
 
-  AI.PIECE_SQUARE_TABLES_ENDGAME[3] = AI.PIECE_SQUARE_TABLES_ENDGAME[3].map((e,i)=>{
-    let col = i%8
-    return e + (pawnfiles[col]? -40 : 0)
-  })
+  // AI.PIECE_SQUARE_TABLES_ENDGAME[3] = AI.PIECE_SQUARE_TABLES_ENDGAME[3].map((e,i)=>{
+  //   let col = i%8
+  //   return e + (pawnfiles[col]? -40 : 0)
+  // })
 
-  AI.PIECE_SQUARE_TABLES_ENDGAME[3] = AI.PIECE_SQUARE_TABLES_ENDGAME[3].map((e,i)=>{
-    let col = i%8
-    return e + (!pawnfiles[col]? 40 : 0)
-  })
+  // AI.PIECE_SQUARE_TABLES_ENDGAME[3] = AI.PIECE_SQUARE_TABLES_ENDGAME[3].map((e,i)=>{
+  //   let col = i%8
+  //   return e + (!pawnfiles[col]? 40 : 0)
+  // })
 
-  //Torres delante del rey enemigo ("torre en séptima")
-  for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_ENDGAME[3][i + 8*(kingXposition/8 | 0)] += 27
+  // //Torres delante del rey enemigo ("torre en séptima")
+  // for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_ENDGAME[3][i + 8*(kingXposition/8 | 0)] += 27
 
   //Torre cerca del rey enemigo
   AI.PIECE_SQUARE_TABLES_ENDGAME[3] = AI.PIECE_SQUARE_TABLES_ENDGAME[3].map((e,i)=>{
