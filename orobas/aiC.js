@@ -205,7 +205,7 @@ AI.evaluate = function(board) {
 
   if (AI.phase === 2) safety = AI.getKS(K, us, turn) - AI.getKS(Kx, usx, !turn)
 
-  let positional = psqt/5 + mobility/2 + structure + safety
+  let positional = psqt + mobility + structure + safety
     
   let score = material + positional | 0
   
