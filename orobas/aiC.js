@@ -181,12 +181,13 @@ AI.evaluate = function(board) {
 
   if (AI.iteration === 1 || AI.changeinPV) {
     mobility = AI.getMOB(P,N,B,R,Q,Px,board, color) - AI.getMOB(Px,Nx,Bx,Rx,Qx,P,board, !color)
-    structure = AI.getSTR(P, color) - AI.getSTR(Px, !color)
   }
   
-  let positional = 0.8*psqt + 1.2*mobility + structure
+  structure = AI.getSTR(P, color) - AI.getSTR(Px, !color)
+  
+  let positional = psqt/5 + mobility/2 + structure
 
-  positional = (positional - 78)/5 //Reduces excess of positional valuation (sigmoid is too slow)
+  // positional = (positional - 78)/5 //Reduces excess of positional valuation (sigmoid is too slow)
 
   let score = material + positional | 0
   
@@ -546,6 +547,8 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     AI.ttSave(hashkey, beta, -1, depth, moves[0])
     return beta
   }
+
+  // console.log(depth)
 
   let doFHR = staticeval - 200 * incheck > beta && alpha === beta - 1
   let noncaptures = 0
