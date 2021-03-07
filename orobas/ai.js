@@ -206,7 +206,7 @@ AI.evaluate = function(board) {
   if (AI.phase === 2) safety = AI.getKS(K, us, turn) - AI.getKS(Kx, usx, !turn)
 
   let positional = psqt + mobility + structure + safety
-    
+
   let score = material + positional | 0
   
   return score
@@ -1204,17 +1204,29 @@ AI.createPSQT = function (board) {
     return e + 4 * (8 - AI.manhattanDistance(kingXposition, i))
   })
 
-  //Rey cerca del centro
-  AI.PIECE_SQUARE_TABLES_ENDGAME[5] = [
-    -200,-150,-100,-100,-100,-100,-150,-200,
-    -150,  30,  30,  30,  30,  30,  30,-100,
-    -100,  30,  80,  80,  80,  80,  30,-100,
-    -100,  30,  80, 120, 120,  80,  30,-100,
-    -100,  30,  80, 120, 120,  80,  30,-100,
-    -100,  30,  80,  80,  80,  80,  30,-100,
-    -150,  30,  30,  30,  30,  30,  30,-150,
-    -200,-150,-100,-100,-100,-100,-150,-200,
-  ]
+  console.log('LASTS SCORE', AI.lastscore )
+
+  if (AI.phase === 3 || (AI.phase === 4 && AI.lastscore < AI.ENDGAME_PIECE_VALUES[0])) {
+    //Rey cerca del centro
+    AI.PIECE_SQUARE_TABLES_ENDGAME[5] = [
+      -200,-150,-100,-100,-100,-100,-150,-200,
+      -150,  30,  30,  30,  30,  30,  30,-100,
+      -100,  30,  80,  80,  80,  80,  30,-100,
+      -100,  30,  80, 120, 120,  80,  30,-100,
+      -100,  30,  80, 120, 120,  80,  30,-100,
+      -100,  30,  80,  80,  80,  80,  30,-100,
+      -150,  30,  30,  30,  30,  30,  30,-150,
+      -200,-150,-100,-100,-100,-100,-150,-200,
+    ]
+  }
+  
+  if (AI.phase === 4 && AI.lastscore >= AI.ENDGAME_PIECE_VALUES[0]) {
+    //Rey cerca del rey enemigo
+    AI.PIECE_SQUARE_TABLES_ENDGAME[5] = AI.PIECE_SQUARE_TABLES_ENDGAME[5].map((e,i)=>{
+      return 4 * (8 - AI.manhattanDistance(kingXposition, i))
+    })
+  }
+
 
   //////////////// X RAYS ///////////////////////
   //////////////// X RAYS ///////////////////////
