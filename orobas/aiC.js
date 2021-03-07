@@ -51,8 +51,11 @@ AI.MOBILITY_VALUES = [
   ]
 ]
 
-//Values not full tested
+//Not full tested
 AI.SAFETY_VALUES = [-20, -10,  0, 20, 20,-20,-40,-60]
+
+//Not full tested
+AI.PASSER_VALUES = [0, 200, 400, 500, 500, 500, 500, 500, 500]
 
 //https://open-chess.org/viewtopic.php?t=3058
 AI.MVVLVASCORES = [
@@ -194,12 +197,20 @@ AI.evaluate = function(board) {
   let mobility = 0
   let structure = 0
   let safety = 0
+  let passers = 0
   
   psqt = AI.getPSQT(P,N,B,R,Q,K, turn) - AI.getPSQT(Px,Nx,Bx,Rx,Qx,Kx, !turn)
 
-  if (AI.iteration < 4 || AI.changeinPV) {
+  let doPositional = AI.iteration < 4 || AI.changeinPV
+  let doPassers = AI.phase >= 3
+
+  if (doPositional) {
     mobility = AI.getMOB(P,N,B,R,Q,K,Px,board, turn) - AI.getMOB(Px,Nx,Bx,Rx,Qx,Kx,P,board, !turn)
     structure = AI.getSTR(P, turn) - AI.getSTR(Px, !turn)
+  }
+
+  if (doPassers || doPositional) {
+    passers = AI.getPassers(P, Px, turn) - AI.getPassers(Px, P, !turn)
   }
   
 
@@ -212,9 +223,32 @@ AI.evaluate = function(board) {
   return score
 }
 
-AI.getPassed = function (P, Px) {
-  
+AI.getPassers = function (P, Px, turn) {
+  let pawns = P.dup()
+  let pawnsx = Px.dup()
+  let passers = 0
+  let pxmask = pawnsx.or(Chess.Position.makePawnAttackMask(!turn, pawnsx))
+
+  while (!pawns.isEmpty()) {
+    let index = pawns.extractLowestBitPosition()
+    let pawn = (new Chess.Bitboard).setBit(index)
+    let advancemask = AI.pawnAdvanceMask(pawn, 0, turn)
+
+    let encounters = advancemask.and(pxmask).popcnt()
+    
+    if (encounters === 0) passers++
+  }
+
+  return AI.PASSER_VALUES[passers]
 }
+
+AI.pawnAdvanceMask = function(fromBB, occupied, turn) {
+  if (turn === 0 /* white */) {
+    return Chess.Position.makeSlidingAttackMask(fromBB.dup(), occupied, 1, 0)
+  } else {
+    return Chess.Position.makeSlidingAttackMask(fromBB.dup(), occupied,-1, 0)
+  }
+};
 
 AI.getKS = function (K, us, turn) {
   let mask = Chess.Position.makeKingDefenseMask(turn, K).and(us)
