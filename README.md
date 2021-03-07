@@ -60,12 +60,11 @@ The main intention is not to create an AI that plays better than other chess eng
 
 ### To Do
 * Mate detection
-* Free pawn advance 
-* Passed/doubled/hanging pawns detection.
+* Doubled/isolated/hanging pawns detection.
 * Improve king safety.
 * King pawn tropism.
 * Static Exchange Evaluation (SEE).
-* Move generation by stages (hash moves / tactival moves / killer moves? / quiet moves).
+* Move generation by stages (hash moves / tactical moves / killer moves? / quiet moves).
 * Automated tuning of parameters.
 * Book openings implementation.
 * Compute space gain.
