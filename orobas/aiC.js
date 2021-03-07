@@ -1114,7 +1114,112 @@ AI.createPSQT = function (board) {
     }
   }
 
-  //////////////// Rayos X ///////////////////////
+//***************** ENDGAME ***********************
+//***************** ENDGAME ***********************
+//***************** ENDGAME ***********************
+//***************** ENDGAME ***********************
+
+  AI.PIECE_SQUARE_TABLES_ENDGAME[0] = [
+    0,  0,  0,  0,  0,  0,  0,  0,
+  320,320,320,260,260,320,320,320,
+  200,160,160,200,200,160,160,200,
+   80, 80, 80,100,100, 80, 80, 80,
+   40,-20,-20,-20,-20,-20,-20, 40,
+   40,-40,-40,-40,-40,-40,-40, 40,
+  -80,-80,-80,-80,-80,-80,-80,-80,
+    0,  0,  0,  0,  0,  0,  0,  0,
+ ]
+
+  //Castiga captura y maniobras con peón frontal del rey
+  if (board.getMadeMoveCount()>12 && kingposition > 55) {
+    AI.PIECE_SQUARE_TABLES_ENDGAME[0][kingposition - 8] +=50 
+  }
+
+  //Caballos al centro
+  AI.PIECE_SQUARE_TABLES_ENDGAME[1] = [
+    -100,-100,-100,-100,-100,-100,-100,-100,
+    -100, -40, -40, -40, -40, -40, -40,-100,
+    -100, -40,  40,  40,  40,  40, -40,-100,
+    -100, -40,  40,  40,  40,  40, -40,-100,
+    -100, -40,  40,  40,  40,  40, -40,-100,
+    -100, -40,  40,  40,  40,  40, -40,-100,
+    -100, -40, -40, -40, -40, -40, -40,-100,
+    -100,-100,-100,-100,-100,-100,-100,-100,
+  ]
+
+  //Caballos cerca del rey enemigo
+  AI.PIECE_SQUARE_TABLES_ENDGAME[1] = AI.PIECE_SQUARE_TABLES_ENDGAME[1].map((e,i)=>{
+    return e + 40 - 8 * AI.distance(kingXposition, i)
+  })
+
+  //Alfiles al centro
+  AI.PIECE_SQUARE_TABLES_ENDGAME[2] = [
+    -200,-150,-100,-100,-100,-100,-150,-200,
+    -150, -40, -40, -40, -40, -40, -40,-100,
+    -100, -40,  40,  40,  40,  40, -40,-100,
+    -100, -40,  40,  40,  40,  40, -40,-100,
+    -100, -40,  40,  40,  40,  40, -40,-100,
+    -100, -40,  40,  40,  40,  40, -40,-100,
+    -150, -40, -40, -40, -40, -40, -40,-150,
+    -200,-150,-100,-100,-100,-100,-150,-200,
+  ]
+
+  //Alfiles cerca del rey enemigo
+  AI.PIECE_SQUARE_TABLES_ENDGAME[2] = AI.PIECE_SQUARE_TABLES_ENDGAME[2].map((e,i)=>{
+    return e + 4 * (8 - AI.manhattanDistance(kingXposition, i))
+  })
+
+  //Torres en columnas abiertas
+
+  // pawnfiles = [0,0,0,0,0,0,0,0]
+
+  // for (let i = 0; i < 64; i++) {
+  //   if (pawnmap[i]) {
+  //     let col = i % 8
+
+  //     pawnfiles[col]++
+  //   }
+  // }
+
+  // AI.PIECE_SQUARE_TABLES_ENDGAME[3] = AI.PIECE_SQUARE_TABLES_ENDGAME[3].map((e,i)=>{
+  //   let col = i%8
+  //   return e + (pawnfiles[col]? -40 : 0)
+  // })
+
+  // AI.PIECE_SQUARE_TABLES_ENDGAME[3] = AI.PIECE_SQUARE_TABLES_ENDGAME[3].map((e,i)=>{
+  //   let col = i%8
+  //   return e + (!pawnfiles[col]? 40 : 0)
+  // })
+
+  // //Torres delante del rey enemigo ("torre en séptima")
+  // for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_ENDGAME[3][i + 8*(kingXposition/8 | 0)] += 27
+
+  //Torre cerca del rey enemigo
+  AI.PIECE_SQUARE_TABLES_ENDGAME[3] = AI.PIECE_SQUARE_TABLES_ENDGAME[3].map((e,i)=>{
+    return e + 4 * (8 - AI.manhattanDistance(kingXposition, i))
+  })
+
+  //Dama cerca del rey enemigo
+  AI.PIECE_SQUARE_TABLES_ENDGAME[4] = AI.PIECE_SQUARE_TABLES_ENDGAME[4].map((e,i)=>{
+    return e + 4 * (8 - AI.manhattanDistance(kingXposition, i))
+  })
+
+  //Rey cerca del centro
+  AI.PIECE_SQUARE_TABLES_ENDGAME[5] = [
+    -200,-150,-100,-100,-100,-100,-150,-200,
+    -150,  30,  30,  30,  30,  30,  30,-100,
+    -100,  30,  80,  80,  80,  80,  30,-100,
+    -100,  30,  80, 120, 120,  80,  30,-100,
+    -100,  30,  80, 120, 120,  80,  30,-100,
+    -100,  30,  80,  80,  80,  80,  30,-100,
+    -150,  30,  30,  30,  30,  30,  30,-150,
+    -200,-150,-100,-100,-100,-100,-150,-200,
+  ]
+
+  //////////////// X RAYS ///////////////////////
+  //////////////// X RAYS ///////////////////////
+  //////////////// X RAYS ///////////////////////
+  //////////////// X RAYS ///////////////////////
   let KB = board.makeBishopAttackMask(KX, false)
   let KBmap = AI.bin2map(KB, color)
 
@@ -1218,105 +1323,6 @@ AI.createPSQT = function (board) {
   AI.PIECE_SQUARE_TABLES_MIDGAME[5] = AI.PIECE_SQUARE_TABLES_MIDGAME[5].map((e,i)=>{
     return e - 20*RRmapx[i]
   })
-
-  //***************** ENDGAME ***********************
-
-  AI.PIECE_SQUARE_TABLES_ENDGAME[0] = [
-    0,  0,  0,  0,  0,  0,  0,  0,
-  320,320,320,260,260,320,320,320,
-  200,160,160,200,200,160,160,200,
-   80, 80, 80,100,100, 80, 80, 80,
-   40,-20,-20,-20,-20,-20,-20, 40,
-   40,-40,-40,-40,-40,-40,-40, 40,
-  -80,-80,-80,-80,-80,-80,-80,-80,
-    0,  0,  0,  0,  0,  0,  0,  0,
- ]
-
-  //Castiga captura y maniobras con peón frontal del rey
-  if (board.getMadeMoveCount()>12 && kingposition > 55) {
-    AI.PIECE_SQUARE_TABLES_ENDGAME[0][kingposition - 8] +=50 
-  }
-
-  //Caballos al centro
-  AI.PIECE_SQUARE_TABLES_ENDGAME[1] = [
-    -100,-100,-100,-100,-100,-100,-100,-100,
-    -100, -40, -40, -40, -40, -40, -40,-100,
-    -100, -40,  40,  40,  40,  40, -40,-100,
-    -100, -40,  40,  40,  40,  40, -40,-100,
-    -100, -40,  40,  40,  40,  40, -40,-100,
-    -100, -40,  40,  40,  40,  40, -40,-100,
-    -100, -40, -40, -40, -40, -40, -40,-100,
-    -100,-100,-100,-100,-100,-100,-100,-100,
-  ]
-
-  //Caballos cerca del rey enemigo
-  AI.PIECE_SQUARE_TABLES_ENDGAME[1] = AI.PIECE_SQUARE_TABLES_ENDGAME[1].map((e,i)=>{
-    return e + 40 - 8 * AI.distance(kingXposition, i)
-  })
-
-  //Alfiles al centro
-  AI.PIECE_SQUARE_TABLES_ENDGAME[2] = [
-    -200,-150,-100,-100,-100,-100,-150,-200,
-    -150, -40, -40, -40, -40, -40, -40,-100,
-    -100, -40,  40,  40,  40,  40, -40,-100,
-    -100, -40,  40,  40,  40,  40, -40,-100,
-    -100, -40,  40,  40,  40,  40, -40,-100,
-    -100, -40,  40,  40,  40,  40, -40,-100,
-    -150, -40, -40, -40, -40, -40, -40,-150,
-    -200,-150,-100,-100,-100,-100,-150,-200,
-  ]
-
-  //Alfiles cerca del rey enemigo
-  AI.PIECE_SQUARE_TABLES_ENDGAME[2] = AI.PIECE_SQUARE_TABLES_ENDGAME[2].map((e,i)=>{
-    return e + 4 * (8 - AI.manhattanDistance(kingXposition, i))
-  })
-
-  //Torres en columnas abiertas
-
-  // pawnfiles = [0,0,0,0,0,0,0,0]
-
-  // for (let i = 0; i < 64; i++) {
-  //   if (pawnmap[i]) {
-  //     let col = i % 8
-
-  //     pawnfiles[col]++
-  //   }
-  // }
-
-  // AI.PIECE_SQUARE_TABLES_ENDGAME[3] = AI.PIECE_SQUARE_TABLES_ENDGAME[3].map((e,i)=>{
-  //   let col = i%8
-  //   return e + (pawnfiles[col]? -40 : 0)
-  // })
-
-  // AI.PIECE_SQUARE_TABLES_ENDGAME[3] = AI.PIECE_SQUARE_TABLES_ENDGAME[3].map((e,i)=>{
-  //   let col = i%8
-  //   return e + (!pawnfiles[col]? 40 : 0)
-  // })
-
-  // //Torres delante del rey enemigo ("torre en séptima")
-  // for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_ENDGAME[3][i + 8*(kingXposition/8 | 0)] += 27
-
-  //Torre cerca del rey enemigo
-  AI.PIECE_SQUARE_TABLES_ENDGAME[3] = AI.PIECE_SQUARE_TABLES_ENDGAME[3].map((e,i)=>{
-    return e + 4 * (8 - AI.manhattanDistance(kingXposition, i))
-  })
-
-  //Dama cerca del rey enemigo
-  AI.PIECE_SQUARE_TABLES_ENDGAME[4] = AI.PIECE_SQUARE_TABLES_ENDGAME[4].map((e,i)=>{
-    return e + 4 * (8 - AI.manhattanDistance(kingXposition, i))
-  })
-
-  //Rey cerca del centro
-  AI.PIECE_SQUARE_TABLES_ENDGAME[5] = [
-    -200,-150,-100,-100,-100,-100,-150,-200,
-    -150,  30,  30,  30,  30,  30,  30,-100,
-    -100,  30,  80,  80,  80,  80,  30,-100,
-    -100,  30,  80, 120, 120,  80,  30,-100,
-    -100,  30,  80, 120, 120,  80,  30,-100,
-    -100,  30,  80,  80,  80,  80,  30,-100,
-    -150,  30,  30,  30,  30,  30,  30,-150,
-    -200,-150,-100,-100,-100,-100,-150,-200,
-  ]
 }
 
 AI.PSQT2Sigmoid = function () {
