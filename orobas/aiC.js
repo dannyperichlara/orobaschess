@@ -1065,60 +1065,60 @@ AI.createPSQT = function (board) {
 
   //Torres en columnas abiertas
   
-  // let pawnXfiles = [0,0,0,0,0,0,0,0]
-  // let pawnfiles = [0,0,0,0,0,0,0,0]
+  let pawnXfiles = [0,0,0,0,0,0,0,0]
+  let pawnfiles = [0,0,0,0,0,0,0,0]
   
-  // for (let i = 0; i < 64; i++) {
-  //   if (pawnmap[i]) {
-  //     let col = i % 8
+  for (let i = 0; i < 64; i++) {
+    if (pawnmap[i]) {
+      let col = i % 8
 
-  //     pawnfiles[col]++
-  //   }
-  // }
+      pawnfiles[col]++
+    }
+  }
 
-  // for (let i = 0; i < 64; i++) {
-  //   if (pawnXmap[i]) {
-  //     let col = i % 8
+  for (let i = 0; i < 64; i++) {
+    if (pawnXmap[i]) {
+      let col = i % 8
 
-  //     if (pawnfiles[col]) {
-  //       //Si las columnas están abiertas en mi lado, cuento las del otro lado (antes no)
-  //       pawnXfiles[col]++
-  //     }
+      if (pawnfiles[col]) {
+        //Si las columnas están abiertas en mi lado, cuento las del otro lado (antes no)
+        pawnXfiles[col]++
+      }
 
-  //   }
-  // }
+    }
+  }
 
   
-  // AI.PIECE_SQUARE_TABLES_OPENING[3] = AI.PIECE_SQUARE_TABLES_OPENING[3].map((e,i)=>{
-  //   let col = i%8
-  //   return e + (pawnfiles[col]? -40 : 0)
-  // })
+  AI.PIECE_SQUARE_TABLES_OPENING[3] = AI.PIECE_SQUARE_TABLES_OPENING[3].map((e,i)=>{
+    let col = i%8
+    return e + (pawnfiles[col]? -40 : 0)
+  })
   
-  // AI.PIECE_SQUARE_TABLES_OPENING[3] = AI.PIECE_SQUARE_TABLES_OPENING[3].map((e,i)=>{
-  //   let col = i%8
-  //   return e + (!pawnfiles[col]? 80 : 0) + (!pawnXfiles[col]? 50 : 0)
-  // })
+  AI.PIECE_SQUARE_TABLES_OPENING[3] = AI.PIECE_SQUARE_TABLES_OPENING[3].map((e,i)=>{
+    let col = i%8
+    return e + (!pawnfiles[col]? 80 : 0) + (!pawnXfiles[col]? 50 : 0)
+  })
   
-  // AI.PIECE_SQUARE_TABLES_MIDGAME[3] = AI.PIECE_SQUARE_TABLES_MIDGAME[3].map((e,i)=>{
-  //   let col = i%8
-  //   return e + (pawnfiles[col]? -20 : 0)
-  // })
+  AI.PIECE_SQUARE_TABLES_MIDGAME[3] = AI.PIECE_SQUARE_TABLES_MIDGAME[3].map((e,i)=>{
+    let col = i%8
+    return e + (pawnfiles[col]? -20 : 0)
+  })
   
-  // AI.PIECE_SQUARE_TABLES_MIDGAME[3] = AI.PIECE_SQUARE_TABLES_MIDGAME[3].map((e,i)=>{
-  //   let col = i%8
-  //   return e + (!pawnfiles[col]? 50 : 0) + (!pawnXfiles[col]? 50 : 0)
-  // })
+  AI.PIECE_SQUARE_TABLES_MIDGAME[3] = AI.PIECE_SQUARE_TABLES_MIDGAME[3].map((e,i)=>{
+    let col = i%8
+    return e + (!pawnfiles[col]? 50 : 0) + (!pawnXfiles[col]? 50 : 0)
+  })
   
-  //Torres delante del rey enemigo ("torre en séptima")
-  // for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_MIDGAME[3][i + 8*(kingXposition/8 | 0)] += 27
+  // Torres delante del rey enemigo ("torre en séptima")
+  for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_MIDGAME[3][i + 8*(kingXposition/8 | 0)] += 27
 
-  // //Torres conectadas
-  // let RR = board.makeRookAttackMask(R, P.or(PX))
-  // let RRmap = AI.bin2map(RR, color)
+  //Torres conectadas
+  let RR = board.makeRookAttackMask(R, P.or(PX))
+  let RRmap = AI.bin2map(RR, color)
 
-  // AI.PIECE_SQUARE_TABLES_MIDGAME[3] = AI.PIECE_SQUARE_TABLES_MIDGAME[3].map((e,i)=>{
-  //   return e + 10*RRmap[i]
-  // })
+  AI.PIECE_SQUARE_TABLES_MIDGAME[3] = AI.PIECE_SQUARE_TABLES_MIDGAME[3].map((e,i)=>{
+    return e + 10*RRmap[i]
+  })
 
   //Castiga torres sin desarrollar
   AI.PIECE_SQUARE_TABLES_MIDGAME[2][56] -= 40
@@ -1236,28 +1236,28 @@ AI.createPSQT = function (board) {
 
   //Torres en columnas abiertas
 
-  // pawnfiles = [0,0,0,0,0,0,0,0]
+  pawnfiles = [0,0,0,0,0,0,0,0]
 
-  // for (let i = 0; i < 64; i++) {
-  //   if (pawnmap[i]) {
-  //     let col = i % 8
+  for (let i = 0; i < 64; i++) {
+    if (pawnmap[i]) {
+      let col = i % 8
 
-  //     pawnfiles[col]++
-  //   }
-  // }
+      pawnfiles[col]++
+    }
+  }
 
-  // AI.PIECE_SQUARE_TABLES_ENDGAME[3] = AI.PIECE_SQUARE_TABLES_ENDGAME[3].map((e,i)=>{
-  //   let col = i%8
-  //   return e + (pawnfiles[col]? -40 : 0)
-  // })
+  AI.PIECE_SQUARE_TABLES_ENDGAME[3] = AI.PIECE_SQUARE_TABLES_ENDGAME[3].map((e,i)=>{
+    let col = i%8
+    return e + (pawnfiles[col]? -40 : 0)
+  })
 
-  // AI.PIECE_SQUARE_TABLES_ENDGAME[3] = AI.PIECE_SQUARE_TABLES_ENDGAME[3].map((e,i)=>{
-  //   let col = i%8
-  //   return e + (!pawnfiles[col]? 40 : 0)
-  // })
+  AI.PIECE_SQUARE_TABLES_ENDGAME[3] = AI.PIECE_SQUARE_TABLES_ENDGAME[3].map((e,i)=>{
+    let col = i%8
+    return e + (!pawnfiles[col]? 40 : 0)
+  })
 
-  // //Torres delante del rey enemigo ("torre en séptima")
-  // for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_ENDGAME[3][i + 8*(kingXposition/8 | 0)] += 27
+  //Torres delante del rey enemigo ("torre en séptima")
+  for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_ENDGAME[3][i + 8*(kingXposition/8 | 0)] += 27
 
   //Torre cerca del rey enemigo
   AI.PIECE_SQUARE_TABLES_ENDGAME[3] = AI.PIECE_SQUARE_TABLES_ENDGAME[3].map((e,i)=>{
