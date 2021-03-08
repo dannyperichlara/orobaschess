@@ -57,6 +57,9 @@ AI.SAFETY_VALUES = [-20, -10,  0, 20, 20,-20,-40,-60]
 //Not full tested
 AI.PASSER_VALUES = [0, 200, 400, 500, 500, 500, 500, 500, 500]
 
+//Not fully tested
+AI.STRUCTURE_VALUES = [0,20,40,40,50,20,-40,-80]
+
 //https://open-chess.org/viewtopic.php?t=3058
 AI.MVVLVASCORES = [
   [6002,20225,20250,20400,20800,26900],
@@ -172,22 +175,22 @@ AI.evaluate = function(board) {
   let turn = board.getTurnColor()
   let white = (turn === 0)
 
-  let P = board.getPieceColorBitboard(0, turn).dup()
-  let N = board.getPieceColorBitboard(1, turn).dup()
-  let B = board.getPieceColorBitboard(2, turn).dup()
-  let R = board.getPieceColorBitboard(3, turn).dup()
-  let Q = board.getPieceColorBitboard(4, turn).dup()
-  let K = board.getPieceColorBitboard(5, turn).dup()
+  let P = board.getPieceColorBitboard(0, turn)
+  let N = board.getPieceColorBitboard(1, turn)
+  let B = board.getPieceColorBitboard(2, turn)
+  let R = board.getPieceColorBitboard(3, turn)
+  let Q = board.getPieceColorBitboard(4, turn)
+  let K = board.getPieceColorBitboard(5, turn)
 
-  let Px = board.getPieceColorBitboard(0, !turn).dup()
-  let Nx = board.getPieceColorBitboard(1, !turn).dup()
-  let Bx = board.getPieceColorBitboard(2, !turn).dup()
-  let Rx = board.getPieceColorBitboard(3, !turn).dup()
-  let Qx = board.getPieceColorBitboard(4, !turn).dup()
-  let Kx = board.getPieceColorBitboard(5, !turn).dup()
+  let Px = board.getPieceColorBitboard(0, ~turn & 1)
+  let Nx = board.getPieceColorBitboard(1, ~turn & 1)
+  let Bx = board.getPieceColorBitboard(2, ~turn & 1)
+  let Rx = board.getPieceColorBitboard(3, ~turn & 1)
+  let Qx = board.getPieceColorBitboard(4, ~turn & 1)
+  let Kx = board.getPieceColorBitboard(5, ~turn & 1)
 
-  let us = board.getColorBitboard(turn).dup()
-  let usx = board.getColorBitboard(!turn).dup()
+  let us = board.getColorBitboard(turn)
+  let usx = board.getColorBitboard(~turn & 1)
 
   let colorMaterial = AI.getMaterialValue(P,N,B,R,Q)
   let notcolorMaterial = AI.getMaterialValue(Px,Nx,Bx,Rx,Qx)
@@ -199,22 +202,26 @@ AI.evaluate = function(board) {
   let safety = 0
   let passers = 0
   
-  psqt = AI.getPSQT(P,N,B,R,Q,K, turn) - AI.getPSQT(Px,Nx,Bx,Rx,Qx,Kx, !turn)
+  psqt = AI.getPSQT(P,N,B,R,Q,K, turn)
+       - AI.getPSQT(Px,Nx,Bx,Rx,Qx,Kx, ~turn & 1)
 
   let doPositional = AI.iteration < 4 || AI.changeinPV
   let doPassers = AI.phase >= 3
 
-  if (doPositional) {
-    mobility = AI.getMOB(P,N,B,R,Q,K,Px,board, turn) - AI.getMOB(Px,Nx,Bx,Rx,Qx,Kx,P,board, !turn)
-    structure = AI.getSTR(P, turn) - AI.getSTR(Px, !turn)
+  if (true || doPassers || doPositional) {
+    passers = AI.getPassers(P, Px, white) - AI.getPassers(Px, P, !white)
   }
 
-  if (doPassers || doPositional) {
-    passers = AI.getPassers(P, Px, turn) - AI.getPassers(Px, P, !turn)
+  if (doPositional) {
+    mobility  = AI.getMOB(P,N,B,R,Q,K,Px,board, turn)
+    mobility -= AI.getMOB(Px,Nx,Bx,Rx,Qx,Kx,P,board, ~turn & 1)
+    
+    structure = AI.getSTR(P, turn) - AI.getSTR(Px, ~turn & 1)
   }
+
   
 
-  if (AI.phase === 2) safety = AI.getKS(K, us, turn) - AI.getKS(Kx, usx, !turn)
+  if (AI.phase === 2) safety = AI.getKS(K, us, turn) - AI.getKS(Kx, usx, ~turn & 1)
 
   let positional = psqt + mobility + structure + safety
 
@@ -223,34 +230,44 @@ AI.evaluate = function(board) {
   return score
 }
 
-AI.getPassers = function (P, Px, turn) {
+AI.getPassers = function (_P, _Px, white) {
+  let P = _P.dup()
+  let Px = _Px.dup()
+
   let pawns = P.dup()
-  let pawnsx = Px.dup()
   let passers = 0
-  let pxmask = pawnsx.or(Chess.Position.makePawnAttackMask(!turn, pawnsx))
+  let pxmask = Px.or(Chess.Position.makePawnAttackMask(!white, Px))
 
   while (!pawns.isEmpty()) {
     let index = pawns.extractLowestBitPosition()
-    let pawn = (new Chess.Bitboard).setBit(index)
-    let advancemask = AI.pawnAdvanceMask(pawn, 0, turn)
+    let pawn = (new Chess.Bitboard(0,0)).setBit(index)
+    let advancemask = AI.pawnAdvanceMask(pawn, white)
+    let adcnt = advancemask.popcnt()
+    let encounters
 
-    let encounters = advancemask.and(pxmask).popcnt()
-    
-    if (encounters === 0) passers++
+    if (adcnt > 0) {
+      encounters = advancemask.and(pxmask).popcnt()
+      
+      if (encounters === 0) passers++
+    }
   }
 
   return AI.PASSER_VALUES[passers]
 }
 
-AI.pawnAdvanceMask = function(fromBB, occupied, turn) {
-  if (turn === 0 /* white */) {
-    return Chess.Position.makeSlidingAttackMask(fromBB.dup(), occupied, 1, 0)
+AI.empty = new Chess.Bitboard()
+
+AI.pawnAdvanceMask = function(fromBB, white) {
+  if (white) {
+    return Chess.Position.makeSlidingAttackMask(fromBB.dup(), AI.empty, 1, 0)
   } else {
-    return Chess.Position.makeSlidingAttackMask(fromBB.dup(), occupied,-1, 0)
+    return Chess.Position.makeSlidingAttackMask(fromBB.dup(), AI.empty,-1, 0)
   }
 };
 
-AI.getKS = function (K, us, turn) {
+AI.getKS = function (_K, us, turn) {
+  let K = _K.dup()
+
   let mask = Chess.Position.makeKingDefenseMask(turn, K).and(us)
   let safety = AI.SAFETY_VALUES[mask.popcnt()]
   
@@ -258,15 +275,24 @@ AI.getKS = function (K, us, turn) {
 }
 
 
-AI.getSTR = function(P, color) {
+AI.getSTR = function(_P, color) {
+  let P = _P.dup()
+
   let mask = Chess.Position.makePawnAttackMask(color, P).dup()
   let protectedpawns = mask.and(P).popcnt()
-  let protectedvalues = [0,20,40,40,-10,-20,-40,-80]
 
-  return protectedvalues[protectedpawns]
+  return AI.STRUCTURE_VALUES[protectedpawns]
 }
 
-AI.getMOB = function(P,N,B,R,Q,K,Px,board, color) {
+AI.getMOB = function(_P,_N,_B,_R,_Q,_K,_Px,board, color) {
+  let P = _P.dup()
+  let N = _N.dup()
+  let B = _B.dup()
+  let R = _R.dup()
+  let Q = _Q.dup()
+  let K = _K.dup()
+  let Px = _Px.dup()
+
   let us = board.getColorBitboard(color).dup()
   let them = board.getColorBitboard(!color).dup()
   let enemypawnattackmask = Chess.Position.makePawnAttackMask(!color, Px).dup()
@@ -321,7 +347,7 @@ AI.getMaterialValue = function(P,N,B,R,Q) {
 
 AI.getPSQT = function(P,B,N,R,Q,K,color) {
   
-  let allpieces = [P,B,N,R,Q,K]
+  let allpieces = [P.dup(),B.dup(),N.dup(),R.dup(),Q.dup(),K.dup()]
 
   let value = 0
 
@@ -622,7 +648,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     let lastmove = board.getLastMove()
 
     if (lastmove) {
-      AI.saveHistory(!turn, lastmove, 20) //check moves up in move ordering
+      AI.saveHistory(~turn & 1, lastmove, 20) //check moves up in move ordering
     }
   }
   
@@ -1555,6 +1581,7 @@ AI.search = function(board, options) {
     let beta = AI.INFINITY
     let f =  AI.PVS(board, alpha, beta, 1, 1) //for MTD(f)
 
+    //Iterative Deepening
     for (let depth = 1; depth <= AI.totaldepth; depth+=1) {
       if (AI.stop && AI.iteration > AI.mindepth) break
 
