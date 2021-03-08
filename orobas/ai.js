@@ -228,7 +228,7 @@ AI.evaluate = function(board) {
 
   if (AI.phase === 2) safety = AI.getKS(K, us, turn) - AI.getKS(Kx, usx, ~turn & 1)
 
-  let positional = psqt + mobility + structure + safety
+  let positional = 0.4*psqt + 0.4*mobility + 0.1*structure + 0.1*safety
 
   let score = material + pawnimbalance + positional | 0
   
@@ -665,7 +665,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
 
   // console.log(depth)
 
-  let doFHR = staticeval - 200 * incheck > beta && alpha === beta - 1
+  let doFHR = staticeval - 200 * incheck > beta && alpha === beta - 1 && depth > 6
   let noncaptures = 0
 
   for (let i=0, len=moves.length; i < len; i++) {
@@ -684,7 +684,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     }
 
     // Late-Moves-Pruning (LMP)
-    if (AI.phase < 4 && depth > 6 && isPositional && noncaptures > 4) {
+    if (AI.phase < 4 && depth > 6 && isPositional && noncaptures > 1) {
       continue
     }
 
@@ -692,14 +692,14 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
 
     //Reductions (LMR)
     if (!incheck) {
-      if (doFHR) {
-        R += 1 + Math.sqrt(depth+1) + Math.sqrt(i+1) | 0
+      if ((doFHR || !pvNode) && !isCapture) {
+        R += 1 + Math.sqrt(depth) + Math.sqrt(i) | 0
       } else {
-        if (depth > 0 && i > 0) {
-          R += Math.log(depth)*Math.log(i)/1.95 | 0 // | 0 + 66 ELO???
-        }
+        R += Math.log(depth+1)*Math.log(i+1)/1.95 | 0 // | 0 + 66 ELO???
       }
     }
+
+    if (doFHR) R+=4
 
     let near2mate = alpha > 2*AI.PIECE_VALUES[4] || beta < -2*AI.PIECE_VALUES[4]
    
@@ -1404,7 +1404,7 @@ AI.createPSQT = function (board) {
 
 AI.PSQT2Sigmoid = function () {
   /***************** PSQT a sigmoidea *****************/
-  let upperlimit = 120
+  let upperlimit = 40
   let lowerlimit = 120
 
   for (let i = 1; i <= 4; i++) {
