@@ -60,6 +60,9 @@ AI.PASSER_VALUES = [0, 400, 800, 1600,2000,2400,2800,3200,3600]
 //Not fully tested
 AI.STRUCTURE_VALUES = [0,20,40,40,50,20,-40,-80]
 
+//Not fully tested
+AI.PAWN_IMBALANCE = [-2400,-1280,-640,-320,-160,-80,-40,-20,0,20,40,80,160,320,640,1280,2400]
+
 //https://open-chess.org/viewtopic.php?t=3058
 AI.MVVLVASCORES = [
   [6002,20225,20250,20400,20800,26900],
@@ -196,6 +199,8 @@ AI.evaluate = function(board) {
   let notcolorMaterial = AI.getMaterialValue(Px,Nx,Bx,Rx,Qx)
   let material = colorMaterial.value - notcolorMaterial.value
 
+  let pawnimbalance = AI.PAWN_IMBALANCE[P.popcnt() - Px.popcnt() + 8]
+
   let psqt = 0
   let mobility = 0
   let structure = 0
@@ -208,7 +213,7 @@ AI.evaluate = function(board) {
   let doPositional = AI.iteration < 4 || AI.changeinPV
   let doPassers = AI.phase >= 3
 
-  if (true || doPassers || doPositional) {
+  if (doPassers || doPositional) {
     passers = AI.getPassers(P, Px, white) - AI.getPassers(Px, P, !white)
   }
 
@@ -225,7 +230,7 @@ AI.evaluate = function(board) {
 
   let positional = psqt + mobility + structure + safety
 
-  let score = material + positional | 0
+  let score = material + pawnimbalance + positional | 0
   
   return score
 }
