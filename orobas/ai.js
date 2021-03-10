@@ -14,11 +14,11 @@ let AI = {
   status: null,
   fhf: 0,
   fh: 0,
-  random: 40,
+  random: 20,
   phase: 1,
   htlength: 1 << 24,
-  reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
-  mindepth:  1,
+  reduceHistoryFactor: 0.8, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
+  mindepth:  4,
   secondspermove: 3,
   lastmove: null
 }
@@ -31,37 +31,46 @@ AI.MATE = AI.MIDGAME_PIECE_VALUES[5]
 AI.DRAW = 0
 AI.INFINITY = AI.MIDGAME_PIECE_VALUES[5]*4
 
-//Idea and values from Stockfish. Not fully tested.
+//PSQT VALUES
+AI.PSQT_VALUES = [-4, -2, 0, 1, 2].map(e=>20*e)
+
+let vbm = AI.PSQT_VALUES[0] // Very bad move
+let bm  = AI.PSQT_VALUES[1] // Bad move
+let nm  = AI.PSQT_VALUES[2] // Neutral move
+let GM  = AI.PSQT_VALUES[3] // Good move
+let VGM = AI.PSQT_VALUES[4] // Very good move
+
+//General idea from Stockfish. Not fully tested.
 AI.MOBILITY_VALUES = [
   [
     [],
-    [-62,-53,-12,-4,3,13,22,28,33],
-    [-48,-20,16,26,38,51,55,63,63,68,81,81,91,98],
-    [-60,-20,2,3,3,11,22,31,40,40,41,48,57,57,62],
-    [-30,-12,-8,-9,20,23,23,35,38,53,64,65,65,66,67,67,72,72,77,79,93,108,108,108,110,114,114,116],
+    [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*8),
+    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*8),
+    [-8,-4,0,1,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*5),
+    [-6,-4,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*5),
     []
   ],
   [
     [],
-    [-81,-56,-31,-16,5,11,17,20,25],
-    [-59,-23,-3,13,24,42,54,57,65,73,78,86,88,97],
-    [-78,-17,23,39,70,99,103,121,134,139,158,164,168,169,172],
-    [-48,-30,-7,19,40,55,59,75,78,96,96,100,121,127,131,133,136,141,147,150,151,168,168,171,182,182,192,219],
+    [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*8),
+    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*8),
+    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*12),
+    [-6,-4,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*10),
     []
   ]
 ]
 
-//Not full tested
-AI.SAFETY_VALUES = [-20, -10,  0, 20, 20,-20,-40,-60]
+//Not full tested(
+AI.SAFETY_VALUES = [-2, -1,  0, 1, 2,-1,-2,-3].map(e=>20*e)
 
 //Not full tested
-AI.PASSER_VALUES = [0, 400, 800, 1600,2000,2400,2800,3200,3600]
+AI.PASSER_VALUES = [0, 1, 2, 3, 4, 5, 6, 6, 6].map(e=>400*e)
 
 //Not fully tested
-AI.STRUCTURE_VALUES = [0,20,40,40,50,20,-40,-80]
+AI.STRUCTURE_VALUES = [0,1,2,2,3,1,-1,-2].map(e=>20*e)
 
 //Not fully tested
-AI.PAWN_IMBALANCE = [-2400,-1280,-640,-320,-160,-80,-40,-20,0,20,40,80,160,320,640,1280,2400]
+AI.PAWN_IMBALANCE = [-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8].map(e=>20*e)
 
 //https://open-chess.org/viewtopic.php?t=3058
 AI.MVVLVASCORES = [
@@ -199,7 +208,7 @@ AI.evaluate = function(board) {
   let notcolorMaterial = AI.getMaterialValue(Px,Nx,Bx,Rx,Qx)
   let material = colorMaterial.value - notcolorMaterial.value
 
-  let pawnimbalance = AI.PAWN_IMBALANCE[P.popcnt() - Px.popcnt() + 8]
+  let pawnimbalance = 0//AI.PAWN_IMBALANCE[P.popcnt() - Px.popcnt() + 8]
 
   let psqt = 0
   let mobility = 0
@@ -207,28 +216,26 @@ AI.evaluate = function(board) {
   let safety = 0
   let passers = 0
   
-  psqt = AI.getPSQT(P,N,B,R,Q,K, turn)
-       - AI.getPSQT(Px,Nx,Bx,Rx,Qx,Kx, ~turn & 1)
-
-  let doPositional = AI.iteration < 4 || AI.changeinPV
-  let doPassers = AI.phase >= 3
-
-  if (doPassers || doPositional) {
-    passers = AI.getPassers(P, Px, white) - AI.getPassers(Px, P, !white)
-  }
-
+  psqt = AI.getPSQT(P,N,B,R,Q,K, turn) - AI.getPSQT(Px,Nx,Bx,Rx,Qx,Kx, ~turn & 1)
+  
+  let doPositional = AI.phase > 1
+  let doPassers = AI.phase >= 3 || this.iteration === 1 || AI.changeinPV
+  
+  if (doPassers) {
+      passers = AI.getPassers(P, Px, white) - AI.getPassers(Px, P, !white)
+    }
+    
   if (doPositional) {
     mobility  = AI.getMOB(P,N,B,R,Q,K,Px,board, turn)
     mobility -= AI.getMOB(Px,Nx,Bx,Rx,Qx,Kx,P,board, ~turn & 1)
-    
-    structure = AI.getSTR(P, turn) - AI.getSTR(Px, ~turn & 1)
-  }
-
   
-
-  if (AI.phase === 2) safety = AI.getKS(K, us, turn) - AI.getKS(Kx, usx, ~turn & 1)
-
-  let positional = 0.4*psqt + 0.4*mobility + 0.1*structure + 0.1*safety
+    structure = AI.getSTR(P, turn) - AI.getSTR(Px, ~turn & 1)
+    
+    if (AI.phase === 2) safety = AI.getKS(K, us, turn) - AI.getKS(Kx, usx, ~turn & 1)
+  }
+      
+      
+  let positional = psqt + mobility + structure + safety
 
   let score = material + pawnimbalance + positional | 0
   
@@ -301,8 +308,8 @@ AI.getMOB = function(_P,_N,_B,_R,_Q,_K,_Px,board, color) {
   let us = board.getColorBitboard(color).dup()
   let them = board.getColorBitboard(!color).dup()
   let enemypawnattackmask = Chess.Position.makePawnAttackMask(!color, Px).dup()
-  let space = P.dup().or(Q).or(K).or(enemypawnattackmask)
-  // let space = them.or(us).or(enemypawnattackmask)
+  // let space = P.dup().or(Q).or(K).or(enemypawnattackmask)
+  let space = P.dup().or(K).or(enemypawnattackmask)
   let mobility = 0
   let phaseindex = AI.phase < 3? 0 : 1 //which values for mobility. 0: midgame. 1: endgame
 
@@ -664,14 +671,23 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   }
 
   // console.log(depth)
-
+  
   let doFHR = staticeval - 200 * incheck > beta && alpha === beta - 1 && depth > 6
   let noncaptures = 0
-
+  
   for (let i=0, len=moves.length; i < len; i++) {
     let move = moves[i]
+    let near2mate = alpha > 2*AI.PIECE_VALUES[4] || beta < -2*AI.PIECE_VALUES[4]
+
+    
     let R = 0
     let E = 0
+
+    /*futility pruning */
+    if (!near2mate && !incheck && 1 < depth && depth <= 3+R && legal >= 1) {
+      if (staticeval + AI.FUTILITY_MARGIN*depth <= alpha)  continue
+    }
+
     let piece = move.getPiece()
     let isCapture = move.isCapture()
     let isPositional = move.getKind() < 4 && !incheck
@@ -684,7 +700,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     }
 
     // Late-Moves-Pruning (LMP)
-    if (AI.phase < 4 && depth > 6 && isPositional && noncaptures > 1) {
+    if (AI.phase < 4 && depth > 6 && isPositional && noncaptures > 4) {
       continue
     }
 
@@ -701,12 +717,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
 
     if (doFHR) R+=4
 
-    let near2mate = alpha > 2*AI.PIECE_VALUES[4] || beta < -2*AI.PIECE_VALUES[4]
    
-    /*futility pruning */
-    if (!near2mate && !incheck && 1 < depth && depth <= 3+R && legal >= 1) {
-      if (staticeval + AI.FUTILITY_MARGIN*depth <= alpha)  continue
-    }
     
     if (board.makeMove(move)) {
       legal++
@@ -847,73 +858,73 @@ AI.createPSQT = function (board) {
   AI.PIECE_SQUARE_TABLES_OPENING = [
   // Pawn
       [ 
-      0,  0,  0,  0,  0,  0,  0,  0,
-      0,  0,  0,120,120,  0,  0,  0, 
-      0,  0,  0,100,100,  0,  0,  0,
-      0,  0,  0, 80, 80,  0,-80,-80,
-      0,  0, 40, 60, 60,  0,-80,-80,
-      0,  0, 20, 20, 20,-120,-80,  0,
-      60, 60,-40,-40,-40, 60,120, 60,
-      0,  0,  0,  0,  0,  0,  0,  0,
+       0,  0,  0,  0,  0,   0,  0,  0,
+      nm, nm, nm, nm, nm,  nm, nm, nm, 
+      nm, nm, nm, nm, nm,  nm, nm, nm,
+      nm, nm, nm, nm, nm,  nm,vbm,vbm,
+      nm, nm, GM,VGM, nm,  nm,vbm,vbm,
+      nm, nm,VGM,vbm,VGM, vbm,vbm, nm,
+     VGM,VGM,vbm,vbm,vbm, VGM,VGM,VGM,
+       0,  0,  0,  0,  0,   0,  0,  0,
       ],
 
       // Knight
       [ 
-    -100,-20,-20,-20,-20,-20,-20,-100,
-    -100,-20,-20,-20,-20,-20,-20,-100,
-    -100,-20,-20,-20,-20,-20,-20,-100,
-    -100,-20,-20,-20,-20,-20,-20,-100,
-    -100,-20,-20,-20,-20,-20,-20,-100,
-    -100,-20, 60,-80,-80, 60, 20,-100,
-    -100,-20,-20, 20, 20,-20,-20,-100,
-    -100,-80,-80,-80,-80,-80,-80,-100,
+     vbm, bm, bm, bm, bm, bm, bm, vbm,
+     vbm, bm, bm, bm, bm, bm, bm, vbm,
+     vbm, bm, bm, bm, bm, bm, bm, vbm,
+     vbm, bm, bm, GM, GM, bm, bm, vbm,
+     vbm, bm, bm, GM, GM, bm, bm, vbm,
+     vbm, bm, GM, nm, nm,VGM, nm, vbm,
+     vbm, bm, bm,VGM, nm, bm, bm, vbm,
+     vbm,vbm,vbm,vbm,vbm,vbm,vbm, vbm,
       
       ],
       // Bishop
     [ 
-      0,  0,  0,  0,  0,  0,  0,  0,
-      0,  0,  0,  0,  0,  0,  0,  0,
-      0,  0,  0,  0,  0,  0,  0,  0,
-      0, 20,  0,  0,  0,  0, 20,  0,
-      0,  0, 40,  0,  0, 40,  0,  0,
-    -40, 40,-20,-20,-20,-20, 20,-40,
-      0,120,  0, 20, 20,  0,120,  0,
-      0,  0,-80,  0,  0,-80,  0,  0,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, bm, bm, bm, bm, bm, bm, bm,
+     bm, GM, bm, bm, bm, bm, GM, bm,
+     bm, bm,VGM, bm, bm,VGM, bm, bm,
+    vbm, GM, nm, bm, bm, nm, GM,vbm,
+     bm,VGM, bm, GM, GM, bm,VGM, bm,
+     bm, bm,vbm, bm, bm,vbm, bm, bm,
     ],
     // Rook
     [ 
-      0,  0,  0,  0,  0,  0,  0,  0,
-      0,  0,  0,  0,  0,  0,  0,  0,
-      0,  0,-20,-20,-20,-20,  0,  0,
-      0,  0,-20,-20,-20,-20,  0,  0,
-      0,  0,-20,-20,-20,-20,  0,  0,
-    -80,  0,-20,-20,-20,-20,  0,  0,
-    -40,-20, -20,-20,-20,-20,-20,-80,
-    -20,-20, -20, 80, 80, 60,-80,-60,
+     nm, nm, nm, nm, nm, nm, nm, nm,
+     nm, nm, nm, nm, nm, nm, nm, nm,
+     nm, nm,vbm,vbm,vbm,vbm, nm, nm,
+     nm, nm,vbm,vbm,vbm,vbm, nm, nm,
+     nm, nm,vbm,vbm,vbm,vbm, nm, nm,
+     bm, nm,vbm,vbm,vbm,vbm, nm, nm,
+     vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
+      bm,vbm,vbm,VGM,VGM, GM,vbm, bm,
     ],
-
+    
     // Queen
     [ 
-      -20,-20,-20,-20,-20,-20,-20,-20,
-      -20,-20,-20,-20,-20,-20,-20,-20,
-      -20,-20,-20,-20,-20,-20,-20,-20,
-      -20,-20,-20,-20,-20,-20,-20,-20,
-      -20,-20,-20,-20,-20,-20,-20,-20,
-      -20,-20,-20, 10, 10,-20,-20,-20,
-        0,  0, 10, 10,-10,  0,  0,  0,
-      -60,-40,-20,-10,-20,-30,-40,-60,
+      nm, nm, nm, nm, nm, nm, nm, nm,
+      nm, nm, nm, nm, nm, nm, nm, nm,
+      nm, nm, nm, nm, nm, nm, nm, nm,
+      nm, nm, nm, nm, nm, nm, nm, nm,
+      nm, nm, nm, nm, nm, nm, nm, nm,
+      nm, nm, nm, nm, nm, nm, nm, nm,
+      nm, nm, nm, nm, nm, nm, nm, nm,
+     vbm,vbm, bm, bm, bm, bm,vbm,vbm,
     ],
 
     // King
     [ 
-      -90,-90,-90,-90,-90,-90,-90,-90,
-      -90,-90,-90,-90,-90,-90,-90,-90,
-      -90,-90,-90,-90,-90,-90,-90,-90,
-      -90,-90,-90,-90,-90,-90,-90,-90,
-      -90,-90,-90,-90,-90,-90,-90,-90, 
-      -90,-90,-90,-90,-90,-90,-90,-90,
-      -50,-50,-50,-50,-50,-80, 20,  0,
-      -50,-20,-40,-80,-20,-30,120, 50
+      vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
+      vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
+      vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
+      vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
+      vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm, 
+      vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
+       bm, bm, bm,vbm,vbm,vbm, nm, nm,
+       bm, bm, GM,vbm, bm,vbm,VGM, nm
 
     ]
   ]
@@ -968,46 +979,48 @@ AI.createPSQT = function (board) {
   //Estructura básica peones
   AI.PIECE_SQUARE_TABLES_MIDGAME[0] = [
     0,  0,  0,  0,  0,  0,  0,  0,
-  120,120, 80, 80, 80, 80,120,120,
-   80, 60, 60, 60, 60, 60, 60, 80,
-   60, 20, 50, 60, 60, 20, 10, 60,
-  -20,  0, 40, 40, 40, 30,-20,-20,
-    0, 20, 20,  0, 20, 20, 20,  0,
-   60, 60, 20,-20,-20, 40, 60, 60,
+  VGM,VGM,VGM,VGM,VGM,VGM,VGM,VGM,
+  VGM,VGM, GM, GM, GM, GM,VGM,VGM,
+  vbm,vbm, GM, GM, GM, GM,vbm,vbm,
+  vbm,vbm, GM, GM, GM,vbm,vbm,vbm,
+   nm, nm, nm, nm, nm,vbm,vbm, nm,
+  VGM,VGM, bm, bm, bm, bm,VGM,VGM,
     0,  0,  0,  0,  0,  0,  0,  0,
  ]
 
   //Castiga captura y maniobras con peón frontal del rey
   if (kingposition >= 61 || (kingposition>=56 && kingposition<=58)) {
-    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 7] +=160
-    AI.PIECE_SQUARE_TABLES_OPENING[0][kingposition - 7] +=160
-    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 8] +=120
-    AI.PIECE_SQUARE_TABLES_OPENING[0][kingposition - 8] +=120
-    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 9] +=160
-    AI.PIECE_SQUARE_TABLES_OPENING[0][kingposition - 9] +=160
+    //Good
+    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 7] += VGM
+    AI.PIECE_SQUARE_TABLES_OPENING[0][kingposition - 7] += VGM
+    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 8] += GM
+    AI.PIECE_SQUARE_TABLES_OPENING[0][kingposition - 8] += GM
+    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 9] += VGM
+    AI.PIECE_SQUARE_TABLES_OPENING[0][kingposition - 9] += VGM
 
-    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 15] -=100
-    AI.PIECE_SQUARE_TABLES_OPENING[0][kingposition - 15] -=100
-    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 17] -=100
-    AI.PIECE_SQUARE_TABLES_OPENING[0][kingposition - 17] -=100
-    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 23] -=200    
-    AI.PIECE_SQUARE_TABLES_OPENING[0][kingposition - 23] -=200    
-    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 24] -=200    
-    AI.PIECE_SQUARE_TABLES_OPENING[0][kingposition - 24] -=200    
-    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 25] -=200    
-    AI.PIECE_SQUARE_TABLES_OPENING[0][kingposition - 25] -=200    
+    //Bad
+    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 15] += bm
+    AI.PIECE_SQUARE_TABLES_OPENING[0][kingposition - 15] += bm
+    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 17] += bm
+    AI.PIECE_SQUARE_TABLES_OPENING[0][kingposition - 17] += bm
+    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 23] += vbm    
+    AI.PIECE_SQUARE_TABLES_OPENING[0][kingposition - 23] += vbm    
+    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 24] += vbm    
+    AI.PIECE_SQUARE_TABLES_OPENING[0][kingposition - 24] += vbm    
+    AI.PIECE_SQUARE_TABLES_MIDGAME[0][kingposition - 25] += vbm    
+    AI.PIECE_SQUARE_TABLES_OPENING[0][kingposition - 25] += vbm    
   }
 
   //Caballos al centro
   AI.PIECE_SQUARE_TABLES_MIDGAME[1] = [
-    -100,-100,-100,-100,-100,-100,-100,-100,
-    -100,   0,   0,   0,   0,   0,   0,-100,
-    -100,   0,  40,  40,  40,  40,   0,-100,
-    -100,   0,  40,  40,  40,  40,   0,-100,
-    -100,   0,  40,  40,  40,  40,   0,-100,
-    -100,   0,  40,  40,  40,  40,   0,-100,
-    -100,   0,   0,   0,   0,   0,   0,-100,
-    -100,-100,-100,-100,-100,-100,-100,-100,
+     vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
+     vbm,  nm,  nm,  nm,  nm,  nm,  nm, vbm,
+     vbm,  nm,  GM, VGM, VGM,  GM,  nm, vbm,
+     vbm,  nm,  GM, VGM, VGM,  GM,  nm, vbm,
+     vbm,  nm,  GM,  GM,  GM,  GM,  nm, vbm,
+     vbm,  nm,  GM,  GM,  GM,  GM,  nm, vbm,
+     vbm,  nm,  nm,  nm,  nm,  nm,  nm, vbm,
+     vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
   ]
 
   //Caballos cerca del rey enemigo
@@ -1031,14 +1044,26 @@ AI.createPSQT = function (board) {
 
   //Alfiles al centro
   AI.PIECE_SQUARE_TABLES_MIDGAME[2] = [
-    -100,-100,-100,-100,-100,-100,-100,-100,
-    -100, -40, -40, -40, -40, -40, -40,-100,
-    -100, -40,  40,  40,  40,  40, -40,-100,
-    -100, -40,  40,  60,  60,  40, -40,-100,
-    -100, -40,  40,  60,  60,  40, -40,-100,
-    -100, -40,  40,  40,  40,  40, -40,-100,
-    -100,  40, -40,  40,  40, -40,  40,-100,
-    -100,-100,-100,-100,-100,-100,-100,-100,
+     vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
+     vbm,  nm,  nm,  nm,  nm,  nm,  nm, vbm,
+     vbm,  nm,  GM,  GM,  GM,  GM,  nm, vbm,
+     vbm,  nm,  GM, VGM, VGM,  GM,  nm, vbm,
+     vbm,  nm,  GM, VGM, VGM,  GM,  nm, vbm,
+     vbm,  nm,  nm,  nm,  nm,  nm,  nm, vbm,
+     vbm,  GM,  bm,  nm,  nm,  bm,  GM, vbm,
+     vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
+  ]
+
+  AI.PIECE_SQUARE_TABLES_MIDGAME[3] = [
+     nm,  nm,  nm,  nm,  nm,  nm,  nm,  nm,
+     GM,  GM,  GM, VGM, VGM,  GM,  GM,  GM,
+     nm,  nm,  nm,  nm,  nm,  nm,  nm,  nm,
+     nm,  nm,  nm,  nm,  nm,  nm,  nm,  nm,
+     nm,  nm,  nm,  nm,  nm,  nm,  nm,  nm,
+     GM,  nm,  nm,  nm,  nm,  nm,  nm,  GM,
+    vbm,  nm,  nm,  GM,  GM,  nm,  nm, vbm,
+     bm, vbm, vbm,  GM,  GM,  nm, vbm,  bm,
+
   ]
 
   //Torre
@@ -1126,26 +1151,26 @@ AI.createPSQT = function (board) {
 
   //Dama
   AI.PIECE_SQUARE_TABLES_MIDGAME[4] = [
-    0,   0,   0,   0,   0,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   0,   0,
-  -90, -80, -40, -20, -20, -40, -80, -90,
+   nm,  nm,  nm,  nm,  nm,  nm,  nm,  nm,
+   nm,  nm,  nm,  nm,  nm,  nm,  nm,  nm,
+   nm,  nm,  nm,  nm,  nm,  nm,  nm,  nm,
+   nm,  nm,  nm,  nm,  nm,  nm,  nm,  nm,
+   nm,  nm,  nm,  nm,  nm,  nm,  nm,  nm,
+   nm,  nm,  nm,  nm,  nm,  nm,  nm,  nm,
+   nm,  nm,  nm,  nm,  nm,  nm,  nm,  nm,
+  vbm, vbm,  bm,  bm,  bm,  bm, vbm, vbm,
   ]
 
   //Rey lejos del centro
   AI.PIECE_SQUARE_TABLES_MIDGAME[5] = [ 
-    -95, -95, -95, -95, -95, -95, -95, -95,
-    -95, -95, -95, -95, -95, -95, -95, -95,
-    -95, -95, -95, -95, -95, -95, -95, -95,
-    -95, -95, -95, -95, -95, -95, -95, -95,
-    -95, -95, -95, -95, -95, -95, -95, -95, 
-    -90, -90, -90, -90, -90, -90, -90, -90,
-    -90, -80, -80, -80, -80, -80, -80, -90,
-    -60,  20, -60, -60, -60, -60,  20, -60
+    vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
+    vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
+    vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
+    vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
+    vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm, 
+    vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
+    vbm,  bm,  bm,  bm,  bm,  bm,  bm, vbm,
+     bm, VGM,  bm,  bm,  bm,  bm, VGM,  bm
  ]
 
   //Premia enrocar
@@ -1186,14 +1211,14 @@ AI.createPSQT = function (board) {
 
   AI.PIECE_SQUARE_TABLES_ENDGAME[0] = [
     0,  0,  0,  0,  0,  0,  0,  0,
-  320,320,320,260,260,320,320,320,
-  200,160,160,200,200,160,160,200,
-   80, 80, 80,100,100, 80, 80, 80,
-   40,-20,-20,-20,-20,-20,-20, 40,
-   40,-40,-40,-40,-40,-40,-40, 40,
-  -80,-80,-80,-80,-80,-80,-80,-80,
+    4,  4,  4,  4,  4,  4,  4,  4,
+    2,  2,  2,  2,  2,  2,  2,  2,
     0,  0,  0,  0,  0,  0,  0,  0,
- ]
+   -1, -1, -1, -1, -1, -1, -1, -1,
+   -4, -4, -4, -4, -4, -4, -4, -4,
+   -8, -8, -8, -8, -8, -8, -8, -8,
+    0,  0,  0,  0,  0,  0,  0,  0,
+ ].map(e=>e*VGM)
 
   //Castiga captura y maniobras con peón frontal del rey
   if (board.getMadeMoveCount()>12 && kingposition > 55) {
@@ -1202,14 +1227,14 @@ AI.createPSQT = function (board) {
 
   //Caballos al centro
   AI.PIECE_SQUARE_TABLES_ENDGAME[1] = [
-    -100,-100,-100,-100,-100,-100,-100,-100,
-    -100, -40, -40, -40, -40, -40, -40,-100,
-    -100, -40,  40,  40,  40,  40, -40,-100,
-    -100, -40,  40,  40,  40,  40, -40,-100,
-    -100, -40,  40,  40,  40,  40, -40,-100,
-    -100, -40,  40,  40,  40,  40, -40,-100,
-    -100, -40, -40, -40, -40, -40, -40,-100,
-    -100,-100,-100,-100,-100,-100,-100,-100,
+     vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
+     vbm,  nm,  nm,  nm,  nm,  nm,  nm, vbm,
+     vbm,  nm,  GM, VGM, VGM,  GM,  nm, vbm,
+     vbm,  nm,  GM, VGM, VGM,  GM,  nm, vbm,
+     vbm,  nm,  GM,  GM,  GM,  GM,  nm, vbm,
+     vbm,  nm,  nm,  nm,  nm,  nm,  nm, vbm,
+     vbm,  bm,  bm,  bm,  bm,  bm,  bm, vbm,
+     vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
   ]
 
   //Caballos cerca del rey enemigo
@@ -1219,14 +1244,14 @@ AI.createPSQT = function (board) {
 
   //Alfiles al centro
   AI.PIECE_SQUARE_TABLES_ENDGAME[2] = [
-    -200,-150,-100,-100,-100,-100,-150,-200,
-    -150, -40, -40, -40, -40, -40, -40,-100,
-    -100, -40,  40,  40,  40,  40, -40,-100,
-    -100, -40,  40,  40,  40,  40, -40,-100,
-    -100, -40,  40,  40,  40,  40, -40,-100,
-    -100, -40,  40,  40,  40,  40, -40,-100,
-    -150, -40, -40, -40, -40, -40, -40,-150,
-    -200,-150,-100,-100,-100,-100,-150,-200,
+     vbm, vbm,  bm,  bm,  bm,  bm, vbm, vbm,
+     vbm,  nm,  nm,  nm,  nm,  nm,  nm,  bm,
+      bm,  nm,  GM,  GM,  GM,  GM,  nm,  bm,
+      bm,  nm,  GM, VGM, VGM,  GM,  nm,  bm,
+      bm,  nm,  GM, VGM, VGM,  GM,  nm,  bm,
+      bm,  nm,  GM,  GM,  GM,  GM,  nm,  bm,
+     vbm,  nm,  nm,  nm,  nm,  nm,  nm, vbm,
+     vbm, vbm,  bm,  bm,  bm,  bm,-150, vbm,
   ]
 
   //Alfiles cerca del rey enemigo
@@ -1274,14 +1299,14 @@ AI.createPSQT = function (board) {
   if (AI.phase === 3 || (AI.phase === 4 && AI.lastscore < AI.ENDGAME_PIECE_VALUES[0])) {
     //Rey cerca del centro
     AI.PIECE_SQUARE_TABLES_ENDGAME[5] = [
-      -200,-150,-100,-100,-100,-100,-150,-200,
-      -150,  30,  30,  30,  30,  30,  30,-100,
-      -100,  30,  80,  80,  80,  80,  30,-100,
-      -100,  30,  80, 120, 120,  80,  30,-100,
-      -100,  30,  80, 120, 120,  80,  30,-100,
-      -100,  30,  80,  80,  80,  80,  30,-100,
-      -150,  30,  30,  30,  30,  30,  30,-150,
-      -200,-150,-100,-100,-100,-100,-150,-200,
+       vbm, vbm,  bm,  bm,  bm,  bm, vbm, vbm,
+       vbm,  nm,  nm,  nm,  nm,  nm,  nm,  bm,
+        bm,  nm,  GM,  GM,  GM,  GM,  nm,  bm,
+        bm,  nm,  GM, VGM, VGM,  GM,  nm,  bm,
+        bm,  nm,  GM, VGM, VGM,  GM,  nm,  bm,
+        bm,  nm,  GM,  GM,  GM,  GM,  nm,  bm,
+       vbm,  nm,  nm,  nm,  nm,  nm,  nm, vbm,
+       vbm, vbm,  bm,  bm,  bm,  bm, vbm, vbm,
     ]
   }
   
@@ -1537,8 +1562,6 @@ AI.MTDF = function (board, f, d) {
 }
 
 AI.search = function(board, options) {
-
-  // if (AI.lastscore) AI.DRAW = 2*AI.lastscore
 
   if (options && options.seconds) AI.secondspermove = options.seconds
 
