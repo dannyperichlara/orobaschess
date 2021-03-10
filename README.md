@@ -22,16 +22,30 @@ The main intention is not to create an AI that plays better than other chess eng
 * Delta pruning on Quiescense Search.
 * Reverse futility pruning (soft implementation of the null-move pruning).
 * Fail-high reductions.
+* Type-B pruning
+  * Late bad-captures pruning
+  * Late quiet-moves pruning
 * Pre-processed Piece Square Tables (PSQT) at the begining of every search.
 * Mobility analysis.
-* General pawn structure analysis.
-* Material evaluation, including valuation of pieces asymmetry (in order to avoid the exchange of 3 pawns for a knight).
+* Basic king safety.
+* Basic passers detection.
+* Basic pawn structure analysis.
 * History heuristic, applied only to the actual position. No need for killer moves.
-* Move ordering: 1) hash moves; 2) good captures; 3) history moves; 4) PSQT; 5) bad captures.
+* Move ordering:
+  * 1) Hash moves
+  * 2) Good captures
+  * 3) History moves that give check
+  * 4) Other history moves
+  * 5) PSQT
+  * 6) Bad captures
 * Trasposition table.
-* Iterative deepening.
+* Iterative Deepening.
 * Internal Iterative Deepening.
-* Phase detector without tapered eval.
+* Phase detector without tapered eval. Orobas considers 4 phases for better piece and positional evaluation:
+  * Phase 1: Opening
+  * Phase 2: Midgame
+  * Phase 3: Early endgame
+  * Phase 4: Late endgame
 * History reduction (actually set to 100%).
 * MTD(f), but inactive due to some buggy behaviours related to the hash table. See https://www.chessprogramming.org/MTD(f)
 
@@ -46,24 +60,22 @@ The main intention is not to create an AI that plays better than other chess eng
 
 ### To Do
 * Mate detection
-* Free pawn advance 
-* Passed/doubled/hanging pawns detection.
+* Doubled/isolated/hanging pawns detection.
 * Improve king safety.
-* King tropism.
+* King pawn tropism.
 * Static Exchange Evaluation (SEE).
-* Move generation by stages (hash moves / tactival moves / killer moves? / quiet moves).
+* Move generation by stages (hash moves / tactical moves / killer moves? / quiet moves).
 * Automated tuning of parameters.
 * Book openings implementation.
-* Recognition/valuation of popular pawn structures (like Maroczy Bind or Benoni's).
+* Compute space gain.
 * Recognize the areas of the pawn structures when the action is going on, in order to achieve a better piece coordination.
 * Improve move ordering even more (with SEE).
-* Remove stupid blunders like 1k3b1r/pppb1ppp/4p3/1Nr4n/2P5/1P1P1B1P/P1K2PPB/4R2R b - - 1 21 (in some iterations, the engine sacrifices a knight for nothing).
-* Fix overvaluation of PSQT that can lead to absurd sacrifices (maybe related to the previous issue).
+* Fix overvaluation of PSQT that can lead to absurd sacrifices.
 * Programming of anti-human and anti-computer strategies.
 * Some way to soften the effect of the pre-processor in the hash table in order to avoid jumps in the score.
 * Some way to reduce the odd-even effect.
 * Some way to emulate human focus. For example, the greek gift sacrifice (rnbq1rk1/pppn1ppB/4p3/3pP3/1b1P4/2N2N2/PPP2PPP/R1BQK2R b KQ - 0 7); on the next 2 or 3 moves, the last of black's concerns will be the development of rook on a8, because the actual concern is to put black king in a safe position again.
 * Some clever and cheap way to evaluate the loss of castling rights.
 * Implementation of Best Node Search (https://en.wikipedia.org/wiki/Best_node_search).
-* Implementation of neural network for evaluation and move ordering.
+* Implementation of neural networks for evaluation and move ordering.
 * Parallel tree search ("Parallel Randomized Best-First Minimax Search". Yaron Shoham, Sivan Toledo).
