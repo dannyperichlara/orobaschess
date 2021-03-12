@@ -17,16 +17,38 @@ let AI = {
   random: 20,
   phase: 1,
   htlength: 1 << 24,
-  reduceHistoryFactor: 0.8, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
+  reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
   mindepth:  4,
   secondspermove: 3,
   lastmove: null
 }
 
-AI.MIDGAME_PIECE_VALUES = [124, 781, 825, 1276, 2538, 20000] // TESTEADO OK
-AI.ENDGAME_PIECE_VALUES = [206, 854, 915, 1380, 2682, 20000] // TESTEADO OK
+// PIECE VALUES
+// https://www.chessprogramming.org/Point_Value_by_Regression_Analysis
+AI.PAWN = 271
+
+AI.MIDGAME_PIECE_VALUES = [
+  AI.PAWN,
+  AI.PAWN*2.88 | 0,
+  AI.PAWN*3.45 | 0,
+  AI.PAWN*4.80 | 0,
+  AI.PAWN*10.77 | 0,
+  20000
+]
+
+AI.ENDGAME_PIECE_VALUES = [
+  AI.PAWN,
+  AI.PAWN*2.88 | 0,
+  AI.PAWN*3.45 | 0,
+  AI.PAWN*4.80 | 0,
+  AI.PAWN*10.77 | 0,
+  20000
+]
+
+// OTHER VALUES
+
 AI.FUTILITY_MARGIN = 2 * AI.MIDGAME_PIECE_VALUES[0]
-AI.BISHOP_PAIR = 82
+AI.BISHOP_PAIR = 0
 AI.MATE = AI.MIDGAME_PIECE_VALUES[5]
 AI.DRAW = 0
 AI.INFINITY = AI.MIDGAME_PIECE_VALUES[5]*4
@@ -206,7 +228,7 @@ AI.evaluate = function(board) {
 
   let colorMaterial = AI.getMaterialValue(P,N,B,R,Q)
   let notcolorMaterial = AI.getMaterialValue(Px,Nx,Bx,Rx,Qx)
-  let material = colorMaterial.value - notcolorMaterial.value
+  let material = colorMaterial - notcolorMaterial
 
   let pawnimbalance = 0//AI.PAWN_IMBALANCE[P.popcnt() - Px.popcnt() + 8]
 
@@ -354,7 +376,7 @@ AI.getMaterialValue = function(P,N,B,R,Q) {
 
     value += B.popcnt() > 1? AI.BISHOP_PAIR : 0
 
-    return {value, P, N, B, R, Q}
+    return value
 }
 
 AI.getPSQT = function(P,B,N,R,Q,K,color) {
@@ -722,11 +744,12 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     if (board.makeMove(move)) {
       legal++
 
-      //Late-Moves-Pruning (LMP)    
-      if (!isCapture && legal > 200/depth) {
-        board.unmakeMove()
-        continue
-      }
+      //Late-Moves-Pruning (LMP)
+      // let lmplimit = 811.41*depth**-1.788 | 0
+      // if (!isCapture && legal > lmplimit) {
+      //   board.unmakeMove()
+      //   continue
+      // }
 
       //Extensions
       if (incheck && depth < 3 && pvNode) {
