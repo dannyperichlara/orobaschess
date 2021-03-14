@@ -1483,7 +1483,30 @@ AI.PSQT2Sigmoid = function () {
   }
 }
 
-
+AI.softenPSQT = function () {
+  for (let p = 0; p <= 5; p++) {
+    AI.PIECE_SQUARE_TABLES[p] = AI.PIECE_SQUARE_TABLES[p].map((e,i)=>{
+      let N = [...AI.PIECE_SQUARE_TABLES[p]]
+      let sum = N[i]
+      let total = 1
+      
+      if (i%8!=0 && N[i-9]) {sum += N[i-9]; total++}
+      if ((i+1)%8!=0 && N[i-7]) {sum += N[i-7]; total++}
+      
+      if (i%8!=0 && N[i+7]) {sum += N[i+7]; total++}
+      if ((i+1)%8!=0 && N[i+9]) {sum += N[i+9]; total++}
+      
+      if (i%8!=0 && N[i-1]) {sum += N[i-1]; total++}
+      if ((i+1)%8!=0 && N[i+1]) {sum += N[i+1]; total++}
+      
+      if (N[i-8]) {sum += N[i-8]; total++}
+      if (N[i+8]) {sum += N[i+8]; total++}
+      console.log(sum, total)
+    
+      return 1.3*sum/total | 0
+    })
+  }
+}
 
 AI.setphase = function (board) {
   AI.phase = 1 //OPENING
@@ -1507,7 +1530,7 @@ AI.setphase = function (board) {
   if (AI.phase == 2) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_MIDGAME]
   if (AI.phase >= 3) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_ENDGAME]
 
-  // AI.softenPSQT()
+  AI.softenPSQT()
 
   if (AI.phase < 3) {
     AI.PIECE_VALUES = AI.MIDGAME_PIECE_VALUES
