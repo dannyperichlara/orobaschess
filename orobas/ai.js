@@ -6,7 +6,7 @@ const Chess = require('../chess/chess.js')
 // Math.seedrandom((new Date()).toTimeString())
 
 let AI = {
-  totaldepth: 30,
+  totaldepth: 20,
   ttNodes: 0,
   iteration: 0,
   qsnodes: 0,
@@ -54,7 +54,7 @@ AI.DRAW = 0
 AI.INFINITY = AI.MIDGAME_PIECE_VALUES[5]*4
 
 //PSQT VALUES
-AI.PSQT_VALUES = [-4, -2, 0, 1, 2].map(e=>20*e)
+AI.PSQT_VALUES = [-2, -1, 0, 1, 2].map(e=>10*e) //Scalar 10 TESTED OK
 
 let vbm = AI.PSQT_VALUES[0] // Very bad move
 let bm  = AI.PSQT_VALUES[1] // Bad move
@@ -899,7 +899,7 @@ AI.createPSQT = function (board) {
      vbm, bm, bm, GM, GM, bm, bm, vbm,
      vbm, bm, bm, GM, GM, bm, bm, vbm,
      vbm, bm, GM, nm, nm,VGM, nm, vbm,
-     vbm, bm, bm,VGM, nm, bm, bm, vbm,
+     vbm, bm, bm, GM, nm, bm, bm, vbm,
      vbm,vbm,vbm,vbm,vbm,vbm,vbm, vbm,
       
       ],
