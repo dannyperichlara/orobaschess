@@ -699,6 +699,15 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   
   for (let i=0, len=moves.length; i < len; i++) {
     let move = moves[i]
+    let piece = move.getPiece()
+
+    if (AI.absurd[turn][piece] >= 4 ||
+      AI.phase < 4 && legal >= 1 && depth > 2 && piece > 0 && AI.absurd[turn][piece] >= (depth / 2 | 0)
+    ) {
+      // console.log('Absurd maneuver pruning')
+      continue
+    }
+
     let near2mate = alpha > 2*AI.PIECE_VALUES[4] || beta < -2*AI.PIECE_VALUES[4]
 
     
@@ -710,7 +719,6 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
       if (staticeval + AI.FUTILITY_MARGIN*depth <= alpha)  continue
     }
 
-    let piece = move.getPiece()
     let isCapture = move.isCapture()
     let isPositional = move.getKind() < 4 && !incheck
 
@@ -744,10 +752,17 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     if (board.makeMove(move)) {
       legal++
 
+      // console.log(turn, piece)
+
+      AI.absurd[turn][piece]++
+
+      // console.log(AI.absurd)
+
       //Late-Moves-Pruning (LMP)
       // let lmplimit = 811.41*depth**-1.788 | 0
       // if (!isCapture && legal > lmplimit) {
       //   board.unmakeMove()
+      //   AI.absurd[turn][piece]--
       //   continue
       // }
 
@@ -772,6 +787,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
       }
       
       board.unmakeMove()
+      AI.absurd[turn][piece]--
       
       AI.nodes++
 
@@ -1467,6 +1483,8 @@ AI.PSQT2Sigmoid = function () {
   }
 }
 
+
+
 AI.setphase = function (board) {
   AI.phase = 1 //OPENING
   let color = board.getTurnColor()
@@ -1488,6 +1506,8 @@ AI.setphase = function (board) {
   if (AI.phase == 1) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_OPENING]
   if (AI.phase == 2) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_MIDGAME]
   if (AI.phase >= 3) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_ENDGAME]
+
+  // AI.softenPSQT()
 
   if (AI.phase < 3) {
     AI.PIECE_VALUES = AI.MIDGAME_PIECE_VALUES
@@ -1601,6 +1621,11 @@ AI.search = function(board, options) {
   if (!AI.PIECE_VALUES || nmoves < 2) {
     AI.PIECE_VALUES = AI.MIDGAME_PIECE_VALUES
   }
+
+  AI.absurd = [
+    [0,0,0,0,0,0],
+    [0,0,0,0,0,0],
+  ]
   
   return new Promise((resolve, reject) => {
     let color = board.getTurnColor()
