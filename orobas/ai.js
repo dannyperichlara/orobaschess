@@ -14,7 +14,7 @@ let AI = {
   status: null,
   fhf: 0,
   fh: 0,
-  random: 20,
+  random: 0,
   phase: 1,
   htlength: 1 << 24,
   reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
@@ -460,11 +460,11 @@ AI.scoreMove = function(move) {
   
   if (move.capture) {
     if (move.mvvlva>=20000) { //Goof Captures
-      return 1e7 + move.mvvlva
+      return 1e7 + move.mvvlva + move.psqtvalue
     } else if (move.mvvlva >= 6000){ //Equal Captures
-      return 1e5 + move.mvvlva
+      return 1e5 + move.mvvlva + move.psqtvalue
     } else {
-      return -1e6 + move.mvvlva //Bad Captures
+      return -1e6 + move.mvvlva + move.psqtvalue //Bad Captures
     }
   }
     
@@ -699,6 +699,15 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   
   for (let i=0, len=moves.length; i < len; i++) {
     let move = moves[i]
+    let piece = move.getPiece()
+
+    if ((AI.phase === 1 && AI.absurd[turn][piece] >= 2) || AI.absurd[turn][piece] >= 4 ||
+      AI.phase < 4 && legal >= 1 && depth > 2 && piece > 0 && AI.absurd[turn][piece] >= (depth / 2 | 0)
+    ) {
+      // console.log('Absurd maneuver pruning')
+      continue
+    }
+
     let near2mate = alpha > 2*AI.PIECE_VALUES[4] || beta < -2*AI.PIECE_VALUES[4]
 
     
@@ -710,7 +719,6 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
       if (staticeval + AI.FUTILITY_MARGIN*depth <= alpha)  continue
     }
 
-    let piece = move.getPiece()
     let isCapture = move.isCapture()
     let isPositional = move.getKind() < 4 && !incheck
 
@@ -744,10 +752,17 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     if (board.makeMove(move)) {
       legal++
 
+      // console.log(turn, piece)
+
+      AI.absurd[turn][piece]++
+
+      // console.log(AI.absurd)
+
       //Late-Moves-Pruning (LMP)
       // let lmplimit = 811.41*depth**-1.788 | 0
       // if (!isCapture && legal > lmplimit) {
       //   board.unmakeMove()
+      //   AI.absurd[turn][piece]--
       //   continue
       // }
 
@@ -772,6 +787,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
       }
       
       board.unmakeMove()
+      AI.absurd[turn][piece]--
       
       AI.nodes++
 
@@ -885,8 +901,8 @@ AI.createPSQT = function (board) {
       nm, nm, nm, nm, nm,  nm, nm, nm, 
       nm, nm, nm, nm, nm,  nm, nm, nm,
       nm, nm, nm, nm, nm,  nm,vbm,vbm,
-      nm, nm, GM,VGM, nm,  nm,vbm,vbm,
-      nm, nm,VGM,vbm,VGM, vbm,vbm, nm,
+      nm, nm, GM,VGM, GM,  nm,vbm,vbm,
+      nm, nm, GM, nm, GM, vbm,vbm, nm,
      VGM,VGM,vbm,vbm,vbm, VGM,VGM,VGM,
        0,  0,  0,  0,  0,   0,  0,  0,
       ],
@@ -1467,6 +1483,31 @@ AI.PSQT2Sigmoid = function () {
   }
 }
 
+AI.softenPSQT = function () {
+  for (let p = 0; p <= 5; p++) {
+    AI.PIECE_SQUARE_TABLES[p] = AI.PIECE_SQUARE_TABLES[p].map((e,i)=>{
+      let N = [...AI.PIECE_SQUARE_TABLES[p]]
+      let sum = N[i]
+      let total = 1
+      
+      if (i%8!=0 && N[i-9]) {sum += N[i-9]; total++}
+      if ((i+1)%8!=0 && N[i-7]) {sum += N[i-7]; total++}
+      
+      if (i%8!=0 && N[i+7]) {sum += N[i+7]; total++}
+      if ((i+1)%8!=0 && N[i+9]) {sum += N[i+9]; total++}
+      
+      if (i%8!=0 && N[i-1]) {sum += N[i-1]; total++}
+      if ((i+1)%8!=0 && N[i+1]) {sum += N[i+1]; total++}
+      
+      if (N[i-8]) {sum += N[i-8]; total++}
+      if (N[i+8]) {sum += N[i+8]; total++}
+      console.log(sum, total)
+    
+      return 1.3*sum/total | 0
+    })
+  }
+}
+
 AI.setphase = function (board) {
   AI.phase = 1 //OPENING
   let color = board.getTurnColor()
@@ -1488,6 +1529,8 @@ AI.setphase = function (board) {
   if (AI.phase == 1) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_OPENING]
   if (AI.phase == 2) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_MIDGAME]
   if (AI.phase >= 3) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_ENDGAME]
+
+  AI.softenPSQT()
 
   if (AI.phase < 3) {
     AI.PIECE_VALUES = AI.MIDGAME_PIECE_VALUES
@@ -1601,6 +1644,11 @@ AI.search = function(board, options) {
   if (!AI.PIECE_VALUES || nmoves < 2) {
     AI.PIECE_VALUES = AI.MIDGAME_PIECE_VALUES
   }
+
+  AI.absurd = [
+    [0,0,0,0,0,0],
+    [0,0,0,0,0,0],
+  ]
   
   return new Promise((resolve, reject) => {
     let color = board.getTurnColor()
