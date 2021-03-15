@@ -271,8 +271,10 @@ AI.evaluate = function(board, ply) {
   let positional = psqt + mobility + structure + safety
 
   let score = material + pawnimbalance + positional | 0
+
+  if (score > 0) score /= Math.sqrt(ply) //54.1 win (not fully tested)
   
-  return score/Math.sqrt(ply) | 0 //54.1 win (not fully tested)
+  return score | 0
 }
 
 AI.getPassers = function (_P, _Px, white) {
