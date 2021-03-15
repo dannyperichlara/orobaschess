@@ -542,7 +542,7 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
       board.unmakeMove()
 
       if( score >= beta ) {
-        // AI.saveHistory(turn, move, 2)
+        AI.saveHistory(turn, move, 2)
         return beta
       }
 
@@ -551,9 +551,9 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
         bestscore = score
         bestmove = move
 
-        // AI.saveHistory(turn, move, 1)
+        AI.saveHistory(turn, move, 1)
       } else {
-        // AI.saveHistory(turn, move, -1)
+        AI.saveHistory(turn, move, -1)
       }
     }
   }
@@ -839,8 +839,8 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
         bestscore = score
         bestmove  = move
       } else {
-        // AI.saveHistory(turn, move, -1)
-        // AI.ttSave(hashkey, bestscore, 1, depth, bestmove) //TESTED AT HIGH DEPTH
+        AI.saveHistory(turn, move, -1)
+        AI.ttSave(hashkey, bestscore, 1, depth, bestmove) //TESTED AT HIGH DEPTH
       }
     }
   }
