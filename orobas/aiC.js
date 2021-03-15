@@ -216,7 +216,7 @@ AI.randomizePSQT = function () {
 
 let minpositional = Infinity //Used for tests
 
-AI.evaluate = function(board) {
+AI.evaluate = function(board, ply) {
   let turn = board.getTurnColor()
   let white = (turn === 0)
 
@@ -272,7 +272,7 @@ AI.evaluate = function(board) {
 
   let score = material + pawnimbalance + positional | 0
   
-  return score
+  return score/Math.sqrt(ply) | 0 //54.1 win (not fully tested)
 }
 
 AI.getPassers = function (_P, _Px, white) {
@@ -507,7 +507,7 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
 
   let turn = board.getTurnColor()
   let legal = 0
-  let standpat = AI.evaluate(board)
+  let standpat = AI.evaluate(board, ply)
   let bestscore = -Infinity
   let incheck = board.isKingInCheck()
   let hashkey = board.hashKey.getHashKey()
@@ -687,7 +687,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   let legal = 0
   let bestscore = -Infinity
   let score
-  let staticeval = AI.evaluate(board)
+  let staticeval = AI.evaluate(board, ply)
   let incheck = board.isKingInCheck()
 
   if (incheck) {
