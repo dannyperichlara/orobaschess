@@ -14,11 +14,11 @@ let AI = {
   status: null,
   fhf: 0,
   fh: 0,
-  random: 20,
+  random: 0,
   phase: 1,
   htlength: 1 << 24,
   reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
-  mindepth:  3,
+  mindepth: 4,
   secondspermove: 3,
   lastmove: null
 }
@@ -272,7 +272,7 @@ AI.evaluate = function(board, ply) {
 
   let score = material + pawnimbalance + positional | 0
 
-  if (score > 0) score /= Math.sqrt(ply) //54.1 win (not fully tested)
+  // if (score > 0) score /= Math.sqrt(ply) //54.1 win (not fully tested)
   
   return score | 0
 }
