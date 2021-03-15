@@ -6,7 +6,7 @@ const Chess = require('../chess/chess.js')
 // Math.seedrandom((new Date()).toTimeString())
 
 let AI = {
-  totaldepth: 20,
+  totaldepth: 30,
   ttNodes: 0,
   iteration: 0,
   qsnodes: 0,
@@ -14,11 +14,11 @@ let AI = {
   status: null,
   fhf: 0,
   fh: 0,
-  random: 0,
+  random: 20,
   phase: 1,
   htlength: 1 << 24,
   reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
-  mindepth:  4,
+  mindepth:  3,
   secondspermove: 3,
   lastmove: null
 }
@@ -750,12 +750,17 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     // if (board.movenumber == 1 && i > 0) continue // CHEQUEA ORDEN PSQT
 
     //Reductions (LMR)
-    if (!incheck) {
-      if ((doFHR || !pvNode) && !isCapture) {
-        R += 1 + Math.sqrt(depth) + Math.sqrt(i) | 0
-      } else {
-        R += Math.log(depth+1)*Math.log(i+1)/1.95 | 0 // | 0 + 66 ELO???
-      }
+    if (!incheck && AI.phase < 4) {
+      // if (!isCapture) {
+        // R += Math.max(Math.log(depth+1)*Math.log(i+1)/1.95, depth - 4)
+      // } else {
+        R += Math.log(depth+1)*Math.log(i+1)/1.95
+      // }
+      // if ((doFHR || !pvNode) && !isCapture) {
+      //   R += 1 + Math.sqrt(depth) + Math.sqrt(i) | 0
+      // } else {
+      //   R += Math.log(depth+1)*Math.log(i+1)/1.95 | 0 // | 0 + 66 ELO???
+      // }
     }
 
     if (doFHR) R+=4
@@ -786,7 +791,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
 
       if (legal === 1) {
         //Always search the first move at full depth
-        score = -AI.PVS(board, -beta, -alpha, depth+E-1, ply+1)
+        score = -AI.PVS(board, -beta, -alpha, depth+E-R-1, ply+1)
       } else {
 
         //Next moves are searched with reductions
