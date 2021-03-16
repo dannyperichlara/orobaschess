@@ -14,11 +14,11 @@ let AI = {
   status: null,
   fhf: 0,
   fh: 0,
-  random: 0,
+  random: 20,
   phase: 1,
   htlength: 1 << 24,
   reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
-  mindepth: 4,
+  mindepth: 2,
   secondspermove: 3,
   lastmove: null
 }
@@ -54,7 +54,7 @@ AI.DRAW = 0
 AI.INFINITY = AI.MIDGAME_PIECE_VALUES[5]*4
 
 //PSQT VALUES
-AI.PSQT_VALUES = [-4, -1, 0, 1, 2].map(e=>20*e) //Scalar 10 TESTED OK (20 with 2 softens??)
+AI.PSQT_VALUES = [-2, -1, 0, 1, 2].map(e=>20*e) //Scalar 10 TESTED OK (20 with 2 softens??)
 
 let vbm = AI.PSQT_VALUES[0] // Very bad move
 let bm  = AI.PSQT_VALUES[1] // Bad move
@@ -77,18 +77,34 @@ AI.QUIETSORT = [
 AI.MOBILITY_VALUES = [
   [
     [],
-    [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*16),
-    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*16),
-    [-8,-4,0,1,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*20),
-    [-6,-4,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*5),
+    [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*8),
+    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*8),
+    [0,0,0,0,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*5),
+    [0,0,0,0,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*2),
     []
   ],
   [
     [],
     [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*16),
-    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*26),
-    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*20),
-    [-6,-4,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*10),
+    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*16),
+    [-8,-4,0,1,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*16),
+    [-6,-4,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*5),
+    []
+  ],
+  [
+    [],
+    [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*12),
+    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*20),
+    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*24),
+    [-6,-4,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*5),
+    []
+  ],
+  [
+    [],
+    [-8,-4,-2,-1,0,0,0,0,0].map(e=>e*16),
+    [-6,-2,0,0,0,0,0,0,0,0,0,0,0,0].map(e=>e*26),
+    [-6,-2,0,0,0,0,0,0,0,0,0,0,0,0,0].map(e=>e*20),
+    [-6,-4,-2,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0].map(e=>e*10),
     []
   ]
 ]
@@ -251,7 +267,7 @@ AI.evaluate = function(board, ply) {
   
   psqt = AI.getPSQT(P,N,B,R,Q,K, turn) - AI.getPSQT(Px,Nx,Bx,Rx,Qx,Kx, ~turn & 1)
   
-  let doPositional = true || AI.phase > 1
+  let doPositional = AI.phase > 1
   let doPassers = AI.phase >= 3 || this.iteration === 1 || AI.changeinPV
   
   if (doPassers) {
@@ -339,6 +355,7 @@ AI.getMOB = function(_P,_N,_B,_R,_Q,_K,_Px,board, color) {
   let Q = _Q.dup()
   let K = _K.dup()
   let Px = _Px.dup()
+  let i = AI.phase - 1
 
   let us = board.getColorBitboard(color).dup()
   let them = board.getColorBitboard(!color).dup()
@@ -346,23 +363,21 @@ AI.getMOB = function(_P,_N,_B,_R,_Q,_K,_Px,board, color) {
   // let space = P.dup().or(Q).or(K).or(enemypawnattackmask)
   let space = P.dup().or(K).or(enemypawnattackmask)
   let mobility = 0
-  let phaseindex = AI.phase < 3? 0 : 1 //which values for mobility. 0: midgame. 1: endgame
-
   
   while (!N.isEmpty()) {
-    mobility += AI.MOBILITY_VALUES[phaseindex][1][Chess.Bitboard.KNIGHT_MOVEMENTS[N.extractLowestBitPosition()].dup().and_not(enemypawnattackmask).and_not(us).popcnt()]
+    mobility += AI.MOBILITY_VALUES[i][1][Chess.Bitboard.KNIGHT_MOVEMENTS[N.extractLowestBitPosition()].dup().and_not(enemypawnattackmask).and_not(us).popcnt()]
   }
   
   while (!B.isEmpty()) {
     let index = B.extractLowestBitPosition()
     let bishop = (new Chess.Bitboard).setBit(index)
-    mobility += AI.MOBILITY_VALUES[phaseindex][2][board.makeBishopAttackMask(bishop, space).and_not(us).popcnt()]
+    mobility += AI.MOBILITY_VALUES[i][2][board.makeBishopAttackMask(bishop, space).and_not(us).popcnt()]
   }
   
   while (!R.isEmpty()) {
     let index = R.extractLowestBitPosition()
     let rook = (new Chess.Bitboard).setBit(index)
-    mobility += AI.MOBILITY_VALUES[phaseindex][3][board.makeRookAttackMask(rook, space).and_not(us).popcnt()]
+    mobility += AI.MOBILITY_VALUES[i][3][board.makeRookAttackMask(rook, space).and_not(us).popcnt()]
   }
   
   while (!Q.isEmpty()) {
@@ -370,7 +385,7 @@ AI.getMOB = function(_P,_N,_B,_R,_Q,_K,_Px,board, color) {
     let queen = (new Chess.Bitboard).setBit(index)
     let qcount  = board.makeBishopAttackMask(queen, space).or(board.makeRookAttackMask(queen, space)).and_not(us).popcnt()
     
-    mobility += AI.MOBILITY_VALUES[phaseindex][4][qcount]
+    mobility += AI.MOBILITY_VALUES[i][4][qcount]
   }
   
   if (isNaN(mobility)) return 0
@@ -696,7 +711,11 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     let lastmove = board.getLastMove()
 
     if (lastmove) {
-      AI.saveHistory(~turn & 1, lastmove, 20) //check moves up in move ordering
+      if (AI.phase < 4) {
+        AI.saveHistory(~turn & 1, lastmove, 20) //check moves up in move ordering
+      } else {
+        AI.saveHistory(~turn & 1, lastmove, -200) //check down up in move ordering (phase 4)
+      }
     }
   }
   
@@ -752,17 +771,10 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     // if (board.movenumber == 1 && i > 0) continue // CHEQUEA ORDEN PSQT
 
     //Reductions (LMR)
-    if (!incheck && AI.phase < 4) {
-      // if (!isCapture) {
-        // R += Math.max(Math.log(depth+1)*Math.log(i+1)/1.95, depth - 4)
-      // } else {
+    if (!incheck) {
         R += Math.log(depth+1)*Math.log(i+1)/1.95
-      // }
-      // if ((doFHR || !pvNode) && !isCapture) {
-      //   R += 1 + Math.sqrt(depth) + Math.sqrt(i) | 0
-      // } else {
-      //   R += Math.log(depth+1)*Math.log(i+1)/1.95 | 0 // | 0 + 66 ELO???
-      // }
+
+        if (AI.phase === 4) R /= 2
     }
 
     if (doFHR) R+=4
@@ -1140,12 +1152,12 @@ AI.createPSQT = function (board) {
       // Pawn
           [ 
            0,  0,  0,  0,  0,   0,  0,  0,
-         VGM,VGM,VGM,VGM,VGM, VGM,VGM,VGM,
-          GM, GM, GM, GM, GM,  GM, GM, GM,
-          nm, nm, nm, nm, nm,  nm, nm, nm,
-          bm, bm, bm, bm, bm,  bm, bm, bm,
-          vbm,vbm,vbm,vbm,vbm, vbm,vbm,vbm,
-          vbm,vbm,vbm,vbm,vbm, vbm,vbm,vbm,
+         VGM,VGM,VGM,VGM,VGM,VGM,VGM,VGM,
+          GM, GM, GM, GM, GM, GM, GM, GM,
+          nm, nm, nm, nm, nm, nm, nm, nm,
+          bm, bm, bm, bm, bm, bm, bm, bm,
+         vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
+         vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
           0,  0,  0,  0,  0,   0,  0,  0,
         ],
         
@@ -1213,7 +1225,7 @@ AI.createPSQT = function (board) {
 
 AI.PSQT2Sigmoid = function () {
   /***************** PSQT a sigmoidea *****************/
-  let upperlimit = 40
+  let upperlimit = 120
   let lowerlimit = 120
 
   for (let i = 1; i <= 4; i++) {
@@ -1246,11 +1258,363 @@ AI.softenPSQT = function () {
       
       if (N[i-8]) {sum += N[i-8]; total++}
       if (N[i+8]) {sum += N[i+8]; total++}
-      console.log(sum, total)
     
       return 1.3*sum/total | 0
     })
   }
+}
+
+AI.preprocessor = function (board) {
+  // return
+  let color = board.getTurnColor()
+
+  let P = board.getPieceColorBitboard(0, color).dup()
+  let N = board.getPieceColorBitboard(1, color).dup()
+  let B = board.getPieceColorBitboard(2, color).dup()
+  let R = board.getPieceColorBitboard(3, color).dup()
+  let Q = board.getPieceColorBitboard(4, color).dup()
+  let K = board.getPieceColorBitboard(5, color).dup()
+  let PX = board.getPieceColorBitboard(0, !color).dup()
+  let BX = board.getPieceColorBitboard(2, !color).dup()
+  let RX = board.getPieceColorBitboard(3, !color).dup()
+  let QX = board.getPieceColorBitboard(4, !color).dup()
+  let KX = board.getPieceColorBitboard(5, !color).dup()
+
+  let pawnmask = Chess.Position.makePawnAttackMask(color, P)
+  let pawnmap = AI.bin2map(P, color)
+  let pawnstructure  = AI.bin2map({high: P.high | pawnmask.high, low: P.low | pawnmask.low}, color)
+
+  
+  let pawnmaskX = Chess.Position.makePawnAttackMask(!color, PX)//.not(PX)
+  let pawnXmap = AI.bin2map(PX, color)
+
+  let kingmap = AI.bin2map(K, color)
+  let kingXmap = AI.bin2map(KX, color)
+
+  let kingposition = kingmap.indexOf(1)
+
+  let kingXposition = kingXmap.indexOf(1)
+
+  //Castiga captura y maniobras con peón frontal del rey
+  if (kingposition >= 61 || (kingposition>=56 && kingposition<=58)) {
+    //Good
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 7] += VGM
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 8] += GM
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 9] += VGM
+
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 7] += VGM
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 8] += GM
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 9] += VGM
+
+    //Bad
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 15] += bm
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 17] += bm
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 23] += vbm    
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 24] += vbm    
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 25] += vbm    
+
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 15] += bm
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 17] += bm
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 23] += vbm    
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 24] += vbm    
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 25] += vbm    
+  }
+
+  //Caballos cerca del rey enemigo
+  AI.PIECE_SQUARE_TABLES_PHASE2[1] = AI.PIECE_SQUARE_TABLES_PHASE2[1].map((e,i)=>{
+    return e + 10 - 2 * AI.distance(kingXposition, i)
+  })
+
+  let outpostbonus = 0
+
+  //Premia caballos en Outposts //??????? NOT FULLY TESTED
+  AI.PIECE_SQUARE_TABLES_PHASE1[1] = AI.PIECE_SQUARE_TABLES_PHASE1[1].map((e,i)=>{
+    let ranks456 = i >= 16 && i <= 39 ? 40 : 0
+    return e + (pawnmap[i]? outpostbonus + ranks456 : -20)
+  })
+
+  //Torre
+  //Premia enrocar
+  if (board.hasCastlingRight(color, true) && 
+    (
+      (pawnmap[kingposition-5] && pawnmap[kingposition-6]) ||
+      (pawnmap[kingposition-5] && pawnmap[kingposition-7] && pawnmap[kingposition-14])
+    )
+  ) {
+      console.log('rook KINGSIDE')
+        AI.PIECE_SQUARE_TABLES_PHASE2[3][63]  -= 20
+        AI.PIECE_SQUARE_TABLES_PHASE2[3][62]  -= 20
+        AI.PIECE_SQUARE_TABLES_PHASE2[3][61]  += 40
+      }
+
+    if (board.hasCastlingRight(color, false) && pawnmap[kingposition-10] && pawnmap[kingposition-11]) {
+        console.log('rook QUEENSIDE')
+        AI.PIECE_SQUARE_TABLES_PHASE2[3][56]  -= 20
+        AI.PIECE_SQUARE_TABLES_PHASE2[3][57]  -= 20
+        AI.PIECE_SQUARE_TABLES_PHASE2[3][58]  -= 20
+        AI.PIECE_SQUARE_TABLES_PHASE2[3][59]  += 40
+      }
+
+  //Torres en columnas abiertas
+  
+  let pawnXfiles = [0,0,0,0,0,0,0,0]
+  let pawnfiles = [0,0,0,0,0,0,0,0]
+  
+  for (let i = 0; i < 64; i++) {
+    if (pawnmap[i]) {
+      let col = i % 8
+
+      pawnfiles[col]++
+    }
+  }
+
+  for (let i = 0; i < 64; i++) {
+    if (pawnXmap[i]) {
+      let col = i % 8
+
+      if (pawnfiles[col]) {
+        //Si las columnas están abiertas en mi lado, cuento las del otro lado (antes no)
+        pawnXfiles[col]++
+      }
+
+    }
+  }
+
+  
+  AI.PIECE_SQUARE_TABLES_PHASE1[3] = AI.PIECE_SQUARE_TABLES_PHASE1[3].map((e,i)=>{
+    let col = i%8
+    return e + (pawnfiles[col]? -40 : 0)
+  })
+  
+  AI.PIECE_SQUARE_TABLES_PHASE1[3] = AI.PIECE_SQUARE_TABLES_PHASE1[3].map((e,i)=>{
+    let col = i%8
+    return e + (!pawnfiles[col]? 80 : 0) + (!pawnXfiles[col]? 50 : 0)
+  })
+  
+  AI.PIECE_SQUARE_TABLES_PHASE2[3] = AI.PIECE_SQUARE_TABLES_PHASE2[3].map((e,i)=>{
+    let col = i%8
+    return e + (pawnfiles[col]? -20 : 0)
+  })
+  
+  AI.PIECE_SQUARE_TABLES_PHASE2[3] = AI.PIECE_SQUARE_TABLES_PHASE2[3].map((e,i)=>{
+    let col = i%8
+    return e + (!pawnfiles[col]? 50 : 0) + (!pawnXfiles[col]? 50 : 0)
+  })
+  
+  // Torres delante del rey enemigo ("torre en séptima")
+  for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_PHASE2[3][i + 8*(kingXposition/8 | 0)] += 27
+
+  //Torres conectadas
+  let RR = board.makeRookAttackMask(R, P.or(PX))
+  let RRmap = AI.bin2map(RR, color)
+
+  AI.PIECE_SQUARE_TABLES_PHASE2[3] = AI.PIECE_SQUARE_TABLES_PHASE2[3].map((e,i)=>{
+    return e + 10*RRmap[i]
+  })
+
+  //Castiga torres sin desarrollar
+  AI.PIECE_SQUARE_TABLES_PHASE2[2][56] -= 40
+  AI.PIECE_SQUARE_TABLES_PHASE2[2][63] -=100
+
+  //Premia enrocar
+  if (board.hasCastlingRight(color, true)) {
+    console.log('KINGSIDE')
+
+    if (
+      (pawnmap[kingposition-5] && pawnmap[kingposition-6]) ||
+      (pawnmap[kingposition-5] && pawnmap[kingposition-7] && pawnmap[kingposition-14])
+    ) {
+      AI.PIECE_SQUARE_TABLES_PHASE2[5][60]  -= 20
+      AI.PIECE_SQUARE_TABLES_PHASE2[5][61]  -= 20
+      AI.PIECE_SQUARE_TABLES_PHASE2[5][62]  +=120
+    } else {
+      AI.PIECE_SQUARE_TABLES_PHASE2[5][62]  -=200
+      AI.PIECE_SQUARE_TABLES_PHASE1[5][62]  -=200 //Evita enroque al vacío
+
+    }
+  }
+
+  if (board.hasCastlingRight(color, false)) {
+    console.log('QUEENSIDE')
+
+    if (pawnmap[kingposition-10] && pawnmap[kingposition-11]) {
+      AI.PIECE_SQUARE_TABLES_PHASE2[5][58]  += 40
+      AI.PIECE_SQUARE_TABLES_PHASE2[5][59]  -= 40
+      AI.PIECE_SQUARE_TABLES_PHASE2[5][60]  -= 20
+    } else {
+      AI.PIECE_SQUARE_TABLES_PHASE2[5][58]  -=200
+      AI.PIECE_SQUARE_TABLES_PHASE1[5][58]  -=200 //Evita enroque al vacío
+    }
+  }
+
+//***************** ENDGAME ***********************
+//***************** ENDGAME ***********************
+//***************** ENDGAME ***********************
+//***************** ENDGAME ***********************
+
+  //Castiga captura y maniobras con peón frontal del rey
+  if (board.getMadeMoveCount()>12 && kingposition > 55) {
+    AI.PIECE_SQUARE_TABLES_PHASE3[0][kingposition - 8] +=50 
+  }
+
+  //Caballos cerca del rey enemigo
+  AI.PIECE_SQUARE_TABLES_PHASE3[1] = AI.PIECE_SQUARE_TABLES_PHASE3[1].map((e,i)=>{
+    return e + 40 - 8 * AI.distance(kingXposition, i)
+  })
+
+  //Alfiles cerca del rey enemigo
+  AI.PIECE_SQUARE_TABLES_PHASE3[2] = AI.PIECE_SQUARE_TABLES_PHASE3[2].map((e,i)=>{
+    return e + 4 * (8 - AI.manhattanDistance(kingXposition, i))
+  })
+
+  //Torres en columnas abiertas
+
+  pawnfiles = [0,0,0,0,0,0,0,0]
+
+  for (let i = 0; i < 64; i++) {
+    if (pawnmap[i]) {
+      let col = i % 8
+
+      pawnfiles[col]++
+    }
+  }
+
+  AI.PIECE_SQUARE_TABLES_PHASE3[3] = AI.PIECE_SQUARE_TABLES_PHASE3[3].map((e,i)=>{
+    let col = i%8
+    return e + (pawnfiles[col]? -40 : 0)
+  })
+
+  AI.PIECE_SQUARE_TABLES_PHASE3[3] = AI.PIECE_SQUARE_TABLES_PHASE3[3].map((e,i)=>{
+    let col = i%8
+    return e + (!pawnfiles[col]? 40 : 0)
+  })
+
+  //Torres delante del rey enemigo ("torre en séptima")
+  for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_PHASE3[3][i + 8*(kingXposition/8 | 0)] += 27
+
+  //Torre cerca del rey enemigo
+  AI.PIECE_SQUARE_TABLES_PHASE3[3] = AI.PIECE_SQUARE_TABLES_PHASE3[3].map((e,i)=>{
+    return e + 4 * (8 - AI.manhattanDistance(kingXposition, i))
+  })
+
+  //Dama cerca del rey enemigo
+  AI.PIECE_SQUARE_TABLES_PHASE3[4] = AI.PIECE_SQUARE_TABLES_PHASE3[4].map((e,i)=>{
+    return e + 4 * (8 - AI.manhattanDistance(kingXposition, i))
+  })
+  
+  if (AI.phase === 4 && AI.lastscore >= AI.ENDGAME_PIECE_VALUES[0]) {
+    //Rey cerca del rey enemigo
+    AI.PIECE_SQUARE_TABLES_PHASE3[5] = AI.PIECE_SQUARE_TABLES_PHASE3[5].map((e,i)=>{
+      return 4 * (8 - AI.manhattanDistance(kingXposition, i))
+    })
+  }
+
+  //////////////// X RAYS ///////////////////////
+  //////////////// X RAYS ///////////////////////
+  //////////////// X RAYS ///////////////////////
+  //////////////// X RAYS ///////////////////////
+  let KB = board.makeBishopAttackMask(KX, false)
+  let KBmap = AI.bin2map(KB, color)
+
+  let BB = board.makeBishopAttackMask(BX, false)
+  let BBmap = AI.bin2map(BB, color)
+
+  let RB = board.makeBishopAttackMask(RX, false)
+  let RBmap = AI.bin2map(RB, color)
+  
+  let QB = board.makeBishopAttackMask(QX, false)
+  let QBmap = AI.bin2map(QB, color)
+
+  let KR = board.makeRookAttackMask(KX, false)
+  let KRmap = AI.bin2map(KR, color)
+
+  let RRx = board.makeRookAttackMask(RX, false)
+  let RRmapx = AI.bin2map(RRx, color)
+
+  let QR = board.makeRookAttackMask(KX, false)
+  let QRmap = AI.bin2map(QR, color)
+
+  //Alfiles apuntando a torres
+  AI.PIECE_SQUARE_TABLES_PHASE2[2] = AI.PIECE_SQUARE_TABLES_PHASE2[2].map((e,i)=>{
+    return e + 20*RBmap[i]
+  })
+
+  //Alfiles apuntando a dama
+  AI.PIECE_SQUARE_TABLES_PHASE2[2] = AI.PIECE_SQUARE_TABLES_PHASE2[2].map((e,i)=>{
+    return e + 20*QBmap[i]
+  })
+  
+  //Alfiles apuntando al rey
+  AI.PIECE_SQUARE_TABLES_PHASE2[2] = AI.PIECE_SQUARE_TABLES_PHASE2[2].map((e,i)=>{
+    return e + 20*KBmap[i]
+  })
+
+  AI.PIECE_SQUARE_TABLES_PHASE3[2] = AI.PIECE_SQUARE_TABLES_PHASE3[2].map((e,i)=>{
+    return e + 20*KBmap[i]
+  })
+
+  if (kingXposition % 8 < 7) {
+    AI.PIECE_SQUARE_TABLES_PHASE2[2] = AI.PIECE_SQUARE_TABLES_PHASE2[2].map((e,i)=>{
+      return e + 20*(KBmap[i + 1] || 0)
+    })    
+  }
+
+  if (kingXposition % 8 < 7) {
+    AI.PIECE_SQUARE_TABLES_PHASE3[2] = AI.PIECE_SQUARE_TABLES_PHASE3[2].map((e,i)=>{
+      return e + 20*(KBmap[i + 1] || 0)
+    })    
+  }
+
+  if (kingXposition % 8 > 0) {
+    AI.PIECE_SQUARE_TABLES_PHASE2[2] = AI.PIECE_SQUARE_TABLES_PHASE2[2].map((e,i)=>{
+      return e + 20*(KBmap[i - 1] || 0)
+    })
+  }
+
+  if (kingXposition % 8 > 0) {
+    AI.PIECE_SQUARE_TABLES_PHASE3[2] = AI.PIECE_SQUARE_TABLES_PHASE3[2].map((e,i)=>{
+      return e + 20*(KBmap[i - 1] || 0)
+    })
+  }
+
+  //Torres apuntando a dama
+  AI.PIECE_SQUARE_TABLES_PHASE2[3] = AI.PIECE_SQUARE_TABLES_PHASE2[3].map((e,i)=>{
+    return e + 10*QRmap[i]
+  })
+
+  //Torres apuntando al rey
+  AI.PIECE_SQUARE_TABLES_PHASE2[3] = AI.PIECE_SQUARE_TABLES_PHASE2[3].map((e,i)=>{
+    return e + 10*KRmap[i]
+  })
+
+  AI.PIECE_SQUARE_TABLES_PHASE3[3] = AI.PIECE_SQUARE_TABLES_PHASE3[3].map((e,i)=>{
+    return e + 10*KRmap[i]
+  })
+
+  //Dama apuntando al rey
+  AI.PIECE_SQUARE_TABLES_PHASE2[4] = AI.PIECE_SQUARE_TABLES_PHASE2[4].map((e,i)=>{
+    return e + 10*KBmap[i]
+  })
+
+  //Dama apuntando a alfiles enemigos
+  AI.PIECE_SQUARE_TABLES_PHASE2[4] = AI.PIECE_SQUARE_TABLES_PHASE2[4].map((e,i)=>{
+    return e - 60*BBmap[i]
+  })
+
+  //Dama apuntando a torres enemigas
+  AI.PIECE_SQUARE_TABLES_PHASE2[4] = AI.PIECE_SQUARE_TABLES_PHASE2[4].map((e,i)=>{
+    return e - 20*RRmapx[i]
+  })
+
+  //Rey apuntando a alfiles enemigos
+  AI.PIECE_SQUARE_TABLES_PHASE2[5] = AI.PIECE_SQUARE_TABLES_PHASE2[5].map((e,i)=>{
+    return e - 60*BBmap[i]
+  })
+
+  //Rey apuntando a torres enemigas
+  AI.PIECE_SQUARE_TABLES_PHASE2[5] = AI.PIECE_SQUARE_TABLES_PHASE2[5].map((e,i)=>{
+    return e - 20*RRmapx[i]
+  })
 }
 
 AI.setphase = function (board) {
@@ -1269,14 +1633,15 @@ AI.setphase = function (board) {
 
   if (AI.nofpieces <= 12) AI.phase = 4 //LATE ENGDAME
   
-  AI.createPSQT(board)
+  AI.createPSQT()
+
+  AI.preprocessor(board)
 
   if (AI.phase == 1) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE1]
   if (AI.phase == 2) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE2]
   if (AI.phase == 3) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE3]
   if (AI.phase == 4) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE4]
 
-  // AI.softenPSQT()
   // AI.softenPSQT()
 
   if (AI.phase < 3) {

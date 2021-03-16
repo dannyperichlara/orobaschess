@@ -14,11 +14,11 @@ let AI = {
   status: null,
   fhf: 0,
   fh: 0,
-  random: 0,
+  random: 20,
   phase: 1,
   htlength: 1 << 24,
   reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
-  mindepth: 4,
+  mindepth: 2,
   secondspermove: 3,
   lastmove: null
 }
@@ -251,7 +251,7 @@ AI.evaluate = function(board, ply) {
   
   psqt = AI.getPSQT(P,N,B,R,Q,K, turn) - AI.getPSQT(Px,Nx,Bx,Rx,Qx,Kx, ~turn & 1)
   
-  let doPositional = true || AI.phase > 1
+  let doPositional = AI.phase > 1
   let doPassers = AI.phase >= 3 || this.iteration === 1 || AI.changeinPV
   
   if (doPassers) {
