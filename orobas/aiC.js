@@ -14,11 +14,11 @@ let AI = {
   status: null,
   fhf: 0,
   fh: 0,
-  random: 20,
+  random: 0,
   phase: 1,
   htlength: 1 << 24,
   reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
-  mindepth: 2,
+  mindepth: 8,
   secondspermove: 3,
   lastmove: null
 }
@@ -27,34 +27,51 @@ let AI = {
 // https://www.chessprogramming.org/Point_Value_by_Regression_Analysis
 AI.PAWN = 271
 
-AI.MIDGAME_PIECE_VALUES = [
-  AI.PAWN,
-  AI.PAWN*2.88 | 0,
-  AI.PAWN*3.45 | 0,
-  AI.PAWN*4.80 | 0,
-  AI.PAWN*10.77 | 0,
-  20000
-]
-
-AI.ENDGAME_PIECE_VALUES = [
-  AI.PAWN,
-  AI.PAWN*2.88 | 0,
-  AI.PAWN*3.45 | 0,
-  AI.PAWN*4.80 | 0,
-  AI.PAWN*10.77 | 0,
-  20000
+AI.PIECE_VALUES_BY_PHASE = [
+  [
+    AI.PAWN,
+    AI.PAWN*2.88 | 0,
+    AI.PAWN*3.45 | 0,
+    AI.PAWN*4.80 | 0,
+    AI.PAWN*10.77 | 0,
+    20000
+  ],
+  [
+    AI.PAWN,
+    AI.PAWN*2.88 | 0,
+    AI.PAWN*3.45 | 0,
+    AI.PAWN*4.80 | 0,
+    AI.PAWN*10.77 | 0,
+    20000
+  ],
+  [
+    AI.PAWN,
+    AI.PAWN*2.88 | 0,
+    AI.PAWN*3.45 | 0,
+    AI.PAWN*4.80 | 0,
+    AI.PAWN*10.77 | 0,
+    20000
+  ],
+  [
+    AI.PAWN,
+    AI.PAWN*2.88 | 0,
+    AI.PAWN*3.45 | 0,
+    AI.PAWN*4.80 | 0,
+    AI.PAWN*10.77 | 0,
+    20000
+  ]
 ]
 
 // OTHER VALUES
 
-AI.FUTILITY_MARGIN = 2 * AI.MIDGAME_PIECE_VALUES[0]
+AI.FUTILITY_MARGIN = 2 * AI.PAWN
 AI.BISHOP_PAIR = 0
-AI.MATE = AI.MIDGAME_PIECE_VALUES[5]
+AI.MATE = AI.PIECE_VALUES_BY_PHASE[0][5]
 AI.DRAW = 0
-AI.INFINITY = AI.MIDGAME_PIECE_VALUES[5]*4
+AI.INFINITY = AI.PIECE_VALUES_BY_PHASE[0][5]*4
 
 //PSQT VALUES
-AI.PSQT_VALUES = [-2, -1, 0, 1, 2].map(e=>20*e) //Scalar 10 TESTED OK (20 with 2 softens??)
+AI.PSQT_VALUES = [-2, -1, 0, 1, 2].map(e=>10*e) //Scalar 10 TESTED OK (20 with 2 softens??)
 
 let vbm = AI.PSQT_VALUES[0] // Very bad move
 let bm  = AI.PSQT_VALUES[1] // Bad move
@@ -257,7 +274,7 @@ AI.evaluate = function(board, ply) {
   let notcolorMaterial = AI.getMaterialValue(Px,Nx,Bx,Rx,Qx)
   let material = colorMaterial - notcolorMaterial
 
-  let pawnimbalance = 0//AI.PAWN_IMBALANCE[P.popcnt() - Px.popcnt() + 8]
+  let pawnimbalance = 0// AI.PAWN_IMBALANCE[P.popcnt() - Px.popcnt() + 8]
 
   let psqt = 0
   let mobility = 0
@@ -1502,7 +1519,7 @@ AI.preprocessor = function (board) {
     return e + 4 * (8 - AI.manhattanDistance(kingXposition, i))
   })
   
-  if (AI.phase === 4 && AI.lastscore >= AI.ENDGAME_PIECE_VALUES[0]) {
+  if (AI.phase === 4 && AI.lastscore >= AI.PIECE_VALUES_BY_PHASE[3][0]) {
     //Rey cerca del rey enemigo
     AI.PIECE_SQUARE_TABLES_PHASE3[5] = AI.PIECE_SQUARE_TABLES_PHASE3[5].map((e,i)=>{
       return 4 * (8 - AI.manhattanDistance(kingXposition, i))
@@ -1644,11 +1661,7 @@ AI.setphase = function (board) {
 
   // AI.softenPSQT()
 
-  if (AI.phase < 3) {
-    AI.PIECE_VALUES = AI.MIDGAME_PIECE_VALUES
-  } else {
-    AI.PIECE_VALUES = AI.ENDGAME_PIECE_VALUES
-  }
+  AI.PIECE_VALUES = AI.PIECE_VALUES_BY_PHASE[AI.phase - 1]
 
   AI.randomizePSQT()
   AI.PSQT2Sigmoid()
@@ -1754,7 +1767,7 @@ AI.search = function(board, options) {
   AI.reduceHistory()
 
   if (!AI.PIECE_VALUES || nmoves < 2) {
-    AI.PIECE_VALUES = AI.MIDGAME_PIECE_VALUES
+    AI.PIECE_VALUES = AI.PIECE_VALUES_BY_PHASE[0]
   }
 
   AI.absurd = [
