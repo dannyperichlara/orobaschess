@@ -71,15 +71,16 @@ AI.DRAW = 0
 AI.INFINITY = AI.PIECE_VALUES_BY_PHASE[0][5]*4
 
 //PSQT VALUES
-AI.PSQT_VALUES = [-3,-2,-1, 0, 1, 2, 3].map(e=>4*e) //Scalar 10 TESTED OK (20 with 2 softens??)
+AI.PSQT_VALUES = [-3,-2,-1, 0, 1, 2, 3]
+AI.PSQT_SCALAR = [5, 10, 10, 10, 10, 20]
 
-let wm = AI.PSQT_VALUES[0] // Worst move
-let vbm = AI.PSQT_VALUES[0] // Very bad move
-let bm  = AI.PSQT_VALUES[1] // Bad move
-let nm  = AI.PSQT_VALUES[2] // Neutral move
-let GM  = AI.PSQT_VALUES[3] // Good move
-let VGM = AI.PSQT_VALUES[4] // Very good move
-let BM = AI.PSQT_VALUES[4] // Best move
+let wm  = AI.PSQT_VALUES[0] // Worst move
+let vbm = AI.PSQT_VALUES[1] // Very bad move
+let bm  = AI.PSQT_VALUES[2] // Bad move
+let nm  = AI.PSQT_VALUES[3] // Neutral move
+let GM  = AI.PSQT_VALUES[4] // Good move
+let VGM = AI.PSQT_VALUES[5] // Very good move
+let BM  = AI.PSQT_VALUES[6] // Best move
 
 AI.QUIETSORT = [
   0, 1, 2, 3, 3, 2, 1, 0,
@@ -286,7 +287,7 @@ AI.evaluate = function(board, ply) {
   
   psqt = AI.getPSQT(P,N,B,R,Q,K, turn) - AI.getPSQT(Px,Nx,Bx,Rx,Qx,Kx, ~turn & 1)
   
-  let doPositional = AI.phase > 1// && AI.iteration < 4
+  let doPositional = AI.phase > 1
   let doPassers = AI.phase >= 3 || AI.iteration === 1 || AI.changeinPV
   
   if (doPassers) {
@@ -953,7 +954,7 @@ AI.createPSQT = function (board) {
       nm,VGM, GM, nm, GM, vbm, nm, nm,
      VGM, GM,vbm,vbm,vbm, VGM,VGM,VGM,
        0,  0,  0,  0,  0,   0,  0,  0,
-      ],
+      ].map(e=>e*AI.PSQT_SCALAR[0]),
 
       // Knight
       [ 
@@ -966,7 +967,7 @@ AI.createPSQT = function (board) {
      vbm, bm, bm, bm, bm, bm, bm, vbm,
      vbm,vbm,vbm,vbm,vbm,vbm,vbm, vbm,
       
-      ],
+      ].map(e=>e*AI.PSQT_SCALAR[1]),
       // Bishop
     [ 
       vbm, bm, bm, bm, bm, bm, bm, vbm,
@@ -977,7 +978,7 @@ AI.createPSQT = function (board) {
       vbm, bm, nm, nm, nm, nm, bm, vbm,
       vbm, bm, bm, bm, bm, bm, bm, vbm,
       vbm,vbm,vbm,vbm,vbm,vbm,vbm, vbm,
-    ],
+    ].map(e=>e*AI.PSQT_SCALAR[2]),
     // Rook
     [ 
       nm, nm, nm, nm, nm, nm, nm, nm,
@@ -988,7 +989,7 @@ AI.createPSQT = function (board) {
       nm, nm, nm, nm, nm, nm, nm, nm,
       nm, nm, nm, nm, nm, nm, nm, nm,
       nm, nm, nm, GM, GM, nm, nm, nm,
-    ],
+    ].map(e=>e*AI.PSQT_SCALAR[3]),
     
     // Queen
     [ 
@@ -1000,7 +1001,7 @@ AI.createPSQT = function (board) {
       nm, nm, nm, nm, nm, nm, nm, nm,
       nm, nm, nm, nm, nm, nm, nm, nm,
       wm,vbm,vbm, nm, nm,vbm,vbm, wm,
-    ],
+    ].map(e=>e*AI.PSQT_SCALAR[4]),
 
     // King
     [ 
@@ -1013,7 +1014,7 @@ AI.createPSQT = function (board) {
        bm, bm, bm,vbm,vbm,vbm, nm, nm,
        bm, bm, GM, wm, bm,vbm, BM,nm
 
-    ]
+    ].map(e=>e*AI.PSQT_SCALAR[5])
   ]
 
   AI.PIECE_SQUARE_TABLES_PHASE2 = [
@@ -1027,7 +1028,7 @@ AI.createPSQT = function (board) {
         GM,VGM, GM, nm, GM,vbm, nm, nm,
        VGM, GM,vbm,vbm,vbm,VGM,VGM,VGM,
          0,  0,  0,  0,  0,  0,  0,  0,
-        ],
+        ].map(e=>e*AI.PSQT_SCALAR[0]),
   
         // Knight
         [ 
@@ -1040,7 +1041,7 @@ AI.createPSQT = function (board) {
        vbm, bm, bm, bm, bm, bm, bm, vbm,
        vbm,vbm,vbm,vbm,vbm,vbm,vbm, vbm,
         
-        ],
+        ].map(e=>e*AI.PSQT_SCALAR[1]),
         // Bishop
       [ 
         vbm, bm, bm, bm, bm, bm, bm, vbm,
@@ -1051,7 +1052,7 @@ AI.createPSQT = function (board) {
         vbm, GM, GM, nm, nm, GM, GM, vbm,
         vbm, GM, bm, bm, bm, bm, GM, vbm,
         vbm,vbm,vbm,vbm,vbm,vbm,vbm, vbm,
-      ],
+      ].map(e=>e*AI.PSQT_SCALAR[2]),
       // Rook
       [ 
         nm, nm, nm, nm, nm, nm, nm, nm,
@@ -1062,7 +1063,7 @@ AI.createPSQT = function (board) {
         nm, nm, nm, nm, nm, nm, nm, nm,
         nm, nm, nm, nm, nm, nm, nm, nm,
         nm, nm, nm, nm, nm, nm, nm, nm,
-      ],
+      ].map(e=>e*AI.PSQT_SCALAR[3]),
       
       // Queen
       [ 
@@ -1074,7 +1075,7 @@ AI.createPSQT = function (board) {
         nm, nm, nm, nm, nm, nm, nm, nm,
         bm, bm, bm, bm, bm, bm, bm, bm,
        vbm,vbm,vbm, bm, bm,vbm,vbm,vbm,
-      ],
+      ].map(e=>e*AI.PSQT_SCALAR[4]),
   
       // King
       [ 
@@ -1087,7 +1088,7 @@ AI.createPSQT = function (board) {
          bm, bm, bm,vbm,vbm,vbm, nm, nm,
          bm, bm, nm,vbm, bm,vbm,VGM, nm
   
-      ]
+      ].map(e=>e*AI.PSQT_SCALAR[5])
     ]
 
   AI.PIECE_SQUARE_TABLES_PHASE3 = [
@@ -1101,7 +1102,7 @@ AI.createPSQT = function (board) {
         nm, nm, nm, nm, nm, nm, nm, nm, 
         nm, nm, nm, nm, nm, nm, nm, nm, 
          0,  0,  0,  0,  0,   0,  0,  0,
-        ],
+        ].map(e=>e*AI.PSQT_SCALAR[0]),
   
         // Knight
         [ 
@@ -1114,7 +1115,7 @@ AI.createPSQT = function (board) {
        vbm, nm, nm, nm, nm, nm, nm, vbm,
        vbm,vbm,vbm,vbm,vbm,vbm,vbm, vbm,
         
-        ],
+        ].map(e=>e*AI.PSQT_SCALAR[1]),
         // Bishop
         [ 
           vbm, bm, bm, bm, bm, bm, bm, vbm,
@@ -1126,7 +1127,7 @@ AI.createPSQT = function (board) {
            bm, nm, nm, nm, nm, nm, nm,  bm,
           vbm,vbm,vbm,vbm,vbm,vbm,vbm, vbm,
            
-           ],
+           ].map(e=>e*AI.PSQT_SCALAR[2]),
       // Rook
       [ 
        VGM,VGM,VGM,VGM,VGM,VGM,VGM,VGM,
@@ -1137,7 +1138,7 @@ AI.createPSQT = function (board) {
         nm, nm, nm, nm, nm, nm, nm, nm,
         nm, nm, nm, nm, nm, nm, nm, nm,
         nm, nm, nm, nm, nm, nm, nm, nm,
-      ],
+      ].map(e=>e*AI.PSQT_SCALAR[3]),
       
       // Queen
       [ 
@@ -1149,7 +1150,7 @@ AI.createPSQT = function (board) {
         nm, nm, nm, nm, nm, nm, nm, nm,
         nm, nm, nm, nm, nm, nm, nm, nm,
         nm, nm, nm, nm, nm, nm, nm, nm,
-      ],
+      ].map(e=>e*AI.PSQT_SCALAR[4]),
   
       // King
       [ 
@@ -1161,7 +1162,7 @@ AI.createPSQT = function (board) {
         bm, nm, nm, nm, nm, nm, nm, bm,
         bm, nm, nm, nm, nm, nm, nm, bm,
         bm, bm, bm, bm, bm, bm, bm, bm,
-      ]
+      ].map(e=>e*AI.PSQT_SCALAR[5])
     ]
 
     AI.PIECE_SQUARE_TABLES_PHASE4 = [
@@ -1175,7 +1176,7 @@ AI.createPSQT = function (board) {
          vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
          vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
           0,  0,  0,  0,  0,   0,  0,  0,
-        ],
+        ].map(e=>e*AI.PSQT_SCALAR[0]),
         
         // Knight
         [ 
@@ -1188,7 +1189,7 @@ AI.createPSQT = function (board) {
           bm, nm, nm, nm, nm, nm, nm, bm,
           bm, bm, nm, nm, nm, nm, bm, bm,
       
-        ],
+        ].map(e=>e*AI.PSQT_SCALAR[1]),
         // Bishop
         [ 
           bm, bm, nm, nm, nm, nm, bm, bm,
@@ -1200,7 +1201,7 @@ AI.createPSQT = function (board) {
           bm, nm, nm, nm, nm, nm, nm, bm,
           bm, bm, nm, nm, nm, nm, bm, bm,
       
-        ],
+        ].map(e=>e*AI.PSQT_SCALAR[2]),
         // Rook
         [ 
           nm, nm, nm, nm, nm, nm, nm, nm,
@@ -1211,7 +1212,7 @@ AI.createPSQT = function (board) {
           nm, nm, nm, nm, nm, nm, nm, nm,
           nm, nm, nm, nm, nm, nm, nm, nm,
           nm, nm, nm, nm, nm, nm, nm, nm,
-        ],
+        ].map(e=>e*AI.PSQT_SCALAR[3]),
         
         // Queen
         [ 
@@ -1223,7 +1224,7 @@ AI.createPSQT = function (board) {
           nm, nm, nm, nm, nm, nm, nm, nm,
           nm, nm, nm, nm, nm, nm, nm, nm,
           nm, nm, nm, nm, nm, nm, nm, nm,
-        ],
+        ].map(e=>e*AI.PSQT_SCALAR[4]),
     
         // King
         [ 
@@ -1235,8 +1236,15 @@ AI.createPSQT = function (board) {
          vbm, bm, nm, GM, GM, nm, bm,vbm,
          vbm, nm, bm, bm, bm, bm, nm,vbm,
          vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
-        ]
+        ].map(e=>e*AI.PSQT_SCALAR[5])
       ]
+
+    AI.preprocessor(board)
+    
+    if (AI.phase == 1) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE1]
+    if (AI.phase == 2) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE2]
+    if (AI.phase == 3) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE3]
+    if (AI.phase == 4) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE4]
 }
 
 AI.PSQT2Sigmoid = function () {
@@ -1649,15 +1657,9 @@ AI.setphase = function (board) {
 
   if (AI.nofpieces <= 12) AI.phase = 4 //LATE ENGDAME
   
-  AI.createPSQT()
-
-  AI.preprocessor(board)
-
-  if (AI.phase == 1) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE1]
-  if (AI.phase == 2) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE2]
-  if (AI.phase == 3) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE3]
-  if (AI.phase == 4) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE4]
-
+  AI.createPSQT(board)
+  
+  console.log(AI.PIECE_SQUARE_TABLES)
   // AI.softenPSQT()
 
   AI.PIECE_VALUES = AI.PIECE_VALUES_BY_PHASE[AI.phase - 1]
