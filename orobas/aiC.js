@@ -14,11 +14,11 @@ let AI = {
   status: null,
   fhf: 0,
   fh: 0,
-  random: 0,
+  random: 5,
   phase: 1,
   htlength: 1 << 24,
   reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
-  mindepth: 8,
+  mindepth: 2,
   secondspermove: 3,
   lastmove: null
 }
@@ -71,13 +71,15 @@ AI.DRAW = 0
 AI.INFINITY = AI.PIECE_VALUES_BY_PHASE[0][5]*4
 
 //PSQT VALUES
-AI.PSQT_VALUES = [-2, -1, 0, 1, 2].map(e=>10*e) //Scalar 10 TESTED OK (20 with 2 softens??)
+AI.PSQT_VALUES = [-3,-2,-1, 0, 1, 2, 3].map(e=>4*e) //Scalar 10 TESTED OK (20 with 2 softens??)
 
+let wm = AI.PSQT_VALUES[0] // Worst move
 let vbm = AI.PSQT_VALUES[0] // Very bad move
 let bm  = AI.PSQT_VALUES[1] // Bad move
 let nm  = AI.PSQT_VALUES[2] // Neutral move
 let GM  = AI.PSQT_VALUES[3] // Good move
 let VGM = AI.PSQT_VALUES[4] // Very good move
+let BM = AI.PSQT_VALUES[4] // Best move
 
 AI.QUIETSORT = [
   0, 1, 2, 3, 3, 2, 1, 0,
@@ -274,7 +276,7 @@ AI.evaluate = function(board, ply) {
   let notcolorMaterial = AI.getMaterialValue(Px,Nx,Bx,Rx,Qx)
   let material = colorMaterial - notcolorMaterial
 
-  let pawnimbalance = 0// AI.PAWN_IMBALANCE[P.popcnt() - Px.popcnt() + 8]
+  let pawnimbalance = 0//AI.PAWN_IMBALANCE[P.popcnt() - Px.popcnt() + 8]
 
   let psqt = 0
   let mobility = 0
@@ -284,8 +286,8 @@ AI.evaluate = function(board, ply) {
   
   psqt = AI.getPSQT(P,N,B,R,Q,K, turn) - AI.getPSQT(Px,Nx,Bx,Rx,Qx,Kx, ~turn & 1)
   
-  let doPositional = AI.phase > 1
-  let doPassers = AI.phase >= 3 || this.iteration === 1 || AI.changeinPV
+  let doPositional = AI.phase > 1// && AI.iteration < 4
+  let doPassers = AI.phase >= 3 || AI.iteration === 1 || AI.changeinPV
   
   if (doPassers) {
       passers = AI.getPassers(P, Px, white) - AI.getPassers(Px, P, !white)
@@ -484,8 +486,8 @@ AI.sortMoves = function(moves, turn, ply, board, ttEntry) {
       move.bvalue = bvalue
     }
 
-    // move.psqtvalue = AI.PIECE_SQUARE_TABLES[piece][turn === 0? 56^to : to]
-    move.psqtvalue = AI.QUIETSORT[turn === 0? 56^to : to]
+    move.psqtvalue = AI.PIECE_SQUARE_TABLES[piece][turn === 0? 56^to : to]
+    // move.psqtvalue = AI.QUIETSORT[turn === 0? 56^to : to]
 
   }
 
@@ -505,17 +507,15 @@ AI.scoreMove = function(move) {
   }
   
   if (move.capture) {
-    if (move.mvvlva>=20000) { //Goof Captures
-      return 1e7 + move.mvvlva + move.psqtvalue
-    } else if (move.mvvlva >= 6000){ //Equal Captures
-      return 1e5 + move.mvvlva + move.psqtvalue
+    if (move.mvvlva>=6000) { //Good Captures
+      return 1e7 + move.mvvlva
     } else {
-      return -1e6 + move.mvvlva + move.psqtvalue //Bad Captures
+      return -1e6 + move.mvvlva //Bad Captures
     }
   }
     
   if (move.hvalue) { //History Heuristic
-    score += 1e3 + move.hvalue
+    score += move.hvalue
     
     return score
   } 
@@ -576,7 +576,7 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
       board.unmakeMove()
 
       if( score >= beta ) {
-        AI.saveHistory(turn, move, 2)
+        // AI.saveHistory(turn, move, 2)
         return beta
       }
 
@@ -585,9 +585,9 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
         bestscore = score
         bestmove = move
 
-        AI.saveHistory(turn, move, 1)
+        // AI.saveHistory(turn, move, -1)
       } else {
-        AI.saveHistory(turn, move, -1)
+        // AI.saveHistory(turn, move, -64)
       }
     }
   }
@@ -686,14 +686,14 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   }
 
   //Hash table lookup
-  if (ttEntry && ttEntry.depth >= depth) {
+  if (ttEntry && ttEntry.depth > depth) {
     //testear estrictamente mayor 
     AI.ttnodes++
     
     if (ttEntry.flag === 0) {
       return ttEntry.score
       
-      // alpha = ttEntry.score //No exact score because PSQTs change?
+      alpha = ttEntry.score //No exact score because PSQTs change?
     } else if (ttEntry.flag === -1) {
       if (ttEntry.score > alpha) alpha = ttEntry.score
     } else if (ttEntry.flag === 1) {
@@ -724,17 +724,17 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   let staticeval = AI.evaluate(board, ply)
   let incheck = board.isKingInCheck()
 
-  if (incheck) {
-    let lastmove = board.getLastMove()
+  // if (incheck) {
+  //   let lastmove = board.getLastMove()
 
-    if (lastmove) {
-      if (AI.phase < 4) {
-        AI.saveHistory(~turn & 1, lastmove, 20) //check moves up in move ordering
-      } else {
-        AI.saveHistory(~turn & 1, lastmove, -200) //check down up in move ordering (phase 4)
-      }
-    }
-  }
+  //   if (lastmove) {
+  //     if (AI.phase < 4) {
+  //       AI.saveHistory(~turn & 1, lastmove, 2**depth) //check moves up in move ordering
+  //     } else {
+  //       // AI.saveHistory(~turn & 1, lastmove, -(2**depth)) //check down up in move ordering (phase 4)
+  //     }
+  //   }
+  // }
   
   //Reverse Futility pruning
   if (!incheck && depth <= 3 && staticeval - AI.PIECE_VALUES[1] * depth > beta) {
@@ -830,7 +830,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
 
         //If the result looks promising, we do a research at full depth.
         //Remember we are trying to get the score at depth D, but we just get the score at depth D - R
-        if (!AI.stop && score > alpha/* && score < beta*/) { //https://www.chessprogramming.org/Principal_Variation_Search
+        if (!AI.stop && score > alpha && score < beta) { //https://www.chessprogramming.org/Principal_Variation_Search
           score = -AI.PVS(board, -beta, -alpha, depth+E-1, ply+1)
         }
       }
@@ -855,13 +855,13 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
             
             //LOWERBOUND
             AI.ttSave(hashkey, score, -1, depth, move)
-            AI.saveHistory(turn, move, 2)
+            if (!isCapture) AI.saveHistory(turn, move, 2**depth)
 
             return score
           }
           
-          AI.ttSave(hashkey, score, 1, depth, move) //TESTED AT HIGH DEPTH
-          AI.saveHistory(turn, move, 1)
+          // AI.ttSave(hashkey, score, 1, depth, move) //TESTED AT HIGH DEPTH
+          // AI.saveHistory(turn, move, -1)
 
             
           alpha = score
@@ -870,8 +870,8 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
         bestscore = score
         bestmove  = move
       } else {
-        AI.saveHistory(turn, move, -1)
-        AI.ttSave(hashkey, bestscore, 1, depth, bestmove) //TESTED AT HIGH DEPTH
+        // AI.saveHistory(turn, move, -(2**depth))
+        // AI.ttSave(hashkey, bestscore, 1, depth, bestmove) //TESTED AT HIGH DEPTH
       }
     }
   }
@@ -898,12 +898,11 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     if (bestscore > alphaOrig) {
       // EXACT
       AI.ttSave(hashkey, bestscore, 0, depth, bestmove)
-      AI.saveHistory(turn, bestmove, 2)
+      if (!bestmove.isCapture()) AI.saveHistory(turn, bestmove, 2**depth)
       return bestscore
     } else {
       //UPPERBOUND value <= alphaorig
       AI.ttSave(hashkey, alphaOrig, 1, depth, bestmove)
-      AI.saveHistory(turn, bestmove, -1)
       return alphaOrig
     }
   }
@@ -950,7 +949,7 @@ AI.createPSQT = function (board) {
       nm, nm, nm, nm, nm, vbm,vbm,vbm, 
       nm, nm, nm, nm, nm, vbm,vbm,vbm,
       nm, nm, nm, nm, nm, vbm,vbm,vbm,
-      nm, nm,VGM,VGM, GM, vbm,vbm,vbm,
+      nm, nm, GM, BM,VGM,  wm, wm, wm,
       nm,VGM, GM, nm, GM, vbm, nm, nm,
      VGM, GM,vbm,vbm,vbm, VGM,VGM,VGM,
        0,  0,  0,  0,  0,   0,  0,  0,
@@ -963,7 +962,7 @@ AI.createPSQT = function (board) {
      vbm, bm, nm, nm, nm, nm, bm, vbm,
      vbm, bm, nm, nm, nm, nm, bm, vbm,
      vbm, bm, nm, nm, nm, nm, bm, vbm,
-     vbm, bm, nm, nm, nm, nm, bm, vbm,
+      wm, bm, BM, nm, nm, BM, bm,  wm,
      vbm, bm, bm, bm, bm, bm, bm, vbm,
      vbm,vbm,vbm,vbm,vbm,vbm,vbm, vbm,
       
@@ -973,8 +972,8 @@ AI.createPSQT = function (board) {
       vbm, bm, bm, bm, bm, bm, bm, vbm,
       vbm, bm, bm, bm, bm, bm, bm, vbm,
       vbm, bm, nm, nm, nm, nm, bm, vbm,
-      vbm, bm, nm, nm, nm, nm, bm, vbm,
-      vbm, bm, nm, nm, nm, nm, bm, vbm,
+      vbm, nm, nm, nm, nm, nm, nm, vbm,
+      vbm, bm, BM, nm, nm, BM, bm, vbm,
       vbm, bm, nm, nm, nm, nm, bm, vbm,
       vbm, bm, bm, bm, bm, bm, bm, vbm,
       vbm,vbm,vbm,vbm,vbm,vbm,vbm, vbm,
@@ -982,13 +981,13 @@ AI.createPSQT = function (board) {
     // Rook
     [ 
       nm, nm, nm, nm, nm, nm, nm, nm,
-      GM, GM, GM, GM, GM, GM, GM, GM,
+      GM, GM, GM, BM, BM, GM, GM, GM,
       nm, nm, nm, nm, nm, nm, nm, nm,
       nm, nm, nm, nm, nm, nm, nm, nm,
       nm, nm, nm, nm, nm, nm, nm, nm,
       nm, nm, nm, nm, nm, nm, nm, nm,
       nm, nm, nm, nm, nm, nm, nm, nm,
-      nm, nm, nm, nm, nm, nm, nm, nm,
+      nm, nm, nm, GM, GM, nm, nm, nm,
     ],
     
     // Queen
@@ -1000,7 +999,7 @@ AI.createPSQT = function (board) {
       nm, nm, nm, nm, nm, nm, nm, nm,
       nm, nm, nm, nm, nm, nm, nm, nm,
       nm, nm, nm, nm, nm, nm, nm, nm,
-     vbm,vbm,vbm, nm, nm,vbm,vbm,vbm,
+      wm,vbm,vbm, nm, nm,vbm,vbm, wm,
     ],
 
     // King
@@ -1012,7 +1011,7 @@ AI.createPSQT = function (board) {
       vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm, 
       vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
        bm, bm, bm,vbm,vbm,vbm, nm, nm,
-       bm, bm, GM,vbm, bm,vbm,4*VGM,nm
+       bm, bm, GM, wm, bm,vbm, BM,nm
 
     ]
   ]
