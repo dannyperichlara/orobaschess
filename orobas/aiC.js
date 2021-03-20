@@ -551,11 +551,11 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
   
   if (standpat >= beta ) return beta
   
-  /* delta pruning */ //Never worked. Why?
-  // if (standpat + AI.PIECE_VALUES[4] < alpha) {
-  //   // console.log(ply)
-  //   return alpha
-  // }
+  /* delta pruning */ //Not fully tested
+  if (standpat + AI.PIECE_VALUES[4] < alpha) {
+    // console.log(ply)
+    return alpha
+  }
 
   if ( standpat > alpha) alpha = standpat;
   
