@@ -83,15 +83,75 @@ let VGM = AI.PSQT_VALUES[5] // Very good move
 let BM  = AI.PSQT_VALUES[6] // Best move
 
 AI.QUIETSORT = [
-  0, 1, 2, 3, 3, 2, 1, 0,
-  1, 2, 4, 6, 6, 4, 2, 1,
-  2, 4, 8,16,16, 8, 4, 2,
-  3, 6,10,20,20,10, 6, 3,
-  3, 6,10,20,20,10, 6, 3,
-  2, 4, 8,16,16, 8, 4, 2,
-  1, 2, 4, 6, 6, 4, 2, 1,
-  0, 1, 2, 3, 3, 2, 1, 0,
+  //Pawn
+  [
+    25,21,29,25,9,16,20,20,
+    94,104,112,115,76,82,75,71,
+    275,309,371,401,367,372,318,241,
+    656,895,1092,2091,1541,859,776,743,
+    1577,1559,2657,3584,2983,1696,1486,1536,
+    1215,1337,1548,735,1198,1259,1798,1474,
+    5,4,6,6,6,3,6,4,
+    2,1,1,1,0,0,0,1,
+  ],
+  //Knight
+  [
+    18,27,62,51,57,52,11,7,
+    52,104,149,181,204,140,56,37,
+    67,195,495,386,332,331,163,85,
+    174,563,523,1096,1261,530,510,127,
+    307,191,740,1656,1115,423,263,288,
+    248,509,3002,486,647,3979,430,96,
+    49,72,280,1646,762,155,89,122,
+    10,105,91,136,214,382,48,12,
+  ],
+  //Bishop
+  [
+    38,53,56,76,74,93,34,12,
+    74,193,143,207,228,150,210,79,
+    172,196,529,325,315,551,161,220,
+    128,1069,400,535,499,284,1112,115,
+    428,255,1119,649,600,1074,222,342,
+    193,666,504,1391,1660,616,378,184,
+    125,568,523,914,1135,278,975,60,
+    58,107,239,197,169,438,31,17,
+  ],
+  //Rook
+  [
+    449,294,400,518,365,219,128,172,
+    537,457,511,516,364,279,217,236,
+    465,365,435,479,329,216,188,180,
+    393,331,420,483,393,261,157,205,
+    323,297,414,507,399,287,192,188,
+    279,258,412,522,458,333,205,159,
+    265,262,487,668,485,329,141,98,
+    527,954,1881,2810,2214,3382,404,242,
+  ],
+//Queen
+  [
+    108,111,143,273,158,88,70,86,
+    169,223,199,208,186,162,92,93,
+    167,214,253,272,231,241,166,165,
+    175,232,257,420,380,315,237,323,
+    391,261,473,675,548,423,421,219,
+    178,667,490,767,655,771,349,149,
+    88,231,1074,1030,1080,299,113,47,
+    112,158,263,356,283,109,18,43,
+  ],
+  // king
+  [
+    11,12,15,27,21,30,27,20,
+    20,46,52,47,58,69,51,35,
+    33,74,105,125,111,116,112,51,
+    34,111,159,215,251,211,172,83,
+    43,148,242,344,468,442,330,156,
+    56,192,324,639,802,905,721,341,
+    99,203,373,521,929,1097,1373,885,
+    83,289,498,231,300,797,3399,572,
+  ]
 ]
+
+AI.SORT_FACTOR = [3,5,6,4,2,1]
 
 //General idea from Stockfish. Not fully tested.
 AI.MOBILITY_VALUES = [
@@ -485,10 +545,12 @@ AI.sortMoves = function(moves, turn, ply, board, ttEntry) {
     if (hvalue) {
       move.hvalue = hvalue
       move.bvalue = bvalue
+    } else {
+      move.hvalue = move.bvalue = 0
     }
 
     move.psqtvalue = AI.PIECE_SQUARE_TABLES[piece][turn === 0? 56^to : to]
-    // move.psqtvalue = AI.QUIETSORT[turn === 0? 56^to : to]
+    // move.psqtvalue = AI.QUIETSORT[piece][turn === 0? 56^to : to]
 
   }
 
@@ -809,12 +871,12 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
       // console.log(AI.absurd)
 
       //Late-Moves-Pruning (LMP)
-      // let lmplimit = 811.41*depth**-1.788 | 0
-      // if (!isCapture && legal > lmplimit) {
-      //   board.unmakeMove()
-      //   AI.absurd[turn][piece]--
-      //   continue
-      // }
+      let lmplimit = 800*depth**(-1.8) | 0
+      if (!isCapture && legal > lmplimit) {
+        board.unmakeMove()
+        AI.absurd[turn][piece]--
+        continue
+      }
 
       //Extensions
       if (incheck && depth < 3 && pvNode) {
@@ -844,35 +906,33 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
       // if (AI.stop) return alpha
       if (AI.stop) return alphaOrig //tested ok
 
-      if (score > bestscore) {
-        if (score > alpha) {
-          if (score >= beta) {
-            if (legal === 1) {
-              
-              AI.fhf++
-            }
+      if (score > alpha) {
+        if (score >= beta) {
+          if (legal === 1) {
             
-            AI.fh++
-            
-            //LOWERBOUND
-            AI.ttSave(hashkey, score, -1, depth, move)
-            if (!isCapture) AI.saveHistory(turn, move, 2**depth)
-
-            return score
+            AI.fhf++
           }
           
-          // AI.ttSave(hashkey, score, 1, depth, move) //TESTED AT HIGH DEPTH
-          // AI.saveHistory(turn, move, -1)
+          AI.fh++
+          
+          //LOWERBOUND
+          AI.ttSave(hashkey, score, -1, depth, move)
+          if (!isCapture) AI.saveHistory(turn, move, 2**depth)
 
-            
-          alpha = score
-        }       
+          return score
+        } else {
+          AI.saveHistory(turn, move, -(2**depth))
+        }
 
-        bestscore = score
-        bestmove  = move
+        alpha = score
       } else {
         // AI.saveHistory(turn, move, -(2**depth))
-        // AI.ttSave(hashkey, bestscore, 1, depth, bestmove) //TESTED AT HIGH DEPTH
+        AI.ttSave(hashkey, score, 1, depth, move) //TESTED AT HIGH DEPTH
+      }
+
+      if (score > bestscore) {
+        bestscore = score
+        bestmove  = move
       }
     }
   }
