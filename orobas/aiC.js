@@ -314,6 +314,8 @@ let minpositional = Infinity //Used for tests
 
 AI.evaluate = function(board, ply) {
   let turn = board.getTurnColor()
+  let notturn =  ~turn & 1
+
   let white = (turn === 0)
 
   let P = board.getPieceColorBitboard(0, turn)
@@ -323,15 +325,15 @@ AI.evaluate = function(board, ply) {
   let Q = board.getPieceColorBitboard(4, turn)
   let K = board.getPieceColorBitboard(5, turn)
 
-  let Px = board.getPieceColorBitboard(0, ~turn & 1)
-  let Nx = board.getPieceColorBitboard(1, ~turn & 1)
-  let Bx = board.getPieceColorBitboard(2, ~turn & 1)
-  let Rx = board.getPieceColorBitboard(3, ~turn & 1)
-  let Qx = board.getPieceColorBitboard(4, ~turn & 1)
-  let Kx = board.getPieceColorBitboard(5, ~turn & 1)
+  let Px = board.getPieceColorBitboard(0, notturn)
+  let Nx = board.getPieceColorBitboard(1, notturn)
+  let Bx = board.getPieceColorBitboard(2, notturn)
+  let Rx = board.getPieceColorBitboard(3, notturn)
+  let Qx = board.getPieceColorBitboard(4, notturn)
+  let Kx = board.getPieceColorBitboard(5, notturn)
 
   let us = board.getColorBitboard(turn)
-  let usx = board.getColorBitboard(~turn & 1)
+  let usx = board.getColorBitboard(notturn)
 
   let colorMaterial = AI.getMaterialValue(P,N,B,R,Q)
   let notcolorMaterial = AI.getMaterialValue(Px,Nx,Bx,Rx,Qx)
@@ -345,22 +347,19 @@ AI.evaluate = function(board, ply) {
   let safety = 0
   let passers = 0
   
-  psqt = AI.getPSQT(P,N,B,R,Q,K, turn) - AI.getPSQT(Px,Nx,Bx,Rx,Qx,Kx, ~turn & 1)
+  psqt = AI.getPSQT(P,N,B,R,Q,K, turn) - AI.getPSQT(Px,Nx,Bx,Rx,Qx,Kx, notturn)
   
   let doPositional = AI.phase > 1
-  let doPassers = AI.phase >= 3 || AI.iteration === 1 || AI.changeinPV
+  let doPassers = (AI.phase >= 3 || AI.iteration === 1 || AI.changeinPV)
   
   if (doPassers) {
       passers = AI.getPassers(P, Px, white) - AI.getPassers(Px, P, !white)
     }
     
   if (doPositional) {
-    mobility  = AI.getMOB(P,N,B,R,Q,K,Px,board, turn)
-    mobility -= AI.getMOB(Px,Nx,Bx,Rx,Qx,Kx,P,board, ~turn & 1)
-  
-    structure = AI.getSTR(P, turn) - AI.getSTR(Px, ~turn & 1)
-    
-    if (AI.phase === 2) safety = AI.getKS(K, us, turn) - AI.getKS(Kx, usx, ~turn & 1)
+    mobility  = AI.getMOB(P,N,B,R,Q,K,Px,board, turn) - AI.getMOB(Px,Nx,Bx,Rx,Qx,Kx,P,board, notturn)
+    structure = AI.getSTR(P, turn) - AI.getSTR(Px, notturn)
+    safety = AI.getKS(K, us, turn) - AI.getKS(Kx, usx, notturn)
   }
       
       
@@ -792,9 +791,9 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
 
   //   if (lastmove) {
   //     if (AI.phase < 4) {
-  //       AI.saveHistory(~turn & 1, lastmove, 2**depth) //check moves up in move ordering
+  //       AI.saveHistory(notturn, lastmove, 2**depth) //check moves up in move ordering
   //     } else {
-  //       // AI.saveHistory(~turn & 1, lastmove, -(2**depth)) //check down up in move ordering (phase 4)
+  //       // AI.saveHistory(notturn, lastmove, -(2**depth)) //check down up in move ordering (phase 4)
   //     }
   //   }
   // }
