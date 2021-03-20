@@ -133,13 +133,13 @@ AI.MOBILITY_VALUES = [
 AI.SAFETY_VALUES = [-2, -1,  0, 1, 2,-1,-2,-3].map(e=>20*e)
 
 //Not full tested
-AI.PASSER_VALUES = [0, 1, 2, 3, 4, 5, 6, 6, 6].map(e=>400*e)
+AI.PASSER_VALUES = [0, 1, 2, 3, 4, 5, 6, 6, 6].map(e=>120*e)
 
 //Not fully tested
 AI.STRUCTURE_VALUES = [0,1,2,2,3,1,-1,-2].map(e=>20*e)
 
 //Not fully tested
-AI.PAWN_IMBALANCE = [-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8].map(e=>20*e)
+AI.PAWN_IMBALANCE = [-160,-160,-160,-160,-160,-150,-140,-100,0,100,140,150,160,160,160,160,160]
 
 //https://open-chess.org/viewtopic.php?t=3058
 AI.MVVLVASCORES = [
@@ -277,7 +277,7 @@ AI.evaluate = function(board, ply) {
   let notcolorMaterial = AI.getMaterialValue(Px,Nx,Bx,Rx,Qx)
   let material = colorMaterial - notcolorMaterial
 
-  let pawnimbalance = 0//AI.PAWN_IMBALANCE[P.popcnt() - Px.popcnt() + 8]
+  let pawnimbalance = 0// AI.PAWN_IMBALANCE[P.popcnt() - Px.popcnt() + 8]
 
   let psqt = 0
   let mobility = 0
@@ -790,15 +790,15 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
 
     //Reductions (LMR)
     if (!incheck) {
-        R += Math.log(depth+1)*Math.log(i+1)/1.95
+      R += Math.log(depth+1)*Math.log(i+1)/1.95 | 0
 
-        if (AI.phase === 4) R /= 2
+      
+      
+      if (AI.phase === 4) R /= 2
     }
-
-    if (doFHR) R+=4
-
-   
     
+    if (doFHR) R+=3
+            
     if (board.makeMove(move)) {
       legal++
 
