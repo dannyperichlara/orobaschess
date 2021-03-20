@@ -559,7 +559,7 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
 
   if ( standpat > alpha) alpha = standpat;
   
-  let moves = board.getMoves(true, !incheck)
+  let moves = board.getMoves(false, !incheck)
   
   moves = AI.sortMoves(moves, turn, ply, board, null)
   
@@ -714,7 +714,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     
   if (AI.stop && AI.iteration > AI.mindepth) return alpha
   
-  let moves = board.getMoves(true, false)
+  let moves = board.getMoves(false, false)
 
   moves = AI.sortMoves(moves, turn, ply, board, ttEntry)
   
