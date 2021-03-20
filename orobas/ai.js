@@ -797,7 +797,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
       if (AI.phase === 4) R /= 2
     }
     
-    if (doFHR) R+=3
+    if (doFHR) R+=4
             
     if (board.makeMove(move)) {
       legal++
@@ -1347,14 +1347,6 @@ AI.preprocessor = function (board) {
   //Caballos cerca del rey enemigo
   AI.PIECE_SQUARE_TABLES_PHASE2[1] = AI.PIECE_SQUARE_TABLES_PHASE2[1].map((e,i)=>{
     return e + 10 - 2 * AI.distance(kingXposition, i)
-  })
-
-  let outpostbonus = 0
-
-  //Premia caballos en Outposts //??????? NOT FULLY TESTED
-  AI.PIECE_SQUARE_TABLES_PHASE1[1] = AI.PIECE_SQUARE_TABLES_PHASE1[1].map((e,i)=>{
-    let ranks456 = i >= 16 && i <= 39 ? 40 : 0
-    return e + (pawnmap[i]? outpostbonus + ranks456 : -20)
   })
 
   //Torre
