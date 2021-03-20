@@ -509,9 +509,9 @@ AI.scoreMove = function(move) {
   
   if (move.capture) {
     if (move.mvvlva>=6000) { //Good Captures
-      return 1e7 + move.mvvlva
+      return 1e7 + move.mvvlva + move.psqtvalue
     } else {
-      return -1e6 + move.mvvlva //Bad Captures
+      return -1e6 + move.mvvlva + move.psqtvalue //Bad Captures
     }
   }
     
