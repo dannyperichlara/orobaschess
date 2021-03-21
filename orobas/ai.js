@@ -514,6 +514,13 @@ AI.sortMoves = function(moves, turn, ply, board, ttEntry) {
     let piece = move.getPiece()
     let to = move.getTo()
     let kind = move.getKind()
+    let lastmove = board.getLastMove()
+
+    move.mvvlva = 0
+    move.hvalue = 0
+    move.bvalue = 0
+    move.psqtvalue = 0
+    move.promotion = 0
 
     if (piece === 5) {
       if (kind === 2 || kind === 3) {
@@ -528,14 +535,17 @@ AI.sortMoves = function(moves, turn, ply, board, ttEntry) {
     }
 
     if (move.isCapture()) {
-
       move.mvvlva = AI.MVVLVASCORES[piece][move.getCapturedPiece()]
       move.capture = true
+
+      if (lastmove && lastmove.getTo() === move.getTo()) {
+        move.recapture = true
+      }
     }
     
     
-    if (kind > 2) {
-      move.special = kind
+    if (kind & 8) {
+      move.promotion = kind
     }
 
     let hvalue = AI.history[turn][piece][to]
@@ -568,11 +578,13 @@ AI.scoreMove = function(move) {
     return score
   }
   
-  if (move.capture) {
+  if (move.capture || move.promotion) {
+    let recapturebonus = (move.recapture|0) * 1e7
+    // console.log(recapturebonus)
     if (move.mvvlva>=6000) { //Good Captures
-      return 1e7 + move.mvvlva + move.psqtvalue
+      return 1e7 + move.mvvlva + move.psqtvalue + recapturebonus
     } else {
-      return -1e6 + move.mvvlva + move.psqtvalue //Bad Captures
+      return -1e6 + move.mvvlva + move.psqtvalue + recapturebonus //Bad Captures
     }
   }
     
