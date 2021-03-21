@@ -154,6 +154,18 @@ AI.QUIETSORT = [
 
 AI.SORT_FACTOR = [3,5,6,4,2,1]
 
+AI.LMR_TABLE = new Array(AI.totaldepth)
+
+//Great idea from Igel!
+for (let depth = 1; depth < AI.totaldepth+1; ++depth){
+
+  AI.LMR_TABLE[depth] = new Array(64)
+
+  for (let moves = 1; moves < 64; ++moves){
+      AI.LMR_TABLE[depth][moves] = 0.75 + Math.log(depth) * Math.log(moves) / 2.25 | 0
+      // AI.LMR_TABLE[depth][moves] = Math.log(depth) * Math.log(moves) / 1.95 | 0
+  }
+}
 //General idea from Stockfish. Not fully tested.
 AI.MOBILITY_VALUES = [
   [
@@ -599,6 +611,7 @@ AI.scoreMove = function(move) {
 }
 
 AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
+  AI.qsnodes++
 
   let mateScore = AI.MATE - ply
 
@@ -621,7 +634,6 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
   let incheck = board.isKingInCheck()
   let hashkey = board.hashKey.getHashKey()
   
-  AI.qsnodes++
   
   if (standpat >= beta ) return beta
   
@@ -633,6 +645,7 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
 
   if ( standpat > alpha) alpha = standpat;
   
+  // let moves = board.getMoves(false, !incheck)
   let moves = board.getMoves(false, !incheck)
   
   moves = AI.sortMoves(moves, turn, ply, board, null)
@@ -725,6 +738,9 @@ AI.saveHistory = function(turn, move, value) {
 
 AI.PVS = function(board, alpha, beta, depth, ply) {
   let pvNode = beta - alpha > 1 //https://www.chessprogramming.org/Node_Types
+
+  AI.nodes++
+
 
   if ((new Date()).getTime() > AI.timer + 1000 * AI.secondspermove) {
     if (AI.iteration > AI.mindepth && !pvNode) {
@@ -885,11 +901,9 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
 
     //Reductions (LMR)
     if (!incheck) {
-      R += Math.log(depth+1)*Math.log(i+1)/1.95 | 0
-
+      R += AI.LMR_TABLE[depth][i+1]
       
-      
-      if (AI.phase === 4) R /= 2
+      if (AI.phase === 4) R = R/2 | 0
     }
     
     if (doFHR) R+=4
@@ -934,8 +948,6 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
       board.unmakeMove()
       AI.absurd[turn][piece]--
       
-      AI.nodes++
-
       // if (AI.stop) return alpha
       if (AI.stop) return alphaOrig //tested ok
 
@@ -1450,14 +1462,14 @@ AI.preprocessor = function (board) {
       (pawnmap[kingposition-5] && pawnmap[kingposition-7] && pawnmap[kingposition-14])
     )
   ) {
-      console.log('rook KINGSIDE')
+      // console.log('rook KINGSIDE')
         AI.PIECE_SQUARE_TABLES_PHASE2[3][63]  -= 20
         AI.PIECE_SQUARE_TABLES_PHASE2[3][62]  -= 20
         AI.PIECE_SQUARE_TABLES_PHASE2[3][61]  += 40
       }
 
     if (board.hasCastlingRight(color, false) && pawnmap[kingposition-10] && pawnmap[kingposition-11]) {
-        console.log('rook QUEENSIDE')
+        // console.log('rook QUEENSIDE')
         AI.PIECE_SQUARE_TABLES_PHASE2[3][56]  -= 20
         AI.PIECE_SQUARE_TABLES_PHASE2[3][57]  -= 20
         AI.PIECE_SQUARE_TABLES_PHASE2[3][58]  -= 20
@@ -1527,7 +1539,7 @@ AI.preprocessor = function (board) {
 
   //Premia enrocar
   if (board.hasCastlingRight(color, true)) {
-    console.log('KINGSIDE')
+    // console.log('KINGSIDE')
 
     if (
       (pawnmap[kingposition-5] && pawnmap[kingposition-6]) ||
@@ -1544,7 +1556,7 @@ AI.preprocessor = function (board) {
   }
 
   if (board.hasCastlingRight(color, false)) {
-    console.log('QUEENSIDE')
+    // console.log('QUEENSIDE')
 
     if (pawnmap[kingposition-10] && pawnmap[kingposition-11]) {
       AI.PIECE_SQUARE_TABLES_PHASE2[5][58]  += 40
@@ -1744,7 +1756,6 @@ AI.setphase = function (board) {
   
   AI.createPSQT(board)
   
-  console.log(AI.PIECE_SQUARE_TABLES)
   // AI.softenPSQT()
 
   AI.PIECE_VALUES = AI.PIECE_VALUES_BY_PHASE[AI.phase - 1]
@@ -1907,7 +1918,7 @@ AI.search = function(board, options) {
       AI.PV = AI.getPV(board, AI.totaldepth+1)
 
       if ([...AI.PV][1] && AI.bestmove && [...AI.PV][1].value !== AI.bestmove.value) {
-        console.log('CAMBIO!!!!!!!!!!!')
+        // console.log('CAMBIO!!!!!!!!!!!')
         AI.changeinPV = true
       } else {
         AI.changeinPV = false
