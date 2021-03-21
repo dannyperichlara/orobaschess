@@ -627,17 +627,19 @@ Position.prototype.generateMoves = function(onlyCaptures) {
 	var turnPawns = this.getPieceColorBitboard(Chess.Piece.PAWN, turnColor);
 	var lastRow = Chess.Bitboard.RANKS[turnColor ? 0 : Chess.LAST_RANK];
 
+	// Positional pawn moves: advance one square to an empty square; not to the last row
+	// Pawn promotion: to the last row
+	var positionalPawnMoved = turnPawns.dup().shiftLeft(rankDirection).and_not(occupied);
+
 	if (!onlyCaptures) {
 		// Double pawn pushes: pawns that are at their initial position, with nothing in the next two rows
 		var doublePawnPushed = turnPawns.dup().and(Chess.Bitboard.RANKS[turnColor ? 6 : 1]).shiftLeft(2 * rankDirection).and_not(occupied).and_not(occupied.dup().shiftLeft(rankDirection));
 		addPawnMoves(doublePawnPushed, 2 * rankDirection, Chess.Move.Kind.DOUBLE_PAWN_PUSH);
 
-		// Positional pawn moves: advance one square to an empty square; not to the last row
-		// Pawn promotion: to the last row
-		var positionalPawnMoved = turnPawns.dup().shiftLeft(rankDirection).and_not(occupied);
 		addPawnMoves(positionalPawnMoved.dup().and_not(lastRow), rankDirection, Chess.Move.Kind.POSITIONAL);
-		addPawnPromotions(positionalPawnMoved.dup().and(lastRow), rankDirection, false);
 	}
+
+	addPawnPromotions(positionalPawnMoved.dup().and(lastRow), rankDirection, false);
 
 	// Pawn captures: advance diagonally to the next row to a square occupied by an opponent piece; not to the last row. Also, don't wrap the board from left/right.
 	// Pawn promotion w/ capture: to the last row

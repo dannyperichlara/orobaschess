@@ -1,5 +1,6 @@
 "use strict"
 
+const { mapValues } = require('lodash')
 /* Imports Move Generator */
 const Chess = require('../chess/chess.js')
 
@@ -796,7 +797,27 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   let bestscore = -Infinity
   let score
   let staticeval = AI.evaluate(board, ply)
+
   let incheck = board.isKingInCheck()
+
+  // if (alpha === beta - 1 && !incheck) {
+  //   let value = staticeval + AI.PAWN*1.25;
+  //   if (value < beta) {
+  //     if (depth === 1) {
+  //       let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
+  //       return Math.max(new_value, value);
+  //     }
+  //     value += AI.PAWN*1.75;
+  //     if (value < beta && depth <= 3) {
+  //       let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
+  //       if (new_value < beta)
+  //         // console.log('razoring')
+  //         return Math.max(new_value, value);
+  //     }
+  //   }
+  // }
+
+
 
   // if (incheck) {
   //   let lastmove = board.getLastMove()
@@ -844,7 +865,8 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
       if (staticeval + AI.FUTILITY_MARGIN*depth <= alpha)  continue
     }
 
-    let isCapture = move.isCapture()
+    let isCapture = !!move.capture
+
     let isPositional = move.getKind() < 4 && !incheck
 
     if (isPositional && AI.phase < 4 && piece > 0 && piece < 5) noncaptures++
@@ -890,7 +912,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
       }
 
       //Extensions
-      if (incheck && depth < 3 && pvNode) {
+      if ((incheck) && depth < 3 && pvNode) {
         E = 1
       }
 
