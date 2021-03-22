@@ -28,48 +28,24 @@ let AI = {
 // https://www.chessprogramming.org/Point_Value_by_Regression_Analysis
 AI.PAWN = 271
 
-AI.PIECE_VALUES_BY_PHASE = [
-  [
-    AI.PAWN,
-    AI.PAWN*2.88 | 0,
-    AI.PAWN*3.45 | 0,
-    AI.PAWN*4.80 | 0,
-    AI.PAWN*10.77 | 0,
-    20000
-  ],
-  [
-    AI.PAWN,
-    AI.PAWN*2.88 | 0,
-    AI.PAWN*3.45 | 0,
-    AI.PAWN*4.80 | 0,
-    AI.PAWN*10.77 | 0,
-    20000
-  ],
-  [
-    AI.PAWN,
-    AI.PAWN*2.88 | 0,
-    AI.PAWN*3.45 | 0,
-    AI.PAWN*4.80 | 0,
-    AI.PAWN*10.77 | 0,
-    20000
-  ],
-  [
-    AI.PAWN,
-    AI.PAWN*2.88 | 0,
-    AI.PAWN*3.45 | 0,
-    AI.PAWN*4.80 | 0,
-    AI.PAWN*10.77 | 0,
-    20000
-  ]
+AI.PAWN_VALUES=
+
+AI.PIECE_VALUES = [
+  [465,888,1272,1621,1939,2228,2491,2729,2946],
+  [0,780,1560,2341,3121,3902,4682,5463,6243],
+  [0,934,1969,2804,3739,4674,5609,6544,7479],
+  [0,1600,2900,3902,5203,6504,7804,9105,10406],
+  [0,2918,5837,8756,11674,14593,17512,20430,23349],
+  [20000, 20000],
 ]
 
 // OTHER VALUES
 
 AI.FUTILITY_MARGIN = 2 * AI.PAWN
 AI.BISHOP_PAIR = 0
-AI.MATE = AI.PIECE_VALUES_BY_PHASE[0][5]
-AI.DRAW = 0
-AI.INFINITY = AI.PIECE_VALUES_BY_PHASE[0][5]*4
+AI.MATE = AI.PIECE_VALUES[5][1]
+AI.DRAW = 0//-AI.PIECE_VALUES[1][1]
+AI.INFINITY = AI.PIECE_VALUES[5][1]*4
 
 //PSQT VALUES
 AI.PSQT_VALUES = [-3,-2,-1, 0, 1, 2, 3]
@@ -154,16 +130,22 @@ AI.QUIETSORT = [
 
 AI.SORT_FACTOR = [3,5,6,4,2,1]
 
-AI.LMR_TABLE = new Array(AI.totaldepth)
+AI.LMR_TABLE = new Array(AI.totaldepth+1)
 
 //Great idea from Igel!
 for (let depth = 1; depth < AI.totaldepth+1; ++depth){
 
-  AI.LMR_TABLE[depth] = new Array(64)
+  AI.LMR_TABLE[depth] = new Array(218)
 
-  for (let moves = 1; moves < 64; ++moves){
+  for (let moves = 1; moves < 218; ++moves){
+      //Igel
       AI.LMR_TABLE[depth][moves] = 0.75 + Math.log(depth) * Math.log(moves) / 2.25 | 0
+
+      //Stockfish
       // AI.LMR_TABLE[depth][moves] = Math.log(depth) * Math.log(moves) / 1.95 | 0
+
+      //http://talkchess.com/forum3/viewtopic.php?t=65273 (Evert)
+      // AI.LMR_TABLE[depth][moves] = Math.log(depth*(moves**2)) | 0
   }
 }
 //General idea from Stockfish. Not fully tested.
@@ -488,13 +470,11 @@ AI.getMOB = function(_P,_N,_B,_R,_Q,_K,_Px,board, color) {
 AI.getMaterialValue = function(P,N,B,R,Q) {
     let value = 0
 
-    value = P.popcnt()*AI.PIECE_VALUES[0] +
-            N.popcnt()*AI.PIECE_VALUES[1] +
-            B.popcnt()*AI.PIECE_VALUES[2] + 
-            R.popcnt()*AI.PIECE_VALUES[3] + 
-            Q.popcnt()*AI.PIECE_VALUES[4]
-
-    value += B.popcnt() > 1? AI.BISHOP_PAIR : 0
+    value = AI.PIECE_VALUES[0][P.popcnt()] +
+            AI.PIECE_VALUES[1][N.popcnt()] +
+            AI.PIECE_VALUES[2][B.popcnt()] + 
+            AI.PIECE_VALUES[3][R.popcnt()] + 
+            AI.PIECE_VALUES[4][Q.popcnt()]
 
     return value
 }
@@ -638,7 +618,7 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
   if (standpat >= beta ) return beta
   
   /* delta pruning */ //Not fully tested
-  if (standpat + AI.PIECE_VALUES[4] < alpha) {
+  if (standpat + AI.PIECE_VALUES[4][1] < alpha) {
     // console.log(ply)
     return alpha
   }
@@ -848,7 +828,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   // }
   
   //Reverse Futility pruning
-  if (!incheck && depth <= 3 && staticeval - AI.PIECE_VALUES[1] * depth > beta) {
+  if (!incheck && depth <= 3 && staticeval - AI.PIECE_VALUES[1][1] * depth > beta) {
     AI.ttSave(hashkey, beta, -1, depth, moves[0])
     return beta
   }
@@ -870,7 +850,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
       continue
     }
 
-    let near2mate = alpha > 2*AI.PIECE_VALUES[4] || beta < -2*AI.PIECE_VALUES[4]
+    let near2mate = alpha > 2*AI.PIECE_VALUES[4][1] || beta < -2*AI.PIECE_VALUES[4][1]
 
     
     let R = 0
@@ -1623,7 +1603,7 @@ AI.preprocessor = function (board) {
     return e + 4 * (8 - AI.manhattanDistance(kingXposition, i))
   })
   
-  if (AI.phase === 4 && AI.lastscore >= AI.PIECE_VALUES_BY_PHASE[3][0]) {
+  if (AI.phase === 4 && AI.lastscore >= AI.PIECE_VALUES[3][1]) {
     //Rey cerca del rey enemigo
     AI.PIECE_SQUARE_TABLES_PHASE3[5] = AI.PIECE_SQUARE_TABLES_PHASE3[5].map((e,i)=>{
       return 4 * (8 - AI.manhattanDistance(kingXposition, i))
@@ -1758,8 +1738,6 @@ AI.setphase = function (board) {
   
   // AI.softenPSQT()
 
-  AI.PIECE_VALUES = AI.PIECE_VALUES_BY_PHASE[AI.phase - 1]
-
   AI.randomizePSQT()
   AI.PSQT2Sigmoid()
 }
@@ -1862,10 +1840,6 @@ AI.search = function(board, options) {
   }
 
   AI.reduceHistory()
-
-  if (!AI.PIECE_VALUES || nmoves < 2) {
-    AI.PIECE_VALUES = AI.PIECE_VALUES_BY_PHASE[0]
-  }
 
   AI.absurd = [
     [0,0,0,0,0,0],
