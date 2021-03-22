@@ -15,7 +15,7 @@ let AI = {
   status: null,
   fhf: 0,
   fh: 0,
-  random: 5,
+  random: 20,
   phase: 1,
   htlength: 1 << 24,
   reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
@@ -129,6 +129,17 @@ AI.QUIETSORT = [
 ]
 
 AI.SORT_FACTOR = [3,5,6,4,2,1]
+
+AI.FISCHER_PARKING = [
+  0,0,0,0,0,0,0,0,
+  86,113,155,150,51,124,99,82,
+  240,167,464,313,288,334,194,524,
+  1200,927,1107,2916,4453,2695,1868,1133,
+  3268,2663,3782,7732,16967,3869,2945,3356,
+  3741,4174,9045,2893,769,3435,7533,9758,
+  25093,24912,19376,4790,667,24942,25957,22804,
+  0,0,0,0,0,0,0,0,
+]
 
 AI.LMR_TABLE = new Array(AI.totaldepth+1)
 
@@ -353,10 +364,10 @@ AI.evaluate = function(board, ply) {
     
   if (doPositional) {
     mobility  = AI.getMOB(P,N,B,R,Q,K,Px,board, turn) - AI.getMOB(Px,Nx,Bx,Rx,Qx,Kx,P,board, notturn)
-    structure = AI.getSTR(P, turn) - AI.getSTR(Px, notturn)
     safety = AI.getKS(K, us, turn) - AI.getKS(Kx, usx, notturn)
   }
-      
+  
+  structure = AI.getSTR(P, turn) - AI.getSTR(Px, notturn)
       
   let positional = psqt + mobility + structure + safety
 
@@ -417,8 +428,15 @@ AI.getSTR = function(_P, color) {
 
   let mask = Chess.Position.makePawnAttackMask(color, P).dup()
   let protectedpawns = mask.and(P).popcnt()
+  // let parkingvalue
 
-  return AI.STRUCTURE_VALUES[protectedpawns]
+  // while (!P.isEmpty()) {
+  //   let index = P.extractLowestBitPosition()
+  //   // white: 56^index // black: index
+  //   parkingvalue = AI.FISCHER_PARKING[color ? index : (56 ^ index)]
+  // }
+
+  return AI.STRUCTURE_VALUES[protectedpawns]// + parkingvalue
 }
 
 AI.getMOB = function(_P,_N,_B,_R,_Q,_K,_Px,board, color) {
@@ -756,6 +774,8 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
   }
 
+  if (AI.stop && AI.iteration > AI.mindepth) return alpha
+  
   //Hash table lookup
   if (ttEntry && ttEntry.depth > depth) {
     //testear estrictamente mayor 
@@ -782,7 +802,6 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     ttEntry = AI.ttGet(hashkey)
   }
     
-  if (AI.stop && AI.iteration > AI.mindepth) return alpha
   
   let moves = board.getMoves(false, false)
 
@@ -796,22 +815,24 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
 
   let incheck = board.isKingInCheck()
 
-  // if (alpha === beta - 1 && !incheck) {
-  //   let value = staticeval + AI.PAWN*1.25;
-  //   if (value < beta) {
-  //     if (depth === 1) {
-  //       let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
-  //       return Math.max(new_value, value);
-  //     }
-  //     value += AI.PAWN*1.75;
-  //     if (value < beta && depth <= 3) {
-  //       let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
-  //       if (new_value < beta)
-  //         // console.log('razoring')
-  //         return Math.max(new_value, value);
-  //     }
-  //   }
-  // }
+  //Razoring (idea from Strelka)
+  if (alpha === beta - 1 && !incheck) {
+    let value = staticeval + AI.PAWN;
+    if (value < beta) {
+      if (depth === 1) {
+        let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
+        // console.log('razoring1')
+        return Math.max(new_value, value);
+      }
+      value += 2*AI.PAWN;
+      if (value < beta && depth <= 3) {
+        let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
+        if (new_value < beta)
+          // console.log('razoring2')
+          return Math.max(new_value, value);
+      }
+    }
+  }
 
 
 
