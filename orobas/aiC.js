@@ -30,8 +30,6 @@ let AI = {
 // https://www.chessprogramming.org/Point_Value_by_Regression_Analysis
 AI.PAWN = 271
 
-AI.PAWN_VALUES=
-
 AI.PIECE_VALUES = [
   [0,465,888,1272,1621,1939,2228,2491,2729],
   [0,780,1560,2341,3121,3902,4682,5463,6243],
@@ -43,7 +41,7 @@ AI.PIECE_VALUES = [
 
 // OTHER VALUES
 
-AI.FUTILITY_MARGIN = 2 * AI.PAWN
+AI.FUTILITY_MARGIN = 2 * AI.PIECE_VALUES[0][1]
 AI.BISHOP_PAIR = 0
 AI.MATE = AI.PIECE_VALUES[5][1]
 AI.DRAW = 0//-AI.PIECE_VALUES[1][1]
@@ -817,7 +815,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   if (AI.stop && AI.iteration > AI.mindepth) return alpha
   
   //Hash table lookup
-  if (ttEntry && (AI.iteration === 1 && ttEntry.depth === depth || ttEntry.depth > depth)) {
+  if (ttEntry && ttEntry.depth > depth) {
     //testear estrictamente mayor 
     AI.ttnodes++
     
