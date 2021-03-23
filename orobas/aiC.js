@@ -817,7 +817,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   if (AI.stop && AI.iteration > AI.mindepth) return alpha
   
   //Hash table lookup
-  if (ttEntry && ttEntry.depth > depth) {
+  if (ttEntry && (AI.iteration === 1 && ttEntry.depth === depth || ttEntry.depth > depth)) {
     //testear estrictamente mayor 
     AI.ttnodes++
     
