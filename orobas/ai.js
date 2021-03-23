@@ -653,20 +653,23 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
   let legal = 0
   let standpat = AI.evaluate(board, ply)
   let bestscore = -Infinity
-  let incheck = board.isKingInCheck()
+  let incheck = depth >= -3 && board.isKingInCheck()
   let hashkey = board.hashKey.getHashKey()
-  
-  // we can return the stand pat score (fail-soft) or beta (fail-hard) as a lower bound
-  // if (standpat >= beta ) return beta
-  if (standpat >= beta ) return standpat
-  
-  /* delta pruning */ //Not fully tested
-  if (standpat + AI.PIECE_VALUES[4][1] < alpha) {
-    // console.log(ply)
-    return alpha
-  }
 
-  if ( standpat > alpha) alpha = standpat;
+  if (!incheck) {
+    // we can return the stand pat score (fail-soft) or beta (fail-hard) as a lower bound
+    // if (standpat >= beta ) return beta
+    if (standpat >= beta ) return standpat
+    
+    /* delta pruning */ //Not fully tested
+    if (standpat + AI.PIECE_VALUES[4][1] < alpha) {
+      // console.log(ply)
+      return alpha
+    }
+  
+    if ( standpat > alpha) alpha = standpat
+  }
+  
   
   // let moves = board.getMoves(false, !incheck)
   let moves = board.getMoves(false, !incheck)
@@ -718,6 +721,8 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
 }
 
 AI.ttSave = function (hashkey, score, flag, depth, move) {
+  if (!move) return
+
   AI.hashtable[hashkey % AI.htlength] = {
     hashkey,
     score,
@@ -1858,7 +1863,7 @@ AI.MTDF = function (board, f, d) {
   console.log('INICIO DE MTDF')
   let i = 0
 
-  while (lowerBound < upperBound && i < 100) {
+  while (lowerBound < upperBound && !AI.stop) {
     let beta = Math.max(g, lowerBound + 1)
 
     i++
@@ -1872,7 +1877,7 @@ AI.MTDF = function (board, f, d) {
     }
 
     
-    console.log('Pass ' + i)
+    // console.log('Pass ' + i)
   }
 
   return g
