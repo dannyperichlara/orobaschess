@@ -653,7 +653,7 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
   let legal = 0
   let standpat = AI.evaluate(board, ply)
   let bestscore = -Infinity
-  let incheck = depth >= -3 && board.isKingInCheck()
+  let incheck = board.isKingInCheck()
   let hashkey = board.hashKey.getHashKey()
 
   if (!incheck) {
@@ -669,10 +669,15 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
   
     if ( standpat > alpha) alpha = standpat
   }
+
+  let moves
   
-  
-  // let moves = board.getMoves(false, !incheck)
-  let moves = board.getMoves(false, !incheck)
+  if (incheck && depth >= -3) {
+    moves = board.getMoves(false, false)
+  } else {
+    moves = board.getMoves(false, true)
+  }
+
   
   moves = AI.sortMoves(moves, turn, ply, board, null)
   
