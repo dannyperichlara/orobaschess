@@ -657,7 +657,8 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
   let hashkey = board.hashKey.getHashKey()
   
   // we can return the stand pat score (fail-soft) or beta (fail-hard) as a lower bound
-  if (standpat >= beta ) return beta
+  // if (standpat >= beta ) return beta
+  if (standpat >= beta ) return standpat
   
   /* delta pruning */ //Not fully tested
   if (standpat + AI.PIECE_VALUES[4][1] < alpha) {
@@ -691,7 +692,8 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
 
       if( score >= beta ) {
         // AI.saveHistory(turn, move, 2)
-        return beta
+        return score
+        // return beta
       }
 
       if( score > alpha ) {
