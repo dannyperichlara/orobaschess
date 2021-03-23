@@ -3,6 +3,7 @@
 const { mapValues } = require('lodash')
 /* Imports Move Generator */
 const Chess = require('../chess/chess.js')
+const Zobrist = require('../chess/zobrist.js')
 
 // Math.seedrandom((new Date()).toTimeString())
 
@@ -18,6 +19,7 @@ let AI = {
   random: 20,
   phase: 1,
   htlength: 1 << 24,
+  pawntlength: 5e5,
   reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
   mindepth: 2,
   secondspermove: 3,
@@ -272,6 +274,7 @@ AI.createTables = function () {
   delete AI.history
   delete AI.butterfly
   delete AI.hashtable
+  delete AI.pawntable
 
   AI.history = [[],[]]
   AI.butterfly = [[],[]]
@@ -300,6 +303,7 @@ AI.createTables = function () {
   }
 
   AI.hashtable = new Array(AI.htlength) //positions
+  AI.pawntable = [new Array(AI.pawntlength), new Array(AI.pawntlength)] //positions
 }
 
 //Randomize Piece Square Tables
@@ -321,6 +325,7 @@ let minpositional = Infinity //Used for tests
 AI.evaluate = function(board, ply) {
   let turn = board.getTurnColor()
   let notturn =  ~turn & 1
+  let hashkey = board.hashKey.getHashKey()
 
   let white = (turn === 0)
 
@@ -358,16 +363,12 @@ AI.evaluate = function(board, ply) {
   let doPositional = AI.phase > 1
   let doPassers = (AI.phase >= 3 || AI.iteration === 1 || AI.changeinPV)
   
-  if (doPassers) {
-      passers = AI.getPassers(P, Px, white) - AI.getPassers(Px, P, !white)
-    }
-    
   if (doPositional) {
     mobility  = AI.getMOB(P,N,B,R,Q,K,Px,board, turn) - AI.getMOB(Px,Nx,Bx,Rx,Qx,Kx,P,board, notturn)
     safety = AI.getKS(K, us, turn) - AI.getKS(Kx, usx, notturn)
   }
   
-  structure = AI.getSTR(P, turn) - AI.getSTR(Px, notturn)
+  structure = AI.getStructure(turn, P, Px) - AI.getStructure(notturn, Px, P)
       
   let positional = psqt + mobility + structure + safety
 
@@ -420,6 +421,29 @@ AI.getKS = function (_K, us, turn) {
   let safety = AI.SAFETY_VALUES[mask.popcnt()]
   
   return safety
+}
+
+AI.getStructure = function (turn, P, Px) {
+  let hashkey = (P.low ^ P.high) >>> 0
+
+  let hashentry = AI.pawntable[turn][hashkey%AI.pawntlength]
+  
+  if (hashentry) {
+    return hashentry
+  }
+  let white = turn === 0
+
+  let structure = 0
+
+  let passers = AI.getPassers(P, Px, white)
+
+  structure = AI.getSTR(P, turn)
+
+  structure += passers
+
+  AI.pawntable[turn][hashkey%AI.pawntlength] = structure
+
+  return structure
 }
 
 
