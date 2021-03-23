@@ -656,7 +656,7 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
   let incheck = board.isKingInCheck()
   let hashkey = board.hashKey.getHashKey()
   
-  
+  // we can return the stand pat score (fail-soft) or beta (fail-hard) as a lower bound
   if (standpat >= beta ) return beta
   
   /* delta pruning */ //Not fully tested
@@ -677,6 +677,10 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
   for (let i=0, len=moves.length; i < len; i++) {
 
     let move = moves[i]
+
+    // if (depth < -4 && move.mvvlva < 6000) {
+    //   continue
+    // }
 
     if (board.makeMove(move)) {
       legal++
