@@ -889,9 +889,12 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   // }
   
   //Reverse Futility pruning
-  if (!incheck && depth <= 3 && staticeval - AI.PIECE_VALUES[1][1] * depth > beta) {
-    AI.ttSave(hashkey, beta, -1, depth, moves[0])
-    return beta
+  let reverseval = staticeval - AI.PIECE_VALUES[1][1] * depth
+
+  if (!incheck && depth <= 3 && reverseval > beta) {
+    // AI.ttSave(hashkey, reverseval, -1, depth, moves[0])
+    // return beta
+    return reverseval
   }
 
   // console.log(depth)
