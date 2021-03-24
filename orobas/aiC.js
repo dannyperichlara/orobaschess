@@ -16,7 +16,7 @@ let AI = {
   status: null,
   fhf: 0,
   fh: 0,
-  random: 20,
+  random: 5,
   phase: 1,
   htlength: 1 << 24,
   pawntlength: 5e5,
@@ -1469,26 +1469,26 @@ AI.preprocessor = function (board) {
   //Castiga captura y maniobras con peón frontal del rey
   if (kingposition >= 61 || (kingposition>=56 && kingposition<=58)) {
     //Good
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 7] += VGM
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 8] += GM
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 9] += VGM
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 7] += VGM*20
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 8] += GM*20
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 9] += VGM*20
 
-    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 7] += VGM
-    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 8] += GM
-    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 9] += VGM
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 7] += VGM*20
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 8] += GM*20
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 9] += VGM*20
 
     //Bad
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 15] += bm
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 17] += bm
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 23] += vbm    
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 24] += vbm    
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 25] += vbm    
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 15] += bm*20
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 17] += bm*20
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 23] += vbm  *20  
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 24] += vbm *20   
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 25] += vbm *20   
 
-    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 15] += bm
-    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 17] += bm
-    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 23] += vbm    
-    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 24] += vbm    
-    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 25] += vbm    
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 15] += bm*20
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 17] += bm*20
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 23] += vbm *20   
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 24] += vbm *20   
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 25] += vbm *20   
   }
 
   //Caballos cerca del rey enemigo
