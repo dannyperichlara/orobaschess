@@ -163,9 +163,9 @@ for (let depth = 1; depth < AI.totaldepth+1; ++depth){
 AI.MOBILITY_VALUES = [
   [
     [],
-    [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*8),
-    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*8),
-    [0,0,0,0,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*5),
+    [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*4),
+    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*4),
+    [0,0,0,0,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*2),
     [0,0,0,0,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*2),
     []
   ],
@@ -199,7 +199,16 @@ AI.MOBILITY_VALUES = [
 AI.SAFETY_VALUES = [-2, -1,  0, 1, 2,-1,-2,-3].map(e=>20*e)
 
 //Not full tested
-AI.PASSER_VALUES = [0, 1, 2, 3, 4, 5, 6, 6, 6].map(e=>120*e)
+AI.PASSER_VALUES = [
+  0,0,0,0,0,0,0,0,
+  240,240,240,240,240,240,240,240,
+  120,120,120,120,120,120,120,120,
+  60,60,60,60,60,60,60,60,
+  30,30,30,30,30,30,30,30,
+  15,15,15,15,15,15,15,15,
+  10,10,10,10,10,10,10,10,
+  0,0,0,0,0,0,0,0,
+]
 
 //Not fully tested
 AI.STRUCTURE_VALUES = [0,1,2,2,3,1,-1,-2].map(e=>20*e)
@@ -355,20 +364,21 @@ AI.evaluate = function(board, ply) {
   let structure = 0
   let safety = 0
   let passers = 0
+  let threat = 0
   
   psqt = AI.getPSQT(P,N,B,R,Q,K, turn) - AI.getPSQT(Px,Nx,Bx,Rx,Qx,Kx, notturn)
   
-  let doPositional = AI.phase > 1
-  let doPassers = (AI.phase >= 3 || AI.iteration === 1 || AI.changeinPV)
+  // threat = AI.getThreat(P,N,B,R,Q,Kx,turn) - AI.getThreat(Px,Nx,Bx,Rx,Qx,K,notturn)
   
-  if (doPositional) {
-    mobility  = AI.getMOB(P,N,B,R,Q,K,Px,board, turn) - AI.getMOB(Px,Nx,Bx,Rx,Qx,Kx,P,board, notturn)
-    safety = AI.getKS(K, us, turn) - AI.getKS(Kx, usx, notturn)
-  }
-  
+  mobility  = AI.getMOB(P,N,B,R,Q,K,Px,board, turn) - AI.getMOB(Px,Nx,Bx,Rx,Qx,Kx,P,board, notturn)
+  safety = AI.getKS(K, us, turn) - AI.getKS(Kx, usx, notturn)
+  passers = AI.getPassers(P, Px, white) - AI.getPassers(Px, P, !white)
+
+  // console.log(passers)
+
   structure = AI.getStructure(turn, P, Px) - AI.getStructure(notturn, Px, P)
       
-  let positional = psqt + mobility + structure + safety
+  let positional = psqt + mobility + structure + safety + passers
 
   let score = material + pawnimbalance + positional | 0
 
@@ -385,6 +395,8 @@ AI.getPassers = function (_P, _Px, white) {
   let passers = 0
   let pxmask = Px.or(Chess.Position.makePawnAttackMask(!white, Px))
 
+  let score = 0
+
   while (!pawns.isEmpty()) {
     let index = pawns.extractLowestBitPosition()
     let pawn = (new Chess.Bitboard(0,0)).setBit(index)
@@ -395,11 +407,14 @@ AI.getPassers = function (_P, _Px, white) {
     if (adcnt > 0) {
       encounters = advancemask.and(pxmask).popcnt()
       
-      if (encounters === 0) passers++
+      if (encounters === 0) {
+        passers++
+        score += AI.PASSER_VALUES[white? 56^index : index]
+      }
     }
   }
 
-  return AI.PASSER_VALUES[passers]
+  return score
 }
 
 AI.empty = new Chess.Bitboard()
@@ -1097,11 +1112,11 @@ AI.createPSQT = function (board) {
       nm, nm, nm, nm, nm, vbm,vbm,vbm, 
       nm, nm, nm, nm, nm, vbm,vbm,vbm,
       nm, nm, nm, nm, nm, vbm,vbm,vbm,
-      nm, nm, GM, BM,VGM,  wm, wm, wm,
+      nm, nm, GM, BM, BM,  wm, wm, wm,
       nm,VGM, GM, nm, GM, vbm, nm, nm,
      VGM, GM,vbm,vbm,vbm, VGM,VGM,VGM,
        0,  0,  0,  0,  0,   0,  0,  0,
-      ].map(e=>e*AI.PSQT_SCALAR[0]),
+      ].map(e=>e*AI.PSQT_SCALAR[0]*2),
 
       // Knight
       [ 
@@ -1122,8 +1137,8 @@ AI.createPSQT = function (board) {
       vbm, bm, nm, nm, nm, nm, bm, vbm,
       vbm, nm, nm, nm, nm, nm, nm, vbm,
       vbm, bm, BM, nm, nm, BM, bm, vbm,
-      vbm, bm, nm, nm, nm, nm, bm, vbm,
-      vbm, bm, bm, bm, bm, bm, bm, vbm,
+       wm, bm, nm, nm, nm, nm, bm,  wm,
+      vbm, BM, bm, GM, GM, bm, BM, vbm,
       vbm,vbm,vbm,vbm,vbm,vbm,vbm, vbm,
     ].map(e=>e*AI.PSQT_SCALAR[2]),
     // Rook
@@ -1491,11 +1506,6 @@ AI.preprocessor = function (board) {
     AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 25] += vbm *20   
   }
 
-  //Caballos cerca del rey enemigo
-  AI.PIECE_SQUARE_TABLES_PHASE2[1] = AI.PIECE_SQUARE_TABLES_PHASE2[1].map((e,i)=>{
-    return e + 10 - 2 * AI.distance(kingXposition, i)
-  })
-
   //Torre
   //Premia enrocar
   if (board.hasCastlingRight(color, true) && 
@@ -1620,16 +1630,6 @@ AI.preprocessor = function (board) {
     AI.PIECE_SQUARE_TABLES_PHASE3[0][kingposition - 8] +=50 
   }
 
-  //Caballos cerca del rey enemigo
-  AI.PIECE_SQUARE_TABLES_PHASE3[1] = AI.PIECE_SQUARE_TABLES_PHASE3[1].map((e,i)=>{
-    return e + 40 - 8 * AI.distance(kingXposition, i)
-  })
-
-  //Alfiles cerca del rey enemigo
-  AI.PIECE_SQUARE_TABLES_PHASE3[2] = AI.PIECE_SQUARE_TABLES_PHASE3[2].map((e,i)=>{
-    return e + 4 * (8 - AI.manhattanDistance(kingXposition, i))
-  })
-
   //Torres en columnas abiertas
 
   pawnfiles = [0,0,0,0,0,0,0,0]
@@ -1654,16 +1654,6 @@ AI.preprocessor = function (board) {
 
   //Torres delante del rey enemigo ("torre en séptima")
   for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_PHASE3[3][i + 8*(kingXposition/8 | 0)] += 27
-
-  //Torre cerca del rey enemigo
-  AI.PIECE_SQUARE_TABLES_PHASE3[3] = AI.PIECE_SQUARE_TABLES_PHASE3[3].map((e,i)=>{
-    return e + 4 * (8 - AI.manhattanDistance(kingXposition, i))
-  })
-
-  //Dama cerca del rey enemigo
-  AI.PIECE_SQUARE_TABLES_PHASE3[4] = AI.PIECE_SQUARE_TABLES_PHASE3[4].map((e,i)=>{
-    return e + 4 * (8 - AI.manhattanDistance(kingXposition, i))
-  })
   
   if (AI.phase === 4 && AI.lastscore >= AI.PIECE_VALUES[3][1]) {
     //Rey cerca del rey enemigo
