@@ -985,7 +985,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
       }
 
       //Extensions
-      if ((incheck) && depth < 3 && pvNode) {
+      if ((incheck || (move.mvvlva && move.mvvlva > 20000)) && depth < 3 && pvNode) {
         E = 1
       }
 
