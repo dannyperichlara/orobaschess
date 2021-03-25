@@ -378,11 +378,10 @@ AI.evaluate = function(board, ply) {
   
   mobility  = AI.getMOB(P,N,B,R,Q,K,Px,board, turn) - AI.getMOB(Px,Nx,Bx,Rx,Qx,Kx,P,board, notturn)
   safety = AI.getKS(K, us, turn) - AI.getKS(Kx, usx, notturn)
-  // passers = AI.getPassers(P, Px, white) - AI.getPassers(Px, P, !white)
 
   // console.log(passers)
 
-  structure = AI.getDefendeducture(turn, P, Px) - AI.getDefendeducture(notturn, Px, P)
+  structure = AI.getStructure(turn, P, Px) - AI.getStructure(notturn, Px, P)
       
   let positional = psqt + mobility + structure + safety + passers
 
@@ -490,7 +489,7 @@ AI.getKS = function (_K, us, turn) {
   return safety
 }
 
-AI.getDefendeducture = function (turn, P, Px) {
+AI.getStructure = function (turn, P, Px) {
   let hashkey = (P.low ^ P.high) >>> 0
 
   let hashentry = AI.pawntable[turn][hashkey%AI.pawntlength]
@@ -530,7 +529,7 @@ AI.getDefended = function(_P, color) {
   // while (!P.isEmpty()) {
   //   let index = P.extractLowestBitPosition()
   //   // white: 56^index // black: index
-  //   parkingvalue = AI.FISCHER_PARKING[color ? index : (56 ^ index)]
+  //   parkingvalue = 5*Math.log(AI.FISCHER_PARKING[color ? index : (56 ^ index)])
   // }
 
   return AI.DEFENDED_PAWN_VALUES[defendedpawns]// + parkingvalue
