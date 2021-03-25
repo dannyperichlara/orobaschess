@@ -214,6 +214,8 @@ AI.PASSER_VALUES = [
   0,0,0,0,0,0,0,0,
 ]
 
+AI.DOUBLED_VALUES = [0,-200,-400,-600,-800,-1000,-1200,-1400,-1600]
+
 //Not fully tested
 AI.STRUCTURE_VALUES = [0,1,2,2,3,1,-1,-2].map(e=>20*e)
 
@@ -376,7 +378,7 @@ AI.evaluate = function(board, ply) {
   
   mobility  = AI.getMOB(P,N,B,R,Q,K,Px,board, turn) - AI.getMOB(Px,Nx,Bx,Rx,Qx,Kx,P,board, notturn)
   safety = AI.getKS(K, us, turn) - AI.getKS(Kx, usx, notturn)
-  passers = AI.getPassers(P, Px, white) - AI.getPassers(Px, P, !white)
+  // passers = AI.getPassers(P, Px, white) - AI.getPassers(Px, P, !white)
 
   // console.log(passers)
 
@@ -408,6 +410,33 @@ AI.getThreat = function (P,N,B,R,Q,Kx,turn) {
 
           score += AI.KDISTANCE[distance]
       }
+  }
+
+  return score
+}
+
+AI.getDoubled = function (_P, white) {
+  let pawns = _P.dup()
+  let doubled = 0
+
+  let score = 0
+
+  while (!pawns.isEmpty()) {
+    let index = pawns.extractLowestBitPosition()
+    let pawn = (new Chess.Bitboard(0,0)).setBit(index)
+    let advancemask = AI.pawnAdvanceMask(pawn, white)
+    let adcnt = advancemask.popcnt()
+    let encounters = 0
+
+    if (adcnt > 0) {
+      encounters = advancemask.and(pawns).popcnt()
+      
+      if (encounters > 1) {
+        doubled++
+        // console.log(doubled)
+        score += AI.DOUBLED_VALUES[doubled]
+      }
+    }
   }
 
   return score
@@ -479,10 +508,12 @@ AI.getStructure = function (turn, P, Px) {
   let structure = 0
 
   let passers = AI.getPassers(P, Px, white)
+  let doubled = AI.getDoubled(P, white)
 
   structure = AI.getSTR(P, turn)
 
   structure += passers
+  structure += doubled
 
   AI.pawntable[turn][hashkey%AI.pawntlength] = structure
 
@@ -1978,7 +2009,6 @@ AI.search = function(board, options) {
 
     //Iterative Deepening
     for (let depth = 1; depth <= AI.totaldepth; depth+=1) {
-      console.log(AI.phnodes/AI.pnodes*100 | 0)
       if (AI.stop && AI.iteration > AI.mindepth) break
 
       if (!AI.stop) AI.lastscore = score
@@ -2004,7 +2034,7 @@ AI.search = function(board, options) {
       
       fhfperc = Math.round(AI.fhf*100/AI.fh)
 
-      if (AI.PV) console.log(AI.iteration, depth, AI.PV.map(e=>{ return e && e.getString? e.getString() : '---'}).join(' '), '     |     AI.FHF ' + fhfperc + '%', score)
+      if (AI.PV) console.log(AI.iteration, depth, AI.PV.map(e=>{ return e && e.getString? e.getString() : '---'}).join(' '), '|Fhf ' + fhfperc + '%', 'Pawn hit ' + (AI.phnodes/AI.pnodes*100 | 0),  score)
     }
 
     if (AI.TESTER) {
