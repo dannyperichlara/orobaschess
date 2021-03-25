@@ -18,7 +18,7 @@ let AI = {
   status: null,
   fhf: 0,
   fh: 0,
-  random: 5,
+  random: 20,
   phase: 1,
   htlength: 1 << 24,
   pawntlength: 1e6,
@@ -53,7 +53,7 @@ AI.INFINITY = AI.PIECE_VALUES[5][1]*4
 AI.PSQT_VALUES = [-3,-2,-1, 0, 1, 2, 3]
 AI.PSQT_SCALAR = [5, 10, 10, 10, 10, 20]
 
-AI.KDISTANCE = [0,160,80,40, 20, 0,-10, -30, -60]
+AI.KDISTANCE = [0,16,8,4,2,0,-2,-4,-8]
 
 let wm  = AI.PSQT_VALUES[0] // Worst move
 let vbm = AI.PSQT_VALUES[1] // Very bad move
@@ -175,18 +175,18 @@ AI.MOBILITY_VALUES = [
   ],
   [
     [],
-    [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*16),
-    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*16),
-    [-8,-4,0,1,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*16),
-    [-6,-4,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*5),
+    [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*8),
+    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*8),
+    [-8,-4,0,1,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*8),
+    [-6,-4,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*2),
     []
   ],
   [
     [],
-    [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*12),
-    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*20),
-    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*24),
-    [-6,-4,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*5),
+    [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*6),
+    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*10),
+    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*12),
+    [-6,-4,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*2),
     []
   ],
   [
@@ -214,10 +214,10 @@ AI.PASSER_VALUES = [
   0,0,0,0,0,0,0,0,
 ]
 
-AI.DOUBLED_VALUES = [0,-200,-400,-600,-800,-1000,-1200,-1400,-1600]
+AI.DOUBLED_VALUES = [0,-100,-200,-300,-400,-500,-600,-700,-800]
 
 //Not fully tested
-AI.DEFENDED_PAWN_VALUES = [0,40,80,120,120,80,-20,-40]
+AI.DEFENDED_PAWN_VALUES = [0,20,40,40,80,80,80,80]
 
 //Not fully tested
 AI.PAWN_IMBALANCE = [-160,-160,-160,-160,-160,-150,-140,-100,0,100,140,150,160,160,160,160,160]
@@ -373,19 +373,15 @@ AI.evaluate = function(board, ply) {
   let threat = 0
   
   psqt = AI.getPSQT(P,N,B,R,Q,K, turn) - AI.getPSQT(Px,Nx,Bx,Rx,Qx,Kx, notturn)
-  
-  threat = AI.getThreat(P,N,B,R,Q,Kx,turn) - AI.getThreat(Px,Nx,Bx,Rx,Qx,K,notturn)
-  
   mobility  = AI.getMOB(P,N,B,R,Q,K,Px,board, turn) - AI.getMOB(Px,Nx,Bx,Rx,Qx,Kx,P,board, notturn)
   safety = AI.getKS(K, us, turn) - AI.getKS(Kx, usx, notturn)
-
-  // console.log(passers)
-
   structure = AI.getStructure(turn, P, Px) - AI.getStructure(notturn, Px, P)
+  threat = AI.getThreat(P,N,B,R,Q,Kx,turn) - AI.getThreat(Px,Nx,Bx,Rx,Qx,K,notturn)
+  passers = AI.getPassers(P, Px, white) - AI.getPassers(Px, P, !white)
       
   let positional = psqt + mobility + structure + safety + passers
 
-  let score = material + pawnimbalance + positional | 0
+  let score = material + pawnimbalance + positional + threat | 0
 
   // if (score > 0) score /= Math.sqrt(ply) //54.1 win (not fully tested)
   
@@ -398,7 +394,7 @@ AI.getThreat = function (P,N,B,R,Q,Kx,turn) {
   let score = 0
   let kindex = Kx.extractLowestBitPosition()
 
-  for (let i = 0; i <= 4; i++) {
+  for (let i = 1; i <= 4; i++) {
       let pieces = allpieces[i].dup()
 
       while (!pieces.isEmpty()) {
@@ -430,9 +426,8 @@ AI.getDoubled = function (_P, white) {
     if (adcnt > 0) {
       encounters = advancemask.and(pawns).popcnt()
       
-      if (encounters > 1) {
+      if (encounters > 0) {
         doubled++
-        // console.log(doubled)
         score += AI.DOUBLED_VALUES[doubled]
       }
     }
@@ -505,13 +500,10 @@ AI.getStructure = function (turn, P, Px) {
 
   let structure = 0
 
-  let passers = AI.getPassers(P, Px, white)
   let doubled = AI.getDoubled(P, white)
+  let defended = AI.getDefended(P, turn)
 
-  structure = AI.getDefended(P, turn)
-
-  structure += passers
-  structure += doubled
+  structure = defended + doubled
 
   AI.pawntable[turn][hashkey%AI.pawntlength] = structure
 
@@ -686,7 +678,6 @@ AI.scoreMove = function(move) {
   
   if (move.capture || move.promotion) {
     let recapturebonus = (move.recapture|0) * 5e5
-    // console.log(recapturebonus)
     if (move.mvvlva>=6000) { //Good Captures
       score += 1e7 + move.mvvlva + move.psqtvalue + recapturebonus
     } else {
@@ -734,7 +725,6 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
     
     /* delta pruning */ //Not fully tested
     if (standpat + AI.PIECE_VALUES[4][1] < alpha) {
-      // console.log(ply)
       return alpha
     }
   
@@ -933,14 +923,12 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     if (value < beta) {
       if (depth === 1) {
         let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
-        // console.log('razoring1')
         return Math.max(new_value, value);
       }
       value += 2*AI.PAWN;
       if (value < beta && depth <= 3) {
         let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
         if (new_value < beta)
-          // console.log('razoring2')
           return Math.max(new_value, value);
       }
     }
@@ -969,8 +957,6 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     return reverseval
   }
 
-  // console.log(depth)
-  
   let doFHR = staticeval - 200 * incheck > beta && alpha === beta - 1 && depth > 6
   let noncaptures = 0
   
@@ -998,7 +984,6 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     // }
     
     // if (doAMP) {
-    //   // console.log('Absurd maneuver pruning')
     //   continue
     // }
 
@@ -1043,11 +1028,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     if (board.makeMove(move)) {
       legal++
 
-      // console.log(turn, piece)
-
       AI.absurd[turn][piece]++
-
-      // console.log(AI.absurd)
 
       //Late-Moves-Pruning (LMP)
       let lmplimit = 800*depth**(-1.8) | 0
@@ -1180,7 +1161,6 @@ AI.bin2map = function(bin, color) {
 }
 
 AI.createPSQT = function (board) {
-  console.log('CREATE PSQT')
 
   AI.PIECE_SQUARE_TABLES_PHASE1 = [
   // Pawn
@@ -1570,11 +1550,11 @@ AI.preprocessor = function (board) {
     AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 9] += VGM*20
 
     //Bad
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 15] += bm*20
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 17] += bm*20
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 23] += vbm  *20  
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 24] += vbm *20   
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 25] += vbm *20   
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 15] += wm*40
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 17] += wm*40
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 23] += wm*40  
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 24] += wm*40   
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 25] += wm*40   
 
     AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 15] += bm*20
     AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 17] += bm*20
@@ -1933,7 +1913,7 @@ AI.MTDF = function (board, f, d) {
 
   //Esta línea permite que el algoritmo funcione como PVS normal
   return AI.PVS(board, lowerBound, upperBound, d, 1) 
-  console.log('INICIO DE MTDF')
+  // console.log('INICIO DE MTDF')
   let i = 0
 
   while (lowerBound < upperBound && !AI.stop) {
@@ -1948,9 +1928,6 @@ AI.MTDF = function (board, f, d) {
     } else {
       lowerBound = g
     }
-
-    
-    // console.log('Pass ' + i)
   }
 
   return g
@@ -2021,7 +1998,6 @@ AI.search = function(board, options) {
       AI.PV = AI.getPV(board, AI.totaldepth+1)
 
       if ([...AI.PV][1] && AI.bestmove && [...AI.PV][1].value !== AI.bestmove.value) {
-        // console.log('CAMBIO!!!!!!!!!!!')
         AI.changeinPV = true
       } else {
         AI.changeinPV = false
