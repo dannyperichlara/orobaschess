@@ -20,7 +20,7 @@ let AI = {
   fh: 0,
   random: 20,
   phase: 1,
-  htlength: 1 << 24,
+  htlength: 1e8,
   pawntlength: 1e6,
   reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
   mindepth: 2,
@@ -53,7 +53,7 @@ AI.INFINITY = AI.PIECE_VALUES[5][1]*4
 AI.PSQT_VALUES = [-3,-2,-1, 0, 1, 2, 3]
 AI.PSQT_SCALAR = [5, 10, 10, 10, 10, 20]
 
-AI.KDISTANCE = [0,16,8,4,2,0,-2,-4,-8]
+AI.KDISTANCE = [0,120,80,40,20,20,-10,-20,-30]
 
 let wm  = AI.PSQT_VALUES[0] // Worst move
 let vbm = AI.PSQT_VALUES[1] // Very bad move
@@ -363,8 +363,6 @@ AI.evaluate = function(board, ply) {
   let notcolorMaterial = AI.getMaterialValue(Px,Nx,Bx,Rx,Qx)
   let material = colorMaterial - notcolorMaterial
 
-  let pawnimbalance = 0// AI.PAWN_IMBALANCE[P.popcnt() - Px.popcnt() + 8]
-
   let psqt = 0
   let mobility = 0
   let structure = 0
@@ -379,14 +377,16 @@ AI.evaluate = function(board, ply) {
   threat = AI.getThreat(P,N,B,R,Q,Kx,turn) - AI.getThreat(Px,Nx,Bx,Rx,Qx,K,notturn)
   passers = AI.getPassers(P, Px, white) - AI.getPassers(Px, P, !white)
       
-  let positional = psqt + mobility + structure + safety + passers
+  let positional = psqt + mobility + structure + safety + passers// + threat
 
-  let score = material + pawnimbalance + positional + threat | 0
+  let score = material + positional  | 0
 
   // if (score > 0) score /= Math.sqrt(ply) //54.1 win (not fully tested)
   
   return score | 0
 }
+
+let maxdistance = -1
 
 AI.getThreat = function (P,N,B,R,Q,Kx,turn) {
   let allpieces = [P.dup(),B.dup(),N.dup(),R.dup(),Q.dup()]
@@ -399,9 +399,11 @@ AI.getThreat = function (P,N,B,R,Q,Kx,turn) {
 
       while (!pieces.isEmpty()) {
           let index = pieces.extractLowestBitPosition()
-          // white: 56^index // black: index
-          // let tscore = AI.PIECE_SQUARE_TABLES[i][color ? index : (56 ^ index)]
-          let distance = AI.distance(turn? index : (56 ^ index), kindex) 
+
+          //Here we dont use 56^index
+          let distance = AI.distance(index, kindex) 
+
+          if (distance>maxdistance) maxdistance = distance
 
           score += AI.KDISTANCE[distance]
       }
@@ -677,11 +679,11 @@ AI.scoreMove = function(move) {
   }
   
   if (move.capture || move.promotion) {
-    let recapturebonus = (move.recapture|0) * 5e5
+    // let recapturebonus = (move.recapture|0) * 5e5
     if (move.mvvlva>=6000) { //Good Captures
-      score += 1e7 + move.mvvlva + move.psqtvalue + recapturebonus
+      score += 1e7 + move.mvvlva// + recapturebonus
     } else {
-      score += -1e6 + move.mvvlva + move.psqtvalue + recapturebonus //Bad Captures
+      score += -1e6 + move.mvvlva// + move.psqtvalue + recapturebonus //Bad Captures
     }
   }
     
@@ -1173,7 +1175,7 @@ AI.createPSQT = function (board) {
       nm,VGM, GM, nm, GM, vbm, nm, nm,
      VGM, GM,vbm,vbm,vbm, VGM,VGM,VGM,
        0,  0,  0,  0,  0,   0,  0,  0,
-      ].map(e=>e*AI.PSQT_SCALAR[0]*2),
+      ].map(e=>e*AI.PSQT_SCALAR[0]),
 
       // Knight
       [ 
@@ -1541,26 +1543,26 @@ AI.preprocessor = function (board) {
   //Castiga captura y maniobras con peón frontal del rey
   if (kingposition >= 61 || (kingposition>=56 && kingposition<=58)) {
     //Good
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 7] += VGM*20
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 8] += GM*20
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 9] += VGM*20
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 7] += VGM * AI.PSQT_SCALAR[0]
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 8] += GM * AI.PSQT_SCALAR[0]
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 9] += VGM * AI.PSQT_SCALAR[0]
 
-    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 7] += VGM*20
-    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 8] += GM*20
-    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 9] += VGM*20
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 7] += VGM * AI.PSQT_SCALAR[0]
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 8] += GM * AI.PSQT_SCALAR[0]
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 9] += VGM * AI.PSQT_SCALAR[0]
 
     //Bad
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 15] += wm*40
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 17] += wm*40
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 23] += wm*40  
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 24] += wm*40   
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 25] += wm*40   
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 15] += wm * AI.PSQT_SCALAR[0]
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 17] += wm * AI.PSQT_SCALAR[0]
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 23] += wm * AI.PSQT_SCALAR[0]  
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 24] += wm * AI.PSQT_SCALAR[0]   
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 25] += wm * AI.PSQT_SCALAR[0]   
 
-    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 15] += bm*20
-    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 17] += bm*20
-    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 23] += vbm *20   
-    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 24] += vbm *20   
-    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 25] += vbm *20   
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 15] += bm * AI.PSQT_SCALAR[0]
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 17] += bm * AI.PSQT_SCALAR[0]
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 23] += vbm  * AI.PSQT_SCALAR[0]   
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 24] += vbm  * AI.PSQT_SCALAR[0]   
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 25] += vbm  * AI.PSQT_SCALAR[0]   
   }
 
   //Torre
