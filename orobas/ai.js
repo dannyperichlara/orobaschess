@@ -169,7 +169,7 @@ AI.MOBILITY_VALUES = [
     [],
     [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*4),
     [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*8),
-    [0,0,0,0,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*3),
+    [0,0,0,0,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*8),
     [0,0,0,0,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*2),
     []
   ],
@@ -217,7 +217,7 @@ AI.PASSER_VALUES = [
 AI.DOUBLED_VALUES = [0,-200,-400,-600,-800,-1000,-1200,-1400,-1600]
 
 //Not fully tested
-AI.STRUCTURE_VALUES = [0,1,2,2,3,1,-1,-2].map(e=>20*e)
+AI.DEFENDED_PAWN_VALUES = [0,40,80,120,120,80,-20,-40]
 
 //Not fully tested
 AI.PAWN_IMBALANCE = [-160,-160,-160,-160,-160,-150,-140,-100,0,100,140,150,160,160,160,160,160]
@@ -382,7 +382,7 @@ AI.evaluate = function(board, ply) {
 
   // console.log(passers)
 
-  structure = AI.getStructure(turn, P, Px) - AI.getStructure(notturn, Px, P)
+  structure = AI.getDefendeducture(turn, P, Px) - AI.getDefendeducture(notturn, Px, P)
       
   let positional = psqt + mobility + structure + safety + passers
 
@@ -446,14 +446,13 @@ AI.getPassers = function (_P, _Px, white) {
   let P = _P.dup()
   let Px = _Px.dup()
 
-  let pawns = P.dup()
   let passers = 0
   let pxmask = Px.or(Chess.Position.makePawnAttackMask(!white, Px))
 
   let score = 0
 
-  while (!pawns.isEmpty()) {
-    let index = pawns.extractLowestBitPosition()
+  while (!P.isEmpty()) {
+    let index = P.extractLowestBitPosition()
     let pawn = (new Chess.Bitboard(0,0)).setBit(index)
     let advancemask = AI.pawnAdvanceMask(pawn, white)
     let adcnt = advancemask.popcnt()
@@ -491,7 +490,7 @@ AI.getKS = function (_K, us, turn) {
   return safety
 }
 
-AI.getStructure = function (turn, P, Px) {
+AI.getDefendeducture = function (turn, P, Px) {
   let hashkey = (P.low ^ P.high) >>> 0
 
   let hashentry = AI.pawntable[turn][hashkey%AI.pawntlength]
@@ -510,7 +509,7 @@ AI.getStructure = function (turn, P, Px) {
   let passers = AI.getPassers(P, Px, white)
   let doubled = AI.getDoubled(P, white)
 
-  structure = AI.getSTR(P, turn)
+  structure = AI.getDefended(P, turn)
 
   structure += passers
   structure += doubled
@@ -521,11 +520,11 @@ AI.getStructure = function (turn, P, Px) {
 }
 
 
-AI.getSTR = function(_P, color) {
+AI.getDefended = function(_P, color) {
   let P = _P.dup()
 
   let mask = Chess.Position.makePawnAttackMask(color, P).dup()
-  let protectedpawns = mask.and(P).popcnt()
+  let defendedpawns = mask.and(P).popcnt()
   // let parkingvalue
 
   // while (!P.isEmpty()) {
@@ -534,7 +533,7 @@ AI.getSTR = function(_P, color) {
   //   parkingvalue = AI.FISCHER_PARKING[color ? index : (56 ^ index)]
   // }
 
-  return AI.STRUCTURE_VALUES[protectedpawns]// + parkingvalue
+  return AI.DEFENDED_PAWN_VALUES[defendedpawns]// + parkingvalue
 }
 
 AI.getMOB = function(_P,_N,_B,_R,_Q,_K,_Px,board, color) {
