@@ -164,8 +164,8 @@ AI.MOBILITY_VALUES = [
   [
     [],
     [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*4),
-    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*4),
-    [0,0,0,0,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*2),
+    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*8),
+    [0,0,0,0,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*3),
     [0,0,0,0,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*2),
     []
   ],
@@ -623,28 +623,25 @@ AI.scoreMove = function(move) {
   
   if (move.tt) { 
     score += 1e8
-    return score
   }
   
   if (move.capture || move.promotion) {
     let recapturebonus = (move.recapture|0) * 5e5
     // console.log(recapturebonus)
     if (move.mvvlva>=6000) { //Good Captures
-      if (move.mvvlva >= 20000) return 1e6 + move.mvvlva + move.psqtvalue + recapturebonus
-
-      return 1e7 + move.mvvlva + move.psqtvalue + recapturebonus
+      score += 1e7 + move.mvvlva + move.psqtvalue + recapturebonus
     } else {
-      return -1e6 + move.mvvlva + move.psqtvalue + recapturebonus //Bad Captures
+      score += -1e6 + move.mvvlva + move.psqtvalue + recapturebonus //Bad Captures
     }
   }
     
   if (move.hvalue) { //History Heuristic
     score += move.hvalue
-    
-    return score
   } 
 
-  return move.psqtvalue - 10000 //Else, PSQT
+  score += move.psqtvalue
+
+  return score
 }
 
 AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
@@ -702,9 +699,10 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
 
     let move = moves[i]
 
-    // if (depth < -4 && move.mvvlva < 6000) {
-    //   continue
-    // }
+    //Bad captures pruning TESTED OK +82 ELO 174 games (-4)
+    if (depth < -4 && move.mvvlva < 6000) {
+      continue
+    }
 
     if (board.makeMove(move)) {
       legal++
@@ -922,9 +920,25 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     let piece = move.getPiece()
 
     //Absurd maneuvers pruning (AMP)
-    if ((AI.phase === 1 && AI.absurd[turn][piece] >= 2) || AI.absurd[turn][piece] >= 4 ||
-      AI.phase < 4 && legal >= 1 && depth > 2 && piece > 0 && AI.absurd[turn][piece] >= (depth / 2 | 0)
-    ) {
+    let doAMP
+
+    if (AI.phase === 1 && AI.absurd[turn][piece] >= 2) doAMP = true
+
+    if (AI.phase >= 2) {
+      if (
+        (depth >= 2 && AI.absurd[turn][piece] >= (depth/2 | 0)) ||
+        AI.absurd[turn][0] >= 8 ||
+        AI.absurd[turn][1] >= 4 ||
+        AI.absurd[turn][2] >= 4 ||
+        AI.absurd[turn][3] >= 4 ||
+        AI.absurd[turn][4] >= 4 ||
+        AI.absurd[turn][5] >= 4
+      ) {
+        doAMP = true
+      }
+    }
+    
+    if (doAMP) {
       // console.log('Absurd maneuver pruning')
       continue
     }
@@ -1013,15 +1027,15 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
       if (score > alpha) {
         if (score >= beta) {
           if (legal === 1) {
-            
             AI.fhf++
           }
-          
+
           AI.fh++
+          
           
           //LOWERBOUND
           AI.ttSave(hashkey, score, -1, depth, move)
-          if (!isCapture) AI.saveHistory(turn, move, 2**depth)
+          AI.saveHistory(turn, move, 2**depth)
 
           return score
         } else {
@@ -1062,8 +1076,10 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
 
     if (bestscore > alphaOrig) {
       // EXACT
-      AI.ttSave(hashkey, bestscore, 0, depth, bestmove)
-      if (!bestmove.isCapture()) AI.saveHistory(turn, bestmove, 2**depth)
+      if (bestmove) {
+        AI.ttSave(hashkey, bestscore, 0, depth, bestmove)
+        AI.saveHistory(turn, bestmove, 2**depth)
+      }
       return bestscore
     } else {
       //UPPERBOUND value <= alphaorig
