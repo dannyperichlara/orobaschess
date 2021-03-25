@@ -13,13 +13,15 @@ let AI = {
   iteration: 0,
   qsnodes: 0,
   nodes: 0,
+  pnodes: 0,
+  phnodes: 0,
   status: null,
   fhf: 0,
   fh: 0,
   random: 5,
   phase: 1,
   htlength: 1 << 24,
-  pawntlength: 5e5,
+  pawntlength: 1e6,
   reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
   mindepth: 2,
   secondspermove: 3,
@@ -50,6 +52,8 @@ AI.INFINITY = AI.PIECE_VALUES[5][1]*4
 //PSQT VALUES
 AI.PSQT_VALUES = [-3,-2,-1, 0, 1, 2, 3]
 AI.PSQT_SCALAR = [5, 10, 10, 10, 10, 20]
+
+AI.KDISTANCE = [0,160,80,40, 20, 0,-10, -30, -60]
 
 let wm  = AI.PSQT_VALUES[0] // Worst move
 let vbm = AI.PSQT_VALUES[1] // Very bad move
@@ -368,7 +372,7 @@ AI.evaluate = function(board, ply) {
   
   psqt = AI.getPSQT(P,N,B,R,Q,K, turn) - AI.getPSQT(Px,Nx,Bx,Rx,Qx,Kx, notturn)
   
-  // threat = AI.getThreat(P,N,B,R,Q,Kx,turn) - AI.getThreat(Px,Nx,Bx,Rx,Qx,K,notturn)
+  threat = AI.getThreat(P,N,B,R,Q,Kx,turn) - AI.getThreat(Px,Nx,Bx,Rx,Qx,K,notturn)
   
   mobility  = AI.getMOB(P,N,B,R,Q,K,Px,board, turn) - AI.getMOB(Px,Nx,Bx,Rx,Qx,Kx,P,board, notturn)
   safety = AI.getKS(K, us, turn) - AI.getKS(Kx, usx, notturn)
@@ -385,6 +389,28 @@ AI.evaluate = function(board, ply) {
   // if (score > 0) score /= Math.sqrt(ply) //54.1 win (not fully tested)
   
   return score | 0
+}
+
+AI.getThreat = function (P,N,B,R,Q,Kx,turn) {
+  let allpieces = [P.dup(),B.dup(),N.dup(),R.dup(),Q.dup()]
+
+  let score = 0
+  let kindex = Kx.extractLowestBitPosition()
+
+  for (let i = 0; i <= 4; i++) {
+      let pieces = allpieces[i].dup()
+
+      while (!pieces.isEmpty()) {
+          let index = pieces.extractLowestBitPosition()
+          // white: 56^index // black: index
+          // let tscore = AI.PIECE_SQUARE_TABLES[i][color ? index : (56 ^ index)]
+          let distance = AI.distance(turn? index : (56 ^ index), kindex) 
+
+          score += AI.KDISTANCE[distance]
+      }
+  }
+
+  return score
 }
 
 AI.getPassers = function (_P, _Px, white) {
@@ -440,10 +466,14 @@ AI.getStructure = function (turn, P, Px) {
   let hashkey = (P.low ^ P.high) >>> 0
 
   let hashentry = AI.pawntable[turn][hashkey%AI.pawntlength]
+
+  AI.pnodes++
   
   if (hashentry) {
+    AI.phnodes++
     return hashentry
   }
+
   let white = turn === 0
 
   let structure = 0
@@ -920,28 +950,28 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     let piece = move.getPiece()
 
     //Absurd maneuvers pruning (AMP)
-    let doAMP
+    // let doAMP
 
-    if (AI.phase === 1 && AI.absurd[turn][piece] >= 2) doAMP = true
+    // if (AI.phase === 1 && AI.absurd[turn][piece] >= 2) doAMP = true
 
-    if (AI.phase >= 2) {
-      if (
-        (depth >= 2 && AI.absurd[turn][piece] >= (depth/2 | 0)) ||
-        AI.absurd[turn][0] >= 8 ||
-        AI.absurd[turn][1] >= 4 ||
-        AI.absurd[turn][2] >= 4 ||
-        AI.absurd[turn][3] >= 4 ||
-        AI.absurd[turn][4] >= 4 ||
-        AI.absurd[turn][5] >= 4
-      ) {
-        doAMP = true
-      }
-    }
+    // if (AI.phase === 2 || AI.phase === 3) {
+    //   if (
+    //     (depth >= 2 && AI.absurd[turn][piece] >= (depth/2 | 0)) ||
+    //     AI.absurd[turn][0] >= 8 ||
+    //     AI.absurd[turn][1] >= 4 ||
+    //     AI.absurd[turn][2] >= 4 ||
+    //     AI.absurd[turn][3] >= 4 ||
+    //     AI.absurd[turn][4] >= 4 ||
+    //     AI.absurd[turn][5] >= 4
+    //   ) {
+    //     doAMP = true
+    //   }
+    // }
     
-    if (doAMP) {
-      // console.log('Absurd maneuver pruning')
-      continue
-    }
+    // if (doAMP) {
+    //   // console.log('Absurd maneuver pruning')
+    //   continue
+    // }
 
     let near2mate = alpha > 2*AI.PIECE_VALUES[4][1] || beta < -2*AI.PIECE_VALUES[4][1]
 
@@ -1948,6 +1978,7 @@ AI.search = function(board, options) {
 
     //Iterative Deepening
     for (let depth = 1; depth <= AI.totaldepth; depth+=1) {
+      console.log(AI.phnodes/AI.pnodes*100 | 0)
       if (AI.stop && AI.iteration > AI.mindepth) break
 
       if (!AI.stop) AI.lastscore = score
