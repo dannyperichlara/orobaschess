@@ -20,7 +20,7 @@ let AI = {
   fh: 0,
   random: 20,
   phase: 1,
-  htlength: 1e8,
+  htlength: 1 << 24,
   pawntlength: 1e6,
   reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
   mindepth: 2,
@@ -51,9 +51,21 @@ AI.INFINITY = AI.PIECE_VALUES[5][1]*4
 
 //PSQT VALUES
 AI.PSQT_VALUES = [-3,-2,-1, 0, 1, 2, 3]
-AI.PSQT_SCALAR = [5, 10, 10, 10, 10, 20]
+AI.PSQT_SCALAR = [
+  [5, 10, 10, 10, 10, 20],
+  [5, 10, 10, 10, 10, 20],
+  [5, 10, 10, 10, 10, 20],
+  [5, 10, 10, 10, 10, 20],
+]
 
-AI.KDISTANCE = [0,120,80,40,20,20,-10,-20,-30]
+AI.KDISTANCE = [
+  [0,16,8,4,2,0,-2,-4,-8],
+  [0,16,8,4,2,0,-2,-4,-8],
+  [0,16,8,4,2,0,-2,-4,-8],
+  [0,16,8,4,2,0,-2,-4,-8],
+  [0,16,8,4,2,0,-2,-4,-8],
+  [0,16,8,4,2,0,-2,-4,-8],
+]
 
 let wm  = AI.PSQT_VALUES[0] // Worst move
 let vbm = AI.PSQT_VALUES[1] // Very bad move
@@ -154,10 +166,10 @@ for (let depth = 1; depth < AI.totaldepth+1; ++depth){
 
   for (let moves = 1; moves < 218; ++moves){
       //Igel
-      AI.LMR_TABLE[depth][moves] = 0.75 + Math.log(depth) * Math.log(moves) / 2.25 | 0
+      //AI.LMR_TABLE[depth][moves] = 0.75 + Math.log(depth) * Math.log(moves) / 2.25 | 0
 
       //Stockfish
-      // AI.LMR_TABLE[depth][moves] = Math.log(depth) * Math.log(moves) / 1.95 | 0
+      AI.LMR_TABLE[depth][moves] = Math.log(depth) * Math.log(moves) / 1.95 | 0
 
       //http://talkchess.com/forum3/viewtopic.php?t=65273 (Evert)
       // AI.LMR_TABLE[depth][moves] = Math.log(depth*(moves**2)) | 0
@@ -200,7 +212,7 @@ AI.MOBILITY_VALUES = [
 ]
 
 //Not full tested(
-AI.SAFETY_VALUES = [-2, -1,  0, 1, 2,-1,-2,-3].map(e=>20*e)
+AI.SAFETY_VALUES = [-2, -1,  0, 1, 2,-1,-2,-3,-3].map(e=>20*e)
 
 //Not full tested
 AI.PASSER_VALUES = [
@@ -374,27 +386,33 @@ AI.evaluate = function(board, ply) {
   mobility  = AI.getMOB(P,N,B,R,Q,K,Px,board, turn) - AI.getMOB(Px,Nx,Bx,Rx,Qx,Kx,P,board, notturn)
   safety = AI.getKS(K, us, turn) - AI.getKS(Kx, usx, notturn)
   structure = AI.getStructure(turn, P, Px) - AI.getStructure(notturn, Px, P)
-  threat = AI.getThreat(P,N,B,R,Q,Kx,turn) - AI.getThreat(Px,Nx,Bx,Rx,Qx,K,notturn)
+  threat = AI.getThreat(P,N,B,R,Q,K,Kx,turn) - AI.getThreat(Px,Nx,Bx,Rx,Qx,Kx,K,notturn)
   passers = AI.getPassers(P, Px, white) - AI.getPassers(Px, P, !white)
-      
-  let positional = psqt + mobility + structure + safety + passers// + threat
 
+  
+  let positional = psqt + mobility + structure + safety + passers + threat
+  
   let score = material + positional  | 0
+  
+  if (isNaN(score)) {
+    console.log('material '+material, 'psqt '+psqt, 'mobility '+mobility, 'safety '+safety, 'structure '+structure, 'threat '+threat, 'passers '+passers)
+    process.exit()
+  }
 
   // if (score > 0) score /= Math.sqrt(ply) //54.1 win (not fully tested)
   
   return score | 0
 }
 
-let maxdistance = -1
+// let maxdistance = -1
 
-AI.getThreat = function (P,N,B,R,Q,Kx,turn) {
-  let allpieces = [P.dup(),B.dup(),N.dup(),R.dup(),Q.dup()]
+AI.getThreat = function (P,N,B,R,Q,K,Kx,turn) {
+  let allpieces = [P.dup(),N.dup(),B.dup(),R.dup(),Q.dup(),K.dup()]
 
   let score = 0
   let kindex = Kx.extractLowestBitPosition()
 
-  for (let i = 1; i <= 4; i++) {
+  for (let i = 0; i <= 5; i++) {
       let pieces = allpieces[i].dup()
 
       while (!pieces.isEmpty()) {
@@ -403,9 +421,9 @@ AI.getThreat = function (P,N,B,R,Q,Kx,turn) {
           //Here we dont use 56^index
           let distance = AI.distance(index, kindex) 
 
-          if (distance>maxdistance) maxdistance = distance
+          // if (distance>maxdistance) maxdistance = distance
 
-          score += AI.KDISTANCE[distance]
+          score += AI.KDISTANCE[i][distance]
       }
   }
 
@@ -589,7 +607,7 @@ AI.getMaterialValue = function(P,N,B,R,Q) {
 
 AI.getPSQT = function(P,B,N,R,Q,K,color) {
   
-  let allpieces = [P.dup(),B.dup(),N.dup(),R.dup(),Q.dup(),K.dup()]
+  let allpieces = [P.dup(),N.dup(),B.dup(),R.dup(),Q.dup(),K.dup()]
 
   let value = 0
 
@@ -1175,7 +1193,7 @@ AI.createPSQT = function (board) {
       nm,VGM, GM, nm, GM, vbm, nm, nm,
      VGM, GM,vbm,vbm,vbm, VGM,VGM,VGM,
        0,  0,  0,  0,  0,   0,  0,  0,
-      ].map(e=>e*AI.PSQT_SCALAR[0]),
+      ],
 
       // Knight
       [ 
@@ -1188,7 +1206,7 @@ AI.createPSQT = function (board) {
      vbm, bm, bm, bm, bm, bm, bm, vbm,
      vbm,vbm,vbm,vbm,vbm,vbm,vbm, vbm,
       
-      ].map(e=>e*AI.PSQT_SCALAR[1]),
+      ],
       // Bishop
     [ 
       vbm, bm, bm, bm, bm, bm, bm, vbm,
@@ -1199,7 +1217,7 @@ AI.createPSQT = function (board) {
        wm, bm, nm, nm, nm, nm, bm,  wm,
       vbm, BM, bm, GM, GM, bm, BM, vbm,
       vbm,vbm,vbm,vbm,vbm,vbm,vbm, vbm,
-    ].map(e=>e*AI.PSQT_SCALAR[2]),
+    ],
     // Rook
     [ 
       nm, nm, nm, nm, nm, nm, nm, nm,
@@ -1210,7 +1228,7 @@ AI.createPSQT = function (board) {
       nm, nm, nm, nm, nm, nm, nm, nm,
       nm, nm, nm, nm, nm, nm, nm, nm,
       nm, nm, nm, GM, GM, nm, nm, nm,
-    ].map(e=>e*AI.PSQT_SCALAR[3]),
+    ],
     
     // Queen
     [ 
@@ -1222,7 +1240,7 @@ AI.createPSQT = function (board) {
       nm, nm, nm, nm, nm, nm, nm, nm,
       nm, nm, nm, nm, nm, nm, nm, nm,
       wm,vbm,vbm, nm, nm,vbm,vbm, wm,
-    ].map(e=>e*AI.PSQT_SCALAR[4]),
+    ],
 
     // King
     [ 
@@ -1235,7 +1253,7 @@ AI.createPSQT = function (board) {
        bm, bm, bm,vbm,vbm,vbm, nm, nm,
        bm, bm, GM, wm, bm,vbm, BM,nm
 
-    ].map(e=>e*AI.PSQT_SCALAR[5])
+    ],
   ]
 
   AI.PIECE_SQUARE_TABLES_PHASE2 = [
@@ -1249,7 +1267,7 @@ AI.createPSQT = function (board) {
         GM,VGM, GM, nm, GM,vbm, nm, nm,
        VGM, GM,vbm,vbm,vbm,VGM,VGM,VGM,
          0,  0,  0,  0,  0,  0,  0,  0,
-        ].map(e=>e*AI.PSQT_SCALAR[0]),
+        ],
   
         // Knight
         [ 
@@ -1262,7 +1280,7 @@ AI.createPSQT = function (board) {
        vbm, bm, bm, bm, bm, bm, bm, vbm,
        vbm,vbm,vbm,vbm,vbm,vbm,vbm, vbm,
         
-        ].map(e=>e*AI.PSQT_SCALAR[1]),
+        ],
         // Bishop
       [ 
         vbm, bm, bm, bm, bm, bm, bm, vbm,
@@ -1273,7 +1291,7 @@ AI.createPSQT = function (board) {
         vbm, GM, GM, nm, nm, GM, GM, vbm,
         vbm, GM, bm, bm, bm, bm, GM, vbm,
         vbm,vbm,vbm,vbm,vbm,vbm,vbm, vbm,
-      ].map(e=>e*AI.PSQT_SCALAR[2]),
+      ],
       // Rook
       [ 
         nm, nm, nm, nm, nm, nm, nm, nm,
@@ -1284,7 +1302,7 @@ AI.createPSQT = function (board) {
         nm, nm, nm, nm, nm, nm, nm, nm,
         nm, nm, nm, nm, nm, nm, nm, nm,
         nm, nm, nm, nm, nm, nm, nm, nm,
-      ].map(e=>e*AI.PSQT_SCALAR[3]),
+      ],
       
       // Queen
       [ 
@@ -1296,7 +1314,7 @@ AI.createPSQT = function (board) {
         nm, nm, nm, nm, nm, nm, nm, nm,
         bm, bm, bm, bm, bm, bm, bm, bm,
        vbm,vbm,vbm, bm, bm,vbm,vbm,vbm,
-      ].map(e=>e*AI.PSQT_SCALAR[4]),
+      ],
   
       // King
       [ 
@@ -1309,7 +1327,7 @@ AI.createPSQT = function (board) {
          bm, bm, bm,vbm,vbm,vbm, nm, nm,
          bm, bm, nm,vbm, bm,vbm,VGM, nm
   
-      ].map(e=>e*AI.PSQT_SCALAR[5])
+      ],
     ]
 
   AI.PIECE_SQUARE_TABLES_PHASE3 = [
@@ -1323,7 +1341,7 @@ AI.createPSQT = function (board) {
         nm, nm, nm, nm, nm, nm, nm, nm, 
         nm, nm, nm, nm, nm, nm, nm, nm, 
          0,  0,  0,  0,  0,   0,  0,  0,
-        ].map(e=>e*AI.PSQT_SCALAR[0]),
+        ],
   
         // Knight
         [ 
@@ -1336,7 +1354,7 @@ AI.createPSQT = function (board) {
        vbm, nm, nm, nm, nm, nm, nm, vbm,
        vbm,vbm,vbm,vbm,vbm,vbm,vbm, vbm,
         
-        ].map(e=>e*AI.PSQT_SCALAR[1]),
+        ],
         // Bishop
         [ 
           vbm, bm, bm, bm, bm, bm, bm, vbm,
@@ -1348,7 +1366,7 @@ AI.createPSQT = function (board) {
            bm, nm, nm, nm, nm, nm, nm,  bm,
           vbm,vbm,vbm,vbm,vbm,vbm,vbm, vbm,
            
-           ].map(e=>e*AI.PSQT_SCALAR[2]),
+           ],
       // Rook
       [ 
        VGM,VGM,VGM,VGM,VGM,VGM,VGM,VGM,
@@ -1359,7 +1377,7 @@ AI.createPSQT = function (board) {
         nm, nm, nm, nm, nm, nm, nm, nm,
         nm, nm, nm, nm, nm, nm, nm, nm,
         nm, nm, nm, nm, nm, nm, nm, nm,
-      ].map(e=>e*AI.PSQT_SCALAR[3]),
+      ],
       
       // Queen
       [ 
@@ -1371,7 +1389,7 @@ AI.createPSQT = function (board) {
         nm, nm, nm, nm, nm, nm, nm, nm,
         nm, nm, nm, nm, nm, nm, nm, nm,
         nm, nm, nm, nm, nm, nm, nm, nm,
-      ].map(e=>e*AI.PSQT_SCALAR[4]),
+      ],
   
       // King
       [ 
@@ -1383,7 +1401,7 @@ AI.createPSQT = function (board) {
         bm, nm, nm, nm, nm, nm, nm, bm,
         bm, nm, nm, nm, nm, nm, nm, bm,
         bm, bm, bm, bm, bm, bm, bm, bm,
-      ].map(e=>e*AI.PSQT_SCALAR[5])
+      ],
     ]
 
     AI.PIECE_SQUARE_TABLES_PHASE4 = [
@@ -1397,7 +1415,7 @@ AI.createPSQT = function (board) {
          vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
          vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
           0,  0,  0,  0,  0,   0,  0,  0,
-        ].map(e=>e*AI.PSQT_SCALAR[0]),
+        ],
         
         // Knight
         [ 
@@ -1410,7 +1428,7 @@ AI.createPSQT = function (board) {
           bm, nm, nm, nm, nm, nm, nm, bm,
           bm, bm, nm, nm, nm, nm, bm, bm,
       
-        ].map(e=>e*AI.PSQT_SCALAR[1]),
+        ],
         // Bishop
         [ 
           bm, bm, nm, nm, nm, nm, bm, bm,
@@ -1422,7 +1440,7 @@ AI.createPSQT = function (board) {
           bm, nm, nm, nm, nm, nm, nm, bm,
           bm, bm, nm, nm, nm, nm, bm, bm,
       
-        ].map(e=>e*AI.PSQT_SCALAR[2]),
+        ],
         // Rook
         [ 
           nm, nm, nm, nm, nm, nm, nm, nm,
@@ -1433,7 +1451,7 @@ AI.createPSQT = function (board) {
           nm, nm, nm, nm, nm, nm, nm, nm,
           nm, nm, nm, nm, nm, nm, nm, nm,
           nm, nm, nm, nm, nm, nm, nm, nm,
-        ].map(e=>e*AI.PSQT_SCALAR[3]),
+        ],
         
         // Queen
         [ 
@@ -1445,7 +1463,7 @@ AI.createPSQT = function (board) {
           nm, nm, nm, nm, nm, nm, nm, nm,
           nm, nm, nm, nm, nm, nm, nm, nm,
           nm, nm, nm, nm, nm, nm, nm, nm,
-        ].map(e=>e*AI.PSQT_SCALAR[4]),
+        ],
     
         // King
         [ 
@@ -1457,8 +1475,26 @@ AI.createPSQT = function (board) {
          vbm, bm, nm, GM, GM, nm, bm,vbm,
          vbm, nm, bm, bm, bm, bm, nm,vbm,
          vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
-        ].map(e=>e*AI.PSQT_SCALAR[5])
+        ],
       ]
+
+    AI.PIECE_SQUARE_TABLES_PHASE1 = AI.PIECE_SQUARE_TABLES_PHASE1.map((table, piece)=>{
+      return table.map(values=>values*AI.PSQT_SCALAR[0][piece])
+    })
+
+    AI.PIECE_SQUARE_TABLES_PHASE2 = AI.PIECE_SQUARE_TABLES_PHASE2.map((table, piece)=>{
+      return table.map(values=>values*AI.PSQT_SCALAR[1][piece])
+    })
+
+    AI.PIECE_SQUARE_TABLES_PHASE3 = AI.PIECE_SQUARE_TABLES_PHASE3.map((table, piece)=>{
+      return table.map(values=>values*AI.PSQT_SCALAR[2][piece])
+    })
+
+    AI.PIECE_SQUARE_TABLES_PHASE4 = AI.PIECE_SQUARE_TABLES_PHASE4.map((table, piece)=>{
+      return table.map(values=>values*AI.PSQT_SCALAR[3][piece])
+    })
+
+    console.log(AI.PIECE_SQUARE_TABLES_PHASE1 )
 
     AI.preprocessor(board)
     
@@ -1543,26 +1579,26 @@ AI.preprocessor = function (board) {
   //Castiga captura y maniobras con peón frontal del rey
   if (kingposition >= 61 || (kingposition>=56 && kingposition<=58)) {
     //Good
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 7] += VGM * AI.PSQT_SCALAR[0]
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 8] += GM * AI.PSQT_SCALAR[0]
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 9] += VGM * AI.PSQT_SCALAR[0]
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 7] += VGM * 20
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 8] += GM * 20
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 9] += VGM * 20
 
-    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 7] += VGM * AI.PSQT_SCALAR[0]
-    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 8] += GM * AI.PSQT_SCALAR[0]
-    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 9] += VGM * AI.PSQT_SCALAR[0]
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 7] += VGM * 20
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 8] += GM * 20
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 9] += VGM * 20
 
     //Bad
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 15] += wm * AI.PSQT_SCALAR[0]
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 17] += wm * AI.PSQT_SCALAR[0]
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 23] += wm * AI.PSQT_SCALAR[0]  
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 24] += wm * AI.PSQT_SCALAR[0]   
-    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 25] += wm * AI.PSQT_SCALAR[0]   
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 15] += wm * 20
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 17] += wm * 20
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 23] += wm * 20  
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 24] += wm * 20   
+    AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 25] += wm * 20   
 
-    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 15] += bm * AI.PSQT_SCALAR[0]
-    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 17] += bm * AI.PSQT_SCALAR[0]
-    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 23] += vbm  * AI.PSQT_SCALAR[0]   
-    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 24] += vbm  * AI.PSQT_SCALAR[0]   
-    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 25] += vbm  * AI.PSQT_SCALAR[0]   
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 15] += bm * 20
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 17] += bm * 20
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 23] += vbm  * 20   
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 24] += vbm  * 20   
+    AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 25] += vbm  * 20   
   }
 
   //Torre
