@@ -1,9 +1,9 @@
 "use strict"
 
-const { mapValues } = require('lodash')
+// const { mapValues } = require('lodash')
 /* Imports Move Generator */
 const Chess = require('../chess/chess.js')
-const Zobrist = require('../chess/zobrist.js')
+// const Zobrist = require('../chess/zobrist.js')
 
 // Math.seedrandom((new Date()).toTimeString())
 
@@ -29,42 +29,42 @@ let AI = {
 }
 
 // PIECE VALUES
-// https://www.chessprogramming.org/Point_Value_by_Regression_Analysis
 AI.PAWN = 271
 
 AI.PIECE_VALUES = [
-  [0,465,888,1272,1621,1939,2228,2491,2729],
-  [0,780,1560,2341,3121,3902,4682,5463,6243],
-  [0,934,1969,2804,3739,4674,5609,6544,7479],
-  [0,1600,2900,3902,5203,6504,7804,9105,10406],
-  [0,2918,5837,8756,11674,14593,17512,20430,23349],
-  [20000, 20000],
+  // https://www.chessprogramming.org/Point_Value_by_Regression_Analysis
+  // These values are almost the same as stockfish values:
+  // 1 / 2.88 / 3.00 / 4.70 / 9.36
+  [AI.PAWN*1.00, AI.PAWN*2.88, AI.PAWN*3.00, AI.PAWN*4.80, AI.PAWN*10.77, AI.PAWN*200],
+  [AI.PAWN*1.00, AI.PAWN*2.88, AI.PAWN*3.00, AI.PAWN*4.80, AI.PAWN*10.77, AI.PAWN*200],
+  [AI.PAWN*1.00, AI.PAWN*2.88, AI.PAWN*3.00, AI.PAWN*4.80, AI.PAWN*10.77, AI.PAWN*200],
+  [AI.PAWN*1.00, AI.PAWN*2.88, AI.PAWN*3.00, AI.PAWN*4.80, AI.PAWN*10.77, AI.PAWN*200],
 ]
 
 // OTHER VALUES
 
-AI.FUTILITY_MARGIN = 2 * AI.PIECE_VALUES[0][1]
-AI.BISHOP_PAIR = 0
-AI.MATE = AI.PIECE_VALUES[5][1]
+AI.FUTILITY_MARGIN = 2 * AI.PIECE_VALUES[0][0]
+AI.BISHOP_PAIR = 0.45 * AI.PAWN //For stockfish is something like 0.62 pawns
+AI.MATE = AI.PIECE_VALUES[0][5]
 AI.DRAW = 0//-AI.PIECE_VALUES[1][1]
-AI.INFINITY = AI.PIECE_VALUES[5][1]*4
+AI.INFINITY = AI.PIECE_VALUES[0][5]*4
 
-//PSQT VALUES
-AI.PSQT_VALUES = [-3,-2,-1, 0, 1, 2, 3]
+AI.PSQT_VALUES = [-4,-2,-1, 0, 1, 2, 4]
+
 AI.PSQT_SCALAR = [
-  [5, 10, 10, 10, 10, 20],
-  [5, 10, 10, 10, 10, 20],
-  [5, 10, 10, 10, 10, 20],
-  [5, 10, 10, 10, 10, 20],
+  [10,  8,  8,  1,  1, 30],
+  [ 8, 10, 10,  4,  2, 20],
+  [ 5,  5,  5, 10, 10, 10],
+  [10,  5,  5,  5,  5,  5],
 ]
 
 AI.KDISTANCE = [
-  [0,16,8,4,2,0,-2,-4,-8],
-  [0,16,8,4,2,0,-2,-4,-8],
-  [0,16,8,4,2,0,-2,-4,-8],
-  [0,16,8,4,2,0,-2,-4,-8],
-  [0,16,8,4,2,0,-2,-4,-8],
-  [0,16,8,4,2,0,-2,-4,-8],
+  [0,16, 8, 4, 0, 0, 0,  0, 0],
+  [0, 0,16, 4, 2, 0, 0, -4,-8],
+  [0, 0, 2, 4, 8, 8, 4, -1,-2],
+  [0, 0, 8, 8, 2, 0, 0, -1,-2],
+  [0, 8, 8, 8, 2, 0, 0, -1,-2],
+  [0, 0,16,-8, 0, 0, 0,  4, 8],
 ]
 
 let wm  = AI.PSQT_VALUES[0] // Worst move
@@ -179,34 +179,34 @@ for (let depth = 1; depth < AI.totaldepth+1; ++depth){
 AI.MOBILITY_VALUES = [
   [
     [],
-    [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*4),
-    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*8),
-    [0,0,0,0,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*8),
+    [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*3),
+    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*5),
+    [0,0,0,0,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*2),
     [0,0,0,0,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*2),
     []
   ],
   [
     [],
-    [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*8),
-    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*8),
-    [-8,-4,0,1,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*8),
-    [-6,-4,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*2),
+    [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*5),
+    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*7),
+    [-8,-4,0,1,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*5),
+    [-6,-4,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*5),
     []
   ],
   [
     [],
-    [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*6),
-    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*10),
-    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*12),
-    [-6,-4,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*2),
+    [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*5),
+    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*7),
+    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*7),
+    [-6,-4,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*7),
     []
   ],
   [
     [],
-    [-8,-4,-2,-1,0,0,0,0,0].map(e=>e*16),
-    [-6,-2,0,0,0,0,0,0,0,0,0,0,0,0].map(e=>e*26),
-    [-6,-2,0,0,0,0,0,0,0,0,0,0,0,0,0].map(e=>e*20),
-    [-6,-4,-2,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0].map(e=>e*10),
+    [-8,-4,-2,-1,0,0,0,0,0].map(e=>e*5),
+    [-6,-2,0,0,0,0,0,0,0,0,0,0,0,0].map(e=>e*7),
+    [-6,-2,0,0,0,0,0,0,0,0,0,0,0,0,0].map(e=>e*7),
+    [-6,-4,-2,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0].map(e=>e*7),
     []
   ]
 ]
@@ -226,10 +226,15 @@ AI.PASSER_VALUES = [
   0,0,0,0,0,0,0,0,
 ]
 
-AI.DOUBLED_VALUES = [0,-100,-200,-300,-400,-500,-600,-700,-800]
+AI.DOUBLED_VALUES = [0,-100,-120,-200,-300,-400,-500,-600,-700]
 
 //Not fully tested
-AI.DEFENDED_PAWN_VALUES = [0,20,40,40,80,80,80,80]
+AI.DEFENDED_PAWN_VALUES = [
+  [0, 0, 0, 0, 0, 0, 0, 0], //phase 1
+  [0,20,40,40,80,80,80,80], //phase 2
+  [0,20,40,40,80,80,80,80], //phase 3
+  [0,20,40,40,80,80,80,80], //phase 4
+]
 
 //Not fully tested
 AI.PAWN_IMBALANCE = [-160,-160,-160,-160,-160,-150,-140,-100,0,100,140,150,160,160,160,160,160]
@@ -386,7 +391,7 @@ AI.evaluate = function(board, ply) {
   mobility  = AI.getMOB(P,N,B,R,Q,K,Px,board, turn) - AI.getMOB(Px,Nx,Bx,Rx,Qx,Kx,P,board, notturn)
   safety = AI.getKS(K, us, turn) - AI.getKS(Kx, usx, notturn)
   structure = AI.getStructure(turn, P, Px) - AI.getStructure(notturn, Px, P)
-  threat = AI.getThreat(P,N,B,R,Q,K,Kx,turn) - AI.getThreat(Px,Nx,Bx,Rx,Qx,Kx,K,notturn)
+  threat = 0//AI.getThreat(P,N,B,R,Q,K,Kx,turn) - AI.getThreat(Px,Nx,Bx,Rx,Qx,Kx,K,notturn)
   passers = AI.getPassers(P, Px, white) - AI.getPassers(Px, P, !white)
 
   
@@ -394,10 +399,8 @@ AI.evaluate = function(board, ply) {
   
   let score = material + positional  | 0
   
-  if (isNaN(score)) {
-    console.log('material '+material, 'psqt '+psqt, 'mobility '+mobility, 'safety '+safety, 'structure '+structure, 'threat '+threat, 'passers '+passers)
-    process.exit()
-  }
+  // console.log('material '+material, 'psqt '+psqt, 'mobility '+mobility, 'safety '+safety, 'structure '+structure, 'threat '+threat, 'passers '+passers)
+
 
   // if (score > 0) score /= Math.sqrt(ply) //54.1 win (not fully tested)
   
@@ -518,16 +521,15 @@ AI.getStructure = function (turn, P, Px) {
 
   let white = turn === 0
 
-  let structure = 0
-
+  let score = 0
   let doubled = AI.getDoubled(P, white)
   let defended = AI.getDefended(P, turn)
 
-  structure = defended + doubled
+  score = defended + doubled
 
-  AI.pawntable[turn][hashkey%AI.pawntlength] = structure
+  AI.pawntable[turn][hashkey%AI.pawntlength] = score
 
-  return structure
+  return score
 }
 
 
@@ -544,7 +546,7 @@ AI.getDefended = function(_P, color) {
   //   parkingvalue = 5*Math.log(AI.FISCHER_PARKING[color ? index : (56 ^ index)])
   // }
 
-  return AI.DEFENDED_PAWN_VALUES[defendedpawns]// + parkingvalue
+  return AI.DEFENDED_PAWN_VALUES[AI.phase-1][defendedpawns]// + parkingvalue
 }
 
 AI.getMOB = function(_P,_N,_B,_R,_Q,_K,_Px,board, color) {
@@ -596,13 +598,13 @@ AI.getMOB = function(_P,_N,_B,_R,_Q,_K,_Px,board, color) {
 AI.getMaterialValue = function(P,N,B,R,Q) {
     let value = 0
 
-    value = AI.PIECE_VALUES[0][P.popcnt()] +
-            AI.PIECE_VALUES[1][N.popcnt()] +
-            AI.PIECE_VALUES[2][B.popcnt()] + 
-            AI.PIECE_VALUES[3][R.popcnt()] + 
-            AI.PIECE_VALUES[4][Q.popcnt()]
+    value = AI.PIECE_VALUES[AI.phase-1][0]*P.popcnt() +
+            AI.PIECE_VALUES[AI.phase-1][1]*N.popcnt() +
+            AI.PIECE_VALUES[AI.phase-1][2]*B.popcnt() + 
+            AI.PIECE_VALUES[AI.phase-1][3]*R.popcnt() + 
+            AI.PIECE_VALUES[AI.phase-1][4]*Q.popcnt()
 
-    return value
+    return value | 0
 }
 
 AI.getPSQT = function(P,B,N,R,Q,K,color) {
@@ -744,7 +746,7 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
     if (standpat >= beta ) return standpat
     
     /* delta pruning */ //Not fully tested
-    if (standpat + AI.PIECE_VALUES[4][1] < alpha) {
+    if (standpat + AI.PIECE_VALUES[0][4] < alpha) {
       return alpha
     }
   
@@ -753,7 +755,7 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
 
   let moves
   
-  if (incheck && depth >= -3) {
+  if (incheck && depth >= -4) {
     moves = board.getMoves(false, false)
   } else {
     moves = board.getMoves(false, true)
@@ -969,7 +971,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   // }
   
   //Reverse Futility pruning
-  let reverseval = staticeval - AI.PIECE_VALUES[1][1] * depth
+  let reverseval = staticeval - AI.PIECE_VALUES[0][1] * depth
 
   if (!incheck && depth <= 3 && reverseval > beta) {
     // AI.ttSave(hashkey, reverseval, -1, depth, moves[0])
@@ -1007,7 +1009,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     //   continue
     // }
 
-    let near2mate = alpha > 2*AI.PIECE_VALUES[4][1] || beta < -2*AI.PIECE_VALUES[4][1]
+    let near2mate = alpha > 2*AI.PIECE_VALUES[0][4] || beta < -2*AI.PIECE_VALUES[0][4]
 
     
     let R = 0
@@ -1186,12 +1188,12 @@ AI.createPSQT = function (board) {
   // Pawn
       [ 
        0,  0,  0,  0,  0,   0,  0,  0,
-      nm, nm, nm, nm, nm, vbm,vbm,vbm, 
-      nm, nm, nm, nm, nm, vbm,vbm,vbm,
-      nm, nm, nm, nm, nm, vbm,vbm,vbm,
-      nm, nm, GM, BM, BM,  wm, wm, wm,
-      nm,VGM, GM, nm, GM, vbm, nm, nm,
-     VGM, GM,vbm,vbm,vbm, VGM,VGM,VGM,
+      wm, wm, wm, wm, wm, vbm,vbm,vbm, 
+      wm,vbm, bm, bm, bm, vbm,vbm,vbm,
+     vbm, bm, nm, GM, GM, vbm,vbm,vbm,
+      bm, nm,VGM, BM, BM,  wm, wm, wm,
+      nm,VGM, nm, nm, nm, vbm, GM, nm,
+     VGM, BM,vbm, wm, wm, VGM,VGM,VGM,
        0,  0,  0,  0,  0,   0,  0,  0,
       ],
 
@@ -1200,10 +1202,10 @@ AI.createPSQT = function (board) {
      vbm, bm, bm, bm, bm, bm, bm, vbm,
      vbm, bm, bm, bm, bm, bm, bm, vbm,
      vbm, bm, nm, nm, nm, nm, bm, vbm,
-     vbm, bm, nm, nm, nm, nm, bm, vbm,
-     vbm, bm, nm, nm, nm, nm, bm, vbm,
+      wm, bm, nm, nm, nm, nm, bm,  wm,
+      wm, bm, wm, GM, GM, wm, bm,  wm,
       wm, bm, BM, nm, nm, BM, bm,  wm,
-     vbm, bm, bm, bm, bm, bm, bm, vbm,
+     vbm, bm, bm, nm, nm, bm, bm, vbm,
      vbm,vbm,vbm,vbm,vbm,vbm,vbm, vbm,
       
       ],
@@ -1212,7 +1214,7 @@ AI.createPSQT = function (board) {
       vbm, bm, bm, bm, bm, bm, bm, vbm,
       vbm, bm, bm, bm, bm, bm, bm, vbm,
       vbm, bm, nm, nm, nm, nm, bm, vbm,
-      vbm, nm, nm, nm, nm, nm, nm, vbm,
+      vbm, GM, nm, nm, nm, nm, nm, vbm,
       vbm, bm, BM, nm, nm, BM, bm, vbm,
        wm, bm, nm, nm, nm, nm, bm,  wm,
       vbm, BM, bm, GM, GM, bm, BM, vbm,
@@ -1222,34 +1224,34 @@ AI.createPSQT = function (board) {
     [ 
       nm, nm, nm, nm, nm, nm, nm, nm,
       GM, GM, GM, BM, BM, GM, GM, GM,
+      wm, wm, wm, wm, wm, wm, wm, wm,
+      wm, wm, wm, wm, wm, wm, wm, wm,
       nm, nm, nm, nm, nm, nm, nm, nm,
       nm, nm, nm, nm, nm, nm, nm, nm,
       nm, nm, nm, nm, nm, nm, nm, nm,
-      nm, nm, nm, nm, nm, nm, nm, nm,
-      nm, nm, nm, nm, nm, nm, nm, nm,
-      nm, nm, nm, GM, GM, nm, nm, nm,
+      nm, nm, nm, BM, GM, GM, nm, nm,
     ],
     
     // Queen
     [ 
+      wm, wm, wm, wm, wm, wm, wm, wm,
+      wm, wm, wm, wm, wm, wm, wm, wm,
+      wm, wm, wm, wm, wm, wm, wm, wm,
+      wm, wm, wm, wm, wm, wm, wm, wm,
+      nm, nm, nm, wm, wm, nm, nm, nm,
       nm, nm, nm, nm, nm, nm, nm, nm,
-      nm, nm, nm, nm, nm, nm, nm, nm,
-      nm, nm, nm, nm, nm, nm, nm, nm,
-      nm, nm, nm, nm, nm, nm, nm, nm,
-      nm, nm, nm, nm, nm, nm, nm, nm,
-      nm, nm, nm, nm, nm, nm, nm, nm,
-      nm, nm, nm, nm, nm, nm, nm, nm,
-      wm,vbm,vbm, nm, nm,vbm,vbm, wm,
+      nm, nm, GM, GM, GM, nm, nm, nm,
+      wm,vbm,vbm, BM, nm,vbm,vbm, wm,
     ],
 
     // King
     [ 
-      vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
-      vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
-      vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
-      vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
-      vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm, 
-      vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
+       wm, wm, wm, wm, wm, wm, wm, wm,
+       wm, wm, wm, wm, wm, wm, wm, wm,
+       wm, wm, wm, wm, wm, wm, wm, wm,
+       wm, wm, wm, wm, wm, wm, wm, wm,
+       wm, wm, wm, wm, wm, wm, wm, wm, 
+      vbm,vbm,vbm, wm, wm,vbm,vbm,vbm,
        bm, bm, bm,vbm,vbm,vbm, nm, nm,
        bm, bm, GM, wm, bm,vbm, BM,nm
 
@@ -1260,10 +1262,10 @@ AI.createPSQT = function (board) {
     // Pawn
         [ 
          0,  0,  0,  0,  0,   0,  0,  0,
-       VGM,VGM,VGM,VGM,VGM,VGM,VGM,vbm, 
-       VGM,VGM,VGM,VGM,VGM,VGM,VGM,vbm,
-        nm, GM, GM, GM, GM, GM,vbm,vbm,
-        nm, nm, GM, GM, GM,vbm,vbm,vbm,
+        nm, nm, nm, nm, nm, nm, nm,vbm, 
+        nm, nm, nm, nm, nm, nm, nm,vbm,
+        nm, nm, GM, GM, GM, GM,vbm,vbm,
+        nm, GM, GM, GM, GM,vbm,vbm,vbm,
         GM,VGM, GM, nm, GM,vbm, nm, nm,
        VGM, GM,vbm,vbm,vbm,VGM,VGM,VGM,
          0,  0,  0,  0,  0,  0,  0,  0,
@@ -1274,11 +1276,11 @@ AI.createPSQT = function (board) {
        vbm, bm, bm, bm, bm, bm, bm, vbm,
        vbm, bm, bm, bm, bm, bm, bm, vbm,
        vbm, bm,VGM,VGM,VGM,VGM, bm, vbm,
-       vbm, bm,VGM,VGM,VGM,VGM, bm, vbm,
-       vbm, bm, GM, GM, GM, GM, bm, vbm,
+       vbm, bm,VGM, BM, BM,VGM, bm, vbm,
+       vbm, bm, GM, BM, BM, GM, bm, vbm,
        vbm, bm, nm, nm, nm, nm, bm, vbm,
        vbm, bm, bm, bm, bm, bm, bm, vbm,
-       vbm,vbm,vbm,vbm,vbm,vbm,vbm, vbm,
+       vbm, wm,vbm,vbm,vbm,vbm, wm, vbm,
         
         ],
         // Bishop
@@ -1286,22 +1288,22 @@ AI.createPSQT = function (board) {
         vbm, bm, bm, bm, bm, bm, bm, vbm,
         vbm, bm, bm, bm, bm, bm, bm, vbm,
         vbm, bm, nm, nm, nm, nm, bm, vbm,
-        vbm, GM, GM, GM, GM, GM, GM, vbm,
-        vbm, GM, GM, GM, GM, GM, GM, vbm,
-        vbm, GM, GM, nm, nm, GM, GM, vbm,
+        vbm, GM, BM, BM, BM, BM, GM, vbm,
+        vbm, GM, GM,VGM,VGM, GM, GM, vbm,
+         wm, GM, GM, GM, GM, GM, GM,  wm,
         vbm, GM, bm, bm, bm, bm, GM, vbm,
-        vbm,vbm,vbm,vbm,vbm,vbm,vbm, vbm,
+        vbm,vbm, wm,vbm,vbm, wm,vbm, vbm,
       ],
       // Rook
       [ 
         nm, nm, nm, nm, nm, nm, nm, nm,
-       VGM,VGM,VGM,VGM,VGM,VGM,VGM,VGM,
+       VGM,VGM,VGM, BM, BM,VGM,VGM,VGM,
         nm, nm, nm, nm, nm, nm, nm, nm,
         nm, nm, nm, nm, nm, nm, nm, nm,
         nm, nm, nm, nm, nm, nm, nm, nm,
         nm, nm, nm, nm, nm, nm, nm, nm,
-        nm, nm, nm, nm, nm, nm, nm, nm,
-        nm, nm, nm, nm, nm, nm, nm, nm,
+        nm, nm, nm, GM, GM, nm, nm, nm,
+        wm, nm, nm, GM, GM, nm, nm, wm,
       ],
       
       // Queen
@@ -1312,8 +1314,8 @@ AI.createPSQT = function (board) {
         nm, nm, nm, nm, nm, nm, nm, nm,
         nm, nm, nm, nm, nm, nm, nm, nm,
         nm, nm, nm, nm, nm, nm, nm, nm,
-        bm, bm, bm, bm, bm, bm, bm, bm,
-       vbm,vbm,vbm, bm, bm,vbm,vbm,vbm,
+        bm, bm, GM, GM, GM, bm, bm, bm,
+       vbm,vbm,vbm, wm, bm,vbm,vbm,vbm,
       ],
   
       // King
@@ -1324,8 +1326,8 @@ AI.createPSQT = function (board) {
         vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
         vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm, 
         vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
-         bm, bm, bm,vbm,vbm,vbm, nm, nm,
-         bm, bm, nm,vbm, bm,vbm,VGM, nm
+         bm, bm, bm,wm, wm,vbm, nm, nm,
+         bm, bm, nm,wm,vbm,vbm,VGM, nm
   
       ],
     ]
@@ -1335,10 +1337,10 @@ AI.createPSQT = function (board) {
         [ 
          0,  0,  0,  0,  0,   0,  0,  0,
         nm, nm, nm, nm, nm, nm, nm, nm, 
-        nm, nm, nm, nm, nm, nm, nm, nm, 
+        BM, BM, BM, BM, BM, BM, BM, BM, 
        VGM,VGM,VGM,VGM,VGM,VGM,VGM,VGM, 
-        nm, nm, nm, nm, nm, nm, nm, nm, 
-        nm, nm, nm, nm, nm, nm, nm, nm, 
+        GM, GM, GM, GM, GM, GM, GM, GM, 
+        GM, GM, GM, GM, GM, GM, GM, GM, 
         nm, nm, nm, nm, nm, nm, nm, nm, 
          0,  0,  0,  0,  0,   0,  0,  0,
         ],
@@ -1347,10 +1349,10 @@ AI.createPSQT = function (board) {
         [ 
        vbm, bm, bm, bm, bm, bm, bm, vbm,
        vbm, nm, nm, nm, nm, nm, nm, vbm,
-       vbm, nm, nm, nm, nm, nm, nm, vbm,
-       vbm, nm, nm, nm, nm, nm, nm, vbm,
-       vbm, nm, nm, nm, nm, nm, nm, vbm,
-       vbm, nm, nm, nm, nm, nm, nm, vbm,
+       vbm, nm, GM, GM, GM, GM, nm, vbm,
+       vbm, nm, GM, BM, BM, GM, nm, vbm,
+       vbm, nm, GM, BM, BM, GM, nm, vbm,
+       vbm, nm, GM, GM, GM, GM, nm, vbm,
        vbm, nm, nm, nm, nm, nm, nm, vbm,
        vbm,vbm,vbm,vbm,vbm,vbm,vbm, vbm,
         
@@ -1359,10 +1361,10 @@ AI.createPSQT = function (board) {
         [ 
           vbm, bm, bm, bm, bm, bm, bm, vbm,
            bm, nm, nm, nm, nm, nm, nm,  bm,
-           nm, nm, nm, nm, nm, nm, nm,  nm,
-           nm, nm, nm, nm, nm, nm, nm,  nm,
-           nm, nm, nm, nm, nm, nm, nm,  nm,
-           nm, nm, nm, nm, nm, nm, nm,  nm,
+           nm, nm, GM, GM, GM, GM, nm,  nm,
+           nm, nm, GM, BM, BM, GM, nm,  nm,
+           nm, nm, GM, BM, BM, GM, nm,  nm,
+           nm, nm, GM, GM, GM, GM, nm,  nm,
            bm, nm, nm, nm, nm, nm, nm,  bm,
           vbm,vbm,vbm,vbm,vbm,vbm,vbm, vbm,
            
@@ -1370,24 +1372,24 @@ AI.createPSQT = function (board) {
       // Rook
       [ 
        VGM,VGM,VGM,VGM,VGM,VGM,VGM,VGM,
-        GM, GM, GM, GM, GM, GM, GM, GM,
-        nm, nm, nm, nm, nm, nm, nm, nm,
-        nm, nm, nm, nm, nm, nm, nm, nm,
-        nm, nm, nm, nm, nm, nm, nm, nm,
-        nm, nm, nm, nm, nm, nm, nm, nm,
-        nm, nm, nm, nm, nm, nm, nm, nm,
-        nm, nm, nm, nm, nm, nm, nm, nm,
+        GM, GM, GM, BM, BM, GM, GM, GM,
+        nm, nm, nm, GM, GM, nm, nm, nm,
+        nm, nm, nm, GM, GM, nm, nm, nm,
+        nm, nm, nm, GM, GM, nm, nm, nm,
+        nm, nm, nm, GM, GM, nm, nm, nm,
+        nm, nm, nm, GM, GM, nm, nm, nm,
+        wm, wm, wm, GM, GM, wm, wm, wm,
       ],
       
       // Queen
       [ 
         nm, nm, nm, nm, nm, nm, nm, nm,
-        nm, nm, nm, nm, nm, nm, nm, nm,
-        nm, nm, nm, nm, nm, nm, nm, nm,
-        nm, nm, nm, nm, nm, nm, nm, nm,
-        nm, nm, nm, nm, nm, nm, nm, nm,
-        nm, nm, nm, nm, nm, nm, nm, nm,
-        nm, nm, nm, nm, nm, nm, nm, nm,
+        nm, GM, GM, GM, GM, GM, GM, nm,
+        nm, GM, GM, GM, GM, GM, GM, nm,
+        nm, GM, GM, BM, BM, GM, GM, nm,
+        nm, GM, GM, BM, BM, GM, GM, nm,
+        nm, GM, GM, GM, GM, GM, GM, nm,
+        nm, GM, GM, GM, GM, GM, GM, nm,
         nm, nm, nm, nm, nm, nm, nm, nm,
       ],
   
@@ -1395,10 +1397,10 @@ AI.createPSQT = function (board) {
       [ 
         bm, bm, bm, bm, bm, bm, bm, bm,
         bm, nm, nm, nm, nm, nm, nm, bm,
-        bm, nm, nm, nm, nm, nm, nm, bm,
-        bm, nm, nm, nm, nm, nm, nm, bm,
-        bm, nm, nm, nm, nm, nm, nm, bm,
-        bm, nm, nm, nm, nm, nm, nm, bm,
+        bm, nm, GM, GM, GM, GM, nm, bm,
+        bm, nm, GM,VGM,VGM, GM, nm, bm,
+        bm, nm, GM,VGM,VGM, GM, nm, bm,
+        bm, nm, GM, GM, GM, GM, nm, bm,
         bm, nm, nm, nm, nm, nm, nm, bm,
         bm, bm, bm, bm, bm, bm, bm, bm,
       ],
@@ -1407,75 +1409,75 @@ AI.createPSQT = function (board) {
     AI.PIECE_SQUARE_TABLES_PHASE4 = [
       // Pawn
           [ 
-           0,  0,  0,  0,  0,   0,  0,  0,
+           0,  0,  0,  0,  0,  0,  0,  0,
+          BM, BM, BM, BM, BM, BM, BM, BM,
          VGM,VGM,VGM,VGM,VGM,VGM,VGM,VGM,
           GM, GM, GM, GM, GM, GM, GM, GM,
-          nm, nm, nm, nm, nm, nm, nm, nm,
           bm, bm, bm, bm, bm, bm, bm, bm,
          vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
-         vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
+          wm, wm, wm, wm, wm, wm, wm, wm,
           0,  0,  0,  0,  0,   0,  0,  0,
         ],
         
         // Knight
         [ 
-          bm, bm, nm, nm, nm, nm, bm, bm,
-          bm, nm, nm, nm, nm, nm, nm, bm,
-          nm, nm, nm, nm, nm, nm, nm, nm,
-          nm, nm, nm, nm, nm, nm, nm, nm,
-          nm, nm, nm, nm, nm, nm, nm, nm,
-          nm, nm, nm, nm, nm, nm, nm, nm,
-          bm, nm, nm, nm, nm, nm, nm, bm,
-          bm, bm, nm, nm, nm, nm, bm, bm,
-      
-        ],
-        // Bishop
-        [ 
-          bm, bm, nm, nm, nm, nm, bm, bm,
-          bm, nm, nm, nm, nm, nm, nm, bm,
-          nm, nm, nm, nm, nm, nm, nm, nm,
-          nm, nm, nm, nm, nm, nm, nm, nm,
-          nm, nm, nm, nm, nm, nm, nm, nm,
-          nm, nm, nm, nm, nm, nm, nm, nm,
-          bm, nm, nm, nm, nm, nm, nm, bm,
-          bm, bm, nm, nm, nm, nm, bm, bm,
-      
-        ],
-        // Rook
-        [ 
-          nm, nm, nm, nm, nm, nm, nm, nm,
-          nm, nm, nm, nm, nm, nm, nm, nm,
-          nm, nm, nm, nm, nm, nm, nm, nm,
-          nm, nm, nm, nm, nm, nm, nm, nm,
-          nm, nm, nm, nm, nm, nm, nm, nm,
-          nm, nm, nm, nm, nm, nm, nm, nm,
-          nm, nm, nm, nm, nm, nm, nm, nm,
-          nm, nm, nm, nm, nm, nm, nm, nm,
-        ],
-        
-        // Queen
-        [ 
-          nm, nm, nm, nm, nm, nm, nm, nm,
-          nm, nm, nm, nm, nm, nm, nm, nm,
-          nm, nm, nm, nm, nm, nm, nm, nm,
-          nm, nm, nm, nm, nm, nm, nm, nm,
-          nm, nm, nm, nm, nm, nm, nm, nm,
-          nm, nm, nm, nm, nm, nm, nm, nm,
-          nm, nm, nm, nm, nm, nm, nm, nm,
-          nm, nm, nm, nm, nm, nm, nm, nm,
-        ],
-    
-        // King
-        [ 
-         vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
-         vbm, nm, bm, bm, bm, bm, nm,vbm,
-         vbm, bm, nm, GM, GM, nm, bm,vbm,
-         vbm, bm, GM,VGM,VGM, GM, bm,vbm,
-         vbm, bm, GM,VGM,VGM, GM, bm,vbm,
-         vbm, bm, nm, GM, GM, nm, bm,vbm,
-         vbm, nm, bm, bm, bm, bm, nm,vbm,
-         vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
-        ],
+          vbm, bm, bm, bm, bm, bm, bm, vbm,
+          vbm, nm, nm, nm, nm, nm, nm, vbm,
+          vbm, nm, GM, GM, GM, GM, nm, vbm,
+          vbm, nm, GM, BM, BM, GM, nm, vbm,
+          vbm, nm, GM, BM, BM, GM, nm, vbm,
+          vbm, nm, GM, GM, GM, GM, nm, vbm,
+          vbm, nm, nm, nm, nm, nm, nm, vbm,
+          vbm,vbm,vbm,vbm,vbm,vbm,vbm, vbm,
+           
+           ],
+           // Bishop
+           [ 
+             vbm, bm, bm, bm, bm, bm, bm, vbm,
+              bm, nm, nm, nm, nm, nm, nm,  bm,
+              nm, nm, GM, GM, GM, GM, nm,  nm,
+              nm, nm, GM, BM, BM, GM, nm,  nm,
+              nm, nm, GM, BM, BM, GM, nm,  nm,
+              nm, nm, GM, GM, GM, GM, nm,  nm,
+              bm, nm, nm, nm, nm, nm, nm,  bm,
+             vbm,vbm,vbm,vbm,vbm,vbm,vbm, vbm,
+              
+              ],
+         // Rook
+         [ 
+          VGM,VGM,VGM,VGM,VGM,VGM,VGM,VGM,
+           GM, GM, GM, BM, BM, GM, GM, GM,
+           nm, nm, nm, GM, GM, nm, nm, nm,
+           nm, nm, nm, GM, GM, nm, nm, nm,
+           nm, nm, nm, GM, GM, nm, nm, nm,
+           nm, nm, nm, GM, GM, nm, nm, nm,
+           nm, nm, nm, GM, GM, nm, nm, nm,
+           wm, wm, wm, GM, GM, wm, wm, wm,
+         ],
+         
+         // Queen
+         [ 
+           nm, nm, nm, nm, nm, nm, nm, nm,
+           nm, GM, GM, GM, GM, GM, GM, nm,
+           nm, GM, GM, GM, GM, GM, GM, nm,
+           nm, GM, GM, BM, BM, GM, GM, nm,
+           nm, GM, GM, BM, BM, GM, GM, nm,
+           nm, GM, GM, GM, GM, GM, GM, nm,
+           nm, GM, GM, GM, GM, GM, GM, nm,
+           nm, nm, nm, nm, nm, nm, nm, nm,
+         ],
+     
+         // King
+         [ 
+           bm, bm, bm, bm, bm, bm, bm, bm,
+           bm, nm, nm, nm, nm, nm, nm, bm,
+           bm, nm, GM, GM, GM, GM, nm, bm,
+           bm, nm, GM,VGM,VGM, GM, nm, bm,
+           bm, nm, GM,VGM,VGM, GM, nm, bm,
+           bm, nm, GM, GM, GM, GM, nm, bm,
+           bm, nm, nm, nm, nm, nm, nm, bm,
+           bm, bm, bm, bm, bm, bm, bm, bm,
+         ],
       ]
 
     AI.PIECE_SQUARE_TABLES_PHASE1 = AI.PIECE_SQUARE_TABLES_PHASE1.map((table, piece)=>{
@@ -1493,8 +1495,6 @@ AI.createPSQT = function (board) {
     AI.PIECE_SQUARE_TABLES_PHASE4 = AI.PIECE_SQUARE_TABLES_PHASE4.map((table, piece)=>{
       return table.map(values=>values*AI.PSQT_SCALAR[3][piece])
     })
-
-    console.log(AI.PIECE_SQUARE_TABLES_PHASE1 )
 
     AI.preprocessor(board)
     
@@ -1566,7 +1566,7 @@ AI.preprocessor = function (board) {
   let pawnstructure  = AI.bin2map({high: P.high | pawnmask.high, low: P.low | pawnmask.low}, color)
 
   
-  let pawnmaskX = Chess.Position.makePawnAttackMask(!color, PX)//.not(PX)
+  let pawnmaskX = Chess.Position.makePawnAttackMask(!color, PX).not(PX)
   let pawnXmap = AI.bin2map(PX, color)
 
   let kingmap = AI.bin2map(K, color)
@@ -1750,7 +1750,7 @@ AI.preprocessor = function (board) {
   //Torres delante del rey enemigo ("torre en séptima")
   for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_PHASE3[3][i + 8*(kingXposition/8 | 0)] += 27
   
-  if (AI.phase === 4 && AI.lastscore >= AI.PIECE_VALUES[3][1]) {
+  if (AI.phase === 4 && AI.lastscore >= AI.PIECE_VALUES[0][3]) {
     //Rey cerca del rey enemigo
     AI.PIECE_SQUARE_TABLES_PHASE3[5] = AI.PIECE_SQUARE_TABLES_PHASE3[5].map((e,i)=>{
       return 4 * (8 - AI.manhattanDistance(kingXposition, i))
@@ -1863,6 +1863,28 @@ AI.preprocessor = function (board) {
   AI.PIECE_SQUARE_TABLES_PHASE2[5] = AI.PIECE_SQUARE_TABLES_PHASE2[5].map((e,i)=>{
     return e - 20*RRmapx[i]
   })
+
+  /************* ABSURD MOVES *****************/
+
+  AI.PIECE_SQUARE_TABLES_PHASE1[1] = AI.PIECE_SQUARE_TABLES_PHASE1[1].map((e,i)=>{return e-20*pawnXmap[i]})
+  AI.PIECE_SQUARE_TABLES_PHASE1[2] = AI.PIECE_SQUARE_TABLES_PHASE1[2].map((e,i)=>{return e-20*pawnXmap[i]})
+  AI.PIECE_SQUARE_TABLES_PHASE1[3] = AI.PIECE_SQUARE_TABLES_PHASE1[3].map((e,i)=>{return e-20*pawnXmap[i]})
+  AI.PIECE_SQUARE_TABLES_PHASE1[4] = AI.PIECE_SQUARE_TABLES_PHASE1[4].map((e,i)=>{return e-20*pawnXmap[i]})
+
+  AI.PIECE_SQUARE_TABLES_PHASE2[1] = AI.PIECE_SQUARE_TABLES_PHASE2[1].map((e,i)=>{return e-20*pawnXmap[i]})
+  AI.PIECE_SQUARE_TABLES_PHASE2[2] = AI.PIECE_SQUARE_TABLES_PHASE2[2].map((e,i)=>{return e-20*pawnXmap[i]})
+  AI.PIECE_SQUARE_TABLES_PHASE2[3] = AI.PIECE_SQUARE_TABLES_PHASE2[3].map((e,i)=>{return e-20*pawnXmap[i]})
+  AI.PIECE_SQUARE_TABLES_PHASE2[4] = AI.PIECE_SQUARE_TABLES_PHASE2[4].map((e,i)=>{return e-20*pawnXmap[i]})
+
+  AI.PIECE_SQUARE_TABLES_PHASE3[1] = AI.PIECE_SQUARE_TABLES_PHASE3[1].map((e,i)=>{return e-20*pawnXmap[i]})
+  AI.PIECE_SQUARE_TABLES_PHASE3[2] = AI.PIECE_SQUARE_TABLES_PHASE3[2].map((e,i)=>{return e-20*pawnXmap[i]})
+  AI.PIECE_SQUARE_TABLES_PHASE3[3] = AI.PIECE_SQUARE_TABLES_PHASE3[3].map((e,i)=>{return e-20*pawnXmap[i]})
+  AI.PIECE_SQUARE_TABLES_PHASE3[4] = AI.PIECE_SQUARE_TABLES_PHASE3[4].map((e,i)=>{return e-20*pawnXmap[i]})
+
+  AI.PIECE_SQUARE_TABLES_PHASE4[1] = AI.PIECE_SQUARE_TABLES_PHASE4[1].map((e,i)=>{return e-20*pawnXmap[i]})
+  AI.PIECE_SQUARE_TABLES_PHASE4[2] = AI.PIECE_SQUARE_TABLES_PHASE4[2].map((e,i)=>{return e-20*pawnXmap[i]})
+  AI.PIECE_SQUARE_TABLES_PHASE4[3] = AI.PIECE_SQUARE_TABLES_PHASE4[3].map((e,i)=>{return e-20*pawnXmap[i]})
+  AI.PIECE_SQUARE_TABLES_PHASE4[4] = AI.PIECE_SQUARE_TABLES_PHASE4[4].map((e,i)=>{return e-20*pawnXmap[i]})
 }
 
 AI.setphase = function (board) {
@@ -2063,7 +2085,7 @@ AI.search = function(board, options) {
 
     resolve({n: board.movenumber, phase: AI.phase, depth: AI.iteration-1, from: AI.bestmove.getFrom(), to: AI.bestmove.getTo(), movestring: AI.bestmove.getString(),
             score: AI.lastscore | 0, sigmoid: (sigmoid * 100 | 0)/100, nodes: AI.nodes, qsnodes: AI.qsnodes,
-            FHF: fhfperc+'%', pieces: board.pieces})
+            FHF: fhfperc+'%'})
   })
 }
 
