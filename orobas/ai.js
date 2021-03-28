@@ -29,16 +29,15 @@ let AI = {
 }
 
 // PIECE VALUES
-AI.PAWN = 271
+AI.PAWN = 300
 
 AI.PIECE_VALUES = [
+  // Stockfish values: 1 / 2.88 / 3.00 / 4.70 / 9.36
   // https://www.chessprogramming.org/Point_Value_by_Regression_Analysis
-  // These values are almost the same as stockfish values:
-  // 1 / 2.88 / 3.00 / 4.70 / 9.36
-  [AI.PAWN*1.00, AI.PAWN*2.88, AI.PAWN*3.00, AI.PAWN*4.80, AI.PAWN*10.77, AI.PAWN*200],
-  [AI.PAWN*1.00, AI.PAWN*2.88, AI.PAWN*3.00, AI.PAWN*4.80, AI.PAWN*10.77, AI.PAWN*200],
-  [AI.PAWN*1.00, AI.PAWN*2.88, AI.PAWN*3.00, AI.PAWN*4.80, AI.PAWN*10.77, AI.PAWN*200],
-  [AI.PAWN*1.00, AI.PAWN*2.88, AI.PAWN*3.00, AI.PAWN*4.80, AI.PAWN*10.77, AI.PAWN*200],
+  [1.00, 2.88, 3.00, 4.80, 10.77, 200].map(e=>e*AI.PAWN),
+  [1.00, 2.88, 3.00, 4.80, 10.77, 200].map(e=>e*AI.PAWN),
+  [1.00, 2.88, 3.00, 4.80, 10.77, 200].map(e=>e*AI.PAWN),
+  [1.00, 2.88, 3.00, 4.80, 10.77, 200].map(e=>e*AI.PAWN),
 ]
 
 // OTHER VALUES
@@ -404,7 +403,7 @@ AI.evaluate = function(board, ply) {
 
   // if (score > 0) score /= Math.sqrt(ply) //54.1 win (not fully tested)
   
-  return score | 0
+  return score/15 | 0
 }
 
 // let maxdistance = -1

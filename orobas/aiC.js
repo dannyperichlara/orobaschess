@@ -8,7 +8,7 @@ const Chess = require('../chess/chess.js')
 // Math.seedrandom((new Date()).toTimeString())
 
 let AI = {
-  totaldepth: 30,
+  totaldepth: [12,20,28,128],
   ttNodes: 0,
   iteration: 0,
   qsnodes: 0,
@@ -29,16 +29,15 @@ let AI = {
 }
 
 // PIECE VALUES
-AI.PAWN = 271
+AI.PAWN = 300
 
 AI.PIECE_VALUES = [
+  // Stockfish values: 1 / 2.88 / 3.00 / 4.70 / 9.36
   // https://www.chessprogramming.org/Point_Value_by_Regression_Analysis
-  // These values are almost the same as stockfish values:
-  // 1 / 2.88 / 3.00 / 4.70 / 9.36
-  [AI.PAWN*1.00, AI.PAWN*2.88, AI.PAWN*3.00, AI.PAWN*4.80, AI.PAWN*10.77, AI.PAWN*200],
-  [AI.PAWN*1.00, AI.PAWN*2.88, AI.PAWN*3.00, AI.PAWN*4.80, AI.PAWN*10.77, AI.PAWN*200],
-  [AI.PAWN*1.00, AI.PAWN*2.88, AI.PAWN*3.00, AI.PAWN*4.80, AI.PAWN*10.77, AI.PAWN*200],
-  [AI.PAWN*1.00, AI.PAWN*2.88, AI.PAWN*3.00, AI.PAWN*4.80, AI.PAWN*10.77, AI.PAWN*200],
+  [1.00, 2.88, 3.00, 4.80, 10.77, 200].map(e=>e*AI.PAWN),
+  [1.00, 2.88, 3.00, 4.80, 10.77, 200].map(e=>e*AI.PAWN),
+  [1.00, 2.88, 3.00, 4.80, 10.77, 200].map(e=>e*AI.PAWN),
+  [1.00, 2.88, 3.00, 4.80, 10.77, 200].map(e=>e*AI.PAWN),
 ]
 
 // OTHER VALUES
@@ -46,7 +45,7 @@ AI.PIECE_VALUES = [
 AI.FUTILITY_MARGIN = 2 * AI.PIECE_VALUES[0][0]
 AI.BISHOP_PAIR = 0.45 * AI.PAWN //For stockfish is something like 0.62 pawns
 AI.MATE = AI.PIECE_VALUES[0][5]
-AI.DRAW = 0//-AI.PIECE_VALUES[1][1]
+AI.DRAW = 0//-AI.PIECE_VALUES[0][1]
 AI.INFINITY = AI.PIECE_VALUES[0][5]*4
 
 AI.PSQT_VALUES = [-4,-2,-1, 0, 1, 2, 4]
@@ -157,22 +156,22 @@ AI.FISCHER_PARKING = [
   0,0,0,0,0,0,0,0,
 ]
 
-AI.LMR_TABLE = new Array(AI.totaldepth+1)
+AI.LMR_TABLE = new Array(AI.totaldepth[3]+1)
 
 //Great idea from Igel!
-for (let depth = 1; depth < AI.totaldepth+1; ++depth){
+for (let depth = 1; depth < AI.totaldepth[3]+1; ++depth){
 
   AI.LMR_TABLE[depth] = new Array(218)
 
   for (let moves = 1; moves < 218; ++moves){
       //Igel
-      //AI.LMR_TABLE[depth][moves] = 0.75 + Math.log(depth) * Math.log(moves) / 2.25 | 0
+      // AI.LMR_TABLE[depth][moves] = 0.75 + Math.log(depth) * Math.log(moves) / 2.25 | 0
 
       //Stockfish
-      AI.LMR_TABLE[depth][moves] = Math.log(depth) * Math.log(moves) / 1.95 | 0
+      AI.LMR_TABLE[depth][moves] = Math.log(depth) * Math.log(moves) / 2 | 0
 
       //http://talkchess.com/forum3/viewtopic.php?t=65273 (Evert)
-      // AI.LMR_TABLE[depth][moves] = Math.log(depth*(moves**2)) | 0
+      // AI.LMR_TABLE[depth][moves] = Math.log(depth*moves) | 0
   }
 }
 //General idea from Stockfish. Not fully tested.
@@ -217,8 +216,8 @@ AI.SAFETY_VALUES = [-2, -1,  0, 1, 2,-1,-2,-3,-3].map(e=>20*e)
 //Not full tested
 AI.PASSER_VALUES = [
   0,0,0,0,0,0,0,0,
-  240,240,240,240,240,240,240,240,
-  120,120,120,120,120,120,120,120,
+  160,160,160,160,160,160,160,160,
+  100,100,100,100,100,100,100,100,
   60,60,60,60,60,60,60,60,
   30,30,30,30,30,30,30,30,
   15,15,15,15,15,15,15,15,
@@ -404,7 +403,7 @@ AI.evaluate = function(board, ply) {
 
   // if (score > 0) score /= Math.sqrt(ply) //54.1 win (not fully tested)
   
-  return score | 0
+  return 0 | score / 3
 }
 
 // let maxdistance = -1
@@ -699,11 +698,11 @@ AI.scoreMove = function(move) {
   }
   
   if (move.capture || move.promotion) {
-    // let recapturebonus = (move.recapture|0) * 5e5
+    let recapturebonus = (move.recapture|0) * 5e5
     if (move.mvvlva>=6000) { //Good Captures
-      score += 1e7 + move.mvvlva// + recapturebonus
+      score += 1e7 + move.mvvlva + recapturebonus
     } else {
-      score += -1e6 + move.mvvlva// + move.psqtvalue + recapturebonus //Bad Captures
+      score += -1e6 + move.mvvlva + recapturebonus //Bad Captures
     }
   }
     
@@ -871,6 +870,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   }
 
   let turn = board.getTurnColor()
+  let notturn = ~turn & 1
   let hashkey = board.hashKey.getHashKey()
   
   let mateScore = AI.MATE - ply
@@ -987,27 +987,27 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     let piece = move.getPiece()
 
     //Absurd maneuvers pruning (AMP)
-    // let doAMP
+    let doAMP
 
-    // if (AI.phase === 1 && AI.absurd[turn][piece] >= 2) doAMP = true
+    if (AI.phase === 1 && AI.absurd[turn][piece] >= 2) doAMP = true
 
-    // if (AI.phase === 2 || AI.phase === 3) {
-    //   if (
-    //     (depth >= 2 && AI.absurd[turn][piece] >= (depth/2 | 0)) ||
-    //     AI.absurd[turn][0] >= 8 ||
-    //     AI.absurd[turn][1] >= 4 ||
-    //     AI.absurd[turn][2] >= 4 ||
-    //     AI.absurd[turn][3] >= 4 ||
-    //     AI.absurd[turn][4] >= 4 ||
-    //     AI.absurd[turn][5] >= 4
-    //   ) {
-    //     doAMP = true
-    //   }
-    // }
+    if (AI.phase === 2 || AI.phase === 3) {
+      if (
+        (depth >= 2 && AI.absurd[turn][piece] >= (depth/2 | 0)) ||
+        AI.absurd[turn][0] >= 8 ||
+        AI.absurd[turn][1] >= 4 ||
+        AI.absurd[turn][2] >= 4 ||
+        AI.absurd[turn][3] >= 4 ||
+        AI.absurd[turn][4] >= 4 ||
+        AI.absurd[turn][5] >= 4
+      ) {
+        doAMP = true
+      }
+    }
     
-    // if (doAMP) {
-    //   continue
-    // }
+    if (doAMP) {
+      continue
+    }
 
     let near2mate = alpha > 2*AI.PIECE_VALUES[0][4] || beta < -2*AI.PIECE_VALUES[0][4]
 
@@ -1994,14 +1994,20 @@ AI.MTDF = function (board, f, d) {
 }
 
 AI.search = function(board, options) {
-
+  
   if (options && options.seconds) AI.secondspermove = options.seconds
-
+  
   AI.nofpieces = board.getOccupiedBitboard().popcnt()
-
+  
   let nmoves = board.madeMoves.length
+  
+  AI.setphase(board)
 
-  if (board.movenumber && board.movenumber === 1) {
+  let changeofphase = AI.lastphase !== AI.phase
+
+  AI.lastphase = AI.phase
+
+  if (board.movenumber && board.movenumber === 1 || changeofphase) {
     AI.createTables()
   }
 
@@ -2032,8 +2038,7 @@ AI.search = function(board, options) {
     AI.iteration = 0
     AI.timer = (new Date()).getTime()
     AI.stop = false
-    AI.setphase(board)
-    AI.PV = AI.getPV(board, AI.totaldepth+1)
+    AI.PV = AI.getPV(board, AI.totaldepth[AI.phase-1]+1)
     AI.changeinPV = true
     
     let score = 0
@@ -2043,7 +2048,7 @@ AI.search = function(board, options) {
     let f =  AI.PVS(board, alpha, beta, 1, 1) //for MTD(f)
 
     //Iterative Deepening
-    for (let depth = 1; depth <= AI.totaldepth; depth+=1) {
+    for (let depth = 1; depth <= AI.totaldepth[AI.phase-1]; depth+=1) {
       if (AI.stop && AI.iteration > AI.mindepth) break
 
       if (!AI.stop) AI.lastscore = score
@@ -2055,7 +2060,7 @@ AI.search = function(board, options) {
       
       score = (white? 1 : -1) * AI.MTDF(board, f, depth)
 
-      AI.PV = AI.getPV(board, AI.totaldepth+1)
+      AI.PV = AI.getPV(board, AI.totaldepth[AI.phase]+1)
 
       if ([...AI.PV][1] && AI.bestmove && [...AI.PV][1].value !== AI.bestmove.value) {
         AI.changeinPV = true
