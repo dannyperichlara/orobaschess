@@ -8,7 +8,7 @@ const Chess = require('../chess/chess.js')
 Math.seedrandom('orobas')
 
 let AI = {
-  totaldepth: 30,
+  totaldepth: 128,
   ttNodes: 0,
   iteration: 0,
   qsnodes: 0,
@@ -1265,7 +1265,7 @@ AI.createPSQT = function (board) {
         nm, nm, nm, nm, nm, nm, nm,vbm,
         nm, nm, GM, GM, GM, GM,vbm,vbm,
         nm, GM, GM, GM, GM,vbm,vbm,vbm,
-        GM,VGM, GM, nm, GM,vbm, nm, nm,
+        GM, GM, GM, nm, GM,vbm, nm, nm,
        VGM, GM,vbm,vbm,vbm,VGM,VGM,VGM,
          0,  0,  0,  0,  0,  0,  0,  0,
         ],
@@ -1896,11 +1896,11 @@ AI.setphase = function (board) {
 
   let queens = board.getPieceColorBitboard(4, color).popcnt() + board.getPieceColorBitboard(4, !color).popcnt()
 
-  if (AI.nofpieces <= 20 && queens === 0) { // ¿Debería ser queens < 2? Hay que testearlo
+  if (AI.nofpieces <= 20 && queens === 0 || Math.abs(AI.lastscore) > AI.PAWN) { // ¿Debería ser queens < 2? Hay que testearlo
     AI.phase = 3 //ENDGAME (the king enters)
   }
 
-  if (AI.nofpieces <= 12) AI.phase = 4 //LATE ENGDAME
+  if (AI.nofpieces <= 12 || Math.abs(AI.lastscore) > AI.PIECE_VALUES[0][1]) AI.phase = 4 //LATE ENGDAME
   
   AI.createPSQT(board)
   AI.randomizePSQT()
