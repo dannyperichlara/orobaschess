@@ -755,9 +755,9 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
   let moves
   
   if (incheck && depth >= -4) {
-    moves = board.getMoves(false, false)
+    moves = board.getMoves(true, false)
   } else {
-    moves = board.getMoves(false, true)
+    moves = board.getMoves(true, true)
   }
 
   
@@ -926,7 +926,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   }
     
   
-  let moves = board.getMoves(false, false)
+  let moves = board.getMoves(true, false)
 
   moves = AI.sortMoves(moves, turn, ply, board, ttEntry)
   
@@ -1923,7 +1923,7 @@ AI.getPV = function (board, length) {
     ttEntry = AI.ttGet(hashkey)
 
     if (ttEntry /*&& ttEntry.depth > 0*/) {
-      let moves = board.getMoves(false, false).filter(move=>{
+      let moves = board.getMoves(true, false).filter(move=>{
         return move.value === ttEntry.move.value
       })
 
