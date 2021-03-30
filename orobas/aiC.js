@@ -1999,8 +1999,15 @@ AI.search = function(board, options) {
   AI.nofpieces = board.getOccupiedBitboard().popcnt()
 
   let nmoves = board.madeMoves.length
+  let changeofphase = false
+  
+  AI.setphase(board)
 
-  if (board.movenumber && board.movenumber === 1) {
+  if (AI.lastphase !== AI.phase) changeofphase = true
+
+  AI.lastphase = AI.phase
+
+  if (board.movenumber && board.movenumber === 1 || changeofphase) {
     AI.createTables()
   }
 
@@ -2031,7 +2038,6 @@ AI.search = function(board, options) {
     AI.iteration = 0
     AI.timer = (new Date()).getTime()
     AI.stop = false
-    AI.setphase(board)
     AI.PV = AI.getPV(board, AI.totaldepth+1)
     AI.changeinPV = true
     
