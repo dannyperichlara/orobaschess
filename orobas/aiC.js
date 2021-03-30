@@ -21,7 +21,7 @@ let AI = {
   random: 20,
   phase: 1,
   htlength: 1 << 24,
-  pawntlength: 1e6,
+  pawntlength: 5e5,
   reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
   mindepth: 2,
   secondspermove: 3,
@@ -29,7 +29,7 @@ let AI = {
 }
 
 // PIECE VALUES
-AI.PAWN = 300
+AI.PAWN = 270
 AI.PAWN2 = AI.PAWN/2 | 0
 AI.PAWN4 = AI.PAWN/4 | 0
 
@@ -50,13 +50,19 @@ AI.MATE = AI.PIECE_VALUES[0][5]
 AI.DRAW = 0//-AI.PIECE_VALUES[1][1]
 AI.INFINITY = AI.PIECE_VALUES[0][5]*4
 
-AI.PSQT_VALUES = [-4,-2,-1, 0, 1, 2, 4]
+let wm  = -4 // Worst move
+let vbm = -2 // Very bad move
+let bm  = -1 // Bad move
+let nm  =  0 // Neutral move
+let GM  =  1 // Good move
+let VGM =  2 // Very good move
+let BM  =  4 // Best move
 
 AI.PSQT_SCALAR = [
-  [10,  8,  8,  1,  1, 30],
-  [ 8, 10, 10,  4,  2, 20],
-  [ 5,  5,  5, 10, 10, 10],
-  [10,  5,  5,  5,  5,  5],
+  [10,10,10,10,10,10],
+  [10,10,10,10,10,10],
+  [10,10,10,10,10,10],
+  [10,10,10,10,10,10],
 ]
 
 AI.KDISTANCE = [
@@ -68,13 +74,6 @@ AI.KDISTANCE = [
   [0, 0,16,-8, 0, 0, 0,  4, 8],
 ]
 
-let wm  = AI.PSQT_VALUES[0] // Worst move
-let vbm = AI.PSQT_VALUES[1] // Very bad move
-let bm  = AI.PSQT_VALUES[2] // Bad move
-let nm  = AI.PSQT_VALUES[3] // Neutral move
-let GM  = AI.PSQT_VALUES[4] // Good move
-let VGM = AI.PSQT_VALUES[5] // Very good move
-let BM  = AI.PSQT_VALUES[6] // Best move
 
 AI.QUIETSORT = [
   //Pawn
@@ -179,41 +178,41 @@ for (let depth = 1; depth < AI.totaldepth+1; ++depth){
 //General idea from Stockfish. Not fully tested.
 AI.MOBILITY_VALUES = [
   [
-    [...Array( 2)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN4),
-    [...Array( 9)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN),
-    [...Array(14)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN),
-    [...Array(15)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN4),
-    [...Array(28)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN4),
-    [...Array( 9)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN4),
+    [],
+    [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*3),
+    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*5),
+    [0,0,0,0,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*2),
+    [0,0,0,0,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*2),
+    []
   ],
   [
-    [...Array( 2)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN2),
-    [...Array( 9)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN),
-    [...Array(14)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN),
-    [...Array(15)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN2),
-    [...Array(28)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN2),
-    [...Array( 9)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN2),
+    [],
+    [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*5),
+    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*7),
+    [-8,-4,0,1,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*5),
+    [-6,-4,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*5),
+    []
   ],
   [
-    [...Array( 2)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN),
-    [...Array( 9)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN2),
-    [...Array(14)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN2),
-    [...Array(15)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN),
-    [...Array(28)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN),
-    [...Array( 9)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN),
+    [],
+    [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*5),
+    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*7),
+    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*7),
+    [-6,-4,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*7),
+    []
   ],
   [
-    [...Array( 2)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN),
-    [...Array( 9)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN4),
-    [...Array(14)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN4),
-    [...Array(15)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN),
-    [...Array(28)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN),
-    [...Array( 9)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN),
+    [],
+    [-8,-4,-2,-1,0,0,0,0,0].map(e=>e*5),
+    [-6,-2,0,0,0,0,0,0,0,0,0,0,0,0].map(e=>e*7),
+    [-6,-2,0,0,0,0,0,0,0,0,0,0,0,0,0].map(e=>e*7),
+    [-6,-4,-2,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0].map(e=>e*7),
+    []
   ]
 ]
 
 //Not full tested(
-AI.SAFETY_VALUES = [-2, -1,  0, 1, 2,-1,-2,-3,-3].map(e=>e*AI.PAWN2)
+  AI.SAFETY_VALUES = [-2, -1,  0, 1, 2,-1,-2,-3,-3].map(e=>20*e)
 
 //Not full tested
 AI.PASSER_VALUES = [
@@ -231,10 +230,10 @@ AI.DOUBLED_VALUES = [0,-100,-120,-200,-300,-400,-500,-600,-700]
 
 //Not fully tested
 AI.DEFENDED_PAWN_VALUES = [
-  [0, 0, 0, 0, 0, 0, 0, 0], //phase 1
-  [0,20,40,40,80,80,80,80], //phase 2
-  [0,20,40,40,80,80,80,80], //phase 3
-  [0,20,40,40,80,80,80,80], //phase 4
+  [0, 0, 0, 0, 0, 0, 0, 0, 0], //phase 1
+  [0,20,40,40,80,80,80,80,80], //phase 2
+  [0,20,40,40,80,80,80,80,80], //phase 3
+  [0,20,40,40,80,80,80,80,80], //phase 4
 ]
 
 //Not fully tested
@@ -389,15 +388,13 @@ AI.evaluate = function(board, ply) {
   let threat = 0
   
   psqt = AI.getPSQT(P,N,B,R,Q,K, turn) - AI.getPSQT(Px,Nx,Bx,Rx,Qx,Kx, notturn)
+
   mobility  = AI.getMOB(P,N,B,R,Q,K,Px,board, turn) - AI.getMOB(Px,Nx,Bx,Rx,Qx,Kx,P,board, notturn)
   safety = AI.getKS(K, us, turn) - AI.getKS(Kx, usx, notturn)
   structure = AI.getStructure(turn, P, Px) - AI.getStructure(notturn, Px, P)
-  threat = 0//AI.getThreat(P,N,B,R,Q,K,Kx,turn) - AI.getThreat(Px,Nx,Bx,Rx,Qx,Kx,K,notturn)
-  // passers = AI.getPassers(P, Px, white) - AI.getPassers(Px, P, !white)
-
   
   let positional = psqt + mobility + structure + safety + passers + threat
-  
+
   let score = material + positional  | 0
   
   // console.log('material '+material, 'psqt '+psqt, 'mobility '+mobility, 'safety '+safety, 'structure '+structure, 'threat '+threat, 'passers '+passers)
@@ -1192,10 +1189,10 @@ AI.createPSQT = function (board) {
        0,  0,  0,  0,  0,   0,  0,  0,
       wm, wm, wm, wm, wm, vbm,vbm,vbm, 
       wm,vbm, bm, bm, bm, vbm,vbm,vbm,
-     vbm, bm, nm, GM, GM, vbm,vbm,vbm,
-      bm, nm,VGM, BM, BM,  wm, wm, wm,
-      nm,VGM, nm, nm, nm, vbm, GM, nm,
-     VGM, BM,vbm, wm, wm, VGM,VGM,VGM,
+     vbm, bm, nm,VGM,VGM, vbm,vbm,vbm,
+      bm, nm, nm, BM, BM,  wm, wm, wm,
+      nm, GM, GM, wm, wm, vbm, GM, nm,
+      GM, GM, GM, wm, wm,  BM, BM, BM,
        0,  0,  0,  0,  0,   0,  0,  0,
       ],
 
@@ -1204,7 +1201,7 @@ AI.createPSQT = function (board) {
      vbm, bm, bm, bm, bm, bm, bm, vbm,
      vbm, bm, bm, bm, bm, bm, bm, vbm,
      vbm, bm, nm, nm, nm, nm, bm, vbm,
-      wm, bm, nm, nm, nm, nm, bm,  wm,
+      wm, bm, nm, GM, GM, nm, bm,  wm,
       wm, bm, wm, GM, GM, wm, bm,  wm,
       wm, bm, BM, nm, nm, BM, bm,  wm,
      vbm, bm, bm, nm, nm, bm, bm, vbm,
@@ -1216,8 +1213,8 @@ AI.createPSQT = function (board) {
       vbm, bm, bm, bm, bm, bm, bm, vbm,
       vbm, bm, bm, bm, bm, bm, bm, vbm,
       vbm, bm, nm, nm, nm, nm, bm, vbm,
-      vbm, GM, nm, nm, nm, nm, nm, vbm,
-      vbm, bm, BM, nm, nm, BM, bm, vbm,
+      vbm,vbm, nm, GM, GM, nm, bm, vbm,
+      vbm, bm, BM, GM, GM, BM, bm, vbm,
        wm, bm, nm, nm, nm, nm, bm,  wm,
       vbm, BM, bm, nm, nm, bm, BM, vbm,
       vbm,vbm, wm,vbm,vbm, wm,vbm, vbm,
@@ -1236,14 +1233,14 @@ AI.createPSQT = function (board) {
     
     // Queen
     [ 
+      wm, wm, wm, wm, wm, wm, wm, wm,
+      wm, wm, wm, wm, wm, wm, wm, wm,
+      wm, wm, wm, wm, wm, wm, wm, wm,
+      wm, wm, wm, wm, wm, wm, wm, wm,
       bm, bm, bm, bm, bm, bm, bm, bm,
-      bm, wm, bm, bm, bm, bm, bm, bm,
-      bm, bm, bm, bm, bm, bm, bm, bm,
-      bm, bm, bm, bm, bm, bm, bm, bm,
-      nm, nm, nm, bm, bm, nm, nm, nm,
-      nm, nm, nm, nm, nm, nm, nm, nm,
-      nm, nm, GM, GM, GM, nm, nm, nm,
-      wm,vbm, wm, BM, nm,vbm,vbm, wm,
+      bm, bm, bm,vbm, bm, bm, bm, bm,
+      bm, bm, GM, GM, GM, bm, bm, bm,
+      wm,vbm, wm, BM, wm,vbm,vbm, wm,
     ],
 
     // King
@@ -1504,7 +1501,6 @@ AI.createPSQT = function (board) {
     if (AI.phase === 2) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE2]
     if (AI.phase === 3) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE3]
     if (AI.phase === 4) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE4]
-
 }
 
 AI.PSQT2Sigmoid = function () {
@@ -1909,7 +1905,7 @@ AI.setphase = function (board) {
   AI.createPSQT(board)
   AI.randomizePSQT()
   
-  AI.softenPSQT()
+  // AI.softenPSQT()
 
   AI.PSQT2Sigmoid()
 }
