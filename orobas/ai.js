@@ -405,7 +405,7 @@ AI.evaluate = function(board, ply) {
 
   // if (score > 0) score /= Math.sqrt(ply) //54.1 win (not fully tested)
   
-  return score/15 | 0
+  return score | 0
 }
 
 // let maxdistance = -1
@@ -1219,7 +1219,7 @@ AI.createPSQT = function (board) {
       vbm, GM, nm, nm, nm, nm, nm, vbm,
       vbm, bm, BM, nm, nm, BM, bm, vbm,
        wm, bm, nm, nm, nm, nm, bm,  wm,
-      vbm, BM, bm, GM, GM, bm, BM, vbm,
+      vbm, BM, bm, nm, nm, bm, BM, vbm,
       vbm,vbm, wm,vbm,vbm, wm,vbm, vbm,
     ],
     // Rook
@@ -1500,10 +1500,10 @@ AI.createPSQT = function (board) {
 
     AI.preprocessor(board)
     
-    if (AI.phase == 1) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE1]
-    if (AI.phase == 2) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE2]
-    if (AI.phase == 3) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE3]
-    if (AI.phase == 4) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE4]
+    if (AI.phase === 1) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE1]
+    if (AI.phase === 2) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE2]
+    if (AI.phase === 3) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE3]
+    if (AI.phase === 4) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE4]
 }
 
 AI.PSQT2Sigmoid = function () {
