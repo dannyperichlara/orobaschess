@@ -755,9 +755,9 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
   let moves
   
   if (incheck && depth >= -4) {
-    moves = board.getMoves(false, false)
+    moves = board.getMoves(true, false)
   } else {
-    moves = board.getMoves(false, true)
+    moves = board.getMoves(true, true)
   }
 
   
@@ -926,7 +926,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   }
     
   
-  let moves = board.getMoves(false, false)
+  let moves = board.getMoves(true, false)
 
   moves = AI.sortMoves(moves, turn, ply, board, ttEntry)
   
@@ -1310,8 +1310,8 @@ AI.createPSQT = function (board) {
         bm, bm, bm, nm, nm, nm, nm, nm,
         bm, wm, bm, nm, nm, nm, nm, nm,
         bm, bm, bm, nm, nm, nm, nm, nm,
-        nm, nm, nm, nm, nm, nm, nm, nm,
-        nm, nm, nm, nm, nm, nm, nm, nm,
+        nm, nm, nm, wm, wm, nm, nm, nm,
+        nm, nm, nm, wm, wm, nm, nm, nm,
         nm, nm, nm, nm, nm, nm, nm, nm,
         bm, bm, GM, GM, GM, bm, bm, bm,
        vbm,vbm,vbm, wm, bm,vbm,vbm,vbm,
@@ -1326,7 +1326,7 @@ AI.createPSQT = function (board) {
         vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm, 
         vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
          bm, bm, bm,wm, wm,vbm, nm, nm,
-         bm, bm, nm,wm,vbm,vbm,VGM, nm
+         bm, GM, nm,wm,vbm,vbm, BM, nm
   
       ],
     ]

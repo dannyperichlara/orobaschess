@@ -1310,8 +1310,8 @@ AI.createPSQT = function (board) {
         bm, bm, bm, nm, nm, nm, nm, nm,
         bm, wm, bm, nm, nm, nm, nm, nm,
         bm, bm, bm, nm, nm, nm, nm, nm,
-        nm, nm, nm, nm, nm, nm, nm, nm,
-        nm, nm, nm, nm, nm, nm, nm, nm,
+        nm, nm, nm, wm, wm, nm, nm, nm,
+        nm, nm, nm, wm, wm, nm, nm, nm,
         nm, nm, nm, nm, nm, nm, nm, nm,
         bm, bm, GM, GM, GM, bm, bm, bm,
        vbm,vbm,vbm, wm, bm,vbm,vbm,vbm,
@@ -1326,7 +1326,7 @@ AI.createPSQT = function (board) {
         vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm, 
         vbm,vbm,vbm,vbm,vbm,vbm,vbm,vbm,
          bm, bm, bm,wm, wm,vbm, nm, nm,
-         bm, bm, nm,wm,vbm,vbm,VGM, nm
+         bm, GM, nm,wm,vbm,vbm, BM, nm
   
       ],
     ]
@@ -1923,7 +1923,7 @@ AI.getPV = function (board, length) {
     ttEntry = AI.ttGet(hashkey)
 
     if (ttEntry /*&& ttEntry.depth > 0*/) {
-      let moves = board.getMoves(true, false).filter(move=>{
+      let moves = board.getMoves(false, false).filter(move=>{
         return move.value === ttEntry.move.value
       })
 
