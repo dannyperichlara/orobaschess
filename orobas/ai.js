@@ -5,7 +5,7 @@
 const Chess = require('../chess/chess.js')
 // const Zobrist = require('../chess/zobrist.js')
 
-// Math.seedrandom((new Date()).toTimeString())
+Math.seedrandom('orobas')
 
 let AI = {
   totaldepth: 30,
@@ -30,6 +30,8 @@ let AI = {
 
 // PIECE VALUES
 AI.PAWN = 300
+AI.PAWN2 = AI.PAWN/2 | 0
+AI.PAWN4 = AI.PAWN/4 | 0
 
 AI.PIECE_VALUES = [
   // Stockfish values: 1 / 2.88 / 3.00 / 4.70 / 9.36
@@ -177,41 +179,41 @@ for (let depth = 1; depth < AI.totaldepth+1; ++depth){
 //General idea from Stockfish. Not fully tested.
 AI.MOBILITY_VALUES = [
   [
-    [],
-    [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*3),
-    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*5),
-    [0,0,0,0,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*2),
-    [0,0,0,0,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*2),
-    []
+    [...Array( 2)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN4),
+    [...Array( 9)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN),
+    [...Array(14)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN),
+    [...Array(15)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN4),
+    [...Array(28)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN4),
+    [...Array( 9)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN4),
   ],
   [
-    [],
-    [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*5),
-    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*7),
-    [-8,-4,0,1,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*5),
-    [-6,-4,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*5),
-    []
+    [...Array( 2)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN2),
+    [...Array( 9)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN),
+    [...Array(14)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN),
+    [...Array(15)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN2),
+    [...Array(28)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN2),
+    [...Array( 9)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN2),
   ],
   [
-    [],
-    [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*5),
-    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*7),
-    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*7),
-    [-6,-4,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*7),
-    []
+    [...Array( 2)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN),
+    [...Array( 9)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN2),
+    [...Array(14)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN2),
+    [...Array(15)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN),
+    [...Array(28)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN),
+    [...Array( 9)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN),
   ],
   [
-    [],
-    [-8,-4,-2,-1,0,0,0,0,0].map(e=>e*5),
-    [-6,-2,0,0,0,0,0,0,0,0,0,0,0,0].map(e=>e*7),
-    [-6,-2,0,0,0,0,0,0,0,0,0,0,0,0,0].map(e=>e*7),
-    [-6,-4,-2,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0].map(e=>e*7),
-    []
+    [...Array( 2)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN),
+    [...Array( 9)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN4),
+    [...Array(14)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN4),
+    [...Array(15)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN),
+    [...Array(28)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN),
+    [...Array( 9)].map((e,i)=>{return Math.log10(i+1) - 0.5}).map(e=>e*AI.PAWN),
   ]
 ]
 
 //Not full tested(
-AI.SAFETY_VALUES = [-2, -1,  0, 1, 2,-1,-2,-3,-3].map(e=>20*e)
+AI.SAFETY_VALUES = [-2, -1,  0, 1, 2,-1,-2,-3,-3].map(e=>e*AI.PAWN2)
 
 //Not full tested
 AI.PASSER_VALUES = [
@@ -240,12 +242,12 @@ AI.PAWN_IMBALANCE = [-160,-160,-160,-160,-160,-150,-140,-100,0,100,140,150,160,1
 
 //https://open-chess.org/viewtopic.php?t=3058
 AI.MVVLVASCORES = [
-  [6002,20225,20250,20400,20800,26900],
-  [4775,6004,20025,20175,20575,26675],
-  [4750,4975,6006,20150,20550,26650],
-  [4600,4825,4850,6008,20400,26500],
-  [4200,4425,4450,4600,6010,26100],
-  [3100,3325,3350,3500,3900,26000],
+  /*P*/[6002,20225,20250,20400,20800,26900],
+  /*N*/[4775, 6004,20025,20175,20575,26675],
+  /*B*/[4750, 4975, 6006,20150,20550,26650],
+  /*R*/[4600, 4825, 4850, 6008,20400,26500],
+  /*Q*/[4200, 4425, 4450, 4600, 6010,26100],
+  /*K*/[3100, 3325, 3350, 3500, 3900,26000],
 ]
 
 AI.PIECE_SQUARE_TABLES = [
@@ -391,7 +393,7 @@ AI.evaluate = function(board, ply) {
   safety = AI.getKS(K, us, turn) - AI.getKS(Kx, usx, notturn)
   structure = AI.getStructure(turn, P, Px) - AI.getStructure(notturn, Px, P)
   threat = 0//AI.getThreat(P,N,B,R,Q,K,Kx,turn) - AI.getThreat(Px,Nx,Bx,Rx,Qx,Kx,K,notturn)
-  passers = AI.getPassers(P, Px, white) - AI.getPassers(Px, P, !white)
+  // passers = AI.getPassers(P, Px, white) - AI.getPassers(Px, P, !white)
 
   
   let positional = psqt + mobility + structure + safety + passers + threat
@@ -523,8 +525,9 @@ AI.getStructure = function (turn, P, Px) {
   let score = 0
   let doubled = AI.getDoubled(P, white)
   let defended = AI.getDefended(P, turn)
+  let passers = AI.getPassers(P, Px, white)
 
-  score = defended + doubled
+  score = defended + doubled + passers
 
   AI.pawntable[turn][hashkey%AI.pawntlength] = score
 
@@ -799,7 +802,7 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
     }
   }
 
-  if (board.isKingInCheck() && legal === 0) {
+  if (incheck && legal === 0) {
       AI.ttSave(hashkey, -AI.MATE + ply, 0, Infinity, bestmove)
       return -AI.MATE + ply;
   }
@@ -978,7 +981,9 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     return reverseval
   }
 
-  let doFHR = staticeval - 200 * incheck > beta && alpha === beta - 1 && depth > 6
+  let threateval = 200 * incheck
+
+  let FHR = staticeval - threateval > beta && alpha === beta - 1? 1 : 0
   let noncaptures = 0
   
   for (let i=0, len=moves.length; i < len; i++) {
@@ -1043,9 +1048,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
       
       if (AI.phase === 4) R = R/2 | 0
     }
-    
-    if (doFHR) R+=4
-            
+                
     if (board.makeMove(move)) {
       legal++
 
@@ -1066,16 +1069,16 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
 
       if (legal === 1) {
         //Always search the first move at full depth
-        score = -AI.PVS(board, -beta, -alpha, depth+E-R-1, ply+1)
+        score = -AI.PVS(board, -beta, -alpha, depth+E-R-FHR-1, ply+1)
       } else {
 
         //Next moves are searched with reductions
-        score = -AI.PVS(board, -alpha-1, -alpha, depth+E-R-1, ply+1)
+        score = -AI.PVS(board, -alpha-1, -alpha, depth+E-R-FHR-1, ply+1)
 
         //If the result looks promising, we do a research at full depth.
         //Remember we are trying to get the score at depth D, but we just get the score at depth D - R
         if (!AI.stop && score > alpha && score < beta) { //https://www.chessprogramming.org/Principal_Variation_Search
-          score = -AI.PVS(board, -beta, -alpha, depth+E-1, ply+1)
+          score = -AI.PVS(board, -beta, -alpha, depth+E+FHR-1, ply+1)
         }
       }
       
@@ -1217,7 +1220,7 @@ AI.createPSQT = function (board) {
       vbm, bm, BM, nm, nm, BM, bm, vbm,
        wm, bm, nm, nm, nm, nm, bm,  wm,
       vbm, BM, bm, GM, GM, bm, BM, vbm,
-      vbm,vbm,vbm,vbm,vbm,vbm,vbm, vbm,
+      vbm,vbm, wm,vbm,vbm, wm,vbm, vbm,
     ],
     // Rook
     [ 
@@ -1233,14 +1236,14 @@ AI.createPSQT = function (board) {
     
     // Queen
     [ 
-      wm, wm, wm, wm, wm, wm, wm, wm,
-      wm, wm, wm, wm, wm, wm, wm, wm,
-      wm, wm, wm, wm, wm, wm, wm, wm,
-      wm, wm, wm, wm, wm, wm, wm, wm,
-      nm, nm, nm, wm, wm, nm, nm, nm,
+      bm, bm, bm, bm, bm, bm, bm, bm,
+      bm, wm, bm, bm, bm, bm, bm, bm,
+      bm, bm, bm, bm, bm, bm, bm, bm,
+      bm, bm, bm, bm, bm, bm, bm, bm,
+      nm, nm, nm, bm, bm, nm, nm, nm,
       nm, nm, nm, nm, nm, nm, nm, nm,
       nm, nm, GM, GM, GM, nm, nm, nm,
-      wm,vbm,vbm, BM, nm,vbm,vbm, wm,
+      wm,vbm, wm, BM, nm,vbm,vbm, wm,
     ],
 
     // King
@@ -1296,7 +1299,7 @@ AI.createPSQT = function (board) {
       // Rook
       [ 
         nm, nm, nm, nm, nm, nm, nm, nm,
-       VGM,VGM,VGM, BM, BM,VGM,VGM,VGM,
+        GM,VGM,VGM, BM, BM,VGM,VGM, GM,
         nm, nm, nm, nm, nm, nm, nm, nm,
         nm, nm, nm, nm, nm, nm, nm, nm,
         nm, nm, nm, nm, nm, nm, nm, nm,
@@ -1307,9 +1310,9 @@ AI.createPSQT = function (board) {
       
       // Queen
       [ 
-        nm, nm, nm, nm, nm, nm, nm, nm,
-        nm, nm, nm, nm, nm, nm, nm, nm,
-        nm, nm, nm, nm, nm, nm, nm, nm,
+        bm, bm, bm, nm, nm, nm, nm, nm,
+        bm, wm, bm, nm, nm, nm, nm, nm,
+        bm, bm, bm, nm, nm, nm, nm, nm,
         nm, nm, nm, nm, nm, nm, nm, nm,
         nm, nm, nm, nm, nm, nm, nm, nm,
         nm, nm, nm, nm, nm, nm, nm, nm,
@@ -1903,10 +1906,10 @@ AI.setphase = function (board) {
   if (AI.nofpieces <= 12) AI.phase = 4 //LATE ENGDAME
   
   AI.createPSQT(board)
-  
-  // AI.softenPSQT()
-
   AI.randomizePSQT()
+  
+  AI.softenPSQT()
+
   AI.PSQT2Sigmoid()
 }
 
