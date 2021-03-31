@@ -2088,6 +2088,13 @@ AI.search = function(board, options) {
 
     AI.lastmove = AI.bestmove
 
+    //zugzwang prevention
+    if (!AI.bestmove) {
+      let moves = board.getMoves()
+
+      AI.bestmove = moves[moves.length*Math.random()|0]
+    }
+
     resolve({n: board.movenumber, phase: AI.phase, depth: AI.iteration-1, from: AI.bestmove.getFrom(), to: AI.bestmove.getTo(), movestring: AI.bestmove.getString(),
             score: AI.lastscore | 0, sigmoid: (sigmoid * 100 | 0)/100, nodes: AI.nodes, qsnodes: AI.qsnodes,
             FHF: fhfperc+'%'})

@@ -308,6 +308,7 @@ AI.createTables = function () {
 
   AI.history = [[],[]]
   AI.butterfly = [[],[]]
+  AI.countermove = [[],[]]
 
   AI.history[0] = [
     Array(64).fill(0),
@@ -331,6 +332,24 @@ AI.createTables = function () {
     AI.butterfly[0][i] = Array(64).fill(0)
     AI.butterfly[1][i] = Array(64).fill(0)
   }
+
+  AI.countermove[0] = [
+    Array(64).fill(0),
+    Array(64).fill(0),
+    Array(64).fill(0),
+    Array(64).fill(0),
+    Array(64).fill(0),
+    Array(64).fill(0),
+  ]
+
+  AI.countermove[1] = [
+    Array(64).fill(0),
+    Array(64).fill(0),
+    Array(64).fill(0),
+    Array(64).fill(0),
+    Array(64).fill(0),
+    Array(64).fill(0),
+  ]
 
   AI.hashtable = new Array(AI.htlength) //positions
   AI.pawntable = [new Array(AI.pawntlength), new Array(AI.pawntlength)] //positions
@@ -639,6 +658,7 @@ AI.sortMoves = function(moves, turn, ply, board, ttEntry) {
     move.mvvlva = 0
     move.hvalue = 0
     move.bvalue = 0
+    move.countermove = 0
     move.psqtvalue = 0
     move.promotion = 0
 
@@ -668,6 +688,13 @@ AI.sortMoves = function(moves, turn, ply, board, ttEntry) {
       move.promotion = kind
     }
 
+    if (lastmove) {
+      let countermove = AI.countermove[turn][lastmove.getPiece()][lastmove.getTo()]
+      
+      if (countermove.value === move.value) move.countermove = true
+    }
+
+    
     let hvalue = AI.history[turn][piece][to]
     let bvalue = AI.butterfly[turn][move.getFrom()][to]
 
@@ -705,7 +732,9 @@ AI.scoreMove = function(move) {
       score += -1e6 + move.mvvlva// + move.psqtvalue + recapturebonus //Bad Captures
     }
   }
-    
+
+  score += 1e6*move.countermove
+
   if (move.hvalue) { //History Heuristic
     score += move.hvalue
   } 
@@ -931,6 +960,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   moves = AI.sortMoves(moves, turn, ply, board, ttEntry)
   
   let bestmove = moves[0]
+  let lastmove = board.getLastMove()
   let legal = 0
   let bestscore = -Infinity
   let score
@@ -958,7 +988,6 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
 
 
   // if (incheck) {
-  //   let lastmove = board.getLastMove()
 
   //   if (lastmove) {
   //     if (AI.phase < 4) {
@@ -1096,7 +1125,11 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
           
           //LOWERBOUND
           AI.ttSave(hashkey, score, -1, depth, move)
-          AI.saveHistory(turn, move, 2**depth)
+
+          if (!move.isCapture()) {
+            AI.saveHistory(turn, move, 2**depth)
+            if (lastmove) AI.countermove[turn][lastmove.getPiece()][lastmove.getTo()] = move
+          }
 
           return score
         } else {
@@ -2087,6 +2120,13 @@ AI.search = function(board, options) {
     let sigmoid = 1/(1+Math.pow(10, -AI.lastscore/400))
 
     AI.lastmove = AI.bestmove
+
+    //zugzwang prevention
+    if (!AI.bestmove) {
+      let moves = board.getMoves()
+
+      AI.bestmove = moves[moves.length*Math.random()|0]
+    }
 
     resolve({n: board.movenumber, phase: AI.phase, depth: AI.iteration-1, from: AI.bestmove.getFrom(), to: AI.bestmove.getTo(), movestring: AI.bestmove.getString(),
             score: AI.lastscore | 0, sigmoid: (sigmoid * 100 | 0)/100, nodes: AI.nodes, qsnodes: AI.qsnodes,
