@@ -23,7 +23,7 @@ let AI = {
   htlength: 1 << 24,
   pawntlength: 5e5,
   reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
-  mindepth: 2,
+  mindepth: [2,2,2,2],
   secondspermove: 3,
   lastmove: null
 }
@@ -395,8 +395,8 @@ AI.evaluate = function(board, ply) {
   let us = board.getColorBitboard(turn)
   let usx = board.getColorBitboard(notturn)
 
-  let colorMaterial = AI.getMaterialValue(P,N,B,R,Q)
-  let notcolorMaterial = AI.getMaterialValue(Px,Nx,Bx,Rx,Qx)
+  let colorMaterial = AI.getMaterialValue(P.dup(),N.dup(),B.dup(),R.dup(),Q.dup())
+  let notcolorMaterial = AI.getMaterialValue(Px.dup(),Nx.dup(),Bx.dup(),Rx.dup(),Qx.dup())
   let material = colorMaterial - notcolorMaterial
 
   let psqt = 0
@@ -406,7 +406,10 @@ AI.evaluate = function(board, ply) {
   let passers = 0
   let threat = 0
   
-  psqt = AI.getPSQT(P,N,B,R,Q,K, turn) - AI.getPSQT(Px,Nx,Bx,Rx,Qx,Kx, notturn)
+  psqt = AI.getPSQT(P.dup(),N.dup(),B.dup(),R.dup(),Q.dup(),K.dup(), turn)
+       - AI.getPSQT(Px.dup(),Nx.dup(),Bx.dup(),Rx.dup(),Qx.dup(), K.dup(), notturn)
+
+  // console.log(psqt)
 
   mobility  = AI.getMOB(P,N,B,R,Q,K,Px,board, turn) - AI.getMOB(Px,Nx,Bx,Rx,Qx,Kx,P,board, notturn)
   safety = AI.getKS(K, us, turn) - AI.getKS(Kx, usx, notturn)
@@ -625,14 +628,14 @@ AI.getMaterialValue = function(P,N,B,R,Q) {
     return value | 0
 }
 
-AI.getPSQT = function(P,B,N,R,Q,K,color) {
+AI.getPSQT = function(P,N,B,R,Q,K,color) {
   
-  let allpieces = [P.dup(),N.dup(),B.dup(),R.dup(),Q.dup(),K.dup()]
+  let allpieces = [P,N,B,R,Q,K]
 
   let value = 0
 
   for (let i = 0; i <= 5; i++) {
-      let pieces = allpieces[i].dup()
+      let pieces = allpieces[i]
 
       while (!pieces.isEmpty()) {
           let index = pieces.extractLowestBitPosition()
@@ -725,11 +728,11 @@ AI.scoreMove = function(move) {
   }
   
   if (move.capture || move.promotion) {
-    // let recapturebonus = (move.recapture|0) * 5e5
+    let recapturebonus = (move.recapture|0) * 5e5
     if (move.mvvlva>=6000) { //Good Captures
-      score += 1e7 + move.mvvlva// + recapturebonus
+      score += 1e7 + move.mvvlva+ recapturebonus
     } else {
-      score += -1e6 + move.mvvlva// + move.psqtvalue + recapturebonus //Bad Captures
+      score += -1e6 + move.mvvlva + move.psqtvalue + recapturebonus //Bad Captures
     }
   }
 
@@ -774,9 +777,9 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
     if (standpat >= beta ) return standpat
     
     /* delta pruning */ //Not fully tested
-    if (standpat + AI.PIECE_VALUES[0][4] < alpha) {
-      return alpha
-    }
+    // if (standpat + AI.PIECE_VALUES[0][4] < alpha) {
+    //   return alpha
+    // }
   
     if ( standpat > alpha) alpha = standpat
   }
@@ -799,9 +802,9 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
     let move = moves[i]
 
     //Bad captures pruning TESTED OK +82 ELO 174 games (-4)
-    if (depth < -4 && move.mvvlva < 6000) {
-      continue
-    }
+    // if (depth < -4 && move.mvvlva < 6000) {
+    //   continue
+    // }
 
     if (board.makeMove(move)) {
       legal++
@@ -829,7 +832,7 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
   }
 
   if (incheck && legal === 0) {
-      AI.ttSave(hashkey, -AI.MATE + ply, 0, Infinity, bestmove)
+      // AI.ttSave(hashkey, -AI.MATE + ply, 0, Infinity, bestmove)
       return -AI.MATE + ply;
   }
 
@@ -901,7 +904,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
 
 
   if ((new Date()).getTime() > AI.timer + 1000 * AI.secondspermove) {
-    if (AI.iteration > AI.mindepth && !pvNode) {
+    if (AI.iteration > AI.mindepth[AI.phase-1] && !pvNode) {
       AI.stop = true
     }
   }
@@ -934,7 +937,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
   }
 
-  if (AI.stop && AI.iteration > AI.mindepth) return alpha
+  if (AI.stop && AI.iteration > AI.mindepth[AI.phase-1]) return alpha
   
   //Hash table lookup
   if (ttEntry && ttEntry.depth > depth) {
@@ -1007,17 +1010,17 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   // }
   
   //Reverse Futility pruning
-  let reverseval = staticeval - AI.PIECE_VALUES[0][1] * depth
+  // let reverseval = staticeval - AI.PIECE_VALUES[0][1] * depth
 
-  if (!incheck && depth <= 3 && reverseval > beta) {
-    // AI.ttSave(hashkey, reverseval, -1, depth, moves[0])
-    // return beta
-    return reverseval
-  }
+  // if (!incheck && depth <= 3 && reverseval > beta) {
+  //   // AI.ttSave(hashkey, reverseval, -1, depth, moves[0])
+  //   // return beta
+  //   return reverseval
+  // }
 
   let threateval = 200 * incheck
 
-  let FHR = staticeval - threateval > beta && alpha === beta - 1? 1 : 0
+  let FHR = 0//staticeval - threateval > beta && alpha === beta - 1? 1 : 0
   let noncaptures = 0
   
   for (let i=0, len=moves.length; i < len; i++) {
@@ -1054,9 +1057,9 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     let E = 0
 
     /*futility pruning */
-    if (!near2mate && !incheck && 1 < depth && depth <= 3+R && legal >= 1) {
-      if (staticeval + AI.FUTILITY_MARGIN*depth <= alpha)  continue
-    }
+    // if (!near2mate && !incheck && 1 < depth && depth <= 3+R && legal >= 1) {
+    //   if (staticeval + AI.FUTILITY_MARGIN*depth <= alpha)  continue
+    // }
 
     let isCapture = !!move.capture
 
@@ -1065,14 +1068,14 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     if (isPositional && AI.phase < 4 && piece > 0 && piece < 5) noncaptures++
 
     // Bad-Captures-Pruning (BCP)
-    if (AI.phase < 4 && isCapture && depth > 8 && move.mvvlva < 6000 && legal > 4) {
-      continue
-    }
+    // if (AI.phase < 4 && isCapture && depth > 8 && move.mvvlva < 6000 && legal > 4) {
+    //   continue
+    // }
 
-    // Late-Moves-Pruning (LMP)
-    if (AI.phase < 4 && depth > 6 && isPositional && noncaptures > 4) {
-      continue
-    }
+    // // Late-Moves-Pruning (LMP)
+    // if (AI.phase < 4 && depth > 6 && isPositional && noncaptures > 4) {
+    //   continue
+    // }
 
     // if (board.movenumber == 1 && i > 0) continue // CHEQUEA ORDEN PSQT
 
@@ -1089,21 +1092,21 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
       AI.absurd[turn][piece]++
 
       //Late-Moves-Pruning (LMP)
-      let lmplimit = 800*depth**(-1.8) | 0
-      if (!isCapture && legal > lmplimit) {
-        board.unmakeMove()
-        AI.absurd[turn][piece]--
-        continue
-      }
+      // let lmplimit = 800*depth**(-1.8) | 0
+      // if (!isCapture && legal > lmplimit) {
+      //   board.unmakeMove()
+      //   AI.absurd[turn][piece]--
+      //   continue
+      // }
 
       //Extensions
-      if ((incheck || (move.mvvlva && move.mvvlva > 20000)) && depth < 3 && pvNode) {
+      if (incheck && depth < 3 && pvNode) {
         E = 1
       }
 
       if (legal === 1) {
         //Always search the first move at full depth
-        score = -AI.PVS(board, -beta, -alpha, depth+E-R-FHR-1, ply+1)
+        score = -AI.PVS(board, -beta, -alpha, depth+E-1, ply+1)
       } else {
 
         //Next moves are searched with reductions
@@ -1112,7 +1115,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
         //If the result looks promising, we do a research at full depth.
         //Remember we are trying to get the score at depth D, but we just get the score at depth D - R
         if (!AI.stop && score > alpha && score < beta) { //https://www.chessprogramming.org/Principal_Variation_Search
-          score = -AI.PVS(board, -beta, -alpha, depth+E+FHR-1, ply+1)
+          score = -AI.PVS(board, -beta, -alpha, depth+E-1, ply+1)
         }
       }
       
@@ -1231,7 +1234,7 @@ AI.createPSQT = function (board) {
       wm, wm, wm, wm, wm, vbm,vbm,vbm, 
       wm,vbm, bm, bm, bm, vbm,vbm,vbm,
      vbm, bm, nm,VGM,VGM, vbm,vbm,vbm,
-      bm, nm, nm, BM, BM,  wm, wm, wm,
+      wm, nm, nm, BM, BM,  wm, wm, wm,
       nm, GM, GM, wm, wm, vbm, GM, nm,
       GM, GM, GM, wm, wm,  BM, BM, BM,
        0,  0,  0,  0,  0,   0,  0,  0,
@@ -2068,8 +2071,28 @@ AI.search = function(board, options) {
     
     if (white) {
       AI.TESTER = true
+
+      // if (AI.lastscore) {
+      //   if (AI.lastscore > AI.PIECE_VALUES[0][1]) {
+      //     AI.DRAW = -2*AI.PIECE_VALUES[0][0]
+      //   } else if (AI.lastscore > AI.PIECE_VALUES[0][1]) {
+      //     AI.DRAW = 2*AI.PIECE_VALUES[0][0]
+      //   } else {
+      //     AI.DRAW = 0
+      //   }
+      // } 
     } else {
       AI.TESTER = false
+
+      // if (AI.lastscore) {
+      //   if (-AI.lastscore > AI.PIECE_VALUES[0][1]) {
+      //     AI.DRAW = -2*AI.PIECE_VALUES[0][0]
+      //   } else if (-AI.lastscore > AI.PIECE_VALUES[0][1]) {
+      //     AI.DRAW = 2*AI.PIECE_VALUES[0][0]
+      //   } else {
+      //     AI.DRAW = 0
+      //   }
+      // } 
     }
         
     AI.nodes = 0
@@ -2090,7 +2113,7 @@ AI.search = function(board, options) {
 
     //Iterative Deepening
     for (let depth = 1; depth <= AI.totaldepth; depth+=1) {
-      if (AI.stop && AI.iteration > AI.mindepth) break
+      if (AI.stop && AI.iteration > AI.mindepth[AI.phase-1]) break
 
       if (!AI.stop) AI.lastscore = score
 
