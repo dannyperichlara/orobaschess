@@ -867,6 +867,14 @@ AI.reduceHistory = function () {
       }
     }
   }
+
+  for (let color = 0; color < 2; color++) {
+    for (let piece = 0; piece < 6; piece++) {      
+      for (let to = 0; to < 64; to++) {
+        AI.countermove[color][piece][to] = 0
+      }
+    }
+  }
 }
 
 AI.saveHistory = function(turn, move, value) {
