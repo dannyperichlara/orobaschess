@@ -728,8 +728,8 @@ AI.scoreMove = function(move) {
   }
   
   if (move.capture || move.promotion) {
-    let recapturebonus = (move.recapture|0) * 5e5
-    if (move.mvvlva>=6000) { //Good Captures
+    let recapturebonus = 0// (move.recapture|0) * 1e7
+    if (true || move.mvvlva>=6000) { //Good Captures
       score += 1e7 + move.mvvlva+ recapturebonus
     } else {
       score += -1e6 + move.mvvlva + move.psqtvalue + recapturebonus //Bad Captures
