@@ -18,7 +18,7 @@ let AI = {
   status: null,
   fhf: 0,
   fh: 0,
-  random: 20,
+  random: 100,
   phase: 1,
   htlength: 1 << 24,
   pawntlength: 5e5,
@@ -980,21 +980,21 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   let incheck = board.isKingInCheck()
 
   //Razoring (idea from Strelka)
-  if (alpha === beta - 1 && !incheck) {
-    let value = staticeval + AI.PAWN;
-    if (value < beta) {
-      if (depth === 1) {
-        let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
-        return Math.max(new_value, value);
-      }
-      value += 2*AI.PAWN;
-      if (value < beta && depth <= 3) {
-        let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
-        if (new_value < beta)
-          return Math.max(new_value, value);
-      }
-    }
-  }
+  // if (alpha === beta - 1 && !incheck) {
+  //   let value = staticeval + AI.PAWN;
+  //   if (value < beta) {
+  //     if (depth === 1) {
+  //       let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
+  //       return Math.max(new_value, value);
+  //     }
+  //     value += 2*AI.PAWN;
+  //     if (value < beta && depth <= 3) {
+  //       let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
+  //       if (new_value < beta)
+  //         return Math.max(new_value, value);
+  //     }
+  //   }
+  // }
 
 
 
@@ -1080,7 +1080,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     // if (board.movenumber == 1 && i > 0) continue // CHEQUEA ORDEN PSQT
 
     //Reductions (LMR)
-    if (!incheck) {
+    if (!incheck && !isCapture) {
       R += AI.LMR_TABLE[depth][i+1]
       
       if (AI.phase === 4) R = R/2 | 0
@@ -1135,7 +1135,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
           
           
           //LOWERBOUND
-          AI.ttSave(hashkey, score, -1, depth, move)
+          AI.ttSave(hashkey, score, -1, depth-R, move)
 
           if (!move.isCapture()) {
             AI.saveHistory(turn, move, 2**depth)
@@ -1150,7 +1150,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
         alpha = score
       } else {
         // AI.saveHistory(turn, move, -(2**depth))
-        AI.ttSave(hashkey, score, 1, depth, move) //TESTED AT HIGH DEPTH
+        AI.ttSave(hashkey, score, 1, depth-R, move) //TESTED AT HIGH DEPTH
       }
 
       if (score > bestscore) {
@@ -1169,7 +1169,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
         return AI.DRAW + ply
       }
       
-      AI.ttSave(hashkey, -AI.MATE + ply, 0, Infinity, bestmove)
+      AI.ttSave(hashkey, -AI.MATE + ply, 0, depth, bestmove)
       return -AI.MATE + ply
       
   } else {
