@@ -1073,6 +1073,10 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
 
     // if (board.movenumber == 1 && i > 0) continue // CHEQUEA ORDEN PSQT
 
+    let moveCountPruning = legal >= (3 + depth * depth) / 2
+
+    if (moveCountPruning && depth >=3 && !isCapture) R++
+
     //Reductions (LMR)
     if (!incheck && !isCapture) {
       R += AI.LMR_TABLE[depth][i+1]
@@ -1142,7 +1146,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
 
           return score
         } else {
-          AI.saveHistory(turn, move, -(2**depth))
+          // AI.saveHistory(turn, move, -(2**depth)) //TESTED NO AYUDA EN NADA!!!!
         }
 
         alpha = score
@@ -2049,7 +2053,7 @@ AI.search = function(board, options) {
 
   AI.lastphase = AI.phase
 
-  if (board.movenumber && board.movenumber === 1 || changeofphase) {
+  if (board.movenumber && board.movenumber <= 1 || changeofphase) {
     AI.createTables()
   }
 
