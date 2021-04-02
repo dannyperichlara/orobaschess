@@ -1125,11 +1125,11 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
 
       if (legal === 1) {
         //Always search the first move at full depth
-        score = -AI.PVS(board, -beta, -alpha, depth-R-FHR-1, ply+1)
+        // score = -AI.PVS(board, -beta, -alpha, depth-R-FHR-1, ply+1)
 
-        if (!AI.stop && score > alpha && score < beta) { //https://www.chessprogramming.org/Principal_Variation_Search
+        // if (!AI.stop && score > alpha && score < beta) { //https://www.chessprogramming.org/Principal_Variation_Search
           score = -AI.PVS(board, -beta, -alpha, depth+E-1, ply+1)
-        }
+        // }
       } else {
 
         //Next moves are searched with reductions
