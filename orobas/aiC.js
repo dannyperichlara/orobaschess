@@ -893,6 +893,20 @@ AI.saveHistory = function(turn, move, value) {
    
 }
 
+AI.givescheck = function (board, move) {
+
+  if (board.makeMove(move)) {
+    let incheck = board.isKingInCheck()
+  
+    board.unmakeMove()
+  
+    return incheck
+  }
+  
+  return false
+
+}
+
 AI.PVS = function(board, alpha, beta, depth, ply) {
   let pvNode = beta - alpha > 1 //https://www.chessprogramming.org/Node_Types
 
@@ -1021,6 +1035,8 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     let move = moves[i]
     let piece = move.getPiece()
 
+    let givescheck = AI.givescheck(board, move)
+
     //Absurd maneuvers pruning (AMP)
     // let doAMP
 
@@ -1061,9 +1077,9 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
 
     if (isPositional && AI.phase < 4 && piece > 0 && piece < 5) noncaptures++
 
-    // Bad-Captures-Pruning (BCP)
-    // if (AI.phase < 4 && isCapture && depth > 8 && move.mvvlva < 6000 && legal > 4) {
-    //   continue
+    // Bad-Captures-Pruning (BCP) //NOT FULLY TESTED
+    // if (AI.phase < 4 && isCapture && depth >= 3 && move.mvvlva < 6000 && legal > 1) {
+    //   R++
     // }
 
     // // Late-Moves-Pruning (LMP)
@@ -1072,6 +1088,8 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     // }
 
     // if (board.movenumber == 1 && i > 0) continue // CHEQUEA ORDEN PSQT
+
+    if (ttEntry && ttEntry.move.isCapture()) R++
 
     let moveCountPruning = legal >= (3 + depth * depth) / 2
 
