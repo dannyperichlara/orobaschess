@@ -226,7 +226,7 @@ AI.PASSER_VALUES = [
   0,0,0,0,0,0,0,0,
 ]
 
-AI.DOUBLED_VALUES = [0,-100,-120,-200,-300,-400,-500,-600,-700]
+AI.DOUBLED_VALUES = [0,-1,-2,-3,-4,-5,-6,-7,-8].map(e=>e*AI.PAWN2/2|0)
 
 //Not fully tested
 AI.DEFENDED_PAWN_VALUES = [
