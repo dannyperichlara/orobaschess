@@ -728,12 +728,8 @@ AI.scoreMove = function(move) {
   }
   
   if (move.capture || move.promotion) {
-    let recapturebonus = 0// (move.recapture|0) * 1e7
-    if (true || move.mvvlva>=6000) { //Good Captures
-      score += 1e7 + move.mvvlva+ recapturebonus
-    } else {
-      score += -1e6 + move.mvvlva + move.psqtvalue + recapturebonus //Bad Captures
-    }
+    // let recapturebonus = (move.recapture|0) * 1e7
+    score += 1e7 + move.mvvlva// + recapturebonus
   }
 
   score += 1e6*move.countermove
@@ -940,7 +936,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   if (AI.stop && AI.iteration > AI.mindepth[AI.phase-1]) return alpha
   
   //Hash table lookup
-  if (ttEntry && ttEntry.depth > depth) {
+  if (ttEntry && ttEntry.depth >= depth) {
     //testear estrictamente mayor 
     AI.ttnodes++
     
@@ -1106,11 +1102,15 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
 
       if (legal === 1) {
         //Always search the first move at full depth
-        score = -AI.PVS(board, -beta, -alpha, depth+E-1, ply+1)
+        score = -AI.PVS(board, -beta, -alpha, depth-R-FHR-1, ply+1)
+
+        if (!AI.stop && score > alpha && score < beta) { //https://www.chessprogramming.org/Principal_Variation_Search
+          score = -AI.PVS(board, -beta, -alpha, depth+E-1, ply+1)
+        }
       } else {
 
         //Next moves are searched with reductions
-        score = -AI.PVS(board, -alpha-1, -alpha, depth+E-R-FHR-1, ply+1)
+        score = -AI.PVS(board, -alpha-1, -alpha, depth-R-FHR-1, ply+1)
 
         //If the result looks promising, we do a research at full depth.
         //Remember we are trying to get the score at depth D, but we just get the score at depth D - R
