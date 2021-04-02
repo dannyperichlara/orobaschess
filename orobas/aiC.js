@@ -837,7 +837,7 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
 }
 
 AI.ttSave = function (hashkey, score, flag, depth, move) {
-  if (!move) return
+  if (AI.stop || !move) return
 
   AI.hashtable[hashkey % AI.htlength] = {
     hashkey,
