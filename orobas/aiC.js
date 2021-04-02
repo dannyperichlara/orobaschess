@@ -1018,18 +1018,18 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   //   }
   // }
   
-  //Reverse Futility pruning
-  // let reverseval = staticeval - AI.PIECE_VALUES[0][1] * depth
+  //Reverse Futility pruning (Static Null Move Pruning)
+  let margin = AI.PIECE_VALUES[0][1] * depth
 
-  // if (!incheck && depth <= 3 && reverseval > beta) {
-  //   // AI.ttSave(hashkey, reverseval, -1, depth, moves[0])
-  //   // return beta
-  //   return reverseval
-  // }
+  if (!incheck && depth <= 3 && staticeval - margin > beta) {
+    // AI.ttSave(hashkey, reverseval, -1, depth, moves[0])
+    return beta
+    return staticeval - margin
+  }
 
   let threateval = 200 * incheck
 
-  let FHR = 0//staticeval - threateval > beta && alpha === beta - 1? 1 : 0
+  let FHR = 0//staticeval - threateval > beta && cutNode? 3 : 0
   let noncaptures = 0
   
   for (let i=0, len=moves.length; i < len; i++) {
