@@ -909,6 +909,7 @@ AI.givescheck = function (board, move) {
 
 AI.PVS = function(board, alpha, beta, depth, ply) {
   let pvNode = beta - alpha > 1 //https://www.chessprogramming.org/Node_Types
+  let cutNode = beta - alpha === 1
 
   AI.nodes++
 
@@ -1090,6 +1091,8 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     // if (board.movenumber == 1 && i > 0) continue // CHEQUEA ORDEN PSQT
 
     if (ttEntry && ttEntry.move.isCapture()) R++
+
+    if (cutNode && !isCapture && !move.promotion && depth>=3 && legal>1+2*ply) R+=2 //Not fully tested
 
     let moveCountPruning = legal >= (3 + depth * depth) / 2
 
