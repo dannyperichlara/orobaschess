@@ -956,8 +956,8 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   }
   
   //IID (if there's no ttEntry, get one for ordering moves)
-  if (!ttEntry && depth > 2) {
-    AI.PVS(board, alpha, beta, depth - 2, ply) //depth - 2 tested ok + 31 ELO
+  if (pvNode && !ttEntry && depth > 2) {
+    AI.PVS(board, alpha, beta, depth-2, ply) //depth - 2 tested ok + 31 ELO
     ttEntry = AI.ttGet(hashkey)
   }
     
@@ -971,11 +971,11 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   let legal = 0
   let bestscore = -Infinity
   let score
-  let staticeval = AI.evaluate(board, ply)
+  let staticeval = AI.evaluate(board, ply) //Apparently doesnt affect performance at low depths
 
   let incheck = board.isKingInCheck()
 
-  //Razoring (idea from Strelka)
+  //Razoring (idea from Strelka) //THIS IS A COMPLETE BULLSHIT
   // if (alpha === beta - 1 && !incheck) {
   //   let value = staticeval + AI.PAWN;
   //   if (value < beta) {
@@ -991,8 +991,6 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   //     }
   //   }
   // }
-
-
 
   // if (incheck) {
 
