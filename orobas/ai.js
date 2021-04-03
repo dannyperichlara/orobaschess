@@ -1102,7 +1102,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
 
     //Reductions (LMR)
     if (!incheck && !isCapture) {
-      R += AI.LMR_TABLE[depth][i+1]//*(Math.log(this.iteration)+1) | 0
+      R += AI.LMR_TABLE[depth][i+1]
       
       if (AI.phase === 4) R = R/2 | 0
     }
