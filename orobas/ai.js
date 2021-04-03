@@ -18,7 +18,7 @@ let AI = {
   status: null,
   fhf: 0,
   fh: 0,
-  random: 20,
+  random: 0,
   phase: 1,
   htlength: 1 << 24,
   pawntlength: 5e5,
@@ -1068,7 +1068,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     let E = 0
 
     /*futility pruning */
-    if (!near2mate && !incheck && 1 < depth && depth <= 3+R && cutNode) {
+    if (!near2mate && !incheck && 1 < depth && depth <= 3+R && legal >= 1) {
       let futilityMargin = 2*AI.PIECE_VALUES[0][1]
 
       if (staticeval + futilityMargin * depth <= alpha)  continue
