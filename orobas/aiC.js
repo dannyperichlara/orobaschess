@@ -44,7 +44,6 @@ AI.PIECE_VALUES = [
 
 // OTHER VALUES
 
-AI.FUTILITY_MARGIN = 2 * AI.PIECE_VALUES[0][0]
 AI.BISHOP_PAIR = 0.45 * AI.PAWN //For stockfish is something like 0.62 pawns
 AI.MATE = AI.PIECE_VALUES[0][5]
 AI.DRAW = 0//-AI.PIECE_VALUES[1][1]
@@ -424,7 +423,7 @@ AI.evaluate = function(board, ply) {
 
   // if (score > 0) score /= Math.sqrt(ply) //54.1 win (not fully tested)
   
-  return score | 0
+  return score/2.7 | 0
 }
 
 // let maxdistance = -1
@@ -1063,16 +1062,19 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
 
     let near2mate = alpha > 2*AI.PIECE_VALUES[0][4] || beta < -2*AI.PIECE_VALUES[0][4]
 
+    let isCapture = !!move.capture
     
     let R = 0
     let E = 0
 
     /*futility pruning */
-    // if (!near2mate && !incheck && 1 < depth && depth <= 3+R && legal >= 1) {
-    //   if (staticeval + AI.FUTILITY_MARGIN*depth <= alpha)  continue
-    // }
+    if (!near2mate && !incheck && 1 < depth && depth <= 3+R && cutNode) {
+      let futilityMargin = 2*AI.PIECE_VALUES[0][1]
 
-    let isCapture = !!move.capture
+      if (staticeval + futilityMargin * depth <= alpha)  continue
+
+    }
+
 
     let isPositional = move.getKind() < 4 && !incheck
 
@@ -1100,7 +1102,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
 
     //Reductions (LMR)
     if (!incheck && !isCapture) {
-      R += AI.LMR_TABLE[depth][i+1]
+      R += AI.LMR_TABLE[depth][i+1]//*(Math.log(this.iteration)+1) | 0
       
       if (AI.phase === 4) R = R/2 | 0
     }
