@@ -22,7 +22,7 @@ let AI = {
   phase: 1,
   htlength: 1 << 24,
   pawntlength: 5e5,
-  reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
+  reduceHistoryFactor: 0.5, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
   mindepth: [2,2,2,2],
   secondspermove: 3,
   lastmove: null
@@ -737,7 +737,7 @@ AI.scoreMove = function(move) {
     score += move.hvalue
   } 
 
-  score += move.psqtvalue
+  score += move.psqtvalue - 1000
 
   return score
 }
