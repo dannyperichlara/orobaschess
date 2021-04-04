@@ -2068,6 +2068,11 @@ AI.MTDF = function (board, f, d) {
 }
 
 AI.search = function(board, options) {
+  if (board.movenumber && board.movenumber <= 1) {
+    AI.lastscore = 0
+    AI.bestmove = 0
+    AI.bestscore = 0
+  }
 
   if (options && options.seconds) AI.secondspermove = options.seconds
 
