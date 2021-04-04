@@ -1592,9 +1592,11 @@ AI.PSQT2Sigmoid = function () {
 AI.softenPSQT = function () {
   for (let p = 0; p <= 5; p++) {
     AI.PIECE_SQUARE_TABLES[p] = AI.PIECE_SQUARE_TABLES[p].map((e,i)=>{
+      if (e) return e
+
       let N = [...AI.PIECE_SQUARE_TABLES[p]]
-      let sum = 4*N[i]
-      let total = 4
+      let sum = N[i]
+      let total = 1
       
       if (i%8!=0 && N[i-9]) {sum += N[i-9]; total++}
       if ((i+1)%8!=0 && N[i-7]) {sum += N[i-7]; total++}
@@ -1607,8 +1609,10 @@ AI.softenPSQT = function () {
       
       if (N[i-8]) {sum += N[i-8]; total++}
       if (N[i+8]) {sum += N[i+8]; total++}
+
+      let average = sum/total
     
-      return 1.3*sum/total | 0
+      return average/2 | 0
     })
   }
 }
@@ -1974,7 +1978,9 @@ AI.setphase = function (board) {
   AI.createPSQT(board)
   AI.randomizePSQT()
   
-  // AI.softenPSQT()
+  AI.softenPSQT()
+
+  console.log(AI.PIECE_SQUARE_TABLES[1])
 
   AI.PSQT2Sigmoid()
 }
