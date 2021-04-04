@@ -1034,6 +1034,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   for (let i=0, len=moves.length; i < len; i++) {
     let move = moves[i]
     let piece = move.getPiece()
+    let to = move.getTo()
 
     let givescheck = AI.givescheck(board, move)
 
@@ -1099,6 +1100,11 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     let moveCountPruning = legal >= (3 + depth * depth) / 2 // tested with i and failed
 
     if (moveCountPruning && depth >=3 && !isCapture) R++
+
+    if (!isCapture && cutNode && AI.history[turn][piece][to] < -20) {
+      // console.log('prune')
+      R++
+    }
 
     //Reductions (LMR)
     if (!incheck) {
