@@ -22,7 +22,7 @@ let AI = {
   phase: 1,
   htlength: 1 << 24,
   pawntlength: 5e5,
-  reduceHistoryFactor: 0.5, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
+  reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
   mindepth: [2,2,2,2],
   secondspermove: 3,
   lastmove: null
@@ -1163,18 +1163,22 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
           AI.ttSave(hashkey, score, -1, depth-R, move)
 
           if (!move.isCapture()) {
-            AI.saveHistory(turn, move, 2**depth)
+            AI.saveHistory(turn, move, 1 << depth)
             if (lastmove) AI.countermove[turn][lastmove.getPiece()][lastmove.getTo()] = move
+
+            //Negative plausibility (http://www.aifactory.co.uk/newsletter/2007_01_neg_plausibility.htm)
+            for (let j=0; j < i; j++) {
+              if (!moves[j].capture) AI.saveHistory(turn, moves[j], -(i-j)-1)
+            }
+            
           }
 
           return score
         } else {
-          // AI.saveHistory(turn, move, -(2**depth)) //TESTED NO AYUDA EN NADA!!!!
         }
 
         alpha = score
       } else {
-        // AI.saveHistory(turn, move, -(2**depth))
         AI.ttSave(hashkey, score, 1, depth-R, move) //TESTED AT HIGH DEPTH
       }
 
@@ -1208,7 +1212,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
       // EXACT
       if (bestmove) {
         AI.ttSave(hashkey, bestscore, 0, depth, bestmove)
-        AI.saveHistory(turn, bestmove, 2**depth)
+        if (!bestmove.isCapture()) AI.saveHistory(turn, bestmove, 1)
       }
       return bestscore
     } else {
