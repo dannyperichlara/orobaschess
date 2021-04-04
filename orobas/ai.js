@@ -1096,7 +1096,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
 
     if (cutNode && !isCapture && !move.promotion && depth>=3 && legal>1+2*ply) R+=2 //Not fully tested
 
-    let moveCountPruning = legal >= (3 + depth * depth) / 2
+    let moveCountPruning = legal >= (3 + depth * depth) / 2 // tested with i and failed
 
     if (moveCountPruning && depth >=3 && !isCapture) R++
 
