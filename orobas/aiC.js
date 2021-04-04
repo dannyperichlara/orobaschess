@@ -920,6 +920,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   }
 
   let turn = board.getTurnColor()
+  let notturn = ~turn & 1
   let hashkey = board.hashKey.getHashKey()
   
   let mateScore = AI.MATE - ply
@@ -1007,7 +1008,6 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   // }
 
   // if (incheck) {
-
   //   if (lastmove) {
   //     if (AI.phase < 4) {
   //       AI.saveHistory(notturn, lastmove, 2**depth) //check moves up in move ordering
@@ -1101,7 +1101,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     if (moveCountPruning && depth >=3 && !isCapture) R++
 
     //Reductions (LMR)
-    if (!incheck && !isCapture) {
+    if (!incheck) {
       R += AI.LMR_TABLE[depth][i+1]
       
       if (AI.phase === 4) R = R/2 | 0
@@ -1979,8 +1979,6 @@ AI.setphase = function (board) {
   AI.randomizePSQT()
   
   AI.softenPSQT()
-
-  console.log(AI.PIECE_SQUARE_TABLES[1])
 
   AI.PSQT2Sigmoid()
 }
