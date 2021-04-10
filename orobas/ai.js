@@ -724,23 +724,23 @@ AI.scoreMove = function(move) {
   let score = 0
   
   if (move.tt) { 
-    score += 1e8
+    return score += 1e8
   }
   
   if (move.capture || move.promotion) {
     // let recapturebonus = (move.recapture|0) * 1e7
-    score += 1e7 + move.mvvlva// + recapturebonus
+    return score += 1e7 + move.mvvlva// + recapturebonus
   }
 
-  score += 1e6*move.countermove
+  if (move.countermove) {
+    return score += 1e6*move.countermove
+  }
 
   if (move.hvalue) { //History Heuristic
-    score += move.hvalue
+    return score += move.hvalue
   } 
 
-  score += move.psqtvalue - 1000
-
-  return score
+  return move.psqtvalue - 1000
 }
 
 AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
@@ -770,7 +770,10 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
   if (!incheck) {
     // we can return the stand pat score (fail-soft) or beta (fail-hard) as a lower bound
     // if (standpat >= beta ) return beta
-    if (standpat >= beta ) return standpat
+    if (standpat >= beta ) {
+      // return standpat
+      return beta
+    }
     
     /* delta pruning */ //Not fully tested
     // if (standpat + AI.PIECE_VALUES[0][4] < alpha) {
@@ -811,8 +814,8 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
 
       if( score >= beta ) {
         // AI.saveHistory(turn, move, 2)
-        return score
-        // return beta
+        // return score
+        return beta
       }
 
       if( score > alpha ) {
@@ -1036,7 +1039,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   if (!incheck && depth <= 3 && staticeval - margin > beta) {
     // AI.ttSave(hashkey, reverseval, -1, depth, moves[0])
     return beta
-    return staticeval - margin
+    // return staticeval - margin
   }
 
   let threateval = 200 * incheck
@@ -1181,18 +1184,19 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
           //LOWERBOUND
           AI.ttSave(hashkey, score, -1, depth-R, move)
 
-          if (!move.isCapture()) {
+          if (!isCapture) {
             AI.saveHistory(turn, move, 1 << depth)
             if (lastmove) AI.countermove[turn][lastmove.getPiece()][lastmove.getTo()] = move
 
             //Negative plausibility (http://www.aifactory.co.uk/newsletter/2007_01_neg_plausibility.htm)
             for (let j=0; j < i; j++) {
-              if (!moves[j].capture) AI.saveHistory(turn, moves[j], -(i-j)-1)
+              if (!moves[j].capture) AI.saveHistory(turn, moves[j], (j-i)*depth)
             }
             
           }
 
-          return score
+          return beta
+          // return score
         } else {
         }
 
