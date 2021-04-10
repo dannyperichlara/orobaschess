@@ -47,7 +47,7 @@ AI.PIECE_VALUES = [
 AI.BISHOP_PAIR = 0.45 * AI.PAWN //For stockfish is something like 0.62 pawns
 AI.MATE = AI.PIECE_VALUES[0][5]
 AI.DRAW = 0//-AI.PIECE_VALUES[1][1]
-AI.INFINITY = AI.PIECE_VALUES[0][5]*4
+AI.INFINITY = AI.PIECE_VALUES[0][5]*2
 
 let wm  = -4 // Worst move
 let vbm = -2 // Very bad move
@@ -350,8 +350,9 @@ AI.createTables = function () {
     Array(64).fill(0),
   ]
 
-  AI.hashtable = new Array(AI.htlength) //positions
-  AI.pawntable = [new Array(AI.pawntlength), new Array(AI.pawntlength)] //positions
+  // AI.hashtable = new Array(AI.htlength) //positions
+  AI.hashtable = new Map() //positions
+  AI.pawntable = [new Map(), new Map()] //positions
 }
 
 //Randomize Piece Square Tables
@@ -529,7 +530,7 @@ AI.getKS = function (_K, us, turn) {
 AI.getStructure = function (turn, P, Px) {
   let hashkey = (P.low ^ P.high) >>> 0
 
-  let hashentry = AI.pawntable[turn][hashkey%AI.pawntlength]
+  let hashentry = AI.pawntable[turn].get(hashkey % AI.pawntlength)
 
   AI.pnodes++
   
@@ -547,7 +548,7 @@ AI.getStructure = function (turn, P, Px) {
 
   score = defended + doubled + passers
 
-  AI.pawntable[turn][hashkey%AI.pawntlength] = score
+  AI.pawntable[turn].set(hashkey % AI.pawntlength, score)
 
   return score
 }
@@ -762,7 +763,7 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
   let turn = board.getTurnColor()
   let legal = 0
   let standpat = AI.evaluate(board, ply)
-  let bestscore = -Infinity
+  let bestscore = -AI.INFINITY
   let incheck = board.isKingInCheck()
   let hashkey = board.hashKey.getHashKey()
 
@@ -827,7 +828,7 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
   }
 
   if (incheck && legal === 0) {
-      // AI.ttSave(hashkey, -AI.MATE + ply, 0, Infinity, bestmove)
+      // AI.ttSave(hashkey, -AI.MATE + ply, 0, AI.INFINITY, bestmove)
       return -AI.MATE + ply;
   }
 
@@ -836,25 +837,37 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
 }
 
 AI.ttSave = function (hashkey, score, flag, depth, move) {
+  if (!move) console.log('no move')
   if (AI.stop || !move) return
 
-  AI.hashtable[hashkey % AI.htlength] = {
+  // AI.hashtable[hashkey % AI.htlength] = {
+  //   hashkey,
+  //   score,
+  //   flag,
+  //   depth,
+  //   move
+  // }
+
+  AI.hashtable.set(hashkey % AI.htlength, {
     hashkey,
     score,
     flag,
     depth,
     move
-  }
+  })
+
+  // console.log(AI.hashtable)
 }
 
 AI.ttGet = function (hashkey) {
-  let ttEntry = AI.hashtable[hashkey % AI.htlength] 
+  // let ttEntry = AI.hashtable[hashkey % AI.htlength] 
 
-  if (ttEntry && hashkey === ttEntry.hashkey) {
-    return ttEntry
-  } else {
-    return null
-  }
+  // if (ttEntry && hashkey === ttEntry.hashkey) {
+  //   return ttEntry
+  // } else {
+  //   return null
+  // }
+  return AI.hashtable.get(hashkey % AI.htlength)
 }
 
 AI.reduceHistory = function () {
@@ -984,7 +997,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   let bestmove = moves[0]
   let lastmove = board.getLastMove()
   let legal = 0
-  let bestscore = -Infinity
+  let bestscore = -AI.INFINITY
   let score
   let staticeval = AI.evaluate(board, ply) //Apparently doesnt affect performance at low depths
 
@@ -1127,7 +1140,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
       // }
 
       //Extensions
-      if (incheck && depth < 3 && pvNode) {
+      if (incheck && (depth <=1 || pvNode)) {
         E = 1
       }
 
@@ -1473,14 +1486,14 @@ AI.createPSQT = function (board) {
   
       // King
       [ 
-        bm, bm, bm, bm, bm, bm, bm, bm,
-        bm, nm, nm, nm, nm, nm, nm, bm,
-        bm, nm, GM, GM, GM, GM, nm, bm,
-        bm, nm, GM,VGM,VGM, GM, nm, bm,
-        bm, nm, GM,VGM,VGM, GM, nm, bm,
-        bm, nm, GM, GM, GM, GM, nm, bm,
-        bm, nm, nm, nm, nm, nm, nm, bm,
-        bm, bm, bm, bm, bm, bm, bm, bm,
+        wm, wm, wm, wm, wm, wm, wm, wm,
+        wm, bm, bm, bm, bm, bm, bm, wm,
+        wm, bm, GM,VGM,VGM, GM, bm, wm,
+        wm, GM,VGM, BM, BM,VGM, GM, wm,
+        wm, GM,VGM, BM, BM,VGM, GM, wm,
+        wm, bm, GM,VGM,VGM, GM, bm, wm,
+        wm, bm, bm, bm, bm, bm, bm, wm,
+        wm, wm, wm, wm, wm, wm, wm, wm,
       ],
     ]
 
@@ -1547,15 +1560,15 @@ AI.createPSQT = function (board) {
      
          // King
          [ 
-           bm, bm, bm, bm, bm, bm, bm, bm,
-           bm, nm, nm, nm, nm, nm, nm, bm,
-           bm, nm, GM, GM, GM, GM, nm, bm,
-           bm, nm, GM,VGM,VGM, GM, nm, bm,
-           bm, nm, GM,VGM,VGM, GM, nm, bm,
-           bm, nm, GM, GM, GM, GM, nm, bm,
-           bm, nm, nm, nm, nm, nm, nm, bm,
-           bm, bm, bm, bm, bm, bm, bm, bm,
-         ],
+          wm, wm, wm, wm, wm, wm, wm, wm,
+          wm, bm, bm, bm, bm, bm, bm, wm,
+          wm, bm, GM,VGM,VGM, GM, bm, wm,
+          wm, GM,VGM, BM, BM,VGM, GM, wm,
+          wm, GM,VGM, BM, BM,VGM, GM, wm,
+          wm, bm, GM,VGM,VGM, GM, bm, wm,
+          wm, bm, bm, bm, bm, bm, bm, wm,
+          wm, wm, wm, wm, wm, wm, wm, wm,
+        ],
       ]
 
     AI.PIECE_SQUARE_TABLES_PHASE1 = AI.PIECE_SQUARE_TABLES_PHASE1.map((table, piece)=>{
@@ -2050,8 +2063,8 @@ AI.getPV = function (board, length) {
 AI.MTDF = function (board, f, d) {
   let g = f
 
-  let upperBound =  Infinity
-  let lowerBound = -Infinity
+  let upperBound =  AI.INFINITY
+  let lowerBound = -AI.INFINITY
 
   //Esta línea permite que el algoritmo funcione como PVS normal
   return AI.PVS(board, lowerBound, upperBound, d, 1) 
