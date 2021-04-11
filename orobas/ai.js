@@ -5,7 +5,7 @@
 const Chess = require('../chess/chess.js')
 // const Zobrist = require('../chess/zobrist.js')
 
-Math.seedrandom('orobas')
+// Math.seedrandom('orobas')
 
 let AI = {
   totaldepth: 128,
