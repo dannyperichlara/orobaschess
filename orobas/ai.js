@@ -18,7 +18,7 @@ let AI = {
   status: null,
   fhf: 0,
   fh: 0,
-  random: 0,
+  random: 40,
   phase: 1,
   htlength: 1 << 24,
   pawntlength: 5e5,
@@ -411,9 +411,9 @@ AI.evaluate = function(board, ply) {
 
   // console.log(psqt)
 
-  mobility  = AI.getMOB(P,N,B,R,Q,K,Px,board, turn) - AI.getMOB(Px,Nx,Bx,Rx,Qx,Kx,P,board, notturn)
-  safety = AI.getKS(K, us, turn) - AI.getKS(Kx, usx, notturn)
-  structure = AI.getStructure(turn, P, Px) - AI.getStructure(notturn, Px, P)
+  // mobility  = AI.getMOB(P,N,B,R,Q,K,Px,board, turn) - AI.getMOB(Px,Nx,Bx,Rx,Qx,Kx,P,board, notturn)
+  // safety = AI.getKS(K, us, turn) - AI.getKS(Kx, usx, notturn)
+  // structure = AI.getStructure(turn, P, Px) - AI.getStructure(notturn, Px, P)
   
   let positional = psqt + mobility + structure + safety + passers + threat
 
@@ -1148,19 +1148,21 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
       }
 
       if (legal === 1) {
-        //Always search the first move at full depth
-        // score = -AI.PVS(board, -beta, -alpha, depth-R-FHR-1, ply+1)
+        score = -AI.PVS(board, -beta, -alpha, depth-R-FHR-1, ply+1)
 
-        // if (!AI.stop && score > alpha && score < beta) { //https://www.chessprogramming.org/Principal_Variation_Search
+        if (score > alpha && !AI.stop) {
           score = -AI.PVS(board, -beta, -alpha, depth+E-1, ply+1)
-        // }
+        }
+        
       } else {
+        if (AI.stop) return alpha
 
-        //Next moves are searched with reductions
+        //Next moves are searched with null window
         score = -AI.PVS(board, -alpha-1, -alpha, depth-R-FHR-1, ply+1)
 
         //If the result looks promising, we do a research at full depth.
         //Remember we are trying to get the score at depth D, but we just get the score at depth D - R
+
         if (!AI.stop && score > alpha && score < beta) { //https://www.chessprogramming.org/Principal_Variation_Search
           score = -AI.PVS(board, -beta, -alpha, depth+E-1, ply+1)
         }
