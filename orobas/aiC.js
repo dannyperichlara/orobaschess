@@ -35,16 +35,21 @@ AI.PAWN = 271
 AI.PAWN2 = AI.PAWN/2 | 0
 AI.PAWN4 = AI.PAWN/4 | 0
 
-
-
 AI.PIECE_VALUES = [
   // Stockfish values: 1 / 2.88 / 3.00 / 4.70 / 9.36
-  // TD: 1.00, 3.27, 3.68, 5.10, 9.46, 200
-  // TD values / 295 games (32 games from the traditional values)
-  [1.00, 2.68, 3.55, 4.50, 10.75, 200].map(e=>e*AI.PAWN|0),
-  [1.00, 2.68, 3.55, 4.50, 10.75, 200].map(e=>e*AI.PAWN|0),
-  [1.00, 2.68, 3.55, 4.50, 10.75, 200].map(e=>e*AI.PAWN|0),
-  [1.00, 2.68, 3.55, 4.50, 10.75, 200].map(e=>e*AI.PAWN|0),
+  
+  // From TD
+  [1.00, 3.02, 3.63, 4.64, 8.93, 200].map(e=>e*AI.PAWN|0),
+  [1.00, 3.02, 3.63, 4.64, 8.93, 200].map(e=>e*AI.PAWN|0),
+  [1.00, 3.02, 3.63, 4.64, 8.93, 200].map(e=>e*AI.PAWN|0),
+  [1.00, 3.02, 3.63, 4.64, 8.93, 200].map(e=>e*AI.PAWN|0),
+]
+
+AI.PARAMETERS = [
+  1, //PSQT weight
+  1, //Mobility weight
+  1, //King safety weight
+  1, //Pawn structure weight
 ]
 
 // OTHER VALUES
@@ -407,11 +412,17 @@ AI.evaluate = function(board, ply) {
   let pieces = AI.getPieces(board, turn, notturn)
   let material = AI.getMaterial(pieces)
 
-  let psqt = AI.getPSQT(pieces, turn, notturn)
-  let structure = AI.getStructure(pieces.P, pieces.Px, turn, notturn)
-  let safety = AI.getKingSafety(pieces,turn,notturn)
+  // AI.PARAMETERS = [
+  //   1, //PSQT weight
+  //   1, //Mobility weight
+  //   1, //King safety weight
+  //   1, //Pawn structure weight
+  // ]
 
-  let mobility  = AI.getMobility(pieces, board, turn, notturn)
+  let psqt = /*AI.PARAMETERS[0] * */ AI.getPSQT(pieces, turn, notturn)
+  let mobility  = /*AI.PARAMETERS[1] * */ AI.getMobility(pieces, board, turn, notturn)
+  let safety = /*AI.PARAMETERS[2] * */ AI.getKingSafety(pieces,turn,notturn)
+  let structure = /*AI.PARAMETERS[3] * */ AI.getStructure(pieces.P, pieces.Px, turn, notturn)
   
   let positional = psqt + mobility + structure + safety
 
@@ -2156,7 +2167,7 @@ AI.MTDF = function (board, f, d) {
   return g
 }
 
-AI.weightadjustments = [[0],[0],[0],[0],[0],[0]]
+AI.weightAdjustmentsPieces = [[0],[0],[0],[0],[0],[0]]
 
 AI.search = function(board, options) {
 
@@ -2284,54 +2295,92 @@ AI.search = function(board, options) {
 
     // console.log('BEST MOVE', AI.bestmove)
 
+    
+    /************* TD LEARNING ***************/
     let sigmoid = AI.getSigmoid(AI.lastscore)
 
-    /************* TD LEARNING ***************/
-    let alphaTD = 0.001
+    let alphaTD = 0.01
     
     if (board.movenumber && board.movenumber <= 1) {
+      for (let i = 0; i < 5; i++) {
+        AI.PIECE_VALUES[0][i] += (AI.weightAdjustmentsPieces[i].reduce((a,b)=>(a+b),0)*AI.PAWN | 0)
+        AI.PIECE_VALUES[1][i] += (AI.weightAdjustmentsPieces[i].reduce((a,b)=>(a+b),0)*AI.PAWN | 0)
+        AI.PIECE_VALUES[2][i] += (AI.weightAdjustmentsPieces[i].reduce((a,b)=>(a+b),0)*AI.PAWN | 0)
+        AI.PIECE_VALUES[3][i] += (AI.weightAdjustmentsPieces[i].reduce((a,b)=>(a+b),0)*AI.PAWN | 0)
+      }
+
       AI.P = [0.5]
-      AI.sigmoidgradients = [[0],[0],[0],[0],[0],[0]]
-      AI.weightadjustments = [[0],[0],[0],[0],[0],[0]]
+      AI.sigmoidGradientsPieces = [[0],[0],[0],[0],[0],[0]]
+      AI.weightAdjustmentsPieces = [[0],[0],[0],[0],[0],[0]]
+      
+      AI.sigmoidGradientsParameters = (new Array(10)).fill(0).map((e,i)=>{return [0]})
+      AI.weightAdjustmentsParameters = (new Array(10)).fill(0).map((e,i)=>{return [0]})
+      
       AI.i = 1
+
+
     }
 
     AI.P.push(sigmoid)
 
     let pieces = AI.getPieces(board, color, !color)
     let material = AI.getMaterial(pieces)
-    
+
+    // AI.PARAMETERS = [
+    //   1, //PSQT weight
+    //   1, //Mobility weight
+    //   1, //King safety weight
+    //   1, //Pawn structure weight
+    // ]
+
+    for (let i in AI.PARAMETERS) {
+      let term = 1
+      AI.sigmoidGradientsParameters[i].push(sigmoid*(1-sigmoid)*term)
+
+      let sumS = 0
+
+      //This function is arbitrary. The idea is to give more weight to recent moves than past moves
+      let gammaweights = Array.from(Array(AI.sigmoidGradientsParameters[i].length).keys()).reverse().map(e=>{
+        return 1-(e/AI.sigmoidGradientsParameters[i].length)
+      })
+
+      for (let j in AI.sigmoidGradientsParameters[i]) {
+        sumS += gammaweights[j]*AI.sigmoidGradientsParameters[i][j]
+      }
+  
+      AI.weightAdjustmentsParameters[i].push(
+        alphaTD*(AI.P[AI.i] - AI.P[AI.i-1])*sumS
+      )
+
+      AI.PARAMETERS[i] += AI.weightAdjustmentsParameters[i].reduce((a,b)=>(a+b),0)
+    }
     
     for (let i = 1; i <=4; i++) {
       let npieces = board.getPieceColorBitboard(i, color).popcnt() - board.getPieceColorBitboard(i, !color).popcnt()
       
-      AI.sigmoidgradients[i].push(sigmoid*(1-sigmoid)*npieces)
+      AI.sigmoidGradientsPieces[i].push(sigmoid*(1-sigmoid)*npieces)
   
       let sumS = 0
 
       //This function is arbitrary. The idea is to give more weight to recent moves than past moves
-      let gammaweights = Array.from(Array(AI.sigmoidgradients[i].length).keys()).reverse().map(e=>{
-        return 1-(e/AI.sigmoidgradients[i].length)
+      let gammaweights = Array.from(Array(AI.sigmoidGradientsPieces[i].length).keys()).reverse().map(e=>{
+        return 1-(e/AI.sigmoidGradientsPieces[i].length)
       })
 
       // console.log(gammaweights)
 
-      for (let j in AI.sigmoidgradients[i]) {
-        sumS += gammaweights[j]*AI.sigmoidgradients[i][j]
+      for (let j in AI.sigmoidGradientsPieces[i]) {
+        sumS += gammaweights[j]*AI.sigmoidGradientsPieces[i][j]
       }
   
-      AI.weightadjustments[i].push(
+      AI.weightAdjustmentsPieces[i].push(
         alphaTD*(AI.P[AI.i] - AI.P[AI.i-1])*sumS
       )
       
-      AI.PIECE_VALUES[0][i] += (AI.weightadjustments[i].reduce((a,b)=>(a+b),0)*AI.PAWN | 0)
-      AI.PIECE_VALUES[1][i] += (AI.weightadjustments[i].reduce((a,b)=>(a+b),0)*AI.PAWN | 0)
-      AI.PIECE_VALUES[2][i] += (AI.weightadjustments[i].reduce((a,b)=>(a+b),0)*AI.PAWN | 0)
-      AI.PIECE_VALUES[3][i] += (AI.weightadjustments[i].reduce((a,b)=>(a+b),0)*AI.PAWN | 0)
     }
 
 
-    // console.log(AI.weightadjustments[i].length,AI.sigmoidgradients[i].length,AI.P.length)
+    // console.log(AI.weightAdjustmentsPieces[i].length,AI.sigmoidGradientsPieces[i].length,AI.P.length)
     console.table(AI.PIECE_VALUES)
 
     /************* END OF TD LEARNING */
@@ -2355,11 +2404,14 @@ AI.search = function(board, options) {
 }
 
 AI.getSigmoid = function (score) {
-  return 1 / (1 + 10**(-score/(4*AI.PAWN)))
+  // return 1 / (1 + 10**(-score/(4*AI.PAWN)))
+
+  //https://cse.buffalo.edu/~regan/papers/pdf/RBZ14aaai.pdf
+  return 0.9837 / (1 + 1.03457*Math.exp(-score/AI.PAWN))
 }
 
 AI.P = [0.5]
-AI.sigmoidgradients = [0]
+AI.sigmoidGradientsPieces = [0]
 
 AI.createTables()
 
