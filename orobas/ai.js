@@ -18,12 +18,12 @@ let AI = {
   status: null,
   fhf: 0,
   fh: 0,
-  random: 20,
+  random: 0,
   phase: 1,
   htlength: 1 << 24,
   pawntlength: 5e5,
   reduceHistoryFactor: 0.5, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
-  mindepth: [2,2,2,2],
+  mindepth: [3,3,3,3],
   secondspermove: 3,
   lastmove: null
 }
@@ -2229,12 +2229,12 @@ AI.search = function(board, options) {
     let fhfperc = 0
     let alpha = -AI.INFINITY
     let beta = AI.INFINITY
-    let f =  AI.PVS(board, alpha, beta, 1, 1) //for MTD(f)
-
+    
     AI.killers = [
-      (new Array(this.totaldepth+1)).fill([null,null]), //white
-      (new Array(this.totaldepth+1)).fill([null,null]), //black
+      (new Array(128)).fill([null,null]), //white
+      (new Array(128)).fill([null,null]), //black
     ]
+    let f =  AI.PVS(board, alpha, beta, 1, 1) //for MTD(f)
 
     AI.fh = AI.fhf = 0.001
     

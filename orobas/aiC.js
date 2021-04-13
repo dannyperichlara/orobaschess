@@ -7,6 +7,8 @@ const Chess = require('../chess/chess.js')
 
 // Math.seedrandom('orobas')
 
+let wpieces = [1,2,2,2,2]
+
 let AI = {
   totaldepth: 48,
   ttNodes: 0,
@@ -18,33 +20,36 @@ let AI = {
   status: null,
   fhf: 0,
   fh: 0,
-  random: 20,
+  random: 0,
   phase: 1,
   htlength: 1 << 24,
   pawntlength: 5e5,
   reduceHistoryFactor: 0.5, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
-  mindepth: [2,2,2,2],
+  mindepth: [3,3,3,3],
   secondspermove: 3,
   lastmove: null
 }
 
 // PIECE VALUES
-AI.PAWN = 270
+AI.PAWN = 271
 AI.PAWN2 = AI.PAWN/2 | 0
 AI.PAWN4 = AI.PAWN/4 | 0
 
+
+
 AI.PIECE_VALUES = [
   // Stockfish values: 1 / 2.88 / 3.00 / 4.70 / 9.36
-  // https://www.chessprogramming.org/Point_Value_by_Regression_Analysis
-  [1.00, 2.88, 3.00, 4.80, 10.77, 200].map(e=>e*AI.PAWN),
-  [1.00, 2.88, 3.00, 4.80, 10.77, 200].map(e=>e*AI.PAWN),
-  [1.00, 2.88, 3.00, 4.80, 10.77, 200].map(e=>e*AI.PAWN),
-  [1.00, 2.88, 3.00, 4.80, 10.77, 200].map(e=>e*AI.PAWN),
+  // TD: 1.00, 3.27, 3.68, 5.10, 9.46, 200
+  // TD values / 295 games (32 games from the traditional values)
+  [1.00, 2.68, 3.55, 4.50, 10.75, 200].map(e=>e*AI.PAWN|0),
+  [1.00, 2.68, 3.55, 4.50, 10.75, 200].map(e=>e*AI.PAWN|0),
+  [1.00, 2.68, 3.55, 4.50, 10.75, 200].map(e=>e*AI.PAWN|0),
+  [1.00, 2.68, 3.55, 4.50, 10.75, 200].map(e=>e*AI.PAWN|0),
 ]
 
 // OTHER VALUES
 
-AI.BISHOP_PAIR = 0.45 * AI.PAWN //For stockfish is something like 0.62 pawns
+AI.BISHOP_PAIR = 0.5 * AI.PAWN //For stockfish is something like 0.62 pawns
 AI.MATE = AI.PIECE_VALUES[0][5]
 AI.DRAW = 0//-AI.PIECE_VALUES[1][1]
 AI.INFINITY = AI.PIECE_VALUES[0][5]*2
@@ -411,10 +416,10 @@ AI.evaluate = function(board, ply) {
   let positional = psqt + mobility + structure + safety
 
   let score = material + positional  | 0
-  
+
   // console.log('material '+material, 'psqt '+psqt, 'mobility '+mobility, 'safety '+safety, 'structure '+structure, 'threat '+threat, 'passers '+passers)
 
-  return score/2.7 | 0
+  return score | 0
 }
 
 // let maxdistance = -1
@@ -685,7 +690,7 @@ AI.getPSQTvalue = function(pieces, turn, us) {
 
 AI.sortMoves = function(moves, turn, ply, board, ttEntry) {
   let killer1, killer2
-
+  
   if (AI.killers) {
     killer1 = AI.killers[turn][ply][0]
     killer1 = AI.killers[turn][ply][1]
@@ -2151,7 +2156,10 @@ AI.MTDF = function (board, f, d) {
   return g
 }
 
+AI.weightadjustments = [[0],[0],[0],[0],[0],[0]]
+
 AI.search = function(board, options) {
+
   if (board.movenumber && board.movenumber <= 1) {
     AI.lastscore = 0
     AI.bestmove = 0
@@ -2174,7 +2182,7 @@ AI.search = function(board, options) {
   if (board.movenumber && board.movenumber <= 1 || changeofphase) {
     AI.createTables()
   }
-
+  
   AI.reduceHistory()
 
   AI.absurd = [
@@ -2229,15 +2237,16 @@ AI.search = function(board, options) {
     let fhfperc = 0
     let alpha = -AI.INFINITY
     let beta = AI.INFINITY
-    let f =  AI.PVS(board, alpha, beta, 1, 1) //for MTD(f)
-
+    
     AI.killers = [
-      (new Array(this.totaldepth+1)).fill([null,null]), //white
-      (new Array(this.totaldepth+1)).fill([null,null]), //black
+      (new Array(128)).fill([null,null]), //white
+      (new Array(128)).fill([null,null]), //black
     ]
-
+    
     AI.fh = AI.fhf = 0.001
     
+    let f =  AI.PVS(board, alpha, beta, 1, 1) //for MTD(f)
+
     //Iterative Deepening
     for (let depth = 1; depth <= AI.totaldepth; depth+=1) {
       if (AI.stop && AI.iteration > AI.mindepth[AI.phase-1]) break
@@ -2264,7 +2273,7 @@ AI.search = function(board, options) {
       fhfperc = Math.round(AI.fhf*100/AI.fh)
 
       // if (AI.PV) console.log(AI.iteration, depth, AI.PV.map(e=>{ return e && e.getString? e.getString() : '---'}).join(' '), '|Fhf ' + fhfperc + '%', 'Pawn hit ' + (AI.phnodes/AI.pnodes*100 | 0),  score, AI.nodes, AI.qsnodes)
-      console.log(fhfperc)
+      // console.log(fhfperc)
     }
 
     if (AI.TESTER) {
@@ -2275,7 +2284,60 @@ AI.search = function(board, options) {
 
     // console.log('BEST MOVE', AI.bestmove)
 
-    let sigmoid = 1/(1+Math.pow(10, -AI.lastscore/400))
+    let sigmoid = AI.getSigmoid(AI.lastscore)
+
+    /************* TD LEARNING ***************/
+    let alphaTD = 0.001
+    
+    if (board.movenumber && board.movenumber <= 1) {
+      AI.P = [0.5]
+      AI.sigmoidgradients = [[0],[0],[0],[0],[0],[0]]
+      AI.weightadjustments = [[0],[0],[0],[0],[0],[0]]
+      AI.i = 1
+    }
+
+    AI.P.push(sigmoid)
+
+    let pieces = AI.getPieces(board, color, !color)
+    let material = AI.getMaterial(pieces)
+    
+    
+    for (let i = 1; i <=4; i++) {
+      let npieces = board.getPieceColorBitboard(i, color).popcnt() - board.getPieceColorBitboard(i, !color).popcnt()
+      
+      AI.sigmoidgradients[i].push(sigmoid*(1-sigmoid)*npieces)
+  
+      let sumS = 0
+
+      //This function is arbitrary. The idea is to give more weight to recent moves than past moves
+      let gammaweights = Array.from(Array(AI.sigmoidgradients[i].length).keys()).reverse().map(e=>{
+        return 1-(e/AI.sigmoidgradients[i].length)
+      })
+
+      // console.log(gammaweights)
+
+      for (let j in AI.sigmoidgradients[i]) {
+        sumS += gammaweights[j]*AI.sigmoidgradients[i][j]
+      }
+  
+      AI.weightadjustments[i].push(
+        alphaTD*(AI.P[AI.i] - AI.P[AI.i-1])*sumS
+      )
+      
+      AI.PIECE_VALUES[0][i] += (AI.weightadjustments[i].reduce((a,b)=>(a+b),0)*AI.PAWN | 0)
+      AI.PIECE_VALUES[1][i] += (AI.weightadjustments[i].reduce((a,b)=>(a+b),0)*AI.PAWN | 0)
+      AI.PIECE_VALUES[2][i] += (AI.weightadjustments[i].reduce((a,b)=>(a+b),0)*AI.PAWN | 0)
+      AI.PIECE_VALUES[3][i] += (AI.weightadjustments[i].reduce((a,b)=>(a+b),0)*AI.PAWN | 0)
+    }
+
+
+    // console.log(AI.weightadjustments[i].length,AI.sigmoidgradients[i].length,AI.P.length)
+    console.table(AI.PIECE_VALUES)
+
+    /************* END OF TD LEARNING */
+
+
+    AI.i++
 
     AI.lastmove = AI.bestmove
 
@@ -2291,6 +2353,13 @@ AI.search = function(board, options) {
             FHF: fhfperc+'%'})
   })
 }
+
+AI.getSigmoid = function (score) {
+  return 1 / (1 + 10**(-score/(4*AI.PAWN)))
+}
+
+AI.P = [0.5]
+AI.sigmoidgradients = [0]
 
 AI.createTables()
 
