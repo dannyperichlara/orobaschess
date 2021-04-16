@@ -1,5 +1,6 @@
 "use strict"
 
+const { assignIn } = require('lodash')
 // const { mapValues } = require('lodash')
 /* Imports Move Generator */
 const Chess = require('../chess/chess.js')
@@ -7,7 +8,8 @@ const Chess = require('../chess/chess.js')
 
 // Math.seedrandom('orobas')
 
-let wpieces = [1,2,2,2,2]
+let doTDparameters = false
+let doTDpieces = true
 
 let AI = {
   totaldepth: 48,
@@ -20,36 +22,38 @@ let AI = {
   status: null,
   fhf: 0,
   fh: 0,
-  random: 0,
+  random: 20,
   phase: 1,
   htlength: 1 << 24,
   pawntlength: 5e5,
-  reduceHistoryFactor: 0.5, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
+  reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
   mindepth: [3,3,3,3],
   secondspermove: 3,
   lastmove: null
 }
 
 // PIECE VALUES
-AI.PAWN = 271
+AI.PAWN = 100
 AI.PAWN2 = AI.PAWN/2 | 0
 AI.PAWN4 = AI.PAWN/4 | 0
-
+ 
 AI.PIECE_VALUES = [
   // Stockfish values: 1 / 2.88 / 3.00 / 4.70 / 9.36
   
   // From TD
-  [1.00, 3.02, 3.63, 4.64, 8.93, 200].map(e=>e*AI.PAWN|0),
-  [1.00, 3.02, 3.63, 4.64, 8.93, 200].map(e=>e*AI.PAWN|0),
-  [1.00, 3.02, 3.63, 4.64, 8.93, 200].map(e=>e*AI.PAWN|0),
-  [1.00, 3.02, 3.63, 4.64, 8.93, 200].map(e=>e*AI.PAWN|0),
+  [1.00, 2.88, 3.00, 4.80, 10.77, 200].map(e=>e*AI.PAWN),
+  [1.00, 2.88, 3.00, 4.80, 10.77, 200].map(e=>e*AI.PAWN),
+  [1.00, 2.88, 3.00, 4.80, 10.77, 200].map(e=>e*AI.PAWN),
+  [1.00, 2.88, 3.00, 4.80, 10.77, 200].map(e=>e*AI.PAWN),
 ]
 
 AI.PARAMETERS = [
-  1, //PSQT weight
-  1, //Mobility weight
-  1, //King safety weight
-  1, //Pawn structure weight
+  2.5, //PSQT weight
+  4.2, //Mobility weight
+  3.2, //King safety weight
+  1.8, //Defended pawns,
+  1.4, //Doubled pawns,
+  1.4, //Passers pawns,
 ]
 
 // OTHER VALUES
@@ -59,19 +63,19 @@ AI.MATE = AI.PIECE_VALUES[0][5]
 AI.DRAW = 0//-AI.PIECE_VALUES[1][1]
 AI.INFINITY = AI.PIECE_VALUES[0][5]*2
 
-let wm  = -4 // Worst move
-let vbm = -2 // Very bad move
-let bm  = -1 // Bad move
-let nm  =  0 // Neutral move
-let GM  =  1 // Good move
-let VGM =  2 // Very good move
-let BM  =  4 // Best move
+let wm  = -6 // Worst move
+let vbm = -5 // Very bad move
+let bm  = -4 // Bad move
+let nm  = -3 // Neutral move
+let GM  = -2 // Good move
+let VGM = -1 // Very good move
+let BM  =  0 // Best move
 
 AI.PSQT_SCALAR = [
-  [10,10,10,10,10,10],
-  [10,10,10,10,10,10],
-  [10,10,10,10,10,10],
-  [10,10,10,10,10,10],
+  [ 2, 2, 2, 2, 2, 2],
+  [ 2, 2, 2, 2, 2, 2],
+  [ 2, 2, 2, 2, 2, 2],
+  [ 2, 2, 2, 2, 2, 2],
 ]
 
 AI.KDISTANCE = [
@@ -188,74 +192,83 @@ for (let depth = 1; depth < AI.totaldepth+1; ++depth){
 AI.MOBILITY_VALUES = [
   [
     [],
-    [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*3),
-    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*5),
-    [0,0,0,0,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*2),
-    [0,0,0,0,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*2),
+    [-8,-7,-6,-5,-4,-3,-2,-1,0],
+    [-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0],
+    [-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0],
+    [-27,-26,-25,-24,-23,-22,-21,-20,-19,-18,-17,-16,-15,-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0],
     []
   ],
   [
     [],
-    [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*5),
-    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*7),
-    [-8,-4,0,1,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*5),
-    [-6,-4,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*5),
+    [-8,-7,-6,-5,-4,-3,-2,-1,0],
+    [-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0],
+    [-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0],
+    [-27,-26,-25,-24,-23,-22,-21,-20,-19,-18,-17,-16,-15,-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0],
     []
   ],
   [
     [],
-    [-8,-4,-2,-1,0,1,2,3,4].map(e=>e*5),
-    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11].map(e=>e*7),
-    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11,12].map(e=>e*7),
-    [-6,-4,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map(e=>e*7),
+    [-8,-7,-6,-5,-4,-3,-2,-1,0],
+    [-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0],
+    [-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0],
+    [-27,-26,-25,-24,-23,-22,-21,-20,-19,-18,-17,-16,-15,-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0],
     []
   ],
   [
     [],
-    [-8,-4,-2,-1,0,0,0,0,0].map(e=>e*5),
-    [-6,-2,0,0,0,0,0,0,0,0,0,0,0,0].map(e=>e*7),
-    [-6,-2,0,0,0,0,0,0,0,0,0,0,0,0,0].map(e=>e*7),
-    [-6,-4,-2,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0].map(e=>e*7),
+    [-8,-7,-6,-5,-4,-3,-2,-1,0],
+    [-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0],
+    [-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0],
+    [-27,-26,-25,-24,-23,-22,-21,-20,-19,-18,-17,-16,-15,-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0],
     []
   ]
 ]
 
 //Not full tested(
-  AI.SAFETY_VALUES = [-2, -1,  0, 1, 2,-1,-2,-3,-3].map(e=>20*e)
+  AI.SAFETY_VALUES = [-5,-4,-3,-2,-1, 0, 0, 0, 0].map(e=>3*e)
 
 //Not full tested
 AI.PASSER_VALUES = [
-  0,0,0,0,0,0,0,0,
-  240,240,240,240,240,240,240,240,
-  120,120,120,120,120,120,120,120,
-  60,60,60,60,60,60,60,60,
-  30,30,30,30,30,30,30,30,
-  15,15,15,15,15,15,15,15,
+   0, 0, 0, 0, 0, 0, 0, 0,
+  80,80,80,80,80,80,80,80,
+  40,40,40,40,40,40,40,40,
+  20,20,20,20,20,20,20,20,
   10,10,10,10,10,10,10,10,
-  0,0,0,0,0,0,0,0,
+   5, 5, 5, 5, 5, 5, 5, 5,
+   4, 4, 4, 4, 4, 4, 4, 4,
+   0, 0, 0, 0, 0, 0, 0, 0,
 ]
 
-AI.DOUBLED_VALUES = [0,-1,-2,-3,-4,-5,-6,-7,-8].map(e=>e*AI.PAWN2/2|0)
+AI.DOUBLED_VALUES = [0,-1,-2,-3,-4,-5,-6,-7,-8].map(e=>e*AI.PAWN2/5|0)
 
 //Not fully tested
 AI.DEFENDED_PAWN_VALUES = [
   [0, 0, 0, 0, 0, 0, 0, 0, 0], //phase 1
-  [0,20,40,40,80,80,80,80,80], //phase 2
-  [0,20,40,40,80,80,80,80,80], //phase 3
-  [0,20,40,40,80,80,80,80,80], //phase 4
+  [0,10,20,20,40,40,40,40,40], //phase 2
+  [0,10,20,20,40,40,40,40,40], //phase 3
+  [0,10,20,20,40,40,40,40,40], //phase 4
 ]
 
 //Not fully tested
 AI.PAWN_IMBALANCE = [-160,-160,-160,-160,-160,-150,-140,-100,0,100,140,150,160,160,160,160,160]
 
 //https://open-chess.org/viewtopic.php?t=3058
+// AI.MVVLVASCORES = [
+//   /*P*/[6002,20225,20250,20400,20800,26900],
+//   /*N*/[4775, 6004,20025,20175,20575,26675],
+//   /*B*/[4750, 4975, 6006,20150,20550,26650],
+//   /*R*/[4600, 4825, 4850, 6008,20400,26500],
+//   /*Q*/[4200, 4425, 4450, 4600, 6010,26100],
+//   /*K*/[3100, 3325, 3350, 3500, 3900,26000],
+// ]
+
 AI.MVVLVASCORES = [
-  /*P*/[6002,20225,20250,20400,20800,26900],
-  /*N*/[4775, 6004,20025,20175,20575,26675],
-  /*B*/[4750, 4975, 6006,20150,20550,26650],
-  /*R*/[4600, 4825, 4850, 6008,20400,26500],
-  /*Q*/[4200, 4425, 4450, 4600, 6010,26100],
-  /*K*/[3100, 3325, 3350, 3500, 3900,26000],
+  [6001,20173,20186,20316,20735,26900],
+  [4627, 6002,20013,20143,20562,26675],
+  [4614, 4787, 6003,20130,20549,26650],
+  [4484, 4657, 4670, 6004,20419,26500],
+  [4065, 4238, 4251, 4381, 6005,26100],
+  [3100, 3325, 3350, 3500, 3900, 6006],
 ]
 
 AI.PIECE_SQUARE_TABLES = [
@@ -369,7 +382,7 @@ AI.createTables = function () {
 AI.randomizePSQT = function () {
   // Math.seedrandom((new Date()).getTime().toString())
   
-  if (AI.phase < 3) {
+  if (AI.phase === 1) {
     //From Knight to Queen
     for (let i = 1; i < 5; i++) {
       AI.PIECE_SQUARE_TABLES[i] = AI.PIECE_SQUARE_TABLES[i].map(e=>{
@@ -416,13 +429,12 @@ AI.evaluate = function(board, ply) {
   //   1, //PSQT weight
   //   1, //Mobility weight
   //   1, //King safety weight
-  //   1, //Pawn structure weight
   // ]
 
-  let psqt = /*AI.PARAMETERS[0] * */ AI.getPSQT(pieces, turn, notturn)
-  let mobility  = /*AI.PARAMETERS[1] * */ AI.getMobility(pieces, board, turn, notturn)
-  let safety = /*AI.PARAMETERS[2] * */ AI.getKingSafety(pieces,turn,notturn)
-  let structure = /*AI.PARAMETERS[3] * */ AI.getStructure(pieces.P, pieces.Px, turn, notturn)
+  let psqt = AI.getPSQT(pieces, turn, notturn)
+  let mobility  = AI.getMobility(pieces, board, turn, notturn)
+  let safety = AI.getKingSafety(pieces,turn,notturn)
+  let structure = AI.getStructure(pieces.P, pieces.Px, turn, notturn)
   
   let positional = psqt + mobility + structure + safety
 
@@ -532,7 +544,7 @@ AI.getKingSafetyValue = function (K, us, turn) {
   let mask = Chess.Position.makeKingDefenseMask(turn, K).and(us)
   let safety = AI.SAFETY_VALUES[mask.popcnt()]
   
-  return safety
+  return AI.PARAMETERS[2] * safety
 }
 
 AI.getStructure = function (P, Px, turn, notturn) {
@@ -554,9 +566,9 @@ AI.getStructureValue = function (turn, P, Px) {
   let white = turn === 0
 
   let score = 0
-  let doubled = AI.getDoubled(P, white)
-  let defended = AI.getDefended(P, turn)
-  let passers = AI.getPassers(P, Px, white)
+  let defended = AI.PARAMETERS[3] * AI.getDefended(P, turn)
+  let doubled = AI.PARAMETERS[4] * AI.getDoubled(P, white)
+  let passers = AI.PARAMETERS[5] * AI.getPassers(P, Px, white)
 
   score = defended + doubled + passers
 
@@ -629,7 +641,7 @@ AI.getMobilityValues = function(_P,_N,_B,_R,_Q,_K,_Px,board, color) {
   
   if (isNaN(mobility)) return 0
   
-  return mobility
+  return AI.PARAMETERS[1] * mobility
 }
 
 AI.getMaterialValue = function(pieces, us) {
@@ -739,7 +751,7 @@ AI.sortMoves = function(moves, turn, ply, board, ttEntry) {
       move.mvvlva = AI.MVVLVASCORES[piece][move.getCapturedPiece()]
       move.capture = true
 
-      if (lastmove && lastmove.getTo() === move.getTo()) {
+      if (lastmove && lastmove.getTo() === move.getTo() && move.mvvlva > 20000) {
         move.recapture = true
       }
     }
@@ -762,14 +774,13 @@ AI.sortMoves = function(moves, turn, ply, board, ttEntry) {
     let hvalue = AI.history[turn][piece][to]
     let bvalue = AI.butterfly[turn][move.getFrom()][to]
 
-    if (hvalue) {
+    if (hvalue && ply <= 6) {
       move.hvalue = hvalue
       move.bvalue = bvalue
     } else {
-      move.hvalue = move.bvalue = 0
+      move.psqtvalue = AI.PIECE_SQUARE_TABLES[piece][turn === 0? 56^to : to]
     }
 
-    move.psqtvalue = AI.PIECE_SQUARE_TABLES[piece][turn === 0? 56^to : to]
     // move.psqtvalue = AI.QUIETSORT[piece][turn === 0? 56^to : to]
 
   }
@@ -787,10 +798,18 @@ AI.scoreMove = function(move) {
   if (move.tt) { 
     return score += 1e8
   }
+
+  if (move.promotion) {
+    return score += 2e7
+  }
   
-  if (move.capture || move.promotion) {
+  if (move.capture) {
     // let recapturebonus = (move.recapture|0) * 1e7
-    return score += 1e7 + move.mvvlva// + recapturebonus
+    if (move.mvvlva > 6000) {
+      return score += 1e7 + move.mvvlva //+ recapturebonus
+    } else {
+      return score += 1e5 + move.mvvlva
+    }
   }
 
   if (move.killer1) return score+=1e6 + 100
@@ -800,11 +819,7 @@ AI.scoreMove = function(move) {
     return score += 1e5*move.countermove
   }
 
-  if (move.hvalue) { //History Heuristic
-    return score += move.hvalue
-  } 
-
-  return move.psqtvalue - 1000
+  return move.psqtvalue + move.hvalue
 }
 
 AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
@@ -871,6 +886,8 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
 
     if (board.makeMove(move)) {
       legal++
+
+      if (AI.stop) return alpha
 
       let score = -AI.quiescenceSearch(board, -beta, -alpha, depth-1, ply+1, pvNode)
 
@@ -1051,7 +1068,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   }
   
   //IID (if there's no ttEntry, get one for ordering moves)
-  if (pvNode && !ttEntry && depth > 2) {
+  if (pvNode && !ttEntry && depth > 2 && !AI.stop) {
     AI.PVS(board, alpha, beta, depth-2, ply) //depth - 2 tested ok + 31 ELO
     ttEntry = AI.ttGet(hashkey)
   }
@@ -1215,7 +1232,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
         }
       }
 
-      if (legal === 1) {
+      if (legal === 1 && !AI.stop) {
         // score = -AI.PVS(board, -beta, -alpha, depth-R-FHR-1, ply+1)
 
         // if (score > alpha && !AI.stop) {
@@ -1651,19 +1668,19 @@ AI.createPSQT = function (board) {
       ]
 
     AI.PIECE_SQUARE_TABLES_PHASE1 = AI.PIECE_SQUARE_TABLES_PHASE1.map((table, piece)=>{
-      return table.map(values=>values*AI.PSQT_SCALAR[0][piece])
+      return table.map(values=>values*AI.PSQT_SCALAR[0][piece]*AI.PARAMETERS[0])
     })
 
     AI.PIECE_SQUARE_TABLES_PHASE2 = AI.PIECE_SQUARE_TABLES_PHASE2.map((table, piece)=>{
-      return table.map(values=>values*AI.PSQT_SCALAR[1][piece])
+      return table.map(values=>values*AI.PSQT_SCALAR[1][piece]*AI.PARAMETERS[0])
     })
 
     AI.PIECE_SQUARE_TABLES_PHASE3 = AI.PIECE_SQUARE_TABLES_PHASE3.map((table, piece)=>{
-      return table.map(values=>values*AI.PSQT_SCALAR[2][piece])
+      return table.map(values=>values*AI.PSQT_SCALAR[2][piece]*AI.PARAMETERS[0])
     })
 
     AI.PIECE_SQUARE_TABLES_PHASE4 = AI.PIECE_SQUARE_TABLES_PHASE4.map((table, piece)=>{
-      return table.map(values=>values*AI.PSQT_SCALAR[3][piece])
+      return table.map(values=>values*AI.PSQT_SCALAR[3][piece]*AI.PARAMETERS[0])
     })
 
     AI.preprocessor(board)
@@ -2082,7 +2099,7 @@ AI.setphase = function (board) {
   
   AI.softenPSQT()
 
-  AI.PSQT2Sigmoid()
+  // AI.PSQT2Sigmoid()
 }
 
 AI.getPV = function (board, length) {
@@ -2168,6 +2185,7 @@ AI.MTDF = function (board, f, d) {
 }
 
 AI.weightAdjustmentsPieces = [[0],[0],[0],[0],[0],[0]]
+AI.weightAdjustmentsParameters = (new Array(20)).fill(0).map((e,i)=>{return [0]})
 
 AI.search = function(board, options) {
 
@@ -2203,36 +2221,12 @@ AI.search = function(board, options) {
   
   return new Promise((resolve, reject) => {
     let color = board.getTurnColor()
+    let notcolor = ~color & 1
     
     AI.color = color
     
     let white = color == 0
-    
-    if (white) {
-      AI.TESTER = true
-
-      // if (AI.lastscore) {
-      //   if (AI.lastscore > AI.PIECE_VALUES[0][1]) {
-      //     AI.DRAW = -2*AI.PIECE_VALUES[0][0]
-      //   } else if (AI.lastscore > AI.PIECE_VALUES[0][1]) {
-      //     AI.DRAW = 2*AI.PIECE_VALUES[0][0]
-      //   } else {
-      //     AI.DRAW = 0
-      //   }
-      // } 
-    } else {
-      AI.TESTER = false
-
-      // if (AI.lastscore) {
-      //   if (-AI.lastscore > AI.PIECE_VALUES[0][1]) {
-      //     AI.DRAW = -2*AI.PIECE_VALUES[0][0]
-      //   } else if (-AI.lastscore > AI.PIECE_VALUES[0][1]) {
-      //     AI.DRAW = 2*AI.PIECE_VALUES[0][0]
-      //   } else {
-      //     AI.DRAW = 0
-      //   }
-      // } 
-    }
+    let notwhite = ~white & 1
         
     AI.nodes = 0
     AI.qsnodes = 0
@@ -2256,7 +2250,7 @@ AI.search = function(board, options) {
     
     AI.fh = AI.fhf = 0.001
     
-    let f =  AI.PVS(board, alpha, beta, 1, 1) //for MTD(f)
+    let f = AI.lastscore //AI.PVS(board, alpha, beta, 1, 1) //for MTD(f)
 
     //Iterative Deepening
     for (let depth = 1; depth <= AI.totaldepth; depth+=1) {
@@ -2280,10 +2274,9 @@ AI.search = function(board, options) {
 
       let strmove = AI.PV[1]? AI.PV[1].getString() : '----'
       
-      
       fhfperc = Math.round(AI.fhf*100/AI.fh)
 
-      // if (AI.PV) console.log(AI.iteration, depth, AI.PV.map(e=>{ return e && e.getString? e.getString() : '---'}).join(' '), '|Fhf ' + fhfperc + '%', 'Pawn hit ' + (AI.phnodes/AI.pnodes*100 | 0),  score, AI.nodes, AI.qsnodes)
+      if (AI.PV) console.log(AI.iteration, depth, AI.PV.map(e=>{ return e && e.getString? e.getString() : '---'}).join(' '), '|Fhf ' + fhfperc + '%', 'Pawn hit ' + (AI.phnodes/AI.pnodes*100 | 0),  score, AI.nodes, AI.qsnodes)
       // console.log(fhfperc)
     }
 
@@ -2298,10 +2291,11 @@ AI.search = function(board, options) {
     
     /************* TD LEARNING ***************/
     let sigmoid = AI.getSigmoid(AI.lastscore)
-
-    let alphaTD = 0.01
     
     if (board.movenumber && board.movenumber <= 1) {
+      console.table(AI.PIECE_VALUES)
+      console.table(AI.PARAMETERS)
+
       for (let i = 0; i < 5; i++) {
         AI.PIECE_VALUES[0][i] += (AI.weightAdjustmentsPieces[i].reduce((a,b)=>(a+b),0)*AI.PAWN | 0)
         AI.PIECE_VALUES[1][i] += (AI.weightAdjustmentsPieces[i].reduce((a,b)=>(a+b),0)*AI.PAWN | 0)
@@ -2309,82 +2303,92 @@ AI.search = function(board, options) {
         AI.PIECE_VALUES[3][i] += (AI.weightAdjustmentsPieces[i].reduce((a,b)=>(a+b),0)*AI.PAWN | 0)
       }
 
+      for (let i in AI.PARAMETERS) {
+        AI.PARAMETERS[i] += AI.weightAdjustmentsParameters[i].reduce((a,b)=>(a+b),0)
+      }
+
       AI.P = [0.5]
       AI.sigmoidGradientsPieces = [[0],[0],[0],[0],[0],[0]]
       AI.weightAdjustmentsPieces = [[0],[0],[0],[0],[0],[0]]
       
-      AI.sigmoidGradientsParameters = (new Array(10)).fill(0).map((e,i)=>{return [0]})
-      AI.weightAdjustmentsParameters = (new Array(10)).fill(0).map((e,i)=>{return [0]})
+      AI.sigmoidGradientsParameters = (new Array(20)).fill(0).map((e,i)=>{return [0]})
+      AI.weightAdjustmentsParameters = (new Array(20)).fill(0).map((e,i)=>{return [0]})
       
       AI.i = 1
-
-
     }
 
     AI.P.push(sigmoid)
 
     let pieces = AI.getPieces(board, color, !color)
-    let material = AI.getMaterial(pieces)
 
     // AI.PARAMETERS = [
-    //   1, //PSQT weight
-    //   1, //Mobility weight
-    //   1, //King safety weight
-    //   1, //Pawn structure weight
+      // PSQT weight
+      // Mobility weight
+      // King safety weight
+      // Defended pawns,
+      // Doubled pawns,
+      // Passers,
     // ]
 
-    for (let i in AI.PARAMETERS) {
-      let term = 1
-      AI.sigmoidGradientsParameters[i].push(sigmoid*(1-sigmoid)*term)
-
-      let sumS = 0
-
-      //This function is arbitrary. The idea is to give more weight to recent moves than past moves
-      let gammaweights = Array.from(Array(AI.sigmoidGradientsParameters[i].length).keys()).reverse().map(e=>{
-        return 1-(e/AI.sigmoidGradientsParameters[i].length)
-      })
-
-      for (let j in AI.sigmoidGradientsParameters[i]) {
-        sumS += gammaweights[j]*AI.sigmoidGradientsParameters[i][j]
-      }
+    if (doTDparameters) {
+      for (let i in AI.PARAMETERS) {
+        let alphaTD = 0.001
   
-      AI.weightAdjustmentsParameters[i].push(
-        alphaTD*(AI.P[AI.i] - AI.P[AI.i-1])*sumS
-      )
-
-      AI.PARAMETERS[i] += AI.weightAdjustmentsParameters[i].reduce((a,b)=>(a+b),0)
-    }
+        let term = [
+          AI.getPSQT(pieces, color, notcolor),
+          AI.getMobility(pieces, board, color, notcolor),
+          AI.getKingSafety(pieces,color,notcolor),
+          AI.getDefended(pieces.P, color) - AI.getDefended(pieces.Px, notcolor),
+          AI.getDoubled(pieces.P, white) - AI.getDoubled(pieces.Px, notwhite),
+          AI.getPassers(pieces.P, pieces.Px, white),
+        ]
+        
+        AI.sigmoidGradientsParameters[i].push(sigmoid*(1-sigmoid)*term[i])
+  
+        let sumS = 0
+  
+        //This function is arbitrary. The idea is to give more weight to recent moves than past moves
+        let gammaweights = Array.from(Array(AI.sigmoidGradientsParameters[i].length).keys()).reverse().map(e=>{
+          return 1-(e/AI.sigmoidGradientsParameters[i].length)
+        })
+  
+        for (let j in AI.sigmoidGradientsParameters[i]) {
+          sumS += gammaweights[j]*AI.sigmoidGradientsParameters[i][j]
+        }
     
-    for (let i = 1; i <=4; i++) {
-      let npieces = board.getPieceColorBitboard(i, color).popcnt() - board.getPieceColorBitboard(i, !color).popcnt()
-      
-      AI.sigmoidGradientsPieces[i].push(sigmoid*(1-sigmoid)*npieces)
-  
-      let sumS = 0
-
-      //This function is arbitrary. The idea is to give more weight to recent moves than past moves
-      let gammaweights = Array.from(Array(AI.sigmoidGradientsPieces[i].length).keys()).reverse().map(e=>{
-        return 1-(e/AI.sigmoidGradientsPieces[i].length)
-      })
-
-      // console.log(gammaweights)
-
-      for (let j in AI.sigmoidGradientsPieces[i]) {
-        sumS += gammaweights[j]*AI.sigmoidGradientsPieces[i][j]
+        AI.weightAdjustmentsParameters[i].push(
+          alphaTD*(AI.P[AI.i] - AI.P[AI.i-1])*sumS
+        )
       }
-  
-      AI.weightAdjustmentsPieces[i].push(
-        alphaTD*(AI.P[AI.i] - AI.P[AI.i-1])*sumS
-      )
-      
     }
 
-
-    // console.log(AI.weightAdjustmentsPieces[i].length,AI.sigmoidGradientsPieces[i].length,AI.P.length)
-    console.table(AI.PIECE_VALUES)
+    if (doTDpieces) {
+      for (let i = 1; i <=4; i++) {
+        let alphaTD = [null, 0.1, 0.1, 0.1, 0.1, null]
+  
+        let npieces = board.getPieceColorBitboard(i, color).popcnt() - board.getPieceColorBitboard(i, !color).popcnt()
+        
+        AI.sigmoidGradientsPieces[i].push(sigmoid*(1-sigmoid)*npieces)
+    
+        let sumS = 0
+  
+        //This function is arbitrary. The idea is to give more weight to recent moves than past moves
+        let gammaweights = Array.from(Array(AI.sigmoidGradientsPieces[i].length).keys()).reverse().map(e=>{
+          return 1-(e/AI.sigmoidGradientsPieces[i].length)
+        })
+  
+        for (let j in AI.sigmoidGradientsPieces[i]) {
+          sumS += gammaweights[j]*AI.sigmoidGradientsPieces[i][j]
+        }
+    
+        AI.weightAdjustmentsPieces[i].push(
+          alphaTD[i]*(AI.P[AI.i] - AI.P[AI.i-1])*sumS
+        )
+        
+      }
+    }
 
     /************* END OF TD LEARNING */
-
 
     AI.i++
 
@@ -2398,7 +2402,7 @@ AI.search = function(board, options) {
     }
 
     resolve({n: board.movenumber, phase: AI.phase, depth: AI.iteration-1, from: AI.bestmove.getFrom(), to: AI.bestmove.getTo(), movestring: AI.bestmove.getString(),
-            score: AI.lastscore | 0, sigmoid: (sigmoid * 100 | 0)/100, nodes: AI.nodes, qsnodes: AI.qsnodes,
+            score: AI.lastscore | 0, sigmoid: (sigmoid * 10000 | 0)/10000, nodes: AI.nodes, qsnodes: AI.qsnodes,
             FHF: fhfperc+'%'})
   })
 }

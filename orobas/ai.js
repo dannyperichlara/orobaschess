@@ -18,7 +18,7 @@ let AI = {
   status: null,
   fhf: 0,
   fh: 0,
-  random: 0,
+  random: 20,
   phase: 1,
   htlength: 1 << 24,
   pawntlength: 5e5,
@@ -359,7 +359,7 @@ AI.createTables = function () {
 AI.randomizePSQT = function () {
   // Math.seedrandom((new Date()).getTime().toString())
   
-  if (AI.phase < 3) {
+  if (AI.phase === 1) {
     //From Knight to Queen
     for (let i = 1; i < 5; i++) {
       AI.PIECE_SQUARE_TABLES[i] = AI.PIECE_SQUARE_TABLES[i].map(e=>{
