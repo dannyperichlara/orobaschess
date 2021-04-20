@@ -1,6 +1,7 @@
 "use strict"
+//2k4r/pppr1ppp/5n2/4p1N1/1b1n4/2NB3P/PPPB1PP1/R2K3R w - - 5 14
 
-const { assignIn } = require('lodash')
+// const { assignIn } = require('lodash')
 // const { mapValues } = require('lodash')
 /* Imports Move Generator */
 const Chess = require('../chess/chess.js')
@@ -9,10 +10,10 @@ const Chess = require('../chess/chess.js')
 // Math.seedrandom('orobas')
 
 let doTDparameters = false
-let doTDpieces = true
+let doTDpieces = false
 
 let AI = {
-  totaldepth: 48,
+  totaldepth: 20,
   ttNodes: 0,
   iteration: 0,
   qsnodes: 0,
@@ -33,7 +34,7 @@ let AI = {
 }
 
 // PIECE VALUES
-AI.PAWN = 100
+AI.PAWN = 270
 AI.PAWN2 = AI.PAWN/2 | 0
 AI.PAWN4 = AI.PAWN/4 | 0
  
@@ -41,41 +42,48 @@ AI.PIECE_VALUES = [
   // Stockfish values: 1 / 2.88 / 3.00 / 4.70 / 9.36
   
   // From TD
-  [1.00, 2.88, 3.00, 4.80, 10.77, 200].map(e=>e*AI.PAWN),
-  [1.00, 2.88, 3.00, 4.80, 10.77, 200].map(e=>e*AI.PAWN),
-  [1.00, 2.88, 3.00, 4.80, 10.77, 200].map(e=>e*AI.PAWN),
-  [1.00, 2.88, 3.00, 4.80, 10.77, 200].map(e=>e*AI.PAWN),
+  [1.00, 2.88, 3.00, 4.80, 10.77, 200].map(e=>e*AI.PAWN|0),
+  [1.00, 2.88, 3.00, 4.80, 10.77, 200].map(e=>e*AI.PAWN|0),
+  [1.00, 2.88, 3.00, 4.80, 10.77, 200].map(e=>e*AI.PAWN|0),
+  [1.00, 2.88, 3.00, 4.80, 10.77, 200].map(e=>e*AI.PAWN|0),
 ]
 
+// 0    │ 4.119047589472161  │
+// │    1    │ 8.598472360135087  │
+// │    2    │ 19.711344196588943 │
+// │    3    │ 20.030337579431595 │
+// │    4    │  49.9964604970125  │
+// │    5    │ 9.991911870879584 
+
 AI.PARAMETERS = [
-  2.5, //PSQT weight
-  4.2, //Mobility weight
-  3.2, //King safety weight
-  1.8, //Defended pawns,
-  1.4, //Doubled pawns,
-  1.4, //Passers pawns,
+   4, //PSQT weight
+ 8.5, //Mobility weight
+  20, //King safety weight
+  20, //Defended pawns
+  50, //Doubled pawns
+  10, //Passers pawns
 ]
 
 // OTHER VALUES
 
-AI.BISHOP_PAIR = 0.5 * AI.PAWN //For stockfish is something like 0.62 pawns
+AI.BISHOP_PAIR = 0.45 * AI.PAWN //For stockfish is something like 0.62 pawns
 AI.MATE = AI.PIECE_VALUES[0][5]
 AI.DRAW = 0//-AI.PIECE_VALUES[1][1]
 AI.INFINITY = AI.PIECE_VALUES[0][5]*2
 
-let wm  = -6 // Worst move
-let vbm = -5 // Very bad move
-let bm  = -4 // Bad move
-let nm  = -3 // Neutral move
-let GM  = -2 // Good move
-let VGM = -1 // Very good move
-let BM  =  0 // Best move
+let wm  = -4 // Worst move
+let vbm = -2 // Very bad move
+let bm  = -1 // Bad move
+let nm  =  0 // Neutral move
+let GM  =  1 // Good move
+let VGM =  2 // Very good move
+let BM  =  4 // Best move
 
 AI.PSQT_SCALAR = [
-  [ 2, 2, 2, 2, 2, 2],
-  [ 2, 2, 2, 2, 2, 2],
-  [ 2, 2, 2, 2, 2, 2],
-  [ 2, 2, 2, 2, 2, 2],
+  [ 1, 1, 1, 1, 1, 1],
+  [ 1, 1, 1, 1, 1, 1],
+  [ 1, 1, 1, 1, 1, 1],
+  [ 1, 1, 1, 1, 1, 1],
 ]
 
 AI.KDISTANCE = [
@@ -87,92 +95,8 @@ AI.KDISTANCE = [
   [0, 0,16,-8, 0, 0, 0,  4, 8],
 ]
 
-
-AI.QUIETSORT = [
-  //Pawn
-  [
-    25,21,29,25,9,16,20,20,
-    94,104,112,115,76,82,75,71,
-    275,309,371,401,367,372,318,241,
-    656,895,1092,2091,1541,859,776,743,
-    1577,1559,2657,3584,2983,1696,1486,1536,
-    1215,1337,1548,735,1198,1259,1798,1474,
-    5,4,6,6,6,3,6,4,
-    2,1,1,1,0,0,0,1,
-  ],
-  //Knight
-  [
-    18,27,62,51,57,52,11,7,
-    52,104,149,181,204,140,56,37,
-    67,195,495,386,332,331,163,85,
-    174,563,523,1096,1261,530,510,127,
-    307,191,740,1656,1115,423,263,288,
-    248,509,3002,486,647,3979,430,96,
-    49,72,280,1646,762,155,89,122,
-    10,105,91,136,214,382,48,12,
-  ],
-  //Bishop
-  [
-    38,53,56,76,74,93,34,12,
-    74,193,143,207,228,150,210,79,
-    172,196,529,325,315,551,161,220,
-    128,1069,400,535,499,284,1112,115,
-    428,255,1119,649,600,1074,222,342,
-    193,666,504,1391,1660,616,378,184,
-    125,568,523,914,1135,278,975,60,
-    58,107,239,197,169,438,31,17,
-  ],
-  //Rook
-  [
-    449,294,400,518,365,219,128,172,
-    537,457,511,516,364,279,217,236,
-    465,365,435,479,329,216,188,180,
-    393,331,420,483,393,261,157,205,
-    323,297,414,507,399,287,192,188,
-    279,258,412,522,458,333,205,159,
-    265,262,487,668,485,329,141,98,
-    527,954,1881,2810,2214,3382,404,242,
-  ],
-//Queen
-  [
-    108,111,143,273,158,88,70,86,
-    169,223,199,208,186,162,92,93,
-    167,214,253,272,231,241,166,165,
-    175,232,257,420,380,315,237,323,
-    391,261,473,675,548,423,421,219,
-    178,667,490,767,655,771,349,149,
-    88,231,1074,1030,1080,299,113,47,
-    112,158,263,356,283,109,18,43,
-  ],
-  // king
-  [
-    11,12,15,27,21,30,27,20,
-    20,46,52,47,58,69,51,35,
-    33,74,105,125,111,116,112,51,
-    34,111,159,215,251,211,172,83,
-    43,148,242,344,468,442,330,156,
-    56,192,324,639,802,905,721,341,
-    99,203,373,521,929,1097,1373,885,
-    83,289,498,231,300,797,3399,572,
-  ]
-]
-
-AI.SORT_FACTOR = [3,5,6,4,2,1]
-
-AI.FISCHER_PARKING = [
-  0,0,0,0,0,0,0,0,
-  86,113,155,150,51,124,99,82,
-  240,167,464,313,288,334,194,524,
-  1200,927,1107,2916,4453,2695,1868,1133,
-  3268,2663,3782,7732,16967,3869,2945,3356,
-  3741,4174,9045,2893,769,3435,7533,9758,
-  25093,24912,19376,4790,667,24942,25957,22804,
-  0,0,0,0,0,0,0,0,
-]
-
 AI.LMR_TABLE = new Array(AI.totaldepth+1)
 
-//Great idea from Igel!
 for (let depth = 1; depth < AI.totaldepth+1; ++depth){
 
   AI.LMR_TABLE[depth] = new Array(218)
@@ -182,7 +106,9 @@ for (let depth = 1; depth < AI.totaldepth+1; ++depth){
       //AI.LMR_TABLE[depth][moves] = 0.75 + Math.log(depth) * Math.log(moves) / 2.25 | 0
 
       //Stockfish
-      AI.LMR_TABLE[depth][moves] = Math.log(depth) * Math.log(moves) / 1.95 | 0
+      AI.LMR_TABLE[depth][moves] = Math.log(depth) * Math.log(moves*1.5) / 1.95 | 0
+
+      // AI.LMR_TABLE[depth][moves] = depth/3 + moves/10 | 0
 
       //http://talkchess.com/forum3/viewtopic.php?t=65273 (Evert)
       // AI.LMR_TABLE[depth][moves] = Math.log(depth*(moves**2)) | 0
@@ -192,83 +118,74 @@ for (let depth = 1; depth < AI.totaldepth+1; ++depth){
 AI.MOBILITY_VALUES = [
   [
     [],
-    [-8,-7,-6,-5,-4,-3,-2,-1,0],
-    [-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0],
-    [-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0],
-    [-27,-26,-25,-24,-23,-22,-21,-20,-19,-18,-17,-16,-15,-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0],
+    [-8,-4,-2,-1,0,1,2,3,4],
+    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11],
+    [0,0,0,0,2,3,4,5,6,7,8,9,10,11,12],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     []
   ],
   [
     [],
-    [-8,-7,-6,-5,-4,-3,-2,-1,0],
-    [-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0],
-    [-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0],
-    [-27,-26,-25,-24,-23,-22,-21,-20,-19,-18,-17,-16,-15,-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0],
+    [-8,-4,-2,-1,0,1,2,3,4],
+    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11],
+    [-8,-4,0,1,2,3,4,5,6,7,8,9,10,11,12],
+    [-6,-4,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23],
     []
   ],
   [
     [],
-    [-8,-7,-6,-5,-4,-3,-2,-1,0],
-    [-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0],
-    [-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0],
-    [-27,-26,-25,-24,-23,-22,-21,-20,-19,-18,-17,-16,-15,-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0],
+    [-8,-4,-2,-1,0,1,2,3,4],
+    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11],
+    [-6,-2,0,1,2,3,4,5,6,7,8,9,10,11,12],
+    [-6,-4,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23],
     []
   ],
   [
     [],
-    [-8,-7,-6,-5,-4,-3,-2,-1,0],
-    [-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0],
-    [-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0],
-    [-27,-26,-25,-24,-23,-22,-21,-20,-19,-18,-17,-16,-15,-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0],
+    [-8,-4,-2,-1,0,0,0,0,0],
+    [-6,-2,0,0,0,0,0,0,0,0,0,0,0,0],
+    [-6,-2,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [-6,-4,-2,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     []
   ]
 ]
 
 //Not full tested(
-  AI.SAFETY_VALUES = [-5,-4,-3,-2,-1, 0, 0, 0, 0].map(e=>3*e)
+  AI.SAFETY_VALUES = [-2,-1, 0, 1, 2,-1,-2,-3,-3]
 
 //Not full tested
 AI.PASSER_VALUES = [
    0, 0, 0, 0, 0, 0, 0, 0,
-  80,80,80,80,80,80,80,80,
-  40,40,40,40,40,40,40,40,
-  20,20,20,20,20,20,20,20,
-  10,10,10,10,10,10,10,10,
-   5, 5, 5, 5, 5, 5, 5, 5,
+   8, 8, 8, 8, 8, 8, 8, 8,
    4, 4, 4, 4, 4, 4, 4, 4,
+   2, 2, 2, 2, 2, 2, 2, 2,
+   1, 1, 1, 1, 1, 1, 1, 1,
+   0, 0, 0, 0, 0, 0, 0, 0,
+   0, 0, 0, 0, 0, 0, 0, 0,
    0, 0, 0, 0, 0, 0, 0, 0,
 ]
 
-AI.DOUBLED_VALUES = [0,-1,-2,-3,-4,-5,-6,-7,-8].map(e=>e*AI.PAWN2/5|0)
+AI.DOUBLED_VALUES = [0,-1,-2,-3,-4,-5,-6,-7,-8]
 
 //Not fully tested
 AI.DEFENDED_PAWN_VALUES = [
   [0, 0, 0, 0, 0, 0, 0, 0, 0], //phase 1
-  [0,10,20,20,40,40,40,40,40], //phase 2
-  [0,10,20,20,40,40,40,40,40], //phase 3
-  [0,10,20,20,40,40,40,40,40], //phase 4
+  [0, 1, 2, 2, 4, 4, 4, 4, 4], //phase 2
+  [0, 1, 2, 2, 4, 4, 4, 4, 4], //phase 3
+  [0, 1, 2, 2, 4, 4, 4, 4, 4], //phase 4
 ]
 
 //Not fully tested
 AI.PAWN_IMBALANCE = [-160,-160,-160,-160,-160,-150,-140,-100,0,100,140,150,160,160,160,160,160]
 
 //https://open-chess.org/viewtopic.php?t=3058
-// AI.MVVLVASCORES = [
-//   /*P*/[6002,20225,20250,20400,20800,26900],
-//   /*N*/[4775, 6004,20025,20175,20575,26675],
-//   /*B*/[4750, 4975, 6006,20150,20550,26650],
-//   /*R*/[4600, 4825, 4850, 6008,20400,26500],
-//   /*Q*/[4200, 4425, 4450, 4600, 6010,26100],
-//   /*K*/[3100, 3325, 3350, 3500, 3900,26000],
-// ]
-
 AI.MVVLVASCORES = [
-  [6001,20173,20186,20316,20735,26900],
-  [4627, 6002,20013,20143,20562,26675],
-  [4614, 4787, 6003,20130,20549,26650],
-  [4484, 4657, 4670, 6004,20419,26500],
-  [4065, 4238, 4251, 4381, 6005,26100],
-  [3100, 3325, 3350, 3500, 3900, 6006],
+  /*P*/[6002,20225,20250,20400,20800,26900],
+  /*N*/[4775, 6004,20025,20175,20575,26675],
+  /*B*/[4750, 4975, 6006,20150,20550,26650],
+  /*R*/[4600, 4825, 4850, 6008,20400,26500],
+  /*Q*/[4200, 4425, 4450, 4600, 6010,26100],
+  /*K*/[3100, 3325, 3350, 3500, 3900,26000],
 ]
 
 AI.PIECE_SQUARE_TABLES = [
@@ -424,6 +341,9 @@ AI.evaluate = function(board, ply) {
   let notturn =  ~turn & 1
   let pieces = AI.getPieces(board, turn, notturn)
   let material = AI.getMaterial(pieces)
+  let mobility = 0
+  let safety = 0
+  let structure = 0
 
   // AI.PARAMETERS = [
   //   1, //PSQT weight
@@ -432,9 +352,10 @@ AI.evaluate = function(board, ply) {
   // ]
 
   let psqt = AI.getPSQT(pieces, turn, notturn)
-  let mobility  = AI.getMobility(pieces, board, turn, notturn)
-  let safety = AI.getKingSafety(pieces,turn,notturn)
-  let structure = AI.getStructure(pieces.P, pieces.Px, turn, notturn)
+  
+  mobility  = AI.getMobility(pieces, board, turn, notturn)
+  safety = AI.getKingSafety(pieces,turn,notturn)
+  structure = AI.getStructure(pieces.P, pieces.Px, turn, notturn)
   
   let positional = psqt + mobility + structure + safety
 
@@ -442,7 +363,7 @@ AI.evaluate = function(board, ply) {
 
   // console.log('material '+material, 'psqt '+psqt, 'mobility '+mobility, 'safety '+safety, 'structure '+structure, 'threat '+threat, 'passers '+passers)
 
-  return score | 0
+  return score/10 | 0
 }
 
 // let maxdistance = -1
@@ -566,7 +487,7 @@ AI.getStructureValue = function (turn, P, Px) {
   let white = turn === 0
 
   let score = 0
-  let defended = AI.PARAMETERS[3] * AI.getDefended(P, turn)
+  let defended = AI.PARAMETERS[3] * AI.getDefendedPawns(P, turn)
   let doubled = AI.PARAMETERS[4] * AI.getDoubled(P, white)
   let passers = AI.PARAMETERS[5] * AI.getPassers(P, Px, white)
 
@@ -578,20 +499,13 @@ AI.getStructureValue = function (turn, P, Px) {
 }
 
 
-AI.getDefended = function(_P, color) {
+AI.getDefendedPawns = function(_P, color) {
   let P = _P.dup()
 
   let mask = Chess.Position.makePawnAttackMask(color, P).dup()
   let defendedpawns = mask.and(P).popcnt()
-  // let parkingvalue
 
-  // while (!P.isEmpty()) {
-  //   let index = P.extractLowestBitPosition()
-  //   // white: 56^index // black: index
-  //   parkingvalue = 5*Math.log(AI.FISCHER_PARKING[color ? index : (56 ^ index)])
-  // }
-
-  return AI.DEFENDED_PAWN_VALUES[AI.phase-1][defendedpawns]// + parkingvalue
+  return AI.DEFENDED_PAWN_VALUES[AI.phase-1][defendedpawns]
 }
 
 AI.getMobility = function (pieces, board, turn, notturn) {
@@ -713,6 +627,7 @@ AI.getPSQTvalue = function(pieces, turn, us) {
 
 AI.sortMoves = function(moves, turn, ply, board, ttEntry) {
   let killer1, killer2
+  let white = turn === 0
   
   if (AI.killers) {
     killer1 = AI.killers[turn][ply][0]
@@ -723,13 +638,14 @@ AI.sortMoves = function(moves, turn, ply, board, ttEntry) {
     let move = moves[i]
     let piece = move.getPiece()
     let to = move.getTo()
+    // let from = move.getFrom()
     let kind = move.getKind()
-    let lastmove = board.getLastMove()
+    // let lastmove = board.getLastMove()
 
     move.mvvlva = 0
     move.hvalue = 0
-    move.bvalue = 0
-    move.countermove = 0
+    // move.bvalue = 0
+    // move.countermove = 0
     move.psqtvalue = 0
     move.promotion = 0
     move.killer1 = 0
@@ -751,37 +667,36 @@ AI.sortMoves = function(moves, turn, ply, board, ttEntry) {
       move.mvvlva = AI.MVVLVASCORES[piece][move.getCapturedPiece()]
       move.capture = true
 
-      if (lastmove && lastmove.getTo() === move.getTo() && move.mvvlva > 20000) {
-        move.recapture = true
-      }
+      // if (lastmove && lastmove.getTo() === to && move.mvvlva > 20000) {
+      //   move.recapture = true
+      // }
     }
 
     if (killer1 && killer1.value === move.value) move.killer1 = true
     if (killer2 && killer2.value === move.value) move.killer2 = true
 
-
     if (kind & 8) {
       move.promotion = kind
     }
 
-    if (lastmove) {
-      let countermove = AI.countermove[turn][lastmove.getPiece()][lastmove.getTo()]
+    // if (lastmove) {
+    //   let countermove = AI.countermove[turn][lastmove.getPiece()][lastmove.getTo()]
       
-      if (countermove.value === move.value) move.countermove = true
-    }
+    //   if (countermove.value === move.value) move.countermove = true
+    // }
 
     
     let hvalue = AI.history[turn][piece][to]
-    let bvalue = AI.butterfly[turn][move.getFrom()][to]
+    // let bvalue = AI.butterfly[turn][from][to]
+
+    // move.from = AI.butterfly[turn][from].reduce((a,b)=>(a+b), 0)
 
     if (hvalue && ply <= 6) {
       move.hvalue = hvalue
-      move.bvalue = bvalue
+      // move.bvalue = bvalue
     } else {
       move.psqtvalue = AI.PIECE_SQUARE_TABLES[piece][turn === 0? 56^to : to]
     }
-
-    // move.psqtvalue = AI.QUIETSORT[piece][turn === 0? 56^to : to]
 
   }
 
@@ -806,20 +721,27 @@ AI.scoreMove = function(move) {
   if (move.capture) {
     // let recapturebonus = (move.recapture|0) * 1e7
     if (move.mvvlva > 6000) {
-      return score += 1e7 + move.mvvlva //+ recapturebonus
+      return score += 1e7 + move.mvvlva// + recapturebonus
     } else {
-      return score += 1e5 + move.mvvlva
+      return score += 1e4 + move.mvvlva
     }
   }
 
-  if (move.killer1) return score+=1e6 + 100
+  if (move.killer1) return score+=1e6 + 1000
   if (move.killer2) return score+=1e6
 
-  if (move.countermove) {
-    return score += 1e5*move.countermove
-  }
+  // if (move.countermove) {
+  //   return score += 1e5*move.countermove
+  // }
 
-  return move.psqtvalue + move.hvalue
+  if (move.hvalue) return move.hvalue
+
+  // if (move.from) return move.from //no sirveeeeee
+
+  return move.psqtvalue
+
+
+  // return move.psqtvalue + move.hvalue
 }
 
 AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
@@ -842,34 +764,22 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
   let turn = board.getTurnColor()
   let legal = 0
   let standpat = AI.evaluate(board, ply)
-  let bestscore = -AI.INFINITY
   let incheck = board.isKingInCheck()
-  let hashkey = board.hashKey.getHashKey()
 
   if (!incheck) {
-    // we can return the stand pat score (fail-soft) or beta (fail-hard) as a lower bound
-    // if (standpat >= beta ) return beta
     if (standpat >= beta ) {
-      // return standpat
-      return beta
+      return standpat
     }
     
-    /* delta pruning */ //Not fully tested
-    // if (standpat + AI.PIECE_VALUES[0][4] < alpha) {
+    /* delta pruning */ //WORKS AWFULLY
+    // if (standpat < alpha - AI.PIECE_VALUES[0][4]) {
     //   return alpha
     // }
   
     if ( standpat > alpha) alpha = standpat
   }
 
-  let moves
-  
-  if (incheck && depth >= -4) {
-    moves = board.getMoves(true, false)
-  } else {
-    moves = board.getMoves(true, true)
-  }
-
+  let moves = board.getMoves(true, !incheck)
   
   moves = AI.sortMoves(moves, turn, ply, board, null)
   
@@ -880,7 +790,7 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
     let move = moves[i]
 
     //Bad captures pruning TESTED OK +82 ELO 174 games (-4)
-    // if (depth < -4 && move.mvvlva < 6000) {
+    // if (depth < -4 && move.mvvlva < 6000 && legal >= 1) {
     //   continue
     // }
 
@@ -893,44 +803,27 @@ AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
 
       board.unmakeMove()
 
-      if( score >= beta ) {
-        // AI.saveHistory(turn, move, 2)
-        // return score
-        return beta
-      }
-
       if( score > alpha ) {
+        
+        if( score >= beta ) {
+          return score
+        }
+        
         alpha = score
-        bestscore = score
-        bestmove = move
-
-        // AI.saveHistory(turn, move, -1)
-      } else {
-        // AI.saveHistory(turn, move, -64)
       }
     }
   }
 
   if (incheck && legal === 0) {
-      // AI.ttSave(hashkey, -AI.MATE + ply, 0, AI.INFINITY, bestmove)
       return -AI.MATE + ply;
   }
 
-  if (bestmove) AI.ttSave(hashkey, bestscore, 0, depth, bestmove)
   return alpha
 }
 
 AI.ttSave = function (hashkey, score, flag, depth, move) {
   if (!move) console.log('no move')
   if (AI.stop || !move) return
-
-  // AI.hashtable[hashkey % AI.htlength] = {
-  //   hashkey,
-  //   score,
-  //   flag,
-  //   depth,
-  //   move
-  // }
 
   AI.hashtable.set(hashkey % AI.htlength, {
     hashkey,
@@ -939,18 +832,9 @@ AI.ttSave = function (hashkey, score, flag, depth, move) {
     depth,
     move
   })
-
-  // console.log(AI.hashtable)
 }
 
 AI.ttGet = function (hashkey) {
-  // let ttEntry = AI.hashtable[hashkey % AI.htlength] 
-
-  // if (ttEntry && hashkey === ttEntry.hashkey) {
-  //   return ttEntry
-  // } else {
-  //   return null
-  // }
   return AI.hashtable.get(hashkey % AI.htlength)
 }
 
@@ -976,16 +860,7 @@ AI.saveHistory = function(turn, move, value) {
   //according to The_Relative_History_Heuristic.pdf, no much difference if it's 1 or 1 << depth
   turn = turn | 0
 
-  let to
-
-  if (move.isCapture()) { 
-    to = move.getFrom() //TESTING
-  } else {
-    to = move.getTo()
-    AI.butterfly[turn][move.getFrom()][to] += value | 0
-  }
-
-  AI.history[turn][move.getPiece()][to] += value | 0
+  AI.history[turn][move.getPiece()][move.getTo()] += value | 0
    
 }
 
@@ -1008,7 +883,6 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   let cutNode = beta - alpha === 1
 
   AI.nodes++
-
 
   if ((new Date()).getTime() > AI.timer + 1000 * AI.secondspermove) {
     if (AI.iteration > AI.mindepth[AI.phase-1] && !pvNode) {
@@ -1039,16 +913,18 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   }
 
   let alphaOrig = alpha
+  
   let ttEntry = AI.ttGet(hashkey)
-
+  
+  
   if (depth <= 0) {
     return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
   }
-
-  if (AI.stop && AI.iteration > AI.mindepth[AI.phase-1]) return alpha
   
+  if (AI.stop && AI.iteration > AI.mindepth[AI.phase-1]) return alpha
+
   //Hash table lookup
-  if (ttEntry && ttEntry.depth >= depth) {
+  if (ttEntry && ttEntry.depth >= depth && this.iteration > 1) {
     //testear estrictamente mayor 
     AI.ttnodes++
     
@@ -1061,14 +937,14 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
     } else if (ttEntry.flag === 1) {
       if (ttEntry.score < beta) beta = ttEntry.score
     }
-
+    
     if (alpha >= beta) {
       return ttEntry.score
     }
   }
-  
+
   //IID (if there's no ttEntry, get one for ordering moves)
-  if (pvNode && !ttEntry && depth > 2 && !AI.stop) {
+  if (pvNode && !ttEntry && depth > 2) {
     AI.PVS(board, alpha, beta, depth-2, ply) //depth - 2 tested ok + 31 ELO
     ttEntry = AI.ttGet(hashkey)
   }
@@ -1079,6 +955,9 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   moves = AI.sortMoves(moves, turn, ply, board, ttEntry)
   
   let bestmove = moves[0]
+
+  // AI.ttSave(hashkey, alpha, 0, depth, bestmove)
+
   let lastmove = board.getLastMove()
   let legal = 0
   let bestscore = -AI.INFINITY
@@ -1088,126 +967,114 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
   let incheck = board.isKingInCheck()
 
   //Razoring (idea from Strelka) //THIS IS A COMPLETE BULLSHIT
-  // if (alpha === beta - 1 && !incheck) {
-  //   let value = staticeval + AI.PAWN;
-  //   if (value < beta) {
-  //     if (depth === 1) {
-  //       let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
-  //       return Math.max(new_value, value);
-  //     }
-  //     value += 2*AI.PAWN;
-  //     if (value < beta && depth <= 3) {
-  //       let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
-  //       if (new_value < beta)
-  //         return Math.max(new_value, value);
-  //     }
-  //   }
-  // }
+  if (cutNode && !incheck) {
+    let value = staticeval + AI.PAWN;
+    if (value < beta) {
+      if (depth === 1) {
+        let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
+        return Math.max(new_value, value);
+      }
+      value += 2*AI.PAWN;
+      if (value < beta && depth <= 3) {
+        let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
+        if (new_value < beta)
+          return Math.max(new_value, value);
+      }
+    }
+  }
 
-  // if (incheck) {
+  // if (incheck) { //NO SIRVE
   //   if (lastmove) {
   //     if (AI.phase < 4) {
   //       AI.saveHistory(notturn, lastmove, 2**depth) //check moves up in move ordering
-  //     } else {
-  //       // AI.saveHistory(notturn, lastmove, -(2**depth)) //check down up in move ordering (phase 4)
   //     }
   //   }
   // }
   
-  //Reverse Futility pruning (Static Null Move Pruning)
+  //Reverse Futility pruning (Static Null Move Pruning) PERFECT!!!!
   let margin = AI.PIECE_VALUES[0][1] * depth
 
   if (!incheck && depth <= 3 && staticeval - margin > beta) {
-    // AI.ttSave(hashkey, reverseval, -1, depth, moves[0])
-    return beta
-    // return staticeval - margin
+    AI.ttSave(hashkey, staticeval - margin, -1, depth, moves[0])
+    // return beta
+    return staticeval - margin //FAIL SOFT MUCHO MEJOR
   }
 
+  //FAIL HIGH REDUCTIONS (PERFECT)
   let threateval = 200 * incheck
-
-  let FHR = 0//staticeval - threateval > beta && cutNode? 3 : 0
+  let FHR = staticeval - threateval > beta && cutNode? 3 : 0 // (funciona bien)
   let noncaptures = 0
   
   for (let i=0, len=moves.length; i < len; i++) {
     let move = moves[i]
     let piece = move.getPiece()
     let to = move.getTo()
+    let R = 0
+    let E = 0
 
-    let givescheck = AI.givescheck(board, move)
+    // let givescheck = AI.givescheck(board, move)  //CONSUMES A LOT
 
     //Absurd maneuvers pruning (AMP)
-    // let doAMP
+    let doAMP = false
 
-    // if (AI.phase === 1 && AI.absurd[turn][piece] >= 2) doAMP = true
+    if (cutNode && AI.phase === 1 && AI.absurd[turn][piece] >= 2 && !pvNode) doAMP = true
 
-    // if (AI.phase === 2 || AI.phase === 3) {
-    //   if (
-    //     (depth >= 2 && AI.absurd[turn][piece] >= (depth/2 | 0)) ||
-    //     AI.absurd[turn][0] >= 8 ||
-    //     AI.absurd[turn][1] >= 4 ||
-    //     AI.absurd[turn][2] >= 4 ||
-    //     AI.absurd[turn][3] >= 4 ||
-    //     AI.absurd[turn][4] >= 4 ||
-    //     AI.absurd[turn][5] >= 4
-    //   ) {
-    //     doAMP = true
-    //   }
-    // }
+    if (cutNode && (AI.phase === 2 || AI.phase === 3)) {
+      if (depth >= 2 && AI.absurd[turn][piece] >= (depth/2 | 0)) {
+        doAMP = true
+      }
+    }
     
-    // if (doAMP) {
-    //   continue
-    // }
+    if (doAMP) {
+      R+=2 //PERFECT
+    }
 
     let near2mate = alpha > 2*AI.PIECE_VALUES[0][4] || beta < -2*AI.PIECE_VALUES[0][4]
 
     let isCapture = !!move.capture
-    
-    let R = 0
-    let E = 0
 
     /*futility pruning */
-    // if (!near2mate && !incheck && 1 < depth && depth <= 3+R && legal >= 1) {
-    //   let futilityMargin = 2*AI.PIECE_VALUES[0][1]
+    if (!near2mate && !incheck && 1 < depth && depth <= 3+R && !pvNode && legal > 1) {
+      let futilityMargin = 2*AI.PIECE_VALUES[0][1]
 
-    //   if (staticeval + futilityMargin * depth <= alpha)  continue
+      if (staticeval + futilityMargin * depth <= alpha) continue
 
-    // }
-
+    }
 
     let isPositional = move.getKind() < 4 && !incheck
 
     if (isPositional && AI.phase < 4 && piece > 0 && piece < 5) noncaptures++
 
     // Bad-Captures-Pruning (BCP) //NOT FULLY TESTED
-    // if (AI.phase < 4 && isCapture && depth >= 3 && move.mvvlva < 6000 && legal > 1) {
-    //   R++
-    // }
+    if (!pvNode && AI.phase < 4 && isCapture && depth >= 3 && move.mvvlva < 6000 && legal > 1) {
+      R++
+    }
 
     // // Late-Moves-Pruning (LMP)
-    // if (AI.phase < 4 && depth > 6 && isPositional && noncaptures > 4) {
-    //   continue
-    // }
+    if (!pvNode && AI.phase < 4 && depth > 6 && isPositional && noncaptures > 4) {
+      continue
+    }
 
     // if (board.movenumber == 1 && i > 0) continue // CHEQUEA ORDEN PSQT
 
-    // if (ttEntry && ttEntry.move.isCapture()) R++
+    if (ttEntry && ttEntry.move.isCapture()) R++
 
-    // if (cutNode && !isCapture && !move.promotion && depth>=3 && legal>1+2*ply) R+=2 //Not fully tested
+    if (cutNode && !isCapture && !move.promotion && depth>=3 && legal>1+2*ply) R+=2 //Not fully tested
 
-    // let moveCountPruning = legal >= (3 + depth * depth) / 2 // tested with i and failed
+    let moveCountPruning = legal >= (3 + depth * depth) / 2 // tested with i and failed
 
-    // if (moveCountPruning && depth >=3 && !isCapture) R++
+    if (moveCountPruning && depth >=3 && !isCapture) R++
 
-    // if (!isCapture && cutNode && AI.history[turn][piece][to] < -20) {
-    //   // console.log('prune')
-    //   R++
-    // }
+    if (!isCapture && cutNode && AI.history[turn][piece][to] < -20) {
+      // console.log('prune')
+      R++
+    }
 
     //Reductions (LMR)
-    if (!incheck) {
+    if (!incheck && !pvNode && depth > 2) {
       R += AI.LMR_TABLE[depth][i+1]
 
-      // if (AI.phase === 4) R = R/2 | 0
+      if (AI.phase === 4) R = R/2 | 0
     }
 
     if (R<0) R=0
@@ -1218,27 +1085,22 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
       AI.absurd[turn][piece]++
 
       //Late-Moves-Pruning (LMP)
-      // let lmplimit = 800*depth**(-1.8) | 0
-      // if (!isCapture && legal > lmplimit) {
-      //   board.unmakeMove()
-      //   AI.absurd[turn][piece]--
-      //   continue
-      // }
+      let lmplimit = 800*depth**(-1.8) | 0
+      if (!isCapture && legal > lmplimit) {
+        board.unmakeMove()
+        AI.absurd[turn][piece]--
+        continue
+      }
 
       //Extensions
-      if (pvNode && depth < 3) {
+      if (pvNode || depth < 3) {
         if (incheck) {
           E = 1
         }
       }
 
-      if (legal === 1 && !AI.stop) {
-        // score = -AI.PVS(board, -beta, -alpha, depth-R-FHR-1, ply+1)
-
-        // if (score > alpha && !AI.stop) {
+      if (legal === 1/* && !AI.stop*/) {
           score = -AI.PVS(board, -beta, -alpha, depth+E-1, ply+1)
-        // }
-        
       } else {
         if (AI.stop) return alpha
 
@@ -1261,6 +1123,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
       
       //Betsmove so far
       if (score > alpha) {
+        alpha = score
         bestscore = score
         bestmove  = move
 
@@ -1272,40 +1135,34 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
 
           AI.fh++
           
-          
           //LOWERBOUND
           AI.ttSave(hashkey, score, -1, depth, move)
 
           if (!isCapture) {
-            AI.killers[turn|0][ply][1] = AI.killers[turn|0][ply][0]
+            if (AI.killers[turn|0][ply][0] && AI.killers[turn|0][ply][0].value != move.value) {
+              AI.killers[turn|0][ply][1] = AI.killers[turn|0][ply][0]
+            }
+
             AI.killers[turn|0][ply][0] = move
 
-            // AI.saveHistory(turn, move, depth**3)
             if (lastmove) AI.countermove[turn][lastmove.getPiece()][lastmove.getTo()] = move
-
-            //Negative plausibility (http://www.aifactory.co.uk/newsletter/2007_01_neg_plausibility.htm)
-            // for (let j=0; j < i; j++) {
-              //   if (!moves[j].capture) AI.saveHistory(turn, moves[j], (j-i)*depth)
-              // }
-              
-            }
-            
-            return beta
-            // return score
           }
           
-          if (!isCapture) {AI.saveHistory(turn, move, depth**2)}
-          AI.ttSave(hashkey, score, -1, depth, move)
+          return score
+        }
         
-        alpha = score
-      } else {
-        // AI.ttSave(hashkey, score, 1, depth, move) //TESTED AT HIGH DEPTH
+        if (!isCapture) {AI.saveHistory(turn, move, depth**2)} //PERFECT
+        
       }
     }
   }
 
-  if (ply === 1 && legal === 1) AI.stop = true
+  if (ply === 1 && legal === 1) {
+    AI.ttSave(hashkey, score, 0, depth, bestmove)
+    return score
+  }
 
+  // console.log(bestscore, alphaOrig)
   if (legal === 0) {
       // stalemate, draw
       if (!board.isKingInCheck()) {
@@ -1313,22 +1170,26 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
         return AI.DRAW + ply
       }
       
-      AI.ttSave(hashkey, -AI.MATE + ply, 0, depth, bestmove)
+      AI.ttSave(hashkey, -AI.MATE + ply, 0, depth+1, bestmove)
       return -AI.MATE + ply
       
   } else {
 
     if (board.isDraw()) {
       AI.ttSave(hashkey, AI.DRAW + ply, 1, depth, bestmove)   
-      return AI.DRAW + ply
+      // return AI.DRAW + ply
+      return (-staticeval/2 | 0) + ply
     }
 
+
     if (bestscore > alphaOrig) {
+      // if (true) console.log('EXACT')
       // EXACT
       if (bestmove) {
         AI.ttSave(hashkey, bestscore, 0, depth, bestmove)
         if (!bestmove.isCapture()) AI.saveHistory(turn, bestmove, 1)
       }
+
       return bestscore
     } else {
       //UPPERBOUND value <= alphaorig
@@ -1336,7 +1197,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
       return alphaOrig
     }
   }
-  
+
 }
 
 AI.bin2map = function(bin, color) {
@@ -2103,7 +1964,7 @@ AI.setphase = function (board) {
 }
 
 AI.getPV = function (board, length) {
-  let PV = [board.getLastMove() || {}]
+  let PV = []
   let legal = 0
 
   let ttEntry
@@ -2157,22 +2018,30 @@ AI.getPV = function (board, length) {
 }
 
 AI.MTDF = function (board, f, d) {
+  if (AI.stop) return f
+
+  let toomuch = f > 2*AI.PIECE_VALUES[0][0] || f < -2*AI.PIECE_VALUES[0][0]
+
+  // console.log(f)
+  //Esta línea permite que el algoritmo funcione como PVS normal
   let g = f
 
   let upperBound =  AI.INFINITY
   let lowerBound = -AI.INFINITY
+  if (AI.iteration === 1 || toomuch) return AI.PVS(board, lowerBound, upperBound, d, 1) 
 
-  //Esta línea permite que el algoritmo funcione como PVS normal
-  return AI.PVS(board, lowerBound, upperBound, d, 1) 
   // console.log('INICIO DE MTDF')
-  let i = 0
+  let beta
 
   while (lowerBound < upperBound && !AI.stop) {
-    let beta = Math.max(g, lowerBound + 1)
-
-    i++
-
+    if (g === lowerBound) {
+      beta = g + 1
+    } else {
+      beta = g
+    }
+    
     g = AI.PVS(board, beta - 1, beta, d, 1)
+    process.stdout.write('g: '+g+'\r');
 
     if (g < beta) {
       upperBound = g
@@ -2228,10 +2097,6 @@ AI.search = function(board, options) {
     let white = color == 0
     let notwhite = ~white & 1
         
-    AI.nodes = 0
-    AI.qsnodes = 0
-    AI.enodes = 0
-    AI.ttnodes = 0
     AI.iteration = 0
     AI.timer = (new Date()).getTime()
     AI.stop = false
@@ -2250,19 +2115,25 @@ AI.search = function(board, options) {
     
     AI.fh = AI.fhf = 0.001
     
-    let f = AI.lastscore //AI.PVS(board, alpha, beta, 1, 1) //for MTD(f)
+    let f = AI.PVS(board, alpha, beta, 1, 1) //for MTD(f)
+    console.log(f)
 
     //Iterative Deepening
     for (let depth = 1; depth <= AI.totaldepth; depth+=1) {
+      AI.nodes = 0
+      AI.qsnodes = 0
+      AI.enodes = 0
+      AI.ttnodes = 0
+
       if (AI.stop && AI.iteration > AI.mindepth[AI.phase-1]) break
 
       if (!AI.stop) AI.lastscore = score
 
-      AI.bestmove = [...AI.PV][1]
+      AI.bestmove = [...AI.PV][0]
       AI.iteration++
-      f = AI.lastscore
+      f = AI.MTDF(board, f, depth) | 0
       
-      score = (white? 1 : -1) * AI.MTDF(board, f, depth)
+      score = (white? 1 : -1) * f | 0
 
       AI.PV = AI.getPV(board, AI.totaldepth+1)
 
@@ -2272,12 +2143,11 @@ AI.search = function(board, options) {
         AI.changeinPV = false
       }
 
-      let strmove = AI.PV[1]? AI.PV[1].getString() : '----'
-      
       fhfperc = Math.round(AI.fhf*100/AI.fh)
 
       if (AI.PV) console.log(AI.iteration, depth, AI.PV.map(e=>{ return e && e.getString? e.getString() : '---'}).join(' '), '|Fhf ' + fhfperc + '%', 'Pawn hit ' + (AI.phnodes/AI.pnodes*100 | 0),  score, AI.nodes, AI.qsnodes)
-      // console.log(fhfperc)
+      
+      if (!AI.stop && depth === AI.totaldepth) depth = 1
     }
 
     if (AI.TESTER) {
@@ -2338,7 +2208,7 @@ AI.search = function(board, options) {
           AI.getPSQT(pieces, color, notcolor),
           AI.getMobility(pieces, board, color, notcolor),
           AI.getKingSafety(pieces,color,notcolor),
-          AI.getDefended(pieces.P, color) - AI.getDefended(pieces.Px, notcolor),
+          AI.getDefendedPawns(pieces.P, color) - AI.getDefendedPawns(pieces.Px, notcolor),
           AI.getDoubled(pieces.P, white) - AI.getDoubled(pieces.Px, notwhite),
           AI.getPassers(pieces.P, pieces.Px, white),
         ]
@@ -2396,7 +2266,7 @@ AI.search = function(board, options) {
 
     //zugzwang prevention
     if (!AI.bestmove) {
-      let moves = board.getMoves()
+      let moves = board.getMoves(false, false)
 
       AI.bestmove = moves[moves.length*Math.random()|0]
     }

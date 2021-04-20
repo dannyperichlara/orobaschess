@@ -8,7 +8,7 @@ const Chess = require('../chess/chess.js')
 // Math.seedrandom('orobas')
 
 let AI = {
-  totaldepth: 48,
+  totaldepth: 20,
   ttNodes: 0,
   iteration: 0,
   qsnodes: 0,
