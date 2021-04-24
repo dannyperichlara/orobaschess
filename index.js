@@ -80,7 +80,7 @@ app.get('/', function (req, res) {
         
         if (enpassantsquare !== '-') {
           chessPosition.enPassantSquare = fromto.indexOf(enpassantsquare)
-          console.log('enpassant', chessPosition.enPassantSquare)
+          // console.log('enpassant', chessPosition.enPassantSquare)
   
           //En passant squares are defined different from FEN in the move generator:
           if (turn === 0) chessPosition.enPassantSquare -= 8
