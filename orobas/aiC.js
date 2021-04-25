@@ -8,7 +8,7 @@ const Chess = require('../chess/chess.js')
 // Math.seedrandom('orobas')
 
 let AI = {
-  totaldepth: 2,
+  totaldepth: 48,
   ttNodes: 0,
   iteration: 0,
   qsnodes: 0,
@@ -22,7 +22,7 @@ let AI = {
   phase: 1,
   htlength: 1 << 24,
   pawntlength: 5e5,
-  reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
+  reduceHistoryFactor: 0.5, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
   mindepth: [3,3,3,3],
   secondspermove: 3,
   lastmove: null
@@ -530,10 +530,10 @@ AI.getStructureValue = function (turn, P, Px) {
 
   AI.pnodes++
   
-  // if (hashentry) {
-  //   AI.phnodes++
-  //   return hashentry
-  // }
+  if (hashentry) {
+    AI.phnodes++
+    return hashentry
+  }
 
   let white = turn === 0
 
@@ -785,15 +785,15 @@ AI.scoreMove = function(move) {
   if (move.killer1) return score+=1e6 + 1000
   if (move.killer2) return score+=1e6
 
-  if (move.countermove) {
-    return score += 1e5*move.countermove
-  }
+//   if (move.countermove) { //no funciona
+//     return score += 2e5*move.countermove
+//   }
 
   if (move.hvalue) { //History Heuristic
     return score += move.hvalue
   } 
 
-  return move.psqtvalue - 1000
+  return 0//move.psqtvalue
 }
 
 AI.quiescenceSearch = function(board, alpha, beta, depth, ply, pvNode) {
@@ -948,16 +948,8 @@ AI.saveHistory = function(turn, move, value) {
   //according to The_Relative_History_Heuristic.pdf, no much difference if it's 1 or 1 << depth
   turn = turn | 0
 
-  let to
 
-  if (move.isCapture()) { 
-    to = move.getFrom() //TESTING
-  } else {
-    to = move.getTo()
-    AI.butterfly[turn][move.getFrom()][to] += value | 0
-  }
-
-  AI.history[turn][move.getPiece()][to] += value | 0
+  AI.history[turn][move.getPiece()][move.getTo()] += value | 0
    
 }
 
@@ -1252,7 +1244,7 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
             AI.killers[turn|0][ply][1] = AI.killers[turn|0][ply][0]
             AI.killers[turn|0][ply][0] = move
 
-            // AI.saveHistory(turn, move, depth**3)
+            AI.saveHistory(turn, move, 2**depth)
             if (lastmove) AI.countermove[turn][lastmove.getPiece()][lastmove.getTo()] = move
 
             //Negative plausibility (http://www.aifactory.co.uk/newsletter/2007_01_neg_plausibility.htm)
@@ -1263,14 +1255,15 @@ AI.PVS = function(board, alpha, beta, depth, ply) {
             }
             
             return beta
-            // return score
+            return score
           }
           
-          if (!isCapture) {AI.saveHistory(turn, move, depth**2)}
+          if (!isCapture) {AI.saveHistory(turn, move, 1)}
           AI.ttSave(hashkey, score, -1, depth, move)
         
         alpha = score
       } else {
+        // AI.saveHistory(turn, move, -(depth**2))
         // AI.ttSave(hashkey, score, 1, depth, move) //TESTED AT HIGH DEPTH
       }
     }
@@ -2268,7 +2261,7 @@ AI.search = function(board, options) {
       
       fhfperc = Math.round(AI.fhf*100/AI.fh)
 
-      // if (AI.PV) console.log(AI.iteration, depth, AI.PV.map(e=>{ return e && e.getString? e.getString() : '---'}).join(' '), '|Fhf ' + fhfperc + '%', 'Pawn hit ' + (AI.phnodes/AI.pnodes*100 | 0),  score, AI.nodes, AI.qsnodes)
+      if (AI.PV) console.log(AI.iteration, depth, AI.PV.map(e=>{ return e && e.getString? e.getString() : '---'}).join(' '), '|Fhf ' + fhfperc + '%', 'Pawn hit ' + (AI.phnodes/AI.pnodes*100 | 0),  score, AI.nodes, AI.qsnodes)
       // console.log(fhfperc)
     }
 
