@@ -23,7 +23,7 @@ let AI = {
     htlength: 1 << 24,
     pawntlength: 5e5,
     reduceHistoryFactor: 0.5, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
-    mindepth: [1, 1, 1, 1],
+    mindepth: [3, 3, 3, 3],
     secondspermove: 3,
     lastmove: null,
     f: 0
@@ -406,16 +406,12 @@ AI.evaluate = function (board, ply, beta) {
     
     let score = material
     
-    if (AI.phase < 4 && score > beta + AI.PAWN) {
-        // console.log('si')
-        return score
-    }
+    //Lazy Evaluation
+    if (AI.phase < 4 && score >= beta + AI.PAWN)  return beta
+    
     let psqt = AI.getPSQT(pieces, turn, notturn)
-    
+    let safety = AI.getKingSafety(pieces, turn, notturn)  
     let structure = AI.getStructure(pieces.P, pieces.Px, turn, notturn)
-    
-    let safety = AI.getKingSafety(pieces, turn, notturn)
-
     let mobility = AI.getMobility(pieces, board, turn, notturn)
 
     score += psqt + structure + safety + mobility | 0
@@ -837,8 +833,8 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
         // we can return the stand pat score (fail-soft) or beta (fail-hard) as a lower bound
         // if (standpat >= beta ) return beta
         if (standpat >= beta) {
-            // return standpat
-            return beta
+            return standpat
+            // return beta
         }
 
         /* delta pruning */ //Not fully tested
@@ -880,8 +876,8 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
 
             if (score >= beta) {
                 // AI.saveHistory(turn, move, 2)
-                // return score
-                return beta
+                return score
+                // return beta
             }
 
             if (score > alpha) {
@@ -1016,14 +1012,15 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     }
 
     let alphaOrig = alpha
-    let ttEntry = AI.ttGet(hashkey)
-
+    
     if (depth <= 0) {
         return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
     }
-
+    
     if (AI.stop && AI.iteration > AI.mindepth[AI.phase - 1]) return alpha
-
+    
+    let ttEntry = AI.ttGet(hashkey)
+    
     //Hash table lookup
     if (ttEntry && ttEntry.depth >= depth) {
         //testear estrictamente mayor 
@@ -1096,8 +1093,8 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
     if (!incheck && depth <= 3 && staticeval - margin > beta) {
         // AI.ttSave(hashkey, reverseval, -1, depth, moves[0])
-        return beta
-        // return staticeval - margin
+        // return beta
+        return staticeval - margin
     }
 
     let threateval = 200 * incheck
@@ -1272,7 +1269,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
                     }
 
-                    return beta
+                    // return beta
                     return score
                 }
 

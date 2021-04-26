@@ -23,9 +23,10 @@ let AI = {
     htlength: 1 << 24,
     pawntlength: 5e5,
     reduceHistoryFactor: 0.5, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
-    mindepth: [1, 1, 1, 1],
+    mindepth: [3, 3, 3, 3],
     secondspermove: 3,
-    lastmove: null
+    lastmove: null,
+    f: 0
 }
 
 // PIECE VALUES
@@ -396,21 +397,24 @@ AI.getMaterial = function (pieces) {
     return AI.getMaterialValue(pieces, true) - AI.getMaterialValue(pieces, false)
 }
 
-AI.evaluate = function (board, ply) {
+AI.evaluate = function (board, ply, beta) {
     let turn = board.getTurnColor()
     let notturn = ~turn & 1
     let pieces = AI.getPieces(board, turn, notturn)
     let material = AI.getMaterial(pieces)
 
+    
+    let score = material
+    
+    //Lazy Evaluation
+    if (AI.phase < 4 && score >= beta + AI.PAWN)  return beta
+    
     let psqt = AI.getPSQT(pieces, turn, notturn)
+    let safety = AI.getKingSafety(pieces, turn, notturn)  
     let structure = AI.getStructure(pieces.P, pieces.Px, turn, notturn)
-    let safety = AI.getKingSafety(pieces, turn, notturn)
-
     let mobility = AI.getMobility(pieces, board, turn, notturn)
 
-    let positional = psqt + mobility + structure + safety
-
-    let score = material + positional | 0
+    score += psqt + structure + safety + mobility | 0
 
     // console.log('material '+material, 'psqt '+psqt, 'mobility '+mobility, 'safety '+safety, 'structure '+structure, 'threat '+threat, 'passers '+passers)
 
@@ -820,7 +824,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
 
     let turn = board.getTurnColor()
     let legal = 0
-    let standpat = AI.evaluate(board, ply)
+    let standpat = AI.evaluate(board, ply, beta)
     let bestscore = -AI.INFINITY
     let incheck = board.isKingInCheck()
     let hashkey = board.hashKey.getHashKey()
@@ -1008,14 +1012,15 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     }
 
     let alphaOrig = alpha
-    let ttEntry = AI.ttGet(hashkey)
-
+    
     if (depth <= 0) {
         return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
     }
-
+    
     if (AI.stop && AI.iteration > AI.mindepth[AI.phase - 1]) return alpha
-
+    
+    let ttEntry = AI.ttGet(hashkey)
+    
     //Hash table lookup
     if (ttEntry && ttEntry.depth >= depth) {
         //testear estrictamente mayor 
@@ -1052,7 +1057,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     let legal = 0
     let bestscore = -AI.INFINITY
     let score
-    let staticeval = AI.evaluate(board, ply) //Apparently doesnt affect performance at low depths
+    let staticeval = AI.evaluate(board, ply, beta) //Apparently doesnt affect performance at low depths
 
     let incheck = board.isKingInCheck()
 
@@ -1218,6 +1223,8 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                 //Remember we are trying to get the score at depth D, but we just get the score at depth D - R
 
                 if (!AI.stop && score > alpha/* && score < beta*/) { //https://www.chessprogramming.org/Principal_Variation_Search
+                    // if (score > beta) AI.ttSave(hashkey, score, -1, depth - R - FHR, move)
+                    
                     score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1)
                 }
             }
@@ -1287,7 +1294,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         }
 
         if (ply === 1) AI.stop = true
-        
+
         AI.ttSave(hashkey, -AI.MATE + ply, 0, depth, bestmove)
         return -AI.MATE + ply
 
@@ -2167,6 +2174,7 @@ AI.search = function (board, options) {
         AI.lastscore = 0
         AI.bestmove = 0
         AI.bestscore = 0
+        AI.f=0
     }
 
     if (options && options.seconds) AI.secondspermove = options.seconds
@@ -2245,7 +2253,6 @@ AI.search = function (board, options) {
             (new Array(128)).fill([null, null]), //white
             (new Array(128)).fill([null, null]), //black
         ]
-        let f = AI.PVS(board, alpha, beta, 1, 1) //for MTD(f)
 
         AI.fh = AI.fhf = 0.001
 
@@ -2257,9 +2264,9 @@ AI.search = function (board, options) {
 
             AI.bestmove = [...AI.PV][1]
             AI.iteration++
-            f = AI.lastscore
+            AI.f = AI.MTDF(board, AI.f, depth)
 
-            score = (white ? 1 : -1) * AI.MTDF(board, f, depth)
+            score = (white ? 1 : -1) * AI.f
 
             AI.PV = AI.getPV(board, AI.totaldepth + 1)
 
@@ -2274,7 +2281,7 @@ AI.search = function (board, options) {
 
             fhfperc = Math.round(AI.fhf * 100 / AI.fh)
 
-            if (AI.PV) console.log(AI.iteration, depth, AI.PV.map(e => { return e && e.getString ? e.getString() : '---' }).join(' '), '|Fhf ' + fhfperc + '%', 'Pawn hit ' + (AI.phnodes / AI.pnodes * 100 | 0), score, AI.nodes, AI.qsnodes)
+            if (AI.PV && !AI.stop) console.log(AI.iteration, depth, AI.PV.map(e => { return e && e.getString ? e.getString() : '---' }).join(' '), '|Fhf ' + fhfperc + '%', 'Pawn hit ' + (AI.phnodes / AI.pnodes * 100 | 0), score, AI.nodes.toString(), AI.qsnodes.toString())
             // console.log(fhfperc)
         }
 
