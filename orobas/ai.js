@@ -833,8 +833,8 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
         // we can return the stand pat score (fail-soft) or beta (fail-hard) as a lower bound
         // if (standpat >= beta ) return beta
         if (standpat >= beta) {
-            // return standpat
-            return beta
+            return standpat
+            // return beta
         }
 
         /* delta pruning */ //Not fully tested
@@ -876,8 +876,8 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
 
             if (score >= beta) {
                 // AI.saveHistory(turn, move, 2)
-                // return score
-                return beta
+                return score
+                // return beta
             }
 
             if (score > alpha) {
@@ -1093,8 +1093,8 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
     if (!incheck && depth <= 3 && staticeval - margin > beta) {
         // AI.ttSave(hashkey, reverseval, -1, depth, moves[0])
-        return beta
-        // return staticeval - margin
+        // return beta
+        return staticeval - margin
     }
 
     let threateval = 200 * incheck
@@ -1269,7 +1269,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
                     }
 
-                    return beta
+                    // return beta
                     return score
                 }
 
