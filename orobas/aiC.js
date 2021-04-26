@@ -686,6 +686,7 @@ AI.getPSQTvalue = function (pieces, turn, us) {
 AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
     let t0 = (new Date).getTime()
     let killer1, killer2
+    // let lastmove = board.getLastMove()
 
     if (AI.killers) {
         killer1 = AI.killers[turn][ply][0]
@@ -697,14 +698,13 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         let piece = move.getPiece()
         let to = move.getTo()
         let kind = move.getKind()
-        // let lastmove = board.getLastMove()
 
         move.mvvlva = 0
         move.hvalue = 0
         // move.bvalue = 0
         // move.countermove = 0
         move.psqtvalue = 0
-        // move.promotion = 0
+        move.promotion = 0
         move.killer1 = 0
         move.killer2 = 0
 
@@ -758,13 +758,13 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
 
     }
 
+    
+    moves.sort((a, b) => {
+      return AI.scoreMove(b, board) - AI.scoreMove(a, board)
+    })
     let t1 = (new Date()).getTime()
 
     AI.sortingTime += (t1 - t0)
-
-    moves.sort((a, b) => {
-        return AI.scoreMove(b, board) - AI.scoreMove(a, board)
-    })
 
 
     return moves
@@ -1217,7 +1217,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                 //If the result looks promising, we do a research at full depth.
                 //Remember we are trying to get the score at depth D, but we just get the score at depth D - R
 
-                if (!AI.stop && score > alpha && score < beta) { //https://www.chessprogramming.org/Principal_Variation_Search
+                if (!AI.stop && score > alpha/* && score < beta*/) { //https://www.chessprogramming.org/Principal_Variation_Search
                     score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1)
                 }
             }
