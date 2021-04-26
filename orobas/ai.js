@@ -893,7 +893,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
         return -AI.MATE + ply;
     }
 
-    if (bestmove) AI.ttSave(hashkey, bestscore, 0, depth, bestmove)
+    // if (bestmove) AI.ttSave(hashkey, bestscore, 0, depth, bestmove)
     return alpha
 }
 
@@ -1217,7 +1217,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                 //If the result looks promising, we do a research at full depth.
                 //Remember we are trying to get the score at depth D, but we just get the score at depth D - R
 
-                if (!AI.stop && score > alpha && score < beta) { //https://www.chessprogramming.org/Principal_Variation_Search
+                if (!AI.stop && score > alpha/* && score < beta*/) { //https://www.chessprogramming.org/Principal_Variation_Search
                     score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1)
                 }
             }
@@ -1286,6 +1286,8 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             return AI.DRAW + ply
         }
 
+        if (ply === 1) AI.stop = true
+        
         AI.ttSave(hashkey, -AI.MATE + ply, 0, depth, bestmove)
         return -AI.MATE + ply
 
