@@ -757,19 +757,16 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
     let alphaOrig = alpha
 
-    if (depth <= 0) {
-        return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
-    }
-
+    
     if (AI.stop && AI.iteration > AI.mindepth[AI.phase - 1]) return alpha
-
+    
     let ttEntry = AI.ttGet(hashkey)
-
+    
     //Hash table lookup
     if (ttEntry && ttEntry.depth >= depth) {
         //testear estrictamente mayor 
         AI.ttnodes++
-
+        
         if (ttEntry.flag === 0) {
             return ttEntry.score
         } else if (ttEntry.flag === -1) {
@@ -777,14 +774,18 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         } else if (ttEntry.flag === 1) {
             if (ttEntry.score < beta) beta = ttEntry.score
         }
-
+        
         if (alpha >= beta) {
             return ttEntry.score
         }
     }
 
+    if (depth <= 0) {
+        return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
+    }
+
     //IID (if there's no ttEntry, get one for ordering moves)
-    if (pvNode && !ttEntry && depth > 2) {
+    if (pvNode && !ttEntry && depth > 3) {
         AI.PVS(board, alpha, beta, depth - 2, ply) //depth - 2 tested ok + 31 ELO
         ttEntry = AI.ttGet(hashkey)
     }
