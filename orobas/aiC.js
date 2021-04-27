@@ -18,7 +18,7 @@ let AI = {
     htlength: 1 << 24,
     pawntlength: 5e5,
     reduceHistoryFactor: 0.5, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
-    mindepth: [3, 3, 3, 3],
+    mindepth: [1, 1, 1, 1],
     secondspermove: 3,
     lastmove: null,
     f: 0
@@ -257,7 +257,7 @@ AI.evaluate = function (board, ply, beta) {
     score += AI.getMaterial(pieces)
 
     //Lazy Evaluation
-    if (AI.phase < 4 && score >= beta + AI.PAWN) return beta
+    // if (AI.phase < 4 && score >= beta + AI.PAWN) return beta
 
     score += AI.getStructure(pieces.P, pieces.Px, turn, notturn)
     score += AI.getKingSafety(pieces, turn, notturn)
@@ -627,7 +627,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
 
     let moves
 
-    if (incheck && depth >= -4) {
+    if (incheck/* && depth >= -4*/) {
         moves = board.getMoves(true, false)
     } else {
         moves = board.getMoves(true, true)
@@ -722,8 +722,8 @@ AI.givescheck = function (board, move) {
 }
 
 AI.PVS = function (board, alpha, beta, depth, ply) {
-    let pvNode = beta - alpha > 1 //https://www.chessprogramming.org/Node_Types
-    let cutNode = beta - alpha === 1
+    let pvNode = beta - alpha > 1 // PV-Node
+    let cutNode = beta - alpha === 1 // Expected Cut-Node
 
     AI.nodes++
 
@@ -829,7 +829,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     //   }
     // }
 
-    //Reverse Futility pruning (Static Null Move Pruning)
+    //Reverse Futility pruning (Static Null Move Pruning) TESTED OK
     let margin = AI.PIECE_VALUES[0][1] * depth
 
     if (!incheck && depth <= 3 && staticeval - margin > beta) {
@@ -878,11 +878,11 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         let R = 0
         let E = 0
 
-        /*futility pruning */
-        // if (!near2mate && !incheck && 1 < depth && depth <= 3+R && legal >= 1) {
-        //   let futilityMargin = 2*AI.PIECE_VALUES[0][1]
+        /*futility pruning */ //NO FUNCIONA
+        // if (cutNode && !near2mate && !incheck && !givescheck && legal >= 1) {
+        //   let futilityMargin = depth * AI.PIECE_VALUES[0][1]
 
-        //   if (staticeval + futilityMargin * depth <= alpha)  continue
+        //   if (staticeval + futilityMargin <= alpha) continue
 
         // }
 
@@ -938,7 +938,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             }
 
             if (legal === 1) {
-                score = -AI.PVS(board, -beta, -alpha, depth - R - FHR - 1, ply + 1)
+                score = -AI.PVS(board, -beta, -alpha, depth + E - R - FHR - 1, ply + 1)
 
                 if (score > alpha && !AI.stop) {
                     score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1)
@@ -947,7 +947,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                 if (AI.stop) return score
                 
                 //Next moves are searched with null window
-                score = -AI.PVS(board, -alpha - 1, -alpha, depth - R - FHR - 1, ply + 1)
+                score = -AI.PVS(board, -alpha - 1, -alpha, depth + E - R - FHR - 1, ply + 1)
                 
                 //If the result looks promising, we do a research at full depth.
                 //Remember we are trying to get the score at depth D, but we just get the score at depth D - R
@@ -1009,7 +1009,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             return AI.DRAW + ply
         }
 
-        if (ply === 1) AI.stop = true
+        // if (ply === 1) AI.stop = true
 
         AI.ttSave(hashkey, -AI.MATE + ply, 0, depth, bestmove)
         return -AI.MATE + ply
@@ -1908,7 +1908,7 @@ AI.search = function (board, options) {
     
     AI.lastphase = AI.phase
     
-    if (board.movenumber && board.movenumber <= 1 || changeofphase) {
+    if (board.movenumber && board.movenumber <= 1/* || changeofphase*/) {
         AI.createTables()
     }
     
@@ -1990,7 +1990,7 @@ AI.search = function (board, options) {
 
         // console.log('BEST MOVE', AI.bestmove)
 
-        let sigmoid = 1 / (1 + Math.pow(10, -AI.lastscore / 400))
+        let sigmoid = 1 / (1 + Math.pow(10, -AI.lastscore / (4 * AI.PAWN)))
 
         AI.lastmove = AI.bestmove
 
