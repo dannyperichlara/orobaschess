@@ -259,10 +259,13 @@ AI.evaluate = function (board, ply, beta) {
     //Lazy Evaluation
     // if (AI.phase < 4 && score >= beta + AI.PAWN) return beta
 
-    score += AI.getStructure(pieces.P, pieces.Px, turn, notturn)
-    score += AI.getKingSafety(pieces, turn, notturn)
-    score += AI.getMobility(pieces, board, turn, notturn)
     score += AI.getPSQT(pieces, turn, notturn)
+    score += AI.getStructure(pieces.P, pieces.Px, turn, notturn)
+
+    if (AI.phase > 1) {
+        score += AI.getKingSafety(pieces, turn, notturn)
+        score += AI.getMobility(pieces, board, turn, notturn)
+    }
 
     score = score | 0
 
@@ -570,10 +573,10 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
             move.score = 1000 + hvalue
             continue
         } else {
-            move.score = 0
-            // move.psqtvalue = AI.PIECE_SQUARE_TABLES[piece][turn === 0 ? 56 ^ to : to]
-            // move.score = move.psqtvalue
-            // continue
+            // move.score = 0
+            move.psqtvalue = AI.PIECE_SQUARE_TABLES[piece][turn === 0 ? 56 ^ to : to]
+            move.score = move.psqtvalue
+            continue
         }
     }
 
@@ -1471,26 +1474,26 @@ AI.preprocessor = function (board) {
     //Castiga captura y maniobras con peón frontal del rey
     if (kingposition >= 61 || (kingposition >= 56 && kingposition <= 58)) {
         //Good
-        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 7] += VGM * 20
-        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 8] += GM * 20
-        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 9] += VGM * 20
+        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 7] += VGM * 4
+        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 8] += GM * 4
+        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 9] += VGM * 4
 
-        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 7] += VGM * 20
-        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 8] += GM * 20
-        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 9] += VGM * 20
+        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 7] += VGM * 4
+        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 8] += GM * 4
+        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 9] += VGM * 4
 
         //Bad
-        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 15] += wm * 20
-        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 17] += wm * 20
-        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 23] += wm * 20
-        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 24] += wm * 20
-        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 25] += wm * 20
+        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 15] += wm * 4
+        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 17] += wm * 4
+        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 23] += wm * 4
+        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 24] += wm * 4
+        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 25] += wm * 4
 
-        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 15] += bm * 20
-        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 17] += bm * 20
-        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 23] += vbm * 20
-        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 24] += vbm * 20
-        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 25] += vbm * 20
+        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 15] += bm * 4
+        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 17] += bm * 4
+        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 23] += vbm * 4
+        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 24] += vbm * 4
+        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 25] += vbm * 4
     }
 
     //Torre
@@ -1793,7 +1796,7 @@ AI.setphase = function (board) {
         AI.phase = 3 //ENDGAME (the king enters)
     }
 
-    if (AI.nofpieces <= 12 || Math.abs(AI.lastscore) > AI.PIECE_VALUES[0][1]) AI.phase = 4 //LATE ENGDAME
+    if (AI.nofpieces <= 12 || Math.abs(AI.lastscore) > AI.PIECE_VALUES[0][3]) AI.phase = 4 //LATE ENGDAME
 
     AI.createPSQT(board)
     AI.randomizePSQT()
@@ -1958,27 +1961,27 @@ AI.search = function (board, options) {
             
             if (AI.stop && AI.iteration > AI.mindepth[AI.phase - 1]) break
 
-            if (!AI.stop) AI.lastscore = score
-
+            
             AI.bestmove = [...AI.PV][1]
             AI.iteration++
             AI.f = AI.MTDF(board, AI.f, depth)
-
+            
             score = (white ? 1 : -1) * AI.f
-
+            
             AI.PV = AI.getPV(board, AI.totaldepth + 1)
-
+            
             if ([...AI.PV][1] && AI.bestmove && [...AI.PV][1].value !== AI.bestmove.value) {
                 AI.changeinPV = true
             } else {
                 AI.changeinPV = false
             }
-
+            
             let strmove = AI.PV[1] ? AI.PV[1].getString() : '----'
-
-
+            
+            
             fhfperc = Math.round(AI.fhf * 100 / AI.fh)
-
+            if (!AI.stop) AI.lastscore = score
+            
             if (AI.PV && !AI.stop) console.log(AI.iteration, depth, AI.PV.map(e => { return e && e.getString ? e.getString() : '---' }).join(' '), '|Fhf ' + fhfperc + '%', 'Pawn hit ' + (AI.phnodes / AI.pnodes * 100 | 0), score, AI.nodes.toString(), AI.qsnodes.toString())
             // console.log(fhfperc)
         }
@@ -1997,7 +2000,7 @@ AI.search = function (board, options) {
 
         //zugzwang prevention
         if (!AI.bestmove) {
-            let moves = board.getMoves()
+            let moves = board.getMoves(false, false)
 
             AI.bestmove = moves[moves.length * Math.random() | 0]
         }

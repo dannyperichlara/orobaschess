@@ -163,7 +163,9 @@ Position.perft = function(depth, chessPosition) {
  */
 Position.prototype.getMoves = function(pseudoLegal, onlyCaptures) {
 	var moves = this.generateMoves(!!onlyCaptures);
-	return pseudoLegal ? moves : moves.filter(Position.prototype.isMoveLegal, this);
+	if (pseudoLegal) return moves
+
+	return moves.filter(Position.prototype.isMoveLegal, this)
 };
 
 /**
