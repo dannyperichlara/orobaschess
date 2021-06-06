@@ -17,7 +17,7 @@ let AI = {
     phase: 1,
     htlength: 1 << 24,
     pawntlength: 5e5,
-    reduceHistoryFactor: 0.5, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
+    reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
     mindepth: [1, 1, 1, 1],
     secondspermove: 3,
     lastmove: null,
@@ -38,7 +38,7 @@ AI.PIECE_VALUES = [
     [1.66, 2.88, 3.00, 4.80, 10.77, 200].map(e => e * AI.PAWN),
 ]
 
-AI.BISHOP_PAIR = 0.45 * AI.PAWN //For stockfish is something like 0.62 pawns
+AI.BISHOP_PAIR = 0.60 * AI.PAWN //For stockfish is something like 0.62 pawns
 AI.MATE = AI.PIECE_VALUES[0][5]
 AI.DRAW = 0
 AI.INFINITY = AI.PIECE_VALUES[0][5] * 2
