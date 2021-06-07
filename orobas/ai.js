@@ -66,7 +66,7 @@ AI.MOBILITY_VALUES = [
     [
         [],
         [-4, -3, -2, -1, 0, 1, 2, 3, 4].map(e => e * 8 | 0),
-        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(e => e * 9 | 0),
+        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(e => e * 13 | 0),
         [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(e => e * 5 | 0),
         [-4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map(e => e * 5 | 0),
         []
@@ -74,7 +74,7 @@ AI.MOBILITY_VALUES = [
     [
         [],
         [-4, -3, -2, -1, 0, 1, 2, 3, 4].map(e => e * 7.5 | 0),
-        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(e => e * 9 | 0),
+        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(e => e * 11 | 0),
         [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(e => e * 8 | 0),
         [-4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map(e => e * 6.5 | 0),
         []
@@ -797,6 +797,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
     moves = AI.sortMoves(moves, turn, ply, board, ttEntry)
 
+    let length10 = 0.1*moves.length | 0
     let bestmove = moves[0]
     let lastmove = board.getLastMove()
     let legal = 0
@@ -924,7 +925,9 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         if (!incheck) {
             R += AI.LMR_TABLE[depth][i + 1]
 
-            if (AI.phase === 4) R = R / 2 | 0
+            if (AI.phase < 4 && legal > length10) {
+                R = 2*R
+            }
         }
 
         if (R < 0) R = 0
@@ -943,10 +946,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
             if (legal === 1) {
                 score = -AI.PVS(board, -beta, -alpha, depth + E - R - FHR - 1, ply + 1)
-
-                if (score > alpha && !AI.stop) {
-                    score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1)
-                }
             } else {
                 if (AI.stop) return score
                 
@@ -1955,6 +1954,9 @@ AI.search = function (board, options) {
         ]
         
         AI.fh = AI.fhf = 0.001
+
+        delete AI.hashtable
+        AI.hashtable = new Map()
         
         //Iterative Deepening
         for (let depth = 1; depth <= AI.totaldepth; depth += 1) {
