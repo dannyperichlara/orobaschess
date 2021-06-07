@@ -1958,8 +1958,8 @@ AI.search = function (board, options) {
         
         AI.fh = AI.fhf = 0.001
 
-        delete AI.hashtable
-        AI.hashtable = new Map()
+        // delete AI.hashtable
+        // AI.hashtable = new Map()
         
         //Iterative Deepening
         for (let depth = 1; depth <= AI.totaldepth; depth += 1) {

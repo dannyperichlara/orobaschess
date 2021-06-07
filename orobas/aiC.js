@@ -38,7 +38,7 @@ AI.PIECE_VALUES = [
     [1.66, 2.88, 3.00, 4.80, 10.77, 200].map(e => e * AI.PAWN),
 ]
 
-AI.BISHOP_PAIR = 0.60 * AI.PAWN //For stockfish is something like 0.62 pawns
+AI.BISHOP_PAIR = AI.PAWN //For stockfish is something like 0.62 pawns
 AI.MATE = AI.PIECE_VALUES[0][5]
 AI.DRAW = 0
 AI.INFINITY = AI.PIECE_VALUES[0][5] * 2
@@ -1086,7 +1086,7 @@ AI.createPSQT = function (board) {
             vbm, bm, nm, VGM, VGM, vbm, vbm, vbm,
             wm, nm, nm, BM, BM, wm, wm, wm,
             nm, GM, GM, wm, wm, vbm, GM, nm,
-            GM, GM, GM, wm, wm, BM, BM, BM,
+            GM, GM, GM, bm, bm, BM, BM, BM,
             0, 0, 0, 0, 0, 0, 0, 0,
         ],
 
@@ -1097,7 +1097,7 @@ AI.createPSQT = function (board) {
             vbm, bm, nm, nm, nm, nm, bm, vbm,
             wm, bm, nm, GM, GM, nm, bm, wm,
             wm, bm, wm, GM, GM, wm, bm, wm,
-            wm, bm, BM, nm, nm, BM, bm, wm,
+            wm, bm, nm, nm, nm, BM, bm, wm,
             vbm, bm, bm, nm, nm, bm, bm, vbm,
             vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
 
@@ -1146,7 +1146,7 @@ AI.createPSQT = function (board) {
             wm, wm, wm, wm, wm, wm, wm, wm,
             vbm, vbm, vbm, wm, wm, vbm, vbm, vbm,
             bm, bm, bm, vbm, vbm, vbm, nm, nm,
-            bm, bm, GM, wm, bm, vbm, BM, nm
+            bm, bm,2*BM, wm, bm, vbm,3*BM, nm
 
         ],
     ]
@@ -1247,7 +1247,7 @@ AI.createPSQT = function (board) {
             vbm, nm, GM, BM, BM, GM, nm, vbm,
             vbm, nm, GM, GM, GM, GM, nm, vbm,
             vbm, nm, nm, nm, nm, nm, nm, vbm,
-            vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
+            vbm, wm, vbm, vbm, vbm, vbm, wm, vbm,
 
         ],
         // Bishop
@@ -1259,7 +1259,7 @@ AI.createPSQT = function (board) {
             nm, nm, GM, BM, BM, GM, nm, nm,
             nm, nm, GM, GM, GM, GM, nm, nm,
             bm, nm, nm, nm, nm, nm, nm, bm,
-            vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
+            vbm, vbm, wm, vbm, vbm, wm, vbm, vbm,
 
         ],
         // Rook
@@ -1589,8 +1589,8 @@ AI.preprocessor = function (board) {
             (pawnmap[kingposition - 5] && pawnmap[kingposition - 6]) ||
             (pawnmap[kingposition - 5] && pawnmap[kingposition - 7] && pawnmap[kingposition - 14])
         ) {
-            AI.PIECE_SQUARE_TABLES_PHASE2[5][60] -= 20
-            AI.PIECE_SQUARE_TABLES_PHASE2[5][61] -= 20
+            AI.PIECE_SQUARE_TABLES_PHASE2[5][60] -= 80
+            AI.PIECE_SQUARE_TABLES_PHASE2[5][61] -= 40
             AI.PIECE_SQUARE_TABLES_PHASE2[5][62] += 120
         } else {
             AI.PIECE_SQUARE_TABLES_PHASE2[5][62] -= 200
@@ -1603,9 +1603,9 @@ AI.preprocessor = function (board) {
         // console.log('QUEENSIDE')
 
         if (pawnmap[kingposition - 10] && pawnmap[kingposition - 11]) {
-            AI.PIECE_SQUARE_TABLES_PHASE2[5][58] += 40
-            AI.PIECE_SQUARE_TABLES_PHASE2[5][59] -= 40
-            AI.PIECE_SQUARE_TABLES_PHASE2[5][60] -= 20
+            AI.PIECE_SQUARE_TABLES_PHASE2[5][58] += 80
+            AI.PIECE_SQUARE_TABLES_PHASE2[5][59] -= 80
+            AI.PIECE_SQUARE_TABLES_PHASE2[5][60] -= 40
         } else {
             AI.PIECE_SQUARE_TABLES_PHASE2[5][58] -= 200
             AI.PIECE_SQUARE_TABLES_PHASE1[5][58] -= 200 //Evita enroque al vacío
@@ -1958,8 +1958,8 @@ AI.search = function (board, options) {
         
         AI.fh = AI.fhf = 0.001
 
-        delete AI.hashtable
-        AI.hashtable = new Map()
+        // delete AI.hashtable
+        // AI.hashtable = new Map()
         
         //Iterative Deepening
         for (let depth = 1; depth <= AI.totaldepth; depth += 1) {
