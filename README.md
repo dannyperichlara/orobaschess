@@ -18,26 +18,29 @@ The main intention is not to create an AI that plays better than other chess eng
 * Quiescense Search with stand-pat pruning.
 * Late move reductions.
 * Check extensions.
-* Futile pruning.
-* Delta pruning on Quiescense Search.
+* Futile pruning (deactivated).
+* Delta pruning on Quiescense Search (deactivated).
 * Reverse futility pruning (soft implementation of the null-move pruning).
-* Fail-high reductions.
+* Fail-high reductions (deactivated).
 * Type-B pruning
-  * Late bad-captures pruning
-  * Late quiet-moves pruning
+  * Late bad-captures pruning (deactivated)
+  * Late quiet-moves pruning (deactivated)
 * Pre-processed Piece Square Tables (PSQT) at the begining of every search.
 * Mobility analysis.
 * Basic king safety.
 * Basic passers detection.
-* Basic pawn structure analysis.
-* History heuristic, applied only to the actual position. No need for killer moves.
-* Move ordering:
+* Basic pawn structure analysis (defended, doubled & passed pawns)
+* Pawn hash table
+* History heuristic, applied only to the actual position.
+* Killer heuristic.
+* Move ordering (fail-high on the first move: 90%):
   * 1) Hash moves
-  * 2) Good captures
-  * 3) History moves that give check
-  * 4) Other history moves
-  * 5) PSQT
-  * 6) Bad captures
+  * 2) Promotions
+  * 3) Equal and good captures
+  * 4) Killer moves
+  * 5) Bad captures
+  * 6) History moves
+  * 7) PSQT
 * Trasposition table.
 * Iterative Deepening.
 * Internal Iterative Deepening.
@@ -52,24 +55,24 @@ The main intention is not to create an AI that plays better than other chess eng
 ### Orobas main ideas
 * **Positional moves pruning**. If the pre-processor is complex enough and well tuned, the best positional move won't require a deep depth analysis (Capablanca once said "I see only one move ahead, but it is always the correct one"). The main idea is not to move a piece because the evaluation function returns a good score 20 plies ahead, but because it's very likely, given the experience and previuos knowledge, that this move gives an advantage later in the game. Human intuition, even if the move it's eventually a bad move.
 * **Late-bad-captures pruning**. Analyze bad captures near the root only.
-* **History heuristic, only applied to the actual position**, with negative values on low-fails, and valuation not based on depth.
-* **Piece-Square-Table for the opening**, with the most common moves. The idea is to achieve one move per-piece at the opening the same way humans do: Moving the obvious piece to the obvious place.
+* **History heuristic, only applied to the actual position**
+* **Piece-Square-Table for the opening**, with the most common moves. The idea is to achieve one move per-piece at the openin, moving the obvious piece to the obvious place.
 * **A maximum depth of 20 in the midgame**. According to Magnus Carlsen, 20 is the maximum number of moves he can see ahead. (This is coherent with: Ferreira, D. (2013). The Impact of the Search Depth on Chess Playing Strength. J. Int. Comput. Games Assoc., 36, 67-80).
 * **Prune of unlikely moves** (in development). The idea is to emulate human thinking. Grandmasters can see a lot of moves ahead, but actually these moves are a combination of a few possible moves that are in front of their heads: one or two continous moves per piece; eventually a third move, but no more than that (at least in the midgame).
 * **Analysis of common patterns** (not implemented yet). The idea is to evaluate positions based on common patterns like 6P1/5PBP/6K1L; GMs recognize chess positions and patterns very quickly, even if they are not exactly the same.
 
 ### To Do
 * Mate detection
-* Doubled/isolated/hanging pawns detection.
+* Isolated/hanging pawns detection.
 * Improve king safety.
 * King pawn tropism.
-* Static Exchange Evaluation (SEE).
+* Static Exchange Evaluation (SEE) (or not).
 * Move generation by stages (hash moves / tactical moves / killer moves? / quiet moves).
-* Automated tuning of parameters.
+* Automated tuning of parameters, ideally, not the dumb and slow Texel-tuning. A Temporal Difference Learning was applied in order to learn some parameter values, but without human intervention, the values tend to diverge at some point.
 * Book openings implementation.
 * Compute space gain.
 * Recognize the areas of the pawn structures when the action is going on, in order to achieve a better piece coordination.
-* Improve move ordering even more (with SEE).
+* Improve move ordering even more (with SEE?).
 * Fix overvaluation of PSQT that can lead to absurd sacrifices.
 * Programming of anti-human and anti-computer strategies.
 * Some way to soften the effect of the pre-processor in the hash table in order to avoid jumps in the score.
