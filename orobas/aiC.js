@@ -647,9 +647,9 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
         let move = moves[i]
 
         //Bad captures pruning TESTED OK +82 ELO 174 games (-4)
-        // if (depth < -4 && move.mvvlva < 6000 && legal >= 1) {
-        //   continue
-        // }
+        if (AI.phase < 4 && depth < -4 && move.mvvlva < 6000 && legal >= 1) {
+          continue
+        }
 
         if (board.makeMove(move)) {
             legal++
