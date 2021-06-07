@@ -58,6 +58,7 @@ for (let depth = 1; depth < AI.totaldepth + 1; ++depth) {
     AI.LMR_TABLE[depth] = new Array(218)
 
     for (let moves = 1; moves < 218; ++moves) {
+        //Stockfish
         AI.LMR_TABLE[depth][moves] = Math.log(depth) * Math.log(moves) / 1.95 | 0
     }
 }
@@ -98,7 +99,7 @@ AI.MOBILITY_VALUES = [
 ]
 
 //Not fully tested(
-AI.SAFETY_VALUES = [-2, -1, 0, 1, 2, -1, -2, -3, -3].map(e => 20 * e)
+AI.SAFETY_VALUES = [-2, -1, 0, 1, 2, 3, 4, 5, 6].map(e => 20 * e)
 
 //Not fully tested
 AI.PASSER_VALUES = [
@@ -112,7 +113,7 @@ AI.PASSER_VALUES = [
     0, 0, 0, 0, 0, 0, 0, 0,
 ]
 
-AI.DOUBLED_VALUES = [0, -1, -2, -3, -4, -5, -6, -7, -8].map(e => e * AI.PAWN2 / 2 | 0)
+AI.DOUBLED_VALUES = [0, -1, -2, -3, -4, -5, -6, -7, -8].map(e => e * AI.PAWN2 | 0)
 
 //Not fully tested
 AI.DEFENDED_PAWN_VALUES = [
@@ -925,8 +926,10 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         if (!incheck) {
             R += AI.LMR_TABLE[depth][i + 1]
 
-            if (AI.phase < 4 && legal > length10) {
-                R = 2*R
+            if (AI.phase < 4) {
+                if (legal > length10 && !pvNode) R = 2*R
+            } else {
+                R = R/2 | 0
             }
         }
 
