@@ -647,9 +647,9 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
         let move = moves[i]
 
         //Bad captures pruning TESTED OK +82 ELO 174 games (-4)
-        if (AI.phase < 4 && depth < -4 && move.mvvlva < 6000 && legal >= 1) {
-          continue
-        }
+        // if (AI.phase < 4 && depth < -4 && move.mvvlva < 6000 && legal >= 1) {
+        //   continue
+        // }
 
         if (board.makeMove(move)) {
             legal++
@@ -797,6 +797,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
     moves = AI.sortMoves(moves, turn, ply, board, ttEntry)
 
+    let length10 = 0.1*moves.length | 0
     let bestmove = moves[0]
     let lastmove = board.getLastMove()
     let legal = 0
@@ -924,7 +925,9 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         if (!incheck) {
             R += AI.LMR_TABLE[depth][i + 1]
 
-            if (AI.phase === 4) R = R / 2 | 0
+            if (AI.phase < 4 && legal > length10) {
+                R = 2*R
+            }
         }
 
         if (R < 0) R = 0
@@ -943,10 +946,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
             if (legal === 1) {
                 score = -AI.PVS(board, -beta, -alpha, depth + E - R - FHR - 1, ply + 1)
-
-                if (score > alpha && !AI.stop) {
-                    score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1)
-                }
             } else {
                 if (AI.stop) return score
                 
