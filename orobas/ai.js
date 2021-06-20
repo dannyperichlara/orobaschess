@@ -16,7 +16,7 @@ let AI = {
     fh: 0,
     random: 40,
     phase: 1,
-    htlength: 1e8,
+    htlength: 1 << 24,
     pawntlength: 5e5,
     reduceHistoryFactor: 0.5, //1, actúa sólo en la actual búsqueda --> mejor ordenamiento, sube fhf
     mindepth: [1, 1, 1, 1],
@@ -959,11 +959,11 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             if (!incheck && AI.iteration > 2) {
                 R += AI.LMR_TABLE[depth][legal]
     
-                // if (AI.phase < 4) {
-                //     if (legal > length10 && !pvNode) R = R**2
-                // } else {
-                //     R = R/2 | 0
-                // }
+                if (AI.phase < 4) {
+                    if (legal > length10 && !pvNode) R = R**2
+                } else {
+                    R = R/2 | 0
+                }
             }
 
             AI.absurd[turn][piece]++
@@ -981,16 +981,22 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                 if (AI.stop) return score
                 
                 //Next moves are searched with null window
-                score = -AI.PVS(board, -alpha - 1, -alpha, depth + E - R - FHR - 1, ply + 1)
+                if (depth >=2) {
+                    score = -AI.PVS(board, -alpha - 1, -alpha, depth - R - FHR - 1, ply + 1)
                 
-                //If the result looks promising, we do a research at full depth.
-                //Remember we are trying to get the score at depth D, but we just get the score at depth D - R
+                    //If the result looks promising, we do a research at full depth.
+                    //Remember we are trying to get the score at depth D, but we just get the score at depth D - R
 
-                if (!AI.stop && score > alpha/* && score < beta*/) { //https://www.chessprogramming.org/Principal_Variation_Search
-                    // if (score > beta) AI.ttSave(hashkey, score, -1, depth - R - FHR, move)
+                    if (!AI.stop && score > alpha/* && score < beta*/) { //https://www.chessprogramming.org/Principal_Variation_Search
+                        // if (score > beta) AI.ttSave(hashkey, score, -1, depth - R - FHR, move)
 
+                        score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1)
+                    }
+                } else {
                     score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1)
                 }
+                
+
             }
 
             board.unmakeMove()
@@ -1039,19 +1045,19 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     if (legal === 0) {
         // stalemate, draw
         if (!board.isKingInCheck()) {
-            AI.ttSave(hashkey, AI.DRAW + ply, 0, depth, bestmove)
+            // AI.ttSave(hashkey, AI.DRAW + ply, 0, depth, bestmove)
             return AI.DRAW + ply
         }
 
         // if (ply === 1) AI.stop = true
 
-        AI.ttSave(hashkey, -AI.MATE + ply, 0, depth, bestmove)
+        // AI.ttSave(hashkey, -AI.MATE + ply, 0, depth, bestmove)
         return -AI.MATE + ply
 
     } else {
 
         if (board.isDraw()) {
-            AI.ttSave(hashkey, AI.DRAW + ply, 1, depth, bestmove)
+            // AI.ttSave(hashkey, AI.DRAW + ply, 1, depth, bestmove)
             return AI.DRAW + ply
         }
 
@@ -1901,20 +1907,16 @@ AI.MTDF = function (board, f, d) {
     return AI.PVS(board, lowerBound, upperBound, d, 1)
     // console.log('INICIO DE MTDF')
     let i = 0
+    let beta
 
     while (lowerBound < upperBound && !AI.stop) {
-        let beta = Math.max(g, lowerBound + 1)
-
-        i++
+        g === lowerBound? beta = g + 1 : beta = g
 
         g = AI.PVS(board, beta - 1, beta, d, 1)
 
-        if (g < beta) {
-            upperBound = g
-        } else {
-            lowerBound = g
-        }
+        g < beta? upperBound = g : lowerBound = g
     }
+
 
     return g
 }
@@ -1990,7 +1992,7 @@ AI.search = function (board, options) {
         // delete AI.hashtable
         // AI.hashtable = new Map()
 
-        AI.f = AI.lastscore
+        AI.f = AI.PVS(board, -AI.INFINITY, AI.INFINITY, 1, 1)
         
         //Iterative Deepening
         for (let depth = 1; depth <= AI.totaldepth; depth += 1) {
