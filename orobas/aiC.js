@@ -2,6 +2,7 @@
 
 const Chess = require('../chess/chess.js')
 
+
 let AI = {
     totaldepth: 48,
     ttNodes: 0,
@@ -13,7 +14,7 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 20,
+    random: 40,
     phase: 1,
     htlength: 1e8,
     pawntlength: 5e5,
@@ -213,8 +214,8 @@ AI.createTables = function () {
         Array(64).fill(0),
     ]
 
-    AI.hashtable = new Map() //positions
-    AI.pawntable = [new Map(), new Map()] //positions
+    AI.hashtable = new Array(this.htlength) // new Map() //positions
+    AI.pawntable = [new Array(this.pawntlength), new Array(this.pawntlength)] // [new Map(), new Map()] //positions
 }
 
 //Randomize Piece Square Tables
@@ -259,19 +260,22 @@ AI.evaluate = function (board, ply, beta) {
     let notturn = ~turn & 1
     let pieces = AI.getPieces(board, turn, notturn)
     let score = 0
+    let positional = 0
 
     score += AI.getMaterial(pieces)
 
     //Lazy Evaluation
     // if (AI.phase < 4 && score >= beta + AI.PAWN) return beta
 
-    score += AI.getPSQT(pieces, turn, notturn)
-    score += AI.getStructure(pieces.P, pieces.Px, turn, notturn)
-    score += AI.getMobility(pieces, board, turn, notturn)
+    positional += AI.getPSQT(pieces, turn, notturn)
+    positional += AI.getStructure(pieces.P, pieces.Px, turn, notturn)
+    positional += AI.getMobility(pieces, board, turn, notturn)
     
     if (AI.phase > 1) {
-        score += AI.getKingSafety(pieces, turn, notturn)
+        positional += AI.getKingSafety(pieces, turn, notturn)
     }
+
+    score += AI.limit(positional)
 
     return score | 0
 }
@@ -359,7 +363,7 @@ AI.getStructure = function (P, Px, turn, notturn) {
 AI.getStructureValue = function (turn, P, Px) {
     let hashkey = (P.low ^ P.high) >>> 0
 
-    let hashentry = AI.pawntable[turn].get(hashkey % AI.pawntlength)
+    let hashentry = AI.pawntable[turn][hashkey % AI.pawntlength]
 
     AI.pnodes++
 
@@ -377,7 +381,7 @@ AI.getStructureValue = function (turn, P, Px) {
 
     score = defended + doubled + passers
 
-    AI.pawntable[turn].set(hashkey % AI.pawntlength, score)
+    AI.pawntable[turn][hashkey % AI.pawntlength] = score
 
     return score
 }
@@ -444,28 +448,38 @@ AI.getMobilityValues = function (_P, _N, _B, _R, _Q, _K, _Px, board, color) {
 
 AI.getMaterialValue = function (pieces, us) {
     let value = 0
+    let bishops
 
     if (us) {
+        bishops = pieces.B.popcnt()
+
         value = AI.PIECE_VALUES[AI.phase - 1][0] * pieces.P.popcnt() +
             AI.PIECE_VALUES[AI.phase - 1][1] * pieces.N.popcnt() +
-            AI.PIECE_VALUES[AI.phase - 1][2] * pieces.B.popcnt() +
+            AI.PIECE_VALUES[AI.phase - 1][2] * bishops +
             AI.PIECE_VALUES[AI.phase - 1][3] * pieces.R.popcnt() +
             AI.PIECE_VALUES[AI.phase - 1][4] * pieces.Q.popcnt()
     } else {
+        bishops = pieces.Bx.popcnt()
+
         value = AI.PIECE_VALUES[AI.phase - 1][0] * pieces.Px.popcnt() +
             AI.PIECE_VALUES[AI.phase - 1][1] * pieces.Nx.popcnt() +
-            AI.PIECE_VALUES[AI.phase - 1][2] * pieces.Bx.popcnt() +
+            AI.PIECE_VALUES[AI.phase - 1][2] * bishops +
             AI.PIECE_VALUES[AI.phase - 1][3] * pieces.Rx.popcnt() +
             AI.PIECE_VALUES[AI.phase - 1][4] * pieces.Qx.popcnt()
     }
+
+    if (bishops >= 2) value += AI.BISHOP_PAIR
 
 
     return value | 0
 }
 
+AI.limit = (value)=>{
+    return (AI.PAWN * 2) / (1 + Math.exp(-value / (AI.PAWN / 2))) - AI.PAWN | 0
+}
+
 AI.getPSQT = function (pieces, turn, notturn) {
     let psqt = AI.getPSQTvalue(pieces, turn, true) - AI.getPSQTvalue(pieces, notturn, false)
-    psqt = (AI.PAWN * 2) / (1 + Math.exp(-psqt / (AI.PAWN / 2))) - AI.PAWN | 0
     return psqt
 }
 
@@ -607,19 +621,19 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
 AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
     AI.qsnodes++
 
-    let mateScore = AI.MATE - ply
+    // let mateScore = AI.MATE - ply
 
-    if (mateScore < beta) {
-        beta = mateScore
-        if (alpha >= mateScore) return mateScore
-    }
+    // if (mateScore < beta) {
+    //     beta = mateScore
+    //     if (alpha >= mateScore) return mateScore
+    // }
 
-    mateScore = -AI.MATE + ply
+    // mateScore = -AI.MATE + ply
 
-    if (mateScore > alpha) {
-        alpha = mateScore
-        if (beta <= mateScore) return mateScore
-    }
+    // if (mateScore > alpha) {
+    //     alpha = mateScore
+    //     if (beta <= mateScore) return mateScore
+    // }
 
     let turn = board.getTurnColor()
     let legal = 0
@@ -696,17 +710,17 @@ AI.ttSave = function (hashkey, score, flag, depth, move) {
     if (!move) console.log('no move')
     if (AI.stop || !move) return
 
-    AI.hashtable.set(hashkey % AI.htlength, {
+    AI.hashtable[hashkey % AI.htlength] = {
         hashkey,
         score,
         flag,
         depth,
         move
-    })
+    }
 }
 
 AI.ttGet = function (hashkey) {
-    return AI.hashtable.get(hashkey % AI.htlength)
+    return AI.hashtable[hashkey % AI.htlength]
 }
 
 AI.reduceHistory = function () {
@@ -1044,7 +1058,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         if (bestscore > alphaOrig) {
             // EXACT
             if (bestmove) {
-                AI.ttSave(hashkey, bestscore, 0, depth, bestmove)
+                AI.ttSave(hashkey, bestscore + ply, 0, depth, bestmove)
 
                 if (!bestmove.capture) AI.saveHistory(turn, bestmove, 1)
             }
