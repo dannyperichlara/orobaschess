@@ -1,5 +1,7 @@
 "use strict";
 
+// Math.seedrandom('dannyman')
+
 /**
  * Chess namespace, constants and utility functions.
  * @constructor

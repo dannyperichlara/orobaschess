@@ -957,17 +957,21 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             legal++
 
             //Reductions (LMR)
-            if (!incheck) {
-                if (pvNode) {
-                    R += AI.LMR_TABLE[depth][legal]
-                } else {
-                    R += depth/5 + legal/5 | 0
-                }
-    
-                if (AI.phase < 4) {
-                    if (legal > length10 && !pvNode) R = R**2
-                } else {
-                    R = R/2 | 0
+            if (AI.nofpieces <= 4) {
+                R = 0
+            } else {
+                if (!incheck && depth >= 3) {
+                    if (pvNode) {
+                        R += AI.LMR_TABLE[depth][legal]
+                    } else {
+                        R += depth/5 + legal/5 | 0
+                    }
+        
+                    if (AI.phase < 4) {
+                        if (legal > length10 && !pvNode) R = R**2
+                    } else {
+                        R = R/2 | 0
+                    }
                 }
             }
 
