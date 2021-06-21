@@ -817,7 +817,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     }
 
     //IID (if there's no ttEntry, get one for ordering moves)
-    if (pvNode && !ttEntry && depth > 3) {
+    if (pvNode && !ttEntry && depth > 2) {
         AI.PVS(board, alpha, beta, depth - 2, ply) //depth - 2 tested ok + 31 ELO
         ttEntry = AI.ttGet(hashkey)
     }
@@ -909,16 +909,16 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         //   R++
         // }
 
-        let near2mate = alpha > 2 * AI.PIECE_VALUES[0][4] || beta < -2 * AI.PIECE_VALUES[0][4]
+        // let near2mate = alpha > 2 * AI.PIECE_VALUES[0][4] || beta < -2 * AI.PIECE_VALUES[0][4]
 
-        /*futility pruning */ //NO FUNCIONA
-        if (cutNode && !near2mate && !incheck && !givescheck && legal >= 1) {
-          let futilityMargin = depth * AI.PIECE_VALUES[0][1]
+        // /*futility pruning */ //NO FUNCIONA
+        // if (cutNode && !near2mate && !incheck && !givescheck && legal >= 1) {
+        //   let futilityMargin = depth * AI.PIECE_VALUES[0][1]
 
-        //   if (staticeval + futilityMargin <= alpha) continue
-          if (staticeval + futilityMargin <= alpha) R++
+        // //   if (staticeval + futilityMargin <= alpha) continue
+        //   if (staticeval + futilityMargin <= alpha) R++
 
-        }
+        // }
 
 
         // Bad-Captures-Pruning (BCP) //NOT FULLY TESTED
@@ -956,8 +956,12 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             legal++
 
             //Reductions (LMR)
-            if (!incheck && AI.iteration > 2) {
-                R += AI.LMR_TABLE[depth][legal]
+            if (!incheck) {
+                if (pvNode) {
+                    R += AI.LMR_TABLE[depth][legal]
+                } else {
+                    R += depth/5 + legal/5 | 0
+                }
     
                 if (AI.phase < 4) {
                     if (legal > length10 && !pvNode) R = R**2
@@ -1990,7 +1994,7 @@ AI.search = function (board, options) {
         AI.fh = AI.fhf = 0.001
 
         // delete AI.hashtable
-        // AI.hashtable = new Map()
+        // AI.hashtable = new Array(AI.htlength)
 
         AI.f = AI.PVS(board, -AI.INFINITY, AI.INFINITY, 1, 1)
         
