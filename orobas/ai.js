@@ -264,6 +264,7 @@ AI.evaluate = function (board, ply, beta) {
 
     score += AI.getMaterial(pieces)
 
+
     //Lazy Evaluation
     // if (AI.phase < 4 && score >= beta + AI.PAWN) return beta
 
@@ -517,7 +518,7 @@ AI.getPSQTvalue = function (pieces, turn, us) {
     if (AI.phase === 3) whatpieces = [0,3,5]
     if (AI.phase === 4) whatpieces = [0,5]
 
-    for (let i in whatpieces) {
+    for (let i=0, len=whatpieces.length; i < len; i++) {
         let pieces = allpieces[i]
 
         while (!pieces.isEmpty()) {
