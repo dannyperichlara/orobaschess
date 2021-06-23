@@ -24,22 +24,31 @@ let AI = {
     f: 0
 }
 
+// ÍNDICES
+AI.P = 0
+AI.K = 1
+AI.B = 2
+AI.R = 3
+AI.Q = 4
+AI.K = 5
+
+
 ///// VALOR RELATIVO DE LAS PIEZAS
-AI.PAWN = 270
-AI.PAWN2 = AI.PAWN / 2 | 0
-AI.PAWN3 = AI.PAWN / 3 | 0
-AI.PAWN4 = AI.PAWN / 4 | 0
-AI.PAWN5 = AI.PAWN / 5 | 0
+AI.VPAWN = 270
+AI.VPAWN2 = AI.VPAWN / 2 | 0
+AI.VPAWN3 = AI.VPAWN / 3 | 0
+AI.VPAWN4 = AI.VPAWN / 4 | 0
+AI.VPAWN5 = AI.VPAWN / 5 | 0
 
 AI.PIECE_VALUES = [
     //Obtenidos mediante TDL
-    [1.00, 2.88, 3.00, 4.80, 9.60, 200].map(e => e * AI.PAWN),
-    [1.22, 2.88, 3.00, 4.80, 9.60, 200].map(e => e * AI.PAWN),
-    [1.44, 2.88, 3.00, 4.80, 9.60, 200].map(e => e * AI.PAWN),
-    [1.66, 2.88, 3.00, 4.80, 9.60, 200].map(e => e * AI.PAWN),
+    [1.00, 2.88, 3.00, 4.80, 9.60, 200].map(e => e * AI.VPAWN),
+    [1.22, 2.88, 3.00, 4.80, 9.60, 200].map(e => e * AI.VPAWN),
+    [1.44, 2.88, 3.00, 4.80, 9.60, 200].map(e => e * AI.VPAWN),
+    [1.66, 2.88, 3.00, 4.80, 9.60, 200].map(e => e * AI.VPAWN),
 ]
 
-AI.BISHOP_PAIR = 0.6*AI.PAWN | 0
+AI.BISHOP_PAIR = 0.6*AI.VPAWN | 0
 
 // CONSTANTES
 AI.MATE = AI.PIECE_VALUES[0][5]
@@ -48,13 +57,13 @@ AI.INFINITY = AI.PIECE_VALUES[0][5] * 2
 AI.EMPTY = new Chess.Bitboard()
 
 //VALORES POSICIONALES
-let wm = -AI.PAWN // El peor movimiento
-let vbm = -AI.PAWN2 // Muy mal movimiento
-let bm = -AI.PAWN3 // Mal movimiento
-let nm = 0 // Movimiento neutral
-let GM = AI.PAWN4 // Buen movimiento
-let VGM = AI.PAWN3 // Muy buen movimiento
-let BM = AI.PAWN2 // El mejor movimiento
+let twm = -AI.VPAWN // El peor movimiento
+let vbm = -AI.VPAWN2 // Muy mal movimiento
+let abm = -AI.VPAWN3 // Mal movimiento
+let anm = 0 // Movimiento neutral
+let AGM = AI.VPAWN4 // Buen movimiento
+let VGM = AI.VPAWN3 // Muy buen movimiento
+let TBM = AI.VPAWN2 // El mejor movimiento
 
 //CREA TABLA PARA REDUCCIONES
 AI.LMR_TABLE = new Array(AI.totaldepth + 1)
@@ -111,32 +120,32 @@ AI.MOBILITY_VALUES = [
 
 // SEGURIDAD DEL REY
 // Valor se asigna dependiendo del número de piezas que rodea al rey
-AI.SAFETY_VALUES = [-2, -1, 0, 1, 2, -1, -2, -3, -3].map(e => AI.PAWN5 * e)
+AI.SAFETY_VALUES = [-2, -1, 0, 1, 2, -1, -2, -3, -3].map(e => AI.VPAWN5 * e)
 
 // PEONES PASADOS
 // Al detectar un peón pasado, se asigna un valor extra al peón correspondiente
 AI.PASSER_VALUES = [
             0,        0,        0,        0,        0,        0,        0,        0,
-    2*AI.PAWN,2*AI.PAWN,2*AI.PAWN,2*AI.PAWN,2*AI.PAWN,2*AI.PAWN,2*AI.PAWN,2*AI.PAWN,
-      AI.PAWN,  AI.PAWN,  AI.PAWN,  AI.PAWN,  AI.PAWN,  AI.PAWN,  AI.PAWN,  AI.PAWN,
-     AI.PAWN2, AI.PAWN2, AI.PAWN2, AI.PAWN2, AI.PAWN2, AI.PAWN2, AI.PAWN2, AI.PAWN2,
-     AI.PAWN3, AI.PAWN3, AI.PAWN3, AI.PAWN3, AI.PAWN3, AI.PAWN3, AI.PAWN3, AI.PAWN3,
-     AI.PAWN4, AI.PAWN4, AI.PAWN4, AI.PAWN4, AI.PAWN4, AI.PAWN4, AI.PAWN4, AI.PAWN4,
-     AI.PAWN5, AI.PAWN5, AI.PAWN5, AI.PAWN5, AI.PAWN5, AI.PAWN5, AI.PAWN5, AI.PAWN5,
+    2*AI.VPAWN,2*AI.VPAWN,2*AI.VPAWN,2*AI.VPAWN,2*AI.VPAWN,2*AI.VPAWN,2*AI.VPAWN,2*AI.VPAWN,
+      AI.VPAWN,  AI.VPAWN,  AI.VPAWN,  AI.VPAWN,  AI.VPAWN,  AI.VPAWN,  AI.VPAWN,  AI.VPAWN,
+     AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2,
+     AI.VPAWN3, AI.VPAWN3, AI.VPAWN3, AI.VPAWN3, AI.VPAWN3, AI.VPAWN3, AI.VPAWN3, AI.VPAWN3,
+     AI.VPAWN4, AI.VPAWN4, AI.VPAWN4, AI.VPAWN4, AI.VPAWN4, AI.VPAWN4, AI.VPAWN4, AI.VPAWN4,
+     AI.VPAWN5, AI.VPAWN5, AI.VPAWN5, AI.VPAWN5, AI.VPAWN5, AI.VPAWN5, AI.VPAWN5, AI.VPAWN5,
             0,        0,        0,        0,        0,        0,        0,        0,
 ]
 
 // PEONES DOBLADOS
 // Se asigna un valor negativo dependiendo del número de peones doblados
-AI.DOUBLED_VALUES = [0, -1, -2, -4, -8, -9, -10, -11, -12].map(e => e * AI.PAWN2 | 0)
+AI.DOUBLED_VALUES = [0, -1, -2, -4, -8, -9, -10, -11, -12].map(e => e * AI.VPAWN2 | 0)
 
 // ESTRUCTURA DE PEONES
 // Se asigna un valor dependiendo del número de peones defendidos por otro peón en cada fase
 AI.DEFENDED_PAWN_VALUES = [
     [0,        0,        0,        0,        0,        0,        0,        0,        0],
-    [0, AI.PAWN5, AI.PAWN4, AI.PAWN4, AI.PAWN2, AI.PAWN2, AI.PAWN2, AI.PAWN2, AI.PAWN2],
-    [0, AI.PAWN5, AI.PAWN4, AI.PAWN4, AI.PAWN2, AI.PAWN2, AI.PAWN2, AI.PAWN2, AI.PAWN2],
-    [0, AI.PAWN5, AI.PAWN4, AI.PAWN4, AI.PAWN2, AI.PAWN2, AI.PAWN2, AI.PAWN2, AI.PAWN2],
+    [0, AI.VPAWN5, AI.VPAWN4, AI.VPAWN4, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2],
+    [0, AI.VPAWN5, AI.VPAWN4, AI.VPAWN4, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2],
+    [0, AI.VPAWN5, AI.VPAWN4, AI.VPAWN4, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2],
 ]
 
 // MVV-LVA
@@ -152,7 +161,7 @@ AI.MVVLVASCORES = [
   /*K*/[3100,  3325,  3350,  3500,  3900, 26000],
 ]
 
-AI.PIECE_SQUARE_TABLES = [
+AI.PSQT = [
     Array(64).fill(0),
     Array(64).fill(0),
     Array(64).fill(0),
@@ -234,10 +243,10 @@ AI.createTables = function () {
 
 //ESTABLECE VALORES ALEATORIAS EN LA APERTURA (PARA TESTEOS)
 AI.randomizePSQT = function () {
-    if (AI.phase === 1) {
+    if (AI.phase === 0) {
         //From Knight to Queen
         for (let i = 1; i <= 4; i++) {
-            AI.PIECE_SQUARE_TABLES[i] = AI.PIECE_SQUARE_TABLES[i].map(e => {
+            AI.PSQT[i] = AI.PSQT[i].map(e => {
                 return e + Math.random() * AI.random - AI.random / 2 | 0
             })
         }
@@ -290,7 +299,7 @@ AI.evaluate = function (board, ply, beta) {
     positional += AI.getStructure(pieces.P, pieces.Px, turn, notturn)
     positional += AI.getMobility(pieces, board, turn, notturn)
 
-    if (AI.phase > 1) {
+    if (AI.phase > 0) {
         // Seguridad del rey
         positional += AI.getKingSafety(pieces, turn, notturn)
     }
@@ -415,7 +424,7 @@ AI.getDefended = function (_P, color) {
     let mask = Chess.Position.makePawnAttackMask(color, P).dup()
     let defendedpawns = mask.and(P).popcnt()
 
-    return AI.DEFENDED_PAWN_VALUES[AI.phase - 1][defendedpawns]
+    return AI.DEFENDED_PAWN_VALUES[AI.phase][defendedpawns]
 }
 
 AI.getMobility = function (pieces, board, turn, notturn) {
@@ -432,7 +441,7 @@ AI.getMobilityValues = function (_P, _N, _B, _R, _Q, _K, _Px, board, color) {
     let Q = _Q.dup()
     let K = _K.dup()
     let Px = _Px.dup()
-    let i = AI.phase - 1
+    let i = AI.phase
 
     let us = board.getColorBitboard(color).dup()
     let enemypawnattackmask = Chess.Position.makePawnAttackMask(!color, Px).dup()
@@ -479,19 +488,19 @@ AI.getMaterialValue = function (pieces, us) {
     if (us) {
         bishops = pieces.B.popcnt()
 
-        value = AI.PIECE_VALUES[AI.phase - 1][0] * pieces.P.popcnt() +
-            AI.PIECE_VALUES[AI.phase - 1][1] * pieces.N.popcnt() +
-            AI.PIECE_VALUES[AI.phase - 1][2] * bishops +
-            AI.PIECE_VALUES[AI.phase - 1][3] * pieces.R.popcnt() +
-            AI.PIECE_VALUES[AI.phase - 1][4] * pieces.Q.popcnt()
+        value = AI.PIECE_VALUES[AI.phase][0] * pieces.P.popcnt() +
+            AI.PIECE_VALUES[AI.phase][1] * pieces.N.popcnt() +
+            AI.PIECE_VALUES[AI.phase][2] * bishops +
+            AI.PIECE_VALUES[AI.phase][3] * pieces.R.popcnt() +
+            AI.PIECE_VALUES[AI.phase][4] * pieces.Q.popcnt()
     } else {
         bishops = pieces.Bx.popcnt()
 
-        value = AI.PIECE_VALUES[AI.phase - 1][0] * pieces.Px.popcnt() +
-            AI.PIECE_VALUES[AI.phase - 1][1] * pieces.Nx.popcnt() +
-            AI.PIECE_VALUES[AI.phase - 1][2] * bishops +
-            AI.PIECE_VALUES[AI.phase - 1][3] * pieces.Rx.popcnt() +
-            AI.PIECE_VALUES[AI.phase - 1][4] * pieces.Qx.popcnt()
+        value = AI.PIECE_VALUES[AI.phase][0] * pieces.Px.popcnt() +
+            AI.PIECE_VALUES[AI.phase][1] * pieces.Nx.popcnt() +
+            AI.PIECE_VALUES[AI.phase][2] * bishops +
+            AI.PIECE_VALUES[AI.phase][3] * pieces.Rx.popcnt() +
+            AI.PIECE_VALUES[AI.phase][4] * pieces.Qx.popcnt()
     }
 
     if (bishops >= 2) value += AI.BISHOP_PAIR
@@ -501,7 +510,7 @@ AI.getMaterialValue = function (pieces, us) {
 
 // Limita el valor posicional a 1 peón
 AI.limit = (value) => {
-    return (AI.PAWN * 2) / (1 + Math.exp(-value / (AI.PAWN / 2))) - AI.PAWN | 0
+    return (AI.VPAWN * 2) / (1 + Math.exp(-value / (AI.VPAWN / 2))) - AI.VPAWN | 0
 }
 
 AI.getPSQT = function (pieces, turn, notturn) {
@@ -538,10 +547,10 @@ AI.getPSQTvalue = function (pieces, turn, us) {
 
     let whatpieces
 
-    if (AI.phase === 1) whatpieces = [0, 1, 2, 3, 4, 5]
+    if (AI.phase === 0) whatpieces = [0, 1, 2, 3, 4, 5]
+    if (AI.phase === 1) whatpieces = [0, 3, 5]
     if (AI.phase === 2) whatpieces = [0, 3, 5]
-    if (AI.phase === 3) whatpieces = [0, 3, 5]
-    if (AI.phase === 4) whatpieces = [0, 5]
+    if (AI.phase === 3) whatpieces = [0, 5]
 
     for (let i = 0, len = whatpieces.length; i < len; i++) {
         let pieces = allpieces[i]
@@ -549,7 +558,7 @@ AI.getPSQTvalue = function (pieces, turn, us) {
         while (!pieces.isEmpty()) {
             let index = pieces.extractLowestBitPosition()
             // white: 56^index // black: index
-            let sqvalue = AI.PIECE_SQUARE_TABLES[i][turn ? index : (56 ^ index)]
+            let sqvalue = AI.PSQT[i][turn ? index : (56 ^ index)]
 
             value += sqvalue
         }
@@ -643,7 +652,7 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
             // CRITERIO 7
             // Las jugadas restantes se orden de acuerdo a donde se estima sería
             // su mejor posición absoluta en el tablero
-            move.psqtvalue = AI.PIECE_SQUARE_TABLES[piece][turn === 0 ? 56 ^ to : to]
+            move.psqtvalue = AI.PSQT[piece][turn === 0 ? 56 ^ to : to]
             move.score = move.psqtvalue
             continue
         }
@@ -780,7 +789,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     AI.nodes++
 
     if ((new Date()).getTime() > AI.timer + 1000 * AI.secondspermove) {
-        if (AI.iteration > AI.mindepth[AI.phase - 1] && !pvNode) {
+        if (AI.iteration > AI.mindepth[AI.phase] && !pvNode) {
             AI.stop = true
         }
     }
@@ -808,7 +817,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
     let oAlpha = alpha
 
-    if (AI.stop && AI.iteration > AI.mindepth[AI.phase - 1]) return alpha
+    if (AI.stop && AI.iteration > AI.mindepth[AI.phase]) return alpha
 
     let ttEntry = AI.ttGet(hashkey)
 
@@ -875,7 +884,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                 if (!incheck && depth >= 3) {
                     R += AI.LMR_TABLE[depth][legal]
 
-                    if (AI.phase === 4) {
+                    if (AI.phase === 3) {
                         R = R / 2 | 0
                     }
                 }
@@ -1004,138 +1013,138 @@ AI.bin2map = function (bin, color) {
 
 AI.createPSQT = function (board) {
 
-    AI.PIECE_SQUARE_TABLES_PHASE1 = [
+    AI.PSQT_OPENING = [
         // Pawn
         [
-            0, 0, 0, 0, 0, 0, 0, 0,
-            wm, wm, wm, wm, wm, vbm, vbm, vbm,
-            wm, vbm, bm, bm, bm, vbm, vbm, vbm,
-            vbm, bm, nm, VGM, VGM, vbm, vbm, vbm,
-            wm, nm, nm, BM, BM, wm, wm, wm,
-            nm, GM, GM, nm, wm, vbm, GM, nm,
-            GM, GM, GM, bm, bm, GM, BM, BM,
-            0, 0, 0, 0, 0, 0, 0, 0,
+            anm, anm, anm, anm, anm, anm, anm, anm,
+            twm, twm, twm, twm, twm, vbm, vbm, vbm,
+            twm, vbm, abm, abm, abm, vbm, vbm, vbm,
+            vbm, abm, anm, VGM, VGM, vbm, vbm, vbm,
+            twm, anm, anm, TBM, TBM, twm, twm, twm,
+            anm, AGM, AGM, anm, twm, vbm, AGM, anm,
+            AGM, AGM, AGM, abm, abm, AGM, TBM, TBM,
+            anm, anm, anm, anm, anm, anm, anm, anm,
         ],
 
         // Knight
         [
-            vbm, bm, bm, bm, bm, bm, bm, vbm,
-            vbm, bm, bm, bm, bm, bm, bm, vbm,
-            vbm, bm, nm, nm, nm, nm, bm, vbm,
-            wm, bm, nm, GM, GM, nm, bm, wm,
-            wm, bm, wm, BM, BM, wm, bm, wm,
-            wm, bm, GM, nm, nm, GM, bm, wm,
-            vbm, bm, bm, GM, nm, bm, bm, vbm,
+            vbm, abm, abm, abm, abm, abm, abm, vbm,
+            vbm, abm, abm, abm, abm, abm, abm, vbm,
+            vbm, abm, anm, anm, anm, anm, abm, vbm,
+            twm, abm, anm, AGM, AGM, anm, abm, twm,
+            twm, abm, twm, TBM, TBM, twm, abm, twm,
+            twm, abm, AGM, anm, anm, AGM, abm, twm,
+            vbm, abm, abm, AGM, anm, abm, abm, vbm,
             vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
 
         ],
         // Bishop
         [
-            vbm, bm, bm, bm, bm, bm, bm, vbm,
-            vbm, bm, bm, bm, bm, bm, bm, vbm,
-            vbm, bm, nm, nm, nm, nm, bm, vbm,
-            vbm, vbm, nm, GM, GM, nm, wm, vbm,
-            vbm, bm, BM, GM, GM, BM, bm, vbm,
-            wm, bm, nm, bm, bm, nm, bm, wm,
-            vbm, BM, bm, nm, nm, bm, BM, vbm,
-            vbm, vbm, wm, vbm, vbm, wm, vbm, vbm,
+            vbm, abm, abm, abm, abm, abm, abm, vbm,
+            vbm, abm, abm, abm, abm, abm, abm, vbm,
+            vbm, abm, anm, anm, anm, anm, abm, vbm,
+            vbm, vbm, anm, AGM, AGM, anm, twm, vbm,
+            vbm, abm, TBM, AGM, AGM, TBM, abm, vbm,
+            twm, abm, anm, abm, abm, anm, abm, twm,
+            vbm, TBM, abm, anm, anm, abm, TBM, vbm,
+            vbm, vbm, twm, vbm, vbm, twm, vbm, vbm,
         ],
         // Rook
         [
-            nm, nm, nm, nm, nm, nm, nm, nm,
-            GM, GM, GM, BM, BM, GM, GM, GM,
-            wm, wm, wm, wm, wm, wm, wm, wm,
-            wm, wm, wm, wm, wm, wm, wm, wm,
-            nm, nm, nm, nm, nm, nm, nm, nm,
-            nm, nm, nm, nm, nm, nm, nm, nm,
-            nm, nm, nm, nm, nm, nm, nm, nm,
-            nm, nm, nm, BM, BM, GM, nm, nm,
+            anm, anm, anm, anm, anm, anm, anm, anm,
+            AGM, AGM, AGM, TBM, TBM, AGM, AGM, AGM,
+            twm, twm, twm, twm, twm, twm, twm, twm,
+            twm, twm, twm, twm, twm, twm, twm, twm,
+            anm, anm, anm, anm, anm, anm, anm, anm,
+            anm, anm, anm, anm, anm, anm, anm, anm,
+            anm, anm, anm, anm, anm, anm, anm, anm,
+            anm, anm, anm, TBM, TBM, AGM, anm, anm,
         ],
 
         // Queen
         [
-            wm, wm, wm, wm, wm, wm, wm, wm,
-            wm, wm, wm, wm, wm, wm, wm, wm,
-            wm, wm, wm, wm, wm, wm, wm, wm,
-            wm, wm, wm, wm, wm, wm, wm, wm,
-            bm, bm, bm, bm, bm, bm, bm, bm,
-            bm, bm, bm, vbm, bm, bm, bm, bm,
-            bm, bm, GM, GM, GM, bm, bm, bm,
-            wm, vbm, wm, nm, wm, vbm, vbm, wm,
+            twm, twm, twm, twm, twm, twm, twm, twm,
+            twm, twm, twm, twm, twm, twm, twm, twm,
+            twm, twm, twm, twm, twm, twm, twm, twm,
+            twm, twm, twm, twm, twm, twm, twm, twm,
+            abm, abm, abm, abm, abm, abm, abm, abm,
+            abm, abm, abm, vbm, abm, abm, abm, abm,
+            abm, abm, AGM, AGM, AGM, abm, abm, abm,
+            twm, vbm, twm, anm, twm, vbm, vbm, twm,
         ],
 
         // King
         [
-            wm, wm, wm, wm, wm, wm, wm, wm,
-            wm, wm, wm, wm, wm, wm, wm, wm,
-            wm, wm, wm, wm, wm, wm, wm, wm,
-            wm, wm, wm, wm, wm, wm, wm, wm,
-            wm, wm, wm, wm, wm, wm, wm, wm,
-            vbm, vbm, vbm, wm, wm, vbm, vbm, vbm,
-            bm, bm, bm, vbm, vbm, vbm, nm, nm,
-            bm, bm, BM, wm, bm, vbm, BM, nm
+            twm, twm, twm, twm, twm, twm, twm, twm,
+            twm, twm, twm, twm, twm, twm, twm, twm,
+            twm, twm, twm, twm, twm, twm, twm, twm,
+            twm, twm, twm, twm, twm, twm, twm, twm,
+            twm, twm, twm, twm, twm, twm, twm, twm,
+            vbm, vbm, vbm, twm, twm, vbm, vbm, vbm,
+            abm, abm, abm, vbm, vbm, vbm, anm, anm,
+            abm, abm, TBM, twm, abm, vbm, TBM, anm
 
         ],
     ]
 
-    AI.PIECE_SQUARE_TABLES_PHASE2 = [
+    AI.PSQT_MIDGAME = [
         // Pawn
         [
-            0, 0, 0, 0, 0, 0, 0, 0,
-            nm, nm, nm, nm, nm, nm, nm, vbm,
-            nm, nm, nm, nm, nm, nm, nm, vbm,
-            nm, nm, GM, GM, GM, GM, vbm, vbm,
-            nm, GM, GM, GM, GM, vbm, vbm, vbm,
-            GM, GM, GM, nm, GM, vbm, nm, nm,
-            VGM, GM, vbm, vbm, vbm, VGM, VGM, VGM,
-            0, 0, 0, 0, 0, 0, 0, 0,
+            anm, anm, anm, anm, anm, anm, anm, anm,
+            anm, anm, anm, anm, anm, anm, anm, vbm,
+            anm, anm, anm, anm, anm, anm, anm, vbm,
+            anm, anm, AGM, AGM, AGM, AGM, vbm, vbm,
+            anm, AGM, AGM, AGM, AGM, vbm, vbm, vbm,
+            AGM, AGM, AGM, anm, AGM, vbm, anm, anm,
+            VGM, AGM, vbm, vbm, vbm, VGM, VGM, VGM,
+            anm, anm, anm, anm, anm, anm, anm, anm,
         ],
 
         // Knight
         [
-            vbm, bm, bm, bm, bm, bm, bm, vbm,
-            vbm, bm, bm, bm, bm, bm, bm, vbm,
-            vbm, bm, VGM, VGM, VGM, VGM, bm, vbm,
-            vbm, bm, VGM, BM, BM, VGM, bm, vbm,
-            vbm, bm, GM, BM, BM, GM, bm, vbm,
-            vbm, bm, nm, nm, nm, nm, bm, vbm,
-            vbm, bm, bm, bm, bm, bm, bm, vbm,
-            vbm, wm, vbm, vbm, vbm, vbm, wm, vbm,
+            vbm, abm, abm, abm, abm, abm, abm, vbm,
+            vbm, abm, abm, abm, abm, abm, abm, vbm,
+            vbm, abm, VGM, VGM, VGM, VGM, abm, vbm,
+            vbm, abm, VGM, TBM, TBM, VGM, abm, vbm,
+            vbm, abm, AGM, TBM, TBM, AGM, abm, vbm,
+            vbm, abm, anm, anm, anm, anm, abm, vbm,
+            vbm, abm, abm, abm, abm, abm, abm, vbm,
+            vbm, twm, vbm, vbm, vbm, vbm, twm, vbm,
 
         ],
         // Bishop
         [
-            vbm, bm, bm, bm, bm, bm, bm, vbm,
-            vbm, bm, bm, bm, bm, bm, bm, vbm,
-            vbm, bm, nm, nm, nm, nm, bm, vbm,
-            vbm, GM, BM, BM, BM, BM, GM, vbm,
-            vbm, GM, GM, GM, GM, GM, GM, vbm,
-            wm, GM, GM, GM, GM, GM, GM, wm,
-            vbm, GM, bm, bm, bm, bm, GM, vbm,
-            vbm, vbm, wm, vbm, vbm, wm, vbm, vbm,
+            vbm, abm, abm, abm, abm, abm, abm, vbm,
+            vbm, abm, abm, abm, abm, abm, abm, vbm,
+            vbm, abm, anm, anm, anm, anm, abm, vbm,
+            vbm, AGM, TBM, TBM, TBM, TBM, AGM, vbm,
+            vbm, AGM, AGM, AGM, AGM, AGM, AGM, vbm,
+            twm, AGM, AGM, AGM, AGM, AGM, AGM, twm,
+            vbm, AGM, abm, abm, abm, abm, AGM, vbm,
+            vbm, vbm, twm, vbm, vbm, twm, vbm, vbm,
         ],
         // Rook
         [
-            nm, nm, nm, nm, nm, nm, nm, nm,
-            GM, VGM, VGM, BM, BM, VGM, VGM, GM,
-            nm, nm, nm, nm, nm, nm, nm, nm,
-            nm, nm, nm, nm, nm, nm, nm, nm,
-            nm, nm, nm, nm, nm, nm, nm, nm,
-            nm, nm, nm, nm, nm, nm, nm, nm,
-            nm, nm, nm, GM, GM, nm, nm, nm,
-            wm, nm, nm, GM, GM, GM, nm, wm,
+            anm, anm, anm, anm, anm, anm, anm, anm,
+            AGM, VGM, VGM, TBM, TBM, VGM, VGM, AGM,
+            anm, anm, anm, anm, anm, anm, anm, anm,
+            anm, anm, anm, anm, anm, anm, anm, anm,
+            anm, anm, anm, anm, anm, anm, anm, anm,
+            anm, anm, anm, anm, anm, anm, anm, anm,
+            anm, anm, anm, AGM, AGM, anm, anm, anm,
+            twm, anm, anm, AGM, AGM, AGM, anm, twm,
         ],
 
         // Queen
         [
-            bm, bm, bm, nm, nm, nm, nm, nm,
-            bm, wm, bm, nm, nm, nm, nm, nm,
-            bm, bm, bm, nm, nm, nm, nm, nm,
-            nm, nm, nm, wm, wm, nm, nm, nm,
-            nm, nm, nm, wm, wm, nm, nm, nm,
-            nm, nm, nm, nm, nm, nm, nm, nm,
-            bm, bm, GM, GM, GM, bm, bm, bm,
-            vbm, vbm, vbm, wm, bm, vbm, vbm, vbm,
+            abm, abm, abm, anm, anm, anm, anm, anm,
+            abm, twm, abm, anm, anm, anm, anm, anm,
+            abm, abm, abm, anm, anm, anm, anm, anm,
+            anm, anm, anm, twm, twm, anm, anm, anm,
+            anm, anm, anm, twm, twm, anm, anm, anm,
+            anm, anm, anm, anm, anm, anm, anm, anm,
+            abm, abm, AGM, AGM, AGM, abm, abm, abm,
+            vbm, vbm, vbm, twm, abm, vbm, vbm, vbm,
         ],
 
         // King
@@ -1146,190 +1155,189 @@ AI.createPSQT = function (board) {
             vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
             vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
             vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
-            bm, bm, bm, wm, wm, vbm, nm, nm,
-            bm, GM, GM, wm, vbm, vbm, BM, nm,
+            abm, abm, abm, twm, twm, vbm, anm, anm,
+            abm, AGM, AGM, twm, vbm, vbm, TBM, anm,
 
         ],
     ]
 
-    AI.PIECE_SQUARE_TABLES_PHASE3 = [
+    AI.PSQT_EARLY_ENDGAME = [
         // Pawn
         [
-            0, 0, 0, 0, 0, 0, 0, 0,
-            BM, BM, BM, BM, BM, BM, BM, BM,
+            anm, anm, anm, anm, anm, anm, anm, anm,
+            TBM, TBM, TBM, TBM, TBM, TBM, TBM, TBM,
             VGM, VGM, VGM, VGM, VGM, VGM, VGM, VGM,
-            GM, GM, GM, GM, GM, GM, GM, GM,
-            bm, bm, bm, bm, bm, bm, bm, bm,
+            AGM, AGM, AGM, AGM, AGM, AGM, AGM, AGM,
+            abm, abm, abm, abm, abm, abm, abm, abm,
             vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
-            wm, wm, wm, wm, wm, wm, wm, wm,
-            0, 0, 0, 0, 0, 0, 0, 0,
+            twm, twm, twm, twm, twm, twm, twm, twm,
+            anm, anm, anm, anm, anm, anm, anm, anm,
         ],
 
         // Knight
         [
-            vbm, bm, bm, bm, bm, bm, bm, vbm,
-            vbm, nm, nm, nm, nm, nm, nm, vbm,
-            vbm, nm, GM, GM, GM, GM, nm, vbm,
-            vbm, nm, GM, BM, BM, GM, nm, vbm,
-            vbm, nm, GM, BM, BM, GM, nm, vbm,
-            vbm, nm, GM, GM, GM, GM, nm, vbm,
-            vbm, nm, nm, nm, nm, nm, nm, vbm,
-            vbm, wm, vbm, vbm, vbm, vbm, wm, vbm,
+            vbm, abm, abm, abm, abm, abm, abm, vbm,
+            vbm, anm, anm, anm, anm, anm, anm, vbm,
+            vbm, anm, AGM, AGM, AGM, AGM, anm, vbm,
+            vbm, anm, AGM, TBM, TBM, AGM, anm, vbm,
+            vbm, anm, AGM, TBM, TBM, AGM, anm, vbm,
+            vbm, anm, AGM, AGM, AGM, AGM, anm, vbm,
+            vbm, anm, anm, anm, anm, anm, anm, vbm,
+            vbm, twm, vbm, vbm, vbm, vbm, twm, vbm,
 
         ],
         // Bishop
         [
-            vbm, bm, bm, bm, bm, bm, bm, vbm,
-            bm, nm, nm, nm, nm, nm, nm, bm,
-            nm, nm, GM, GM, GM, GM, nm, nm,
-            nm, nm, GM, BM, BM, GM, nm, nm,
-            nm, nm, GM, BM, BM, GM, nm, nm,
-            nm, nm, GM, GM, GM, GM, nm, nm,
-            bm, nm, nm, nm, nm, nm, nm, bm,
-            vbm, vbm, wm, vbm, vbm, wm, vbm, vbm,
+            vbm, abm, abm, abm, abm, abm, abm, vbm,
+            abm, anm, anm, anm, anm, anm, anm, abm,
+            anm, anm, AGM, AGM, AGM, AGM, anm, anm,
+            anm, anm, AGM, TBM, TBM, AGM, anm, anm,
+            anm, anm, AGM, TBM, TBM, AGM, anm, anm,
+            anm, anm, AGM, AGM, AGM, AGM, anm, anm,
+            abm, anm, anm, anm, anm, anm, anm, abm,
+            vbm, vbm, twm, vbm, vbm, twm, vbm, vbm,
 
         ],
         // Rook
         [
             VGM, VGM, VGM, VGM, VGM, VGM, VGM, VGM,
-            GM, GM, GM, BM, BM, GM, GM, GM,
-            nm, nm, nm, GM, GM, nm, nm, nm,
-            nm, nm, nm, GM, GM, nm, nm, nm,
-            nm, nm, nm, GM, GM, nm, nm, nm,
-            nm, nm, nm, GM, GM, nm, nm, nm,
-            nm, nm, nm, GM, GM, nm, nm, nm,
-            wm, wm, wm, GM, GM, wm, wm, wm,
+            AGM, AGM, AGM, TBM, TBM, AGM, AGM, AGM,
+            anm, anm, anm, AGM, AGM, anm, anm, anm,
+            anm, anm, anm, AGM, AGM, anm, anm, anm,
+            anm, anm, anm, AGM, AGM, anm, anm, anm,
+            anm, anm, anm, AGM, AGM, anm, anm, anm,
+            anm, anm, anm, AGM, AGM, anm, anm, anm,
+            twm, twm, twm, AGM, AGM, twm, twm, twm,
         ],
 
         // Queen
         [
-            nm, nm, nm, nm, nm, nm, nm, nm,
-            nm, GM, GM, GM, GM, GM, GM, nm,
-            nm, GM, GM, GM, GM, GM, GM, nm,
-            nm, GM, GM, BM, BM, GM, GM, nm,
-            nm, GM, GM, BM, BM, GM, GM, nm,
-            nm, GM, GM, GM, GM, GM, GM, nm,
-            nm, GM, GM, GM, GM, GM, GM, nm,
-            nm, nm, nm, nm, nm, nm, nm, nm,
+            anm, anm, anm, anm, anm, anm, anm, anm,
+            anm, AGM, AGM, AGM, AGM, AGM, AGM, anm,
+            anm, AGM, AGM, AGM, AGM, AGM, AGM, anm,
+            anm, AGM, AGM, TBM, TBM, AGM, AGM, anm,
+            anm, AGM, AGM, TBM, TBM, AGM, AGM, anm,
+            anm, AGM, AGM, AGM, AGM, AGM, AGM, anm,
+            anm, AGM, AGM, AGM, AGM, AGM, AGM, anm,
+            anm, anm, anm, anm, anm, anm, anm, anm,
         ],
 
         // King
         [
-            wm, wm, wm, wm, wm, wm, wm, wm,
-            wm, bm, bm, bm, bm, bm, bm, wm,
-            wm, bm, GM, VGM, VGM, GM, bm, wm,
-            wm, GM, VGM, BM, BM, VGM, GM, wm,
-            wm, GM, VGM, BM, BM, VGM, GM, wm,
-            wm, bm, GM, VGM, VGM, GM, bm, wm,
-            wm, bm, bm, bm, bm, bm, bm, wm,
-            wm, wm, wm, wm, wm, wm, wm, wm,
+            twm, twm, twm, twm, twm, twm, twm, twm,
+            twm, abm, abm, abm, abm, abm, abm, twm,
+            twm, abm, AGM, VGM, VGM, AGM, abm, twm,
+            twm, AGM, VGM, TBM, TBM, VGM, AGM, twm,
+            twm, AGM, VGM, TBM, TBM, VGM, AGM, twm,
+            twm, abm, AGM, VGM, VGM, AGM, abm, twm,
+            twm, abm, abm, abm, abm, abm, abm, twm,
+            twm, twm, twm, twm, twm, twm, twm, twm,
         ],
     ]
 
-    AI.PIECE_SQUARE_TABLES_PHASE4 = [
+    AI.PSQT_LATE_ENDGAME = [
         // Pawn
         [
-            0, 0, 0, 0, 0, 0, 0, 0,
-            BM, BM, BM, BM, BM, BM, BM, BM,
+            anm, anm, anm, anm, anm, anm, anm, anm,
+            TBM, TBM, TBM, TBM, TBM, TBM, TBM, TBM,
             VGM, VGM, VGM, VGM, VGM, VGM, VGM, VGM,
-            GM, GM, GM, GM, GM, GM, GM, GM,
-            bm, bm, bm, bm, bm, bm, bm, bm,
+            AGM, AGM, AGM, AGM, AGM, AGM, AGM, AGM,
+            abm, abm, abm, abm, abm, abm, abm, abm,
             vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
-            wm, wm, wm, wm, wm, wm, wm, wm,
-            0, 0, 0, 0, 0, 0, 0, 0,
+            twm, twm, twm, twm, twm, twm, twm, twm,
+            anm, anm, anm, anm, anm, anm, anm, anm,
         ],
 
         // Knight
         [
-            vbm, bm, bm, bm, bm, bm, bm, vbm,
-            vbm, nm, nm, nm, nm, nm, nm, vbm,
-            vbm, nm, GM, GM, GM, GM, nm, vbm,
-            vbm, nm, GM, BM, BM, GM, nm, vbm,
-            vbm, nm, GM, BM, BM, GM, nm, vbm,
-            vbm, nm, GM, GM, GM, GM, nm, vbm,
-            vbm, nm, nm, nm, nm, nm, nm, vbm,
+            vbm, abm, abm, abm, abm, abm, abm, vbm,
+            vbm, anm, anm, anm, anm, anm, anm, vbm,
+            vbm, anm, AGM, AGM, AGM, AGM, anm, vbm,
+            vbm, anm, AGM, TBM, TBM, AGM, anm, vbm,
+            vbm, anm, AGM, TBM, TBM, AGM, anm, vbm,
+            vbm, anm, AGM, AGM, AGM, AGM, anm, vbm,
+            vbm, anm, anm, anm, anm, anm, anm, vbm,
             vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
 
         ],
         // Bishop
         [
-            vbm, bm, bm, bm, bm, bm, bm, vbm,
-            bm, nm, nm, nm, nm, nm, nm, bm,
-            nm, nm, GM, GM, GM, GM, nm, nm,
-            nm, nm, GM, BM, BM, GM, nm, nm,
-            nm, nm, GM, BM, BM, GM, nm, nm,
-            nm, nm, GM, GM, GM, GM, nm, nm,
-            bm, nm, nm, nm, nm, nm, nm, bm,
+            vbm, abm, abm, abm, abm, abm, abm, vbm,
+            abm, anm, anm, anm, anm, anm, anm, abm,
+            anm, anm, AGM, AGM, AGM, AGM, anm, anm,
+            anm, anm, AGM, TBM, TBM, AGM, anm, anm,
+            anm, anm, AGM, TBM, TBM, AGM, anm, anm,
+            anm, anm, AGM, AGM, AGM, AGM, anm, anm,
+            abm, anm, anm, anm, anm, anm, anm, abm,
             vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
 
         ],
         // Rook
         [
-            nm, nm, nm, nm, nm, nm, nm, nm,
-            nm, nm, nm, nm, nm, nm, nm, nm,
-            nm, nm, nm, nm, nm, nm, nm, nm,
-            nm, nm, nm, nm, nm, nm, nm, nm,
-            nm, nm, nm, nm, nm, nm, nm, nm,
-            nm, nm, nm, nm, nm, nm, nm, nm,
-            nm, nm, nm, nm, nm, nm, nm, nm,
-            wm, wm, wm, nm, nm, wm, wm, wm,
+            anm, anm, anm, anm, anm, anm, anm, anm,
+            anm, anm, anm, anm, anm, anm, anm, anm,
+            anm, anm, anm, anm, anm, anm, anm, anm,
+            anm, anm, anm, anm, anm, anm, anm, anm,
+            anm, anm, anm, anm, anm, anm, anm, anm,
+            anm, anm, anm, anm, anm, anm, anm, anm,
+            anm, anm, anm, anm, anm, anm, anm, anm,
+            twm, twm, twm, anm, anm, twm, twm, twm,
         ],
 
         // Queen
         [
-            nm, nm, nm, nm, nm, nm, nm, nm,
-            nm, GM, GM, GM, GM, GM, GM, nm,
-            nm, GM, GM, GM, GM, GM, GM, nm,
-            nm, GM, GM, BM, BM, GM, GM, nm,
-            nm, GM, GM, BM, BM, GM, GM, nm,
-            nm, GM, GM, GM, GM, GM, GM, nm,
-            nm, GM, GM, GM, GM, GM, GM, nm,
-            nm, nm, nm, nm, nm, nm, nm, nm,
+            anm, anm, anm, anm, anm, anm, anm, anm,
+            anm, AGM, AGM, AGM, AGM, AGM, AGM, anm,
+            anm, AGM, AGM, AGM, AGM, AGM, AGM, anm,
+            anm, AGM, AGM, TBM, TBM, AGM, AGM, anm,
+            anm, AGM, AGM, TBM, TBM, AGM, AGM, anm,
+            anm, AGM, AGM, AGM, AGM, AGM, AGM, anm,
+            anm, AGM, AGM, AGM, AGM, AGM, AGM, anm,
+            anm, anm, anm, anm, anm, anm, anm, anm,
         ],
 
         // King
         [
-            wm, wm, wm, wm, wm, wm, wm, wm,
-            wm, bm, bm, bm, bm, bm, bm, wm,
-            wm, bm, GM, VGM, VGM, GM, bm, wm,
-            wm, GM, VGM, BM, BM, VGM, GM, wm,
-            wm, GM, VGM, BM, BM, VGM, GM, wm,
-            wm, bm, GM, VGM, VGM, GM, bm, wm,
-            wm, bm, bm, bm, bm, bm, bm, wm,
-            wm, wm, wm, wm, wm, wm, wm, wm,
+            twm, twm, twm, twm, twm, twm, twm, twm,
+            twm, abm, abm, abm, abm, abm, abm, twm,
+            twm, abm, AGM, VGM, VGM, AGM, abm, twm,
+            twm, AGM, VGM, TBM, TBM, VGM, AGM, twm,
+            twm, AGM, VGM, TBM, TBM, VGM, AGM, twm,
+            twm, abm, AGM, VGM, VGM, AGM, abm, twm,
+            twm, abm, abm, abm, abm, abm, abm, twm,
+            twm, twm, twm, twm, twm, twm, twm, twm,
         ],
     ]
 
     AI.preprocessor(board)
 
-    if (AI.phase === 1) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE1]
-    if (AI.phase === 2) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE2]
-    if (AI.phase === 3) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE3]
-    if (AI.phase === 4) AI.PIECE_SQUARE_TABLES = [...AI.PIECE_SQUARE_TABLES_PHASE4]
+    if (AI.phase === 0) AI.PSQT = [...AI.PSQT_OPENING]
+    if (AI.phase === 1) AI.PSQT = [...AI.PSQT_MIDGAME]
+    if (AI.phase === 2) AI.PSQT = [...AI.PSQT_EARLY_ENDGAME]
+    if (AI.phase === 3) AI.PSQT = [...AI.PSQT_LATE_ENDGAME]
 }
 
 AI.PSQT2Sigmoid = function () {
-    let upperlimit = 120
-    let lowerlimit = 120
+    let upperlimit = AI.VPAWN2
+    let lowerlimit = AI.VPAWN2
 
     for (let i = 1; i <= 4; i++) {
-        AI.PIECE_SQUARE_TABLES[i] = AI.PIECE_SQUARE_TABLES[i].map(psqv => {
+        AI.PSQT[i] = AI.PSQT[i].map(psqv => {
             if (psqv > 0) {
                 return (upperlimit * 2) / (1 + Math.exp(-psqv / (upperlimit / 2))) - upperlimit | 0
             } else {
                 return (lowerlimit * 2) / (1 + Math.exp(-psqv / (lowerlimit / 2))) - lowerlimit | 0
             }
-
         })
     }
 }
 
 AI.softenPSQT = function () {
     for (let p = 0; p <= 5; p++) {
-        AI.PIECE_SQUARE_TABLES[p] = AI.PIECE_SQUARE_TABLES[p].map((e, i) => {
+        AI.PSQT[p] = AI.PSQT[p].map((e, i) => {
             if (e) return e
 
-            let N = [...AI.PIECE_SQUARE_TABLES[p]]
+            let N = [...AI.PSQT[p]]
             let sum = N[i]
             let total = 1
 
@@ -1356,12 +1364,12 @@ AI.preprocessor = function (board) {
     let color = board.getTurnColor()
     let sign = color === 0 ? 1 : -1
 
-    let P = board.getPieceColorBitboard(0, color).dup()
-    let N = board.getPieceColorBitboard(1, color).dup()
-    let B = board.getPieceColorBitboard(2, color).dup()
-    let R = board.getPieceColorBitboard(3, color).dup()
-    let Q = board.getPieceColorBitboard(4, color).dup()
-    let K = board.getPieceColorBitboard(5, color).dup()
+    let P  = board.getPieceColorBitboard(0,  color).dup()
+    let N  = board.getPieceColorBitboard(1,  color).dup()
+    let B  = board.getPieceColorBitboard(2,  color).dup()
+    let R  = board.getPieceColorBitboard(3,  color).dup()
+    let Q  = board.getPieceColorBitboard(4,  color).dup()
+    let K  = board.getPieceColorBitboard(5,  color).dup()
     let PX = board.getPieceColorBitboard(0, !color).dup()
     let NX = board.getPieceColorBitboard(1, !color).dup()
     let BX = board.getPieceColorBitboard(2, !color).dup()
@@ -1397,26 +1405,26 @@ AI.preprocessor = function (board) {
         )
     ) {
         //Good
-        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 7 * sign] += VGM
-        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 8 * sign] += GM
-        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 9 * sign] += VGM
+        AI.PSQT_OPENING[0][kingposition - 7 * sign] += VGM
+        AI.PSQT_OPENING[0][kingposition - 8 * sign] += AGM
+        AI.PSQT_OPENING[0][kingposition - 9 * sign] += VGM
 
-        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 7 * sign] += VGM
-        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 8 * sign] += GM
-        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 9 * sign] += VGM
+        AI.PSQT_MIDGAME[0][kingposition - 7 * sign] += VGM
+        AI.PSQT_MIDGAME[0][kingposition - 8 * sign] += AGM
+        AI.PSQT_MIDGAME[0][kingposition - 9 * sign] += VGM
 
         //Bad
-        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 15 * sign] += wm
-        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 17 * sign] += wm
-        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 23 * sign] += wm
-        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 24 * sign] += wm
-        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 25 * sign] += wm
+        AI.PSQT_OPENING[0][kingposition - 15 * sign] += twm
+        AI.PSQT_OPENING[0][kingposition - 17 * sign] += twm
+        AI.PSQT_OPENING[0][kingposition - 23 * sign] += twm
+        AI.PSQT_OPENING[0][kingposition - 24 * sign] += twm
+        AI.PSQT_OPENING[0][kingposition - 25 * sign] += twm
 
-        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 15 * sign] += bm
-        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 17 * sign] += bm
-        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 23 * sign] += vbm
-        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 24 * sign] += vbm
-        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 25 * sign] += vbm
+        AI.PSQT_MIDGAME[0][kingposition - 15 * sign] += abm
+        AI.PSQT_MIDGAME[0][kingposition - 17 * sign] += abm
+        AI.PSQT_MIDGAME[0][kingposition - 23 * sign] += vbm
+        AI.PSQT_MIDGAME[0][kingposition - 24 * sign] += vbm
+        AI.PSQT_MIDGAME[0][kingposition - 25 * sign] += vbm
     }
 
     //Torre
@@ -1428,17 +1436,17 @@ AI.preprocessor = function (board) {
         )
     ) {
         // white
-        AI.PIECE_SQUARE_TABLES_PHASE2[3][kingposition + 3] -= AI.PAWN4
-        AI.PIECE_SQUARE_TABLES_PHASE2[3][kingposition + 2] -= AI.PAWN3
-        AI.PIECE_SQUARE_TABLES_PHASE2[3][kingposition + 1] += AI.PAWN2
+        AI.PSQT_MIDGAME[3][kingposition + 3] -= AI.VPAWN4
+        AI.PSQT_MIDGAME[3][kingposition + 2] -= AI.VPAWN3
+        AI.PSQT_MIDGAME[3][kingposition + 1] += AI.VPAWN2
     }
 
     if (board.hasCastlingRight(color, false) && pawnmap[kingposition - 10 * sign] && pawnmap[kingposition - 11 * sign]) {
         // console.log('rook QUEENSIDE')
-        AI.PIECE_SQUARE_TABLES_PHASE2[3][kingposition - 4] -= AI.PAWN4
-        AI.PIECE_SQUARE_TABLES_PHASE2[3][kingposition - 3] -= AI.PAWN4
-        AI.PIECE_SQUARE_TABLES_PHASE2[3][kingposition - 2] -= AI.PAWN4
-        AI.PIECE_SQUARE_TABLES_PHASE2[3][kingposition - 1] += AI.PAWN2
+        AI.PSQT_MIDGAME[3][kingposition - 4] -= AI.VPAWN4
+        AI.PSQT_MIDGAME[3][kingposition - 3] -= AI.VPAWN4
+        AI.PSQT_MIDGAME[3][kingposition - 2] -= AI.VPAWN4
+        AI.PSQT_MIDGAME[3][kingposition - 1] += AI.VPAWN2
     }
 
     //Torres en columnas abiertas
@@ -1467,34 +1475,34 @@ AI.preprocessor = function (board) {
     }
 
 
-    AI.PIECE_SQUARE_TABLES_PHASE1[3] = AI.PIECE_SQUARE_TABLES_PHASE1[3].map((e, i) => {
+    AI.PSQT_OPENING[3] = AI.PSQT_OPENING[3].map((e, i) => {
         let col = i % 8
         return e + (pawnfiles[col] ? -40 : 0)
     })
 
-    AI.PIECE_SQUARE_TABLES_PHASE1[3] = AI.PIECE_SQUARE_TABLES_PHASE1[3].map((e, i) => {
+    AI.PSQT_OPENING[3] = AI.PSQT_OPENING[3].map((e, i) => {
         let col = i % 8
         return e + (!pawnfiles[col] ? 80 : 0) + (!pawnXfiles[col] ? 50 : 0)
     })
 
-    AI.PIECE_SQUARE_TABLES_PHASE2[3] = AI.PIECE_SQUARE_TABLES_PHASE2[3].map((e, i) => {
+    AI.PSQT_MIDGAME[3] = AI.PSQT_MIDGAME[3].map((e, i) => {
         let col = i % 8
         return e + (pawnfiles[col] ? -20 : 0)
     })
 
-    AI.PIECE_SQUARE_TABLES_PHASE2[3] = AI.PIECE_SQUARE_TABLES_PHASE2[3].map((e, i) => {
+    AI.PSQT_MIDGAME[3] = AI.PSQT_MIDGAME[3].map((e, i) => {
         let col = i % 8
         return e + (!pawnfiles[col] ? 50 : 0) + (!pawnXfiles[col] ? 50 : 0)
     })
 
     // Torres delante del rey enemigo ("torre en séptima")
-    for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_PHASE2[3][i + sign * 8 * (kingXposition / 8 | 0)] += 27
+    for (let i = 8; i < 16; i++) AI.PSQT_MIDGAME[3][i + sign * 8 * (kingXposition / 8 | 0)] += 27
 
     //Torres conectadas
     let RR = board.makeRookAttackMask(R, P.or(PX))
     let RRmap = AI.bin2map(RR, color)
 
-    AI.PIECE_SQUARE_TABLES_PHASE2[3] = AI.PIECE_SQUARE_TABLES_PHASE2[3].map((e, i) => {
+    AI.PSQT_MIDGAME[3] = AI.PSQT_MIDGAME[3].map((e, i) => {
         return e + 10 * RRmap[i]
     })
 
@@ -1506,12 +1514,12 @@ AI.preprocessor = function (board) {
             (pawnmap[kingposition - 5 * sign] && pawnmap[kingposition - 6 * sign]) ||
             (pawnmap[kingposition - 5 * sign] && pawnmap[kingposition - 7 * sign] && pawnmap[kingposition - 14 * sign])
         ) {
-            AI.PIECE_SQUARE_TABLES_PHASE2[5][kingposition] -= AI.PAWN2
-            AI.PIECE_SQUARE_TABLES_PHASE2[5][kingposition + 1] -= AI.PAWN4
-            AI.PIECE_SQUARE_TABLES_PHASE2[5][kingposition + 2] += AI.PAWN
+            AI.PSQT_MIDGAME[5][kingposition] -= AI.VPAWN2
+            AI.PSQT_MIDGAME[5][kingposition + 1] -= AI.VPAWN4
+            AI.PSQT_MIDGAME[5][kingposition + 2] += AI.VPAWN
         } else {
-            AI.PIECE_SQUARE_TABLES_PHASE2[5][kingposition + 2] -= AI.PAWN * 2
-            AI.PIECE_SQUARE_TABLES_PHASE1[5][kingposition + 2] -= AI.PAWN * 2 //Evita enroque al vacío
+            AI.PSQT_MIDGAME[5][kingposition + 2] -= AI.VPAWN * 2
+            AI.PSQT_OPENING[5][kingposition + 2] -= AI.VPAWN * 2 //Evita enroque al vacío
 
         }
     }
@@ -1520,12 +1528,12 @@ AI.preprocessor = function (board) {
         // console.log('QUEENSIDE')
 
         if (pawnmap[kingposition - 10 * sign] && pawnmap[kingposition - 11 * sign]) {
-            AI.PIECE_SQUARE_TABLES_PHASE2[5][kingposition - 2] += AI.PAWN2
-            AI.PIECE_SQUARE_TABLES_PHASE2[5][kingposition - 1] -= AI.PAWN2
-            AI.PIECE_SQUARE_TABLES_PHASE2[5][kingposition] -= AI.PAWN4
+            AI.PSQT_MIDGAME[5][kingposition - 2] += AI.VPAWN2
+            AI.PSQT_MIDGAME[5][kingposition - 1] -= AI.VPAWN2
+            AI.PSQT_MIDGAME[5][kingposition] -= AI.VPAWN4
         } else {
-            AI.PIECE_SQUARE_TABLES_PHASE2[5][kingposition - 2] -= AI.PAWN * 2
-            AI.PIECE_SQUARE_TABLES_PHASE1[5][kingposition - 2] -= AI.PAWN * 2 //Evita enroque al vacío
+            AI.PSQT_MIDGAME[5][kingposition - 2] -= AI.VPAWN * 2
+            AI.PSQT_OPENING[5][kingposition - 2] -= AI.VPAWN * 2 //Evita enroque al vacío
         }
     }
 
@@ -1546,22 +1554,22 @@ AI.preprocessor = function (board) {
         }
     }
 
-    AI.PIECE_SQUARE_TABLES_PHASE3[3] = AI.PIECE_SQUARE_TABLES_PHASE3[3].map((e, i) => {
+    AI.PSQT_EARLY_ENDGAME[3] = AI.PSQT_EARLY_ENDGAME[3].map((e, i) => {
         let col = i % 8
         return e + (pawnfiles[col] ? -40 : 0)
     })
 
-    AI.PIECE_SQUARE_TABLES_PHASE3[3] = AI.PIECE_SQUARE_TABLES_PHASE3[3].map((e, i) => {
+    AI.PSQT_EARLY_ENDGAME[3] = AI.PSQT_EARLY_ENDGAME[3].map((e, i) => {
         let col = i % 8
         return e + (!pawnfiles[col] ? 40 : 0)
     })
 
     //Torres delante del rey enemigo ("torre en séptima")
-    for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_PHASE3[3][i + sign * 8 * (kingXposition / 8 | 0)] += 27
+    for (let i = 8; i < 16; i++) AI.PSQT_EARLY_ENDGAME[3][i + sign * 8 * (kingXposition / 8 | 0)] += 27
 
-    if (AI.phase === 4 && AI.lastscore >= AI.PIECE_VALUES[0][3]) {
+    if (AI.phase === 3 && AI.lastscore >= AI.PIECE_VALUES[0][3]) {
         //Rey cerca del rey enemigo
-        AI.PIECE_SQUARE_TABLES_PHASE3[5] = AI.PIECE_SQUARE_TABLES_PHASE3[5].map((e, i) => {
+        AI.PSQT_EARLY_ENDGAME[5] = AI.PSQT_EARLY_ENDGAME[5].map((e, i) => {
             return 4 * (8 - AI.manhattanDistance(kingXposition, i))
         })
     }
@@ -1592,125 +1600,125 @@ AI.preprocessor = function (board) {
     let QRmap = AI.bin2map(QR, color)
 
     //Alfiles apuntando a torres
-    AI.PIECE_SQUARE_TABLES_PHASE2[2] = AI.PIECE_SQUARE_TABLES_PHASE2[2].map((e, i) => {
+    AI.PSQT_MIDGAME[2] = AI.PSQT_MIDGAME[2].map((e, i) => {
         return e + 20 * RBmap[i]
     })
 
     //Alfiles apuntando a dama
-    AI.PIECE_SQUARE_TABLES_PHASE2[2] = AI.PIECE_SQUARE_TABLES_PHASE2[2].map((e, i) => {
+    AI.PSQT_MIDGAME[2] = AI.PSQT_MIDGAME[2].map((e, i) => {
         return e + 20 * QBmap[i]
     })
 
     //Alfiles apuntando al rey
-    AI.PIECE_SQUARE_TABLES_PHASE2[2] = AI.PIECE_SQUARE_TABLES_PHASE2[2].map((e, i) => {
+    AI.PSQT_MIDGAME[2] = AI.PSQT_MIDGAME[2].map((e, i) => {
         return e + 20 * KBmap[i]
     })
 
-    AI.PIECE_SQUARE_TABLES_PHASE3[2] = AI.PIECE_SQUARE_TABLES_PHASE3[2].map((e, i) => {
+    AI.PSQT_EARLY_ENDGAME[2] = AI.PSQT_EARLY_ENDGAME[2].map((e, i) => {
         return e + 20 * KBmap[i]
     })
 
     if (kingXposition % 8 < 7) {
-        AI.PIECE_SQUARE_TABLES_PHASE2[2] = AI.PIECE_SQUARE_TABLES_PHASE2[2].map((e, i) => {
+        AI.PSQT_MIDGAME[2] = AI.PSQT_MIDGAME[2].map((e, i) => {
             return e + 20 * (KBmap[i + 1] || 0)
         })
     }
 
     if (kingXposition % 8 < 7) {
-        AI.PIECE_SQUARE_TABLES_PHASE3[2] = AI.PIECE_SQUARE_TABLES_PHASE3[2].map((e, i) => {
+        AI.PSQT_EARLY_ENDGAME[2] = AI.PSQT_EARLY_ENDGAME[2].map((e, i) => {
             return e + 20 * (KBmap[i + 1] || 0)
         })
     }
 
     if (kingXposition % 8 > 0) {
-        AI.PIECE_SQUARE_TABLES_PHASE2[2] = AI.PIECE_SQUARE_TABLES_PHASE2[2].map((e, i) => {
+        AI.PSQT_MIDGAME[2] = AI.PSQT_MIDGAME[2].map((e, i) => {
             return e + 20 * (KBmap[i - 1] || 0)
         })
     }
 
     if (kingXposition % 8 > 0) {
-        AI.PIECE_SQUARE_TABLES_PHASE3[2] = AI.PIECE_SQUARE_TABLES_PHASE3[2].map((e, i) => {
+        AI.PSQT_EARLY_ENDGAME[2] = AI.PSQT_EARLY_ENDGAME[2].map((e, i) => {
             return e + 20 * (KBmap[i - 1] || 0)
         })
     }
 
     //Torres apuntando a dama
-    AI.PIECE_SQUARE_TABLES_PHASE2[3] = AI.PIECE_SQUARE_TABLES_PHASE2[3].map((e, i) => {
+    AI.PSQT_MIDGAME[3] = AI.PSQT_MIDGAME[3].map((e, i) => {
         return e + 10 * QRmap[i]
     })
 
     //Torres apuntando al rey
-    AI.PIECE_SQUARE_TABLES_PHASE2[3] = AI.PIECE_SQUARE_TABLES_PHASE2[3].map((e, i) => {
+    AI.PSQT_MIDGAME[3] = AI.PSQT_MIDGAME[3].map((e, i) => {
         return e + 10 * KRmap[i]
     })
 
-    AI.PIECE_SQUARE_TABLES_PHASE3[3] = AI.PIECE_SQUARE_TABLES_PHASE3[3].map((e, i) => {
+    AI.PSQT_EARLY_ENDGAME[3] = AI.PSQT_EARLY_ENDGAME[3].map((e, i) => {
         return e + 10 * KRmap[i]
     })
 
     //Dama apuntando al rey
-    AI.PIECE_SQUARE_TABLES_PHASE2[4] = AI.PIECE_SQUARE_TABLES_PHASE2[4].map((e, i) => {
+    AI.PSQT_MIDGAME[4] = AI.PSQT_MIDGAME[4].map((e, i) => {
         return e + 10 * KBmap[i]
     })
 
     //Dama apuntando a alfiles enemigos
-    AI.PIECE_SQUARE_TABLES_PHASE2[4] = AI.PIECE_SQUARE_TABLES_PHASE2[4].map((e, i) => {
+    AI.PSQT_MIDGAME[4] = AI.PSQT_MIDGAME[4].map((e, i) => {
         return e - 60 * BBmap[i]
     })
 
     //Dama apuntando a torres enemigas
-    AI.PIECE_SQUARE_TABLES_PHASE2[4] = AI.PIECE_SQUARE_TABLES_PHASE2[4].map((e, i) => {
+    AI.PSQT_MIDGAME[4] = AI.PSQT_MIDGAME[4].map((e, i) => {
         return e - 20 * RRmapx[i]
     })
 
     //Rey apuntando a alfiles enemigos
-    AI.PIECE_SQUARE_TABLES_PHASE2[5] = AI.PIECE_SQUARE_TABLES_PHASE2[5].map((e, i) => {
+    AI.PSQT_MIDGAME[5] = AI.PSQT_MIDGAME[5].map((e, i) => {
         return e - 60 * BBmap[i]
     })
 
     //Rey apuntando a torres enemigas
-    AI.PIECE_SQUARE_TABLES_PHASE2[5] = AI.PIECE_SQUARE_TABLES_PHASE2[5].map((e, i) => {
+    AI.PSQT_MIDGAME[5] = AI.PSQT_MIDGAME[5].map((e, i) => {
         return e - 20 * RRmapx[i]
     })
 
     /************* ABSURD MOVES *****************/
 
-    AI.PIECE_SQUARE_TABLES_PHASE1[1] = AI.PIECE_SQUARE_TABLES_PHASE1[1].map((e, i) => { return e - 20 * pawnXmap[i] })
-    AI.PIECE_SQUARE_TABLES_PHASE1[2] = AI.PIECE_SQUARE_TABLES_PHASE1[2].map((e, i) => { return e - 20 * pawnXmap[i] })
-    AI.PIECE_SQUARE_TABLES_PHASE1[3] = AI.PIECE_SQUARE_TABLES_PHASE1[3].map((e, i) => { return e - 20 * pawnXmap[i] })
-    AI.PIECE_SQUARE_TABLES_PHASE1[4] = AI.PIECE_SQUARE_TABLES_PHASE1[4].map((e, i) => { return e - 20 * pawnXmap[i] })
+    AI.PSQT_OPENING[1] = AI.PSQT_OPENING[1].map((e, i) => { return e - 20 * pawnXmap[i] })
+    AI.PSQT_OPENING[2] = AI.PSQT_OPENING[2].map((e, i) => { return e - 20 * pawnXmap[i] })
+    AI.PSQT_OPENING[3] = AI.PSQT_OPENING[3].map((e, i) => { return e - 20 * pawnXmap[i] })
+    AI.PSQT_OPENING[4] = AI.PSQT_OPENING[4].map((e, i) => { return e - 20 * pawnXmap[i] })
 
-    AI.PIECE_SQUARE_TABLES_PHASE2[1] = AI.PIECE_SQUARE_TABLES_PHASE2[1].map((e, i) => { return e - 20 * pawnXmap[i] })
-    AI.PIECE_SQUARE_TABLES_PHASE2[2] = AI.PIECE_SQUARE_TABLES_PHASE2[2].map((e, i) => { return e - 20 * pawnXmap[i] })
-    AI.PIECE_SQUARE_TABLES_PHASE2[3] = AI.PIECE_SQUARE_TABLES_PHASE2[3].map((e, i) => { return e - 20 * pawnXmap[i] })
-    AI.PIECE_SQUARE_TABLES_PHASE2[4] = AI.PIECE_SQUARE_TABLES_PHASE2[4].map((e, i) => { return e - 20 * pawnXmap[i] })
+    AI.PSQT_MIDGAME[1] = AI.PSQT_MIDGAME[1].map((e, i) => { return e - 20 * pawnXmap[i] })
+    AI.PSQT_MIDGAME[2] = AI.PSQT_MIDGAME[2].map((e, i) => { return e - 20 * pawnXmap[i] })
+    AI.PSQT_MIDGAME[3] = AI.PSQT_MIDGAME[3].map((e, i) => { return e - 20 * pawnXmap[i] })
+    AI.PSQT_MIDGAME[4] = AI.PSQT_MIDGAME[4].map((e, i) => { return e - 20 * pawnXmap[i] })
 
-    AI.PIECE_SQUARE_TABLES_PHASE3[1] = AI.PIECE_SQUARE_TABLES_PHASE3[1].map((e, i) => { return e - 20 * pawnXmap[i] })
-    AI.PIECE_SQUARE_TABLES_PHASE3[2] = AI.PIECE_SQUARE_TABLES_PHASE3[2].map((e, i) => { return e - 20 * pawnXmap[i] })
-    AI.PIECE_SQUARE_TABLES_PHASE3[3] = AI.PIECE_SQUARE_TABLES_PHASE3[3].map((e, i) => { return e - 20 * pawnXmap[i] })
-    AI.PIECE_SQUARE_TABLES_PHASE3[4] = AI.PIECE_SQUARE_TABLES_PHASE3[4].map((e, i) => { return e - 20 * pawnXmap[i] })
+    AI.PSQT_EARLY_ENDGAME[1] = AI.PSQT_EARLY_ENDGAME[1].map((e, i) => { return e - 20 * pawnXmap[i] })
+    AI.PSQT_EARLY_ENDGAME[2] = AI.PSQT_EARLY_ENDGAME[2].map((e, i) => { return e - 20 * pawnXmap[i] })
+    AI.PSQT_EARLY_ENDGAME[3] = AI.PSQT_EARLY_ENDGAME[3].map((e, i) => { return e - 20 * pawnXmap[i] })
+    AI.PSQT_EARLY_ENDGAME[4] = AI.PSQT_EARLY_ENDGAME[4].map((e, i) => { return e - 20 * pawnXmap[i] })
 
-    AI.PIECE_SQUARE_TABLES_PHASE4[1] = AI.PIECE_SQUARE_TABLES_PHASE4[1].map((e, i) => { return e - 20 * pawnXmap[i] })
-    AI.PIECE_SQUARE_TABLES_PHASE4[2] = AI.PIECE_SQUARE_TABLES_PHASE4[2].map((e, i) => { return e - 20 * pawnXmap[i] })
-    AI.PIECE_SQUARE_TABLES_PHASE4[3] = AI.PIECE_SQUARE_TABLES_PHASE4[3].map((e, i) => { return e - 20 * pawnXmap[i] })
-    AI.PIECE_SQUARE_TABLES_PHASE4[4] = AI.PIECE_SQUARE_TABLES_PHASE4[4].map((e, i) => { return e - 20 * pawnXmap[i] })
+    AI.PSQT_LATE_ENDGAME[1] = AI.PSQT_LATE_ENDGAME[1].map((e, i) => { return e - 20 * pawnXmap[i] })
+    AI.PSQT_LATE_ENDGAME[2] = AI.PSQT_LATE_ENDGAME[2].map((e, i) => { return e - 20 * pawnXmap[i] })
+    AI.PSQT_LATE_ENDGAME[3] = AI.PSQT_LATE_ENDGAME[3].map((e, i) => { return e - 20 * pawnXmap[i] })
+    AI.PSQT_LATE_ENDGAME[4] = AI.PSQT_LATE_ENDGAME[4].map((e, i) => { return e - 20 * pawnXmap[i] })
 }
 
-AI.setphase = function (board) {
-    AI.phase = 1 //OPENING
+AI.setPhase = function (board) {
+    AI.phase = 0 //OPENING
     let color = board.getTurnColor()
 
     if (AI.nofpieces <= 28 || (board.movenumber && board.movenumber > 10)) {
-        AI.phase = 2 //MIDGAME
+        AI.phase = 1 //MIDGAME
     }
 
     let queens = board.getPieceColorBitboard(4, color).popcnt() + board.getPieceColorBitboard(4, !color).popcnt()
 
-    if (AI.nofpieces <= 20 && queens === 0 || Math.abs(AI.lastscore) > AI.PAWN * 3) { // ¿Debería ser queens < 2? Hay que testearlo
-        AI.phase = 3 //ENDGAME (the king enters)
+    if (AI.nofpieces <= 20 && queens === 0 || Math.abs(AI.lastscore) > AI.VPAWN * 3) { // ¿Debería ser queens < 2? Hay que testearlo
+        AI.phase = 2 //ENDGAME (the king enters)
     }
 
-    if (AI.nofpieces <= 12 || Math.abs(AI.lastscore) > AI.PIECE_VALUES[0][3]) AI.phase = 4 //LATE ENGDAME
+    if (AI.nofpieces <= 12 || Math.abs(AI.lastscore) > AI.PIECE_VALUES[0][3]) AI.phase = 3 //LATE ENGDAME
 
     AI.createPSQT(board)
     AI.randomizePSQT()
@@ -1814,7 +1822,7 @@ AI.search = function (board, options) {
     let nmoves = board.madeMoves.length
     let changeofphase = false
 
-    AI.setphase(board)
+    AI.setPhase(board)
 
     if (AI.lastphase !== AI.phase) changeofphase = true
 
@@ -1864,7 +1872,7 @@ AI.search = function (board, options) {
         //Iterative Deepening
         for (let depth = 1; depth <= AI.totaldepth; depth += 1) {
 
-            if (AI.stop && AI.iteration > AI.mindepth[AI.phase - 1]) break
+            if (AI.stop && AI.iteration > AI.mindepth[AI.phase]) break
 
             AI.bestmove = [...AI.PV][1]
             AI.iteration++
@@ -1893,7 +1901,7 @@ AI.search = function (board, options) {
             console.info('________________________________________________________________________________')
         }
 
-        let sigmoid = 1 / (1 + Math.pow(10, -AI.lastscore / (4 * AI.PAWN)))
+        let sigmoid = 1 / (1 + Math.pow(10, -AI.lastscore / (4 * AI.VPAWN)))
 
         AI.lastmove = AI.bestmove
 
