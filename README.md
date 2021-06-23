@@ -44,6 +44,7 @@ Orobas es una Inteligencia Artificial de Ajedrez creada en 2020 para fines educa
 * MTD(f), but inactive due to some buggy behaviours related to the hash table. See https://www.chessprogramming.org/MTD(f)
 
 ### To Do
+* Create own move generator, prefering Mailbox over Bitboards, as presented by H.G.Muller in "the mailbox trials"
 * Mate detection
 * Isolated/hanging pawns detection.
 * Improve king safety.
