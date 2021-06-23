@@ -26,12 +26,19 @@ let AI = {
 
 // ÍNDICES
 AI.P = 0
-AI.K = 1
+AI.N = 1
 AI.B = 2
 AI.R = 3
 AI.Q = 4
 AI.K = 5
 
+AI.WHITE = 0
+AI.BLACK = 1
+
+AI.OPENING = 0
+AI.MIDGAME = 1
+AI.EARLY_ENDGAME = 2
+AI.LATE_ENDGAME = 3
 
 ///// VALOR RELATIVO DE LAS PIEZAS
 AI.VPAWN = 270
@@ -51,19 +58,19 @@ AI.PIECE_VALUES = [
 AI.BISHOP_PAIR = 0.6*AI.VPAWN | 0
 
 // CONSTANTES
-AI.MATE = AI.PIECE_VALUES[0][5]
+AI.MATE = AI.PIECE_VALUES[AI.OPENING][AI.K]
 AI.DRAW = 0
-AI.INFINITY = AI.PIECE_VALUES[0][5] * 2
+AI.INFINITY = AI.PIECE_VALUES[AI.OPENING][AI.K] * 2
 AI.EMPTY = new Chess.Bitboard()
 
 //VALORES POSICIONALES
-let twm = -AI.VPAWN // El peor movimiento
+let twm = -AI.VPAWN  // El peor movimiento
 let vbm = -AI.VPAWN2 // Muy mal movimiento
 let abm = -AI.VPAWN3 // Mal movimiento
-let anm = 0 // Movimiento neutral
-let AGM = AI.VPAWN4 // Buen movimiento
-let VGM = AI.VPAWN3 // Muy buen movimiento
-let TBM = AI.VPAWN2 // El mejor movimiento
+let anm = 0          // Movimiento neutral
+let AGM = AI.VPAWN4  // Buen movimiento
+let VGM = AI.VPAWN3  // Muy buen movimiento
+let TBM = AI.VPAWN2  // El mejor movimiento
 
 //CREA TABLA PARA REDUCCIONES
 AI.LMR_TABLE = new Array(AI.totaldepth + 1)
@@ -125,14 +132,14 @@ AI.SAFETY_VALUES = [-2, -1, 0, 1, 2, -1, -2, -3, -3].map(e => AI.VPAWN5 * e)
 // PEONES PASADOS
 // Al detectar un peón pasado, se asigna un valor extra al peón correspondiente
 AI.PASSER_VALUES = [
-            0,        0,        0,        0,        0,        0,        0,        0,
+             0,         0,         0,         0,         0,         0,         0,         0,
     2*AI.VPAWN,2*AI.VPAWN,2*AI.VPAWN,2*AI.VPAWN,2*AI.VPAWN,2*AI.VPAWN,2*AI.VPAWN,2*AI.VPAWN,
       AI.VPAWN,  AI.VPAWN,  AI.VPAWN,  AI.VPAWN,  AI.VPAWN,  AI.VPAWN,  AI.VPAWN,  AI.VPAWN,
      AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2,
      AI.VPAWN3, AI.VPAWN3, AI.VPAWN3, AI.VPAWN3, AI.VPAWN3, AI.VPAWN3, AI.VPAWN3, AI.VPAWN3,
      AI.VPAWN4, AI.VPAWN4, AI.VPAWN4, AI.VPAWN4, AI.VPAWN4, AI.VPAWN4, AI.VPAWN4, AI.VPAWN4,
      AI.VPAWN5, AI.VPAWN5, AI.VPAWN5, AI.VPAWN5, AI.VPAWN5, AI.VPAWN5, AI.VPAWN5, AI.VPAWN5,
-            0,        0,        0,        0,        0,        0,        0,        0,
+             0,         0,         0,         0,         0,         0,         0,         0,
 ]
 
 // PEONES DOBLADOS
@@ -142,7 +149,7 @@ AI.DOUBLED_VALUES = [0, -1, -2, -4, -8, -9, -10, -11, -12].map(e => e * AI.VPAWN
 // ESTRUCTURA DE PEONES
 // Se asigna un valor dependiendo del número de peones defendidos por otro peón en cada fase
 AI.DEFENDED_PAWN_VALUES = [
-    [0,        0,        0,        0,        0,        0,        0,        0,        0],
+    [0,         0,         0,         0,         0,         0,         0,         0,         0],
     [0, AI.VPAWN5, AI.VPAWN4, AI.VPAWN4, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2],
     [0, AI.VPAWN5, AI.VPAWN4, AI.VPAWN4, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2],
     [0, AI.VPAWN5, AI.VPAWN4, AI.VPAWN4, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2],
@@ -167,7 +174,7 @@ AI.PSQT = [
     Array(64).fill(0),
     Array(64).fill(0),
     Array(64).fill(0),
-    Array(64).fill(0)
+    Array(64).fill(0),
 ]
 
 AI.bitCount = function (n) {
@@ -219,7 +226,7 @@ AI.createTables = function () {
 
     AI.history = [[], []]
 
-    AI.history[0] = [
+    AI.history[AI.WHITE] = [
         Array(64).fill(0),
         Array(64).fill(0),
         Array(64).fill(0),
@@ -228,7 +235,7 @@ AI.createTables = function () {
         Array(64).fill(0),
     ]
 
-    AI.history[1] = [
+    AI.history[AI.BLACK] = [
         Array(64).fill(0),
         Array(64).fill(0),
         Array(64).fill(0),
@@ -238,14 +245,17 @@ AI.createTables = function () {
     ]
 
     AI.hashtable = new Array(this.htlength) // new Map() //positions
-    AI.pawntable = [(new Array(this.pawntlength)).fill(null), (new Array(this.pawntlength)).fill(null)] // [new Map(), new Map()] //positions
+    AI.pawntable = [
+        (new Array(this.pawntlength)).fill(null),
+        (new Array(this.pawntlength)).fill(null),
+    ] // [new Map(), new Map()] //positions
 }
 
 //ESTABLECE VALORES ALEATORIAS EN LA APERTURA (PARA TESTEOS)
 AI.randomizePSQT = function () {
-    if (AI.phase === 0) {
+    if (AI.phase === AI.OPENING) {
         //From Knight to Queen
-        for (let i = 1; i <= 4; i++) {
+        for (let i = AI.N; i <= AI.Q; i++) {
             AI.PSQT[i] = AI.PSQT[i].map(e => {
                 return e + Math.random() * AI.random - AI.random / 2 | 0
             })
@@ -260,19 +270,19 @@ AI.randomizePSQT = function () {
 // al pasarse como parámetro, los cambios en sus propiedades
 // cambian el objeto original (no existe ámbito).
 AI.getPieces = function (board, turn, notturn) {
-    let P = board.getPieceColorBitboard(0, turn)
-    let N = board.getPieceColorBitboard(1, turn)
-    let B = board.getPieceColorBitboard(2, turn)
-    let R = board.getPieceColorBitboard(3, turn)
-    let Q = board.getPieceColorBitboard(4, turn)
-    let K = board.getPieceColorBitboard(5, turn)
+    let P = board.getPieceColorBitboard(AI.P, turn)
+    let N = board.getPieceColorBitboard(AI.N, turn)
+    let B = board.getPieceColorBitboard(AI.B, turn)
+    let R = board.getPieceColorBitboard(AI.R, turn)
+    let Q = board.getPieceColorBitboard(AI.Q, turn)
+    let K = board.getPieceColorBitboard(AI.K, turn)
 
-    let Px = board.getPieceColorBitboard(0, notturn)
-    let Nx = board.getPieceColorBitboard(1, notturn)
-    let Bx = board.getPieceColorBitboard(2, notturn)
-    let Rx = board.getPieceColorBitboard(3, notturn)
-    let Qx = board.getPieceColorBitboard(4, notturn)
-    let Kx = board.getPieceColorBitboard(5, notturn)
+    let Px = board.getPieceColorBitboard(AI.P, notturn)
+    let Nx = board.getPieceColorBitboard(AI.N, notturn)
+    let Bx = board.getPieceColorBitboard(AI.B, notturn)
+    let Rx = board.getPieceColorBitboard(AI.R, notturn)
+    let Qx = board.getPieceColorBitboard(AI.Q, notturn)
+    let Kx = board.getPieceColorBitboard(AI.K, notturn)
 
     let us = board.getColorBitboard(turn)
     let usx = board.getColorBitboard(notturn)
@@ -884,8 +894,8 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                 if (!incheck && depth >= 3) {
                     R += AI.LMR_TABLE[depth][legal]
 
-                    if (AI.phase === 3) {
-                        R = R / 2 | 0
+                    if (AI.phase === AI.LATE_ENDGAME) {
+                        R = R / 4 | 0
                     }
                 }
             }
@@ -1783,7 +1793,7 @@ AI.getPV = function (board, length) {
 AI.MTDF = function (board, f, d) {
     let g = f
 
-    let upperBound = AI.INFINITY
+    let upperBound =  AI.INFINITY
     let lowerBound = -AI.INFINITY
 
     //Esta línea permite que el algoritmo funcione como PVS normal
