@@ -378,13 +378,14 @@ Position.prototype.makeRookAttackMask = function(fromBB, occupied) {
  * @see http://goo.gl/UYzOw (Square Attacked By)
  */
 Position.prototype.isAttacked = function(color, index) {
+	if (index > 63  || index < 0 ) return false //console.log('KM',index)
+	
 	var pawns = this.getPieceColorBitboard(Chess.Piece.PAWN, color);
 	if (Position.makePawnAttackMask(color, pawns).isSet(index)) {
 		return true;
 	}
 
 	var knights = this.getPieceColorBitboard(Chess.Piece.KNIGHT, color);
-	if (index > 64  || index < 0 )console.log('KM',index)
 
 	if (!Chess.Bitboard.KNIGHT_MOVEMENTS[index].dup().and(knights).isEmpty()) {
 		return true;
@@ -709,7 +710,10 @@ Position.prototype.generateMoves = function(onlyCaptures) {
 	}
 
 	var kingPosition = this.getKingPosition(turnColor);
-	addNormalMoves(kingPosition, Chess.Bitboard.KING_MOVEMENTS[kingPosition].dup().and(mask), Chess.Piece.KING);
+
+	if (kingPosition <= 63 && kingPosition >= 0) {
+		addNormalMoves(kingPosition, Chess.Bitboard.KING_MOVEMENTS[kingPosition].dup().and(mask), Chess.Piece.KING);
+	}
 
 	if (!onlyCaptures) {
 		// King & queen side castle

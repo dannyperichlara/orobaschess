@@ -14,7 +14,7 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 40,
+    random: 120,
     phase: 1,
     htlength: 1 << 24,
     pawntlength: 5e5,
@@ -110,16 +110,16 @@ AI.SAFETY_VALUES = [-2, -1,  0, 1, 2,-1,-2,-3,-3].map(e=>AI.PAWN5*e)
 //Not fully tested
 AI.PASSER_VALUES = [
     0, 0, 0, 0, 0, 0, 0, 0,
-    240, 240, 240, 240, 240, 240, 240, 240,
-    120, 120, 120, 120, 120, 120, 120, 120,
-    60, 60, 60, 60, 60, 60, 60, 60,
-    30, 30, 30, 30, 30, 30, 30, 30,
-    15, 15, 15, 15, 15, 15, 15, 15,
-    10, 10, 10, 10, 10, 10, 10, 10,
+    2*AI.PAWN, 2*AI.PAWN, 2*AI.PAWN, 2*AI.PAWN, 2*AI.PAWN, 2*AI.PAWN, 2*AI.PAWN, 2*AI.PAWN,
+    AI.PAWN, AI.PAWN, AI.PAWN, AI.PAWN, AI.PAWN, AI.PAWN, AI.PAWN, AI.PAWN,
+    AI.PAWN2, AI.PAWN2, AI.PAWN2, AI.PAWN2, AI.PAWN2, AI.PAWN2, AI.PAWN2, AI.PAWN2,
+    AI.PAWN3, AI.PAWN3, AI.PAWN3, AI.PAWN3, AI.PAWN3, AI.PAWN3, AI.PAWN3, AI.PAWN3,
+    AI.PAWN4, AI.PAWN4, AI.PAWN4, AI.PAWN4, AI.PAWN4, AI.PAWN4, AI.PAWN4, AI.PAWN4,
+    AI.PAWN5, AI.PAWN5, AI.PAWN5, AI.PAWN5, AI.PAWN5, AI.PAWN5, AI.PAWN5, AI.PAWN5,
     0, 0, 0, 0, 0, 0, 0, 0,
 ]
 
-AI.DOUBLED_VALUES = [0, -1, -2, -3, -4, -5, -6, -7, -8].map(e => e * AI.PAWN2 | 0)
+AI.DOUBLED_VALUES = [0, -1, -2, -4, -8, -9, -10, -11, -12].map(e => e * AI.PAWN2 | 0)
 
 //Not fully tested
 AI.DEFENDED_PAWN_VALUES = [
@@ -547,6 +547,7 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         let move = moves[i]
         let piece = move.getPiece()
         let to = move.getTo()
+        let from = move.getFrom()
         let kind = move.getKind()
 
         move.mvvlva = 0
@@ -556,6 +557,7 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         move.killer1 = 0
         move.killer2 = 0
         move.score = 0
+
 
         if (ttEntry && move.value === ttEntry.move.value) {
             move.tt = true
@@ -640,7 +642,6 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
     let legal = 0
     let standpat = AI.evaluate(board, ply, beta)
     let bestscore = -AI.INFINITY
-    // let incheck = board.isKingInCheck()
     let hashkey = board.hashKey.getHashKey()
 
     if (true/* !incheck*/) {
@@ -648,8 +649,8 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
             return standpat
         }
 
-        /* delta pruning */ //Not fully tested
-        // if (standpat + AI.PIECE_VALUES[0][4] < alpha) {
+        // /* delta pruning */ //Not fully tested
+        // if (standpat < alpha - AI.PIECE_VALUES[0][4]) {
         //   return alpha
         // }
 
@@ -664,7 +665,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
     //     moves = board.getMoves(true, true)
     // }
 
-    moves = board.getMoves(true, true)
+    moves = board.getMoves(true, !board.isKingInCheck()) //+0 ELO
 
     let ttEntry = AI.ttGet(hashkey)
 
@@ -811,6 +812,29 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         if (alpha >= beta) {
             return ttEntry.score
         }
+
+        // betstmove = ttEntry.move
+    }
+
+    let staticeval = AI.evaluate(board, ply, beta) //Apparently doesnt affect performance at low depths
+
+    let incheck = board.isKingInCheck()
+
+    //Razoring (idea from Strelka) //+34 ELO
+    if (cutNode && !incheck) {
+      let value = staticeval + AI.PAWN;
+      if (value < beta) {
+        if (depth === 1) {
+          let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
+          return Math.max(new_value, value);
+        }
+        value += 2*AI.PAWN;
+        if (value < beta && depth <= 3) {
+          let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
+          if (new_value < beta)
+            return Math.max(new_value, value);
+        }
+      }
     }
 
     if (depth <= 0) {
@@ -833,26 +857,9 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     let legal = 0
     let bestscore = -AI.INFINITY
     let score
-    let staticeval = AI.evaluate(board, ply, beta) //Apparently doesnt affect performance at low depths
 
-    let incheck = board.isKingInCheck()
 
-    //Razoring (idea from Strelka) //THIS IS A COMPLETE BULLSHIT
-    // if (cutNode && !incheck) {
-    //   let value = staticeval + AI.PAWN;
-    //   if (value < beta) {
-    //     if (depth === 1) {
-    //       let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
-    //       return Math.max(new_value, value);
-    //     }
-    //     value += 2*AI.PAWN;
-    //     if (value < beta && depth <= 3) {
-    //       let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
-    //       if (new_value < beta)
-    //         return Math.max(new_value, value);
-    //     }
-    //   }
-    // }
+
 
     // if (incheck) {
     //   if (lastmove) {
@@ -866,11 +873,12 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
     //Reverse Futility pruning (Static Null Move Pruning) TESTED OK
     let margin = AI.PIECE_VALUES[0][1] * depth
+    let reverseval = staticeval - margin
 
-    if (!incheck && depth <= 3 && staticeval - margin > beta) {
-        // AI.ttSave(hashkey, reverseval, -1, depth, moves[0])
+    if (!incheck && depth <= 3 && reverseval > beta) {
+        AI.ttSave(hashkey, reverseval, -1, depth, moves[0])
         // return beta
-        return staticeval - margin
+        return reverseval
     }
 
     let threateval = 200 * incheck
@@ -944,7 +952,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         // if (cutNode && !move.capture && !move.promotion && depth>=3 && legal>1+2*ply) R+=2 //Not fully tested
 
         // let moveCountPruning = legal >= (3 + depth * depth) / 2 // tested with i and failed
-
         // if (moveCountPruning && depth >=3 && !move.capture) R++
 
         // if (!move.capture && cutNode && AI.history[turn][piece][to] < -20) {
@@ -956,7 +963,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         if (board.makeMove(move)) {
             legal++
 
-            //Reductions (LMR)
+            //Reductions (legal)
             if (AI.nofpieces <= 4) {
                 R = 0
             } else {
@@ -967,9 +974,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                         R += depth/5 + legal/5 | 0
                     }
         
-                    if (AI.phase < 4) {
-                        if (legal > length10 && !pvNode) R = R**2
-                    } else {
+                    if (AI.phase === 4) {
                         R = R/2 | 0
                     }
                 }
@@ -978,7 +983,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             AI.absurd[turn][piece]++
 
             //Extensions
-            if (pvNode && depth < 3) {
+            if (pvNode && depth === 1) {
                 if (incheck) {
                     E = 1
                 }
@@ -996,7 +1001,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                     //If the result looks promising, we do a research at full depth.
                     //Remember we are trying to get the score at depth D, but we just get the score at depth D - R
 
-                    if (!AI.stop && score > alpha/* && score < beta*/) { //https://www.chessprogramming.org/Principal_Variation_Search
+                    if (!AI.stop && score > alpha && score < beta) { //https://www.chessprogramming.org/Principal_Variation_Search
                         // if (score > beta) AI.ttSave(hashkey, score, -1, depth - R - FHR, move)
 
                         score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1)
@@ -1016,7 +1021,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
             //Beta cut-off
             if (score >= beta) {
-                if (legal === 1) {
+                if (legal <= 1) {
                     AI.fhf++
                 }
 
@@ -1058,9 +1063,9 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             return AI.DRAW + ply
         }
 
-        // if (ply === 1) AI.stop = true
+        if (ply === 1) AI.stop = true
 
-        // AI.ttSave(hashkey, -AI.MATE + ply, 0, depth, bestmove)
+        AI.ttSave(hashkey, -AI.MATE + ply, 0, depth, bestmove)
         return -AI.MATE + ply
 
     } else {
@@ -1139,9 +1144,9 @@ AI.createPSQT = function (board) {
             vbm, bm, bm, bm, bm, bm, bm, vbm,
             vbm, bm, nm, nm, nm, nm, bm, vbm,
              wm, bm, nm, GM, GM, nm, bm, wm,
-             wm, bm, wm, GM, GM, wm, bm, wm,
-             wm, bm, nm, nm, nm, BM, bm, wm,
-            vbm, bm, bm, nm, nm, bm, bm, vbm,
+             wm, bm, wm, BM, BM, wm, bm, wm,
+             wm, bm, GM, nm, nm, GM, bm, wm,
+            vbm, bm, bm, GM, nm, bm, bm, vbm,
             vbm,vbm,vbm,vbm,vbm,vbm,vbm, vbm,
 
         ],
@@ -1225,10 +1230,10 @@ AI.createPSQT = function (board) {
             vbm, bm, bm, bm, bm, bm, bm, vbm,
             vbm, bm, nm, nm, nm, nm, bm, vbm,
             vbm, GM, BM, BM, BM, BM, GM, vbm,
-            vbm, GM, GM, VGM, VGM, GM, GM, vbm,
-            wm, GM, GM, nm, nm, GM, GM, wm,
+            vbm, GM, GM, GM, GM, GM, GM, vbm,
+             wm, GM, GM, GM, GM, GM, GM,  wm,
             vbm, GM, bm, bm, bm, bm, GM, vbm,
-            vbm, vbm, wm, vbm, vbm, wm, vbm, vbm,
+            vbm,vbm, wm,vbm,vbm, wm,vbm, vbm,
         ],
         // Rook
         [
@@ -1488,6 +1493,7 @@ AI.softenPSQT = function () {
 AI.preprocessor = function (board) {
     // return
     let color = board.getTurnColor()
+    let sign = color === 0? 1 : -1
 
     let P = board.getPieceColorBitboard(0, color).dup()
     let N = board.getPieceColorBitboard(1, color).dup()
@@ -1518,50 +1524,61 @@ AI.preprocessor = function (board) {
     let kingXposition = kingXmap.indexOf(1)
 
     //Castiga captura y maniobras con peón frontal del rey
-    if (kingposition >= 61 || (kingposition >= 56 && kingposition <= 58)) {
+    if (
+        (color === 0 && (
+            kingposition >= 61 ||
+            (kingposition >= 56 && kingposition <= 58)
+            )
+        ) ||
+        (color === 1 && (
+            kingposition <= 2 ||
+            (kingposition >=5 && kingposition <=7)
+            )
+        )
+    ) {
         //Good
-        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 7] += VGM
-        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 8] += GM
-        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 9] += VGM
+        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 7*sign] += VGM
+        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 8*sign] += GM
+        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 9*sign] += VGM
 
-        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 7] += VGM
-        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 8] += GM
-        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 9] += VGM
+        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 7*sign] += VGM
+        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 8*sign] += GM
+        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 9*sign] += VGM
 
         //Bad
-        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 15] += wm
-        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 17] += wm
-        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 23] += wm
-        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 24] += wm
-        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 25] += wm
+        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 15*sign] += wm
+        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 17*sign] += wm
+        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 23*sign] += wm
+        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 24*sign] += wm
+        AI.PIECE_SQUARE_TABLES_PHASE1[0][kingposition - 25*sign] += wm
 
-        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 15] += bm
-        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 17] += bm
-        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 23] += vbm
-        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 24] += vbm
-        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 25] += vbm
+        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 15*sign] += bm
+        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 17*sign] += bm
+        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 23*sign] += vbm
+        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 24*sign] += vbm
+        AI.PIECE_SQUARE_TABLES_PHASE2[0][kingposition - 25*sign] += vbm
     }
 
     //Torre
     //Premia enrocar
     if (board.hasCastlingRight(color, true) &&
         (
-            (pawnmap[kingposition - 5] && pawnmap[kingposition - 6]) ||
-            (pawnmap[kingposition - 5] && pawnmap[kingposition - 7] && pawnmap[kingposition - 14])
+            (pawnmap[kingposition - 5*sign] && pawnmap[kingposition - 6*sign]) ||
+            (pawnmap[kingposition - 5*sign] && pawnmap[kingposition - 7*sign] && pawnmap[kingposition - 14*sign])
         )
     ) {
-        // console.log('rook KINGSIDE')
-        AI.PIECE_SQUARE_TABLES_PHASE2[3][63] -= AI.PAWN4
-        AI.PIECE_SQUARE_TABLES_PHASE2[3][62] -= AI.PAWN4
-        AI.PIECE_SQUARE_TABLES_PHASE2[3][61] += AI.PAWN2
+        // white
+        AI.PIECE_SQUARE_TABLES_PHASE2[3][kingposition+3] -= AI.PAWN4
+        AI.PIECE_SQUARE_TABLES_PHASE2[3][kingposition+2] -= AI.PAWN3
+        AI.PIECE_SQUARE_TABLES_PHASE2[3][kingposition+1] += AI.PAWN2
     }
 
-    if (board.hasCastlingRight(color, false) && pawnmap[kingposition - 10] && pawnmap[kingposition - 11]) {
+    if (board.hasCastlingRight(color, false) && pawnmap[kingposition - 10*sign] && pawnmap[kingposition - 11*sign]) {
         // console.log('rook QUEENSIDE')
-        AI.PIECE_SQUARE_TABLES_PHASE2[3][56] -= AI.PAWN4
-        AI.PIECE_SQUARE_TABLES_PHASE2[3][57] -= AI.PAWN4
-        AI.PIECE_SQUARE_TABLES_PHASE2[3][58] -= AI.PAWN4
-        AI.PIECE_SQUARE_TABLES_PHASE2[3][59] += AI.PAWN2
+        AI.PIECE_SQUARE_TABLES_PHASE2[3][kingposition-4] -= AI.PAWN4
+        AI.PIECE_SQUARE_TABLES_PHASE2[3][kingposition-3] -= AI.PAWN4
+        AI.PIECE_SQUARE_TABLES_PHASE2[3][kingposition-2] -= AI.PAWN4
+        AI.PIECE_SQUARE_TABLES_PHASE2[3][kingposition-1] += AI.PAWN2
     }
 
     //Torres en columnas abiertas
@@ -1611,7 +1628,7 @@ AI.preprocessor = function (board) {
     })
 
     // Torres delante del rey enemigo ("torre en séptima")
-    for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_PHASE2[3][i + 8 * (kingXposition / 8 | 0)] += 27
+    for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_PHASE2[3][i + sign*8 * (kingXposition / 8 | 0)] += 27
 
     //Torres conectadas
     let RR = board.makeRookAttackMask(R, P.or(PX))
@@ -1621,24 +1638,20 @@ AI.preprocessor = function (board) {
         return e + 10 * RRmap[i]
     })
 
-    //Castiga torres sin desarrollar
-    AI.PIECE_SQUARE_TABLES_PHASE2[2][56] -= 40
-    AI.PIECE_SQUARE_TABLES_PHASE2[2][63] -= 100
-
     //Premia enrocar
     if (board.hasCastlingRight(color, true)) {
         // console.log('KINGSIDE')
 
         if (
-            (pawnmap[kingposition - 5] && pawnmap[kingposition - 6]) ||
-            (pawnmap[kingposition - 5] && pawnmap[kingposition - 7] && pawnmap[kingposition - 14])
+            (pawnmap[kingposition - 5*sign] && pawnmap[kingposition - 6*sign]) ||
+            (pawnmap[kingposition - 5*sign] && pawnmap[kingposition - 7*sign] && pawnmap[kingposition - 14*sign])
         ) {
-            AI.PIECE_SQUARE_TABLES_PHASE2[5][60] -= AI.PAWN2
-            AI.PIECE_SQUARE_TABLES_PHASE2[5][61] -= AI.PAWN4
-            AI.PIECE_SQUARE_TABLES_PHASE2[5][62] += AI.PAWN
+            AI.PIECE_SQUARE_TABLES_PHASE2[5][kingposition] -= AI.PAWN2
+            AI.PIECE_SQUARE_TABLES_PHASE2[5][kingposition+1] -= AI.PAWN4
+            AI.PIECE_SQUARE_TABLES_PHASE2[5][kingposition+2] += AI.PAWN
         } else {
-            AI.PIECE_SQUARE_TABLES_PHASE2[5][62] -= AI.PAWN*2
-            AI.PIECE_SQUARE_TABLES_PHASE1[5][62] -= AI.PAWN*2 //Evita enroque al vacío
+            AI.PIECE_SQUARE_TABLES_PHASE2[5][kingposition+2] -= AI.PAWN*2
+            AI.PIECE_SQUARE_TABLES_PHASE1[5][kingposition+2] -= AI.PAWN*2 //Evita enroque al vacío
 
         }
     }
@@ -1646,13 +1659,13 @@ AI.preprocessor = function (board) {
     if (board.hasCastlingRight(color, false)) {
         // console.log('QUEENSIDE')
 
-        if (pawnmap[kingposition - 10] && pawnmap[kingposition - 11]) {
-            AI.PIECE_SQUARE_TABLES_PHASE2[5][58] += AI.PAWN2
-            AI.PIECE_SQUARE_TABLES_PHASE2[5][59] -= AI.PAWN2
-            AI.PIECE_SQUARE_TABLES_PHASE2[5][60] -= AI.PAWN4
+        if (pawnmap[kingposition - 10*sign] && pawnmap[kingposition - 11*sign]) {
+            AI.PIECE_SQUARE_TABLES_PHASE2[5][kingposition-2] += AI.PAWN2
+            AI.PIECE_SQUARE_TABLES_PHASE2[5][kingposition-1] -= AI.PAWN2
+            AI.PIECE_SQUARE_TABLES_PHASE2[5][kingposition] -= AI.PAWN4
         } else {
-            AI.PIECE_SQUARE_TABLES_PHASE2[5][58] -= AI.PAWN*2
-            AI.PIECE_SQUARE_TABLES_PHASE1[5][58] -= AI.PAWN*2 //Evita enroque al vacío
+            AI.PIECE_SQUARE_TABLES_PHASE2[5][kingposition-2] -= AI.PAWN*2
+            AI.PIECE_SQUARE_TABLES_PHASE1[5][kingposition-2] -= AI.PAWN*2 //Evita enroque al vacío
         }
     }
 
@@ -1660,11 +1673,6 @@ AI.preprocessor = function (board) {
     //***************** ENDGAME ***********************
     //***************** ENDGAME ***********************
     //***************** ENDGAME ***********************
-
-    //Castiga captura y maniobras con peón frontal del rey
-    if (board.getMadeMoveCount() > 12 && kingposition > 55) {
-        AI.PIECE_SQUARE_TABLES_PHASE3[0][kingposition - 8] += 50
-    }
 
     //Torres en columnas abiertas
 
@@ -1689,7 +1697,7 @@ AI.preprocessor = function (board) {
     })
 
     //Torres delante del rey enemigo ("torre en séptima")
-    for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_PHASE3[3][i + 8 * (kingXposition / 8 | 0)] += 27
+    for (let i = 8; i < 16; i++) AI.PIECE_SQUARE_TABLES_PHASE3[3][i + sign*8 * (kingXposition / 8 | 0)] += 27
 
     if (AI.phase === 4 && AI.lastscore >= AI.PIECE_VALUES[0][3]) {
         //Rey cerca del rey enemigo
