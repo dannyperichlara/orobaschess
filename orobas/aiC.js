@@ -886,8 +886,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                 alpha = score
 
                 if (!move.capture) { AI.saveHistory(turn, move, 1) }
-            } else {
-                if (!move.capture) { AI.saveHistory(turn, move, -1) }
             }
         }
     }
