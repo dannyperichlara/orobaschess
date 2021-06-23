@@ -62,7 +62,6 @@ for (let depth = 1; depth < AI.totaldepth + 1; ++depth) {
     AI.LMR_TABLE[depth] = new Array(218)
 
     for (let moves = 1; moves < 218; ++moves) {
-        // AI.LMR_TABLE[depth][moves] = Math.log(depth) * Math.log(moves) / 2 | 0
         if (depth >= 3) {
             AI.LMR_TABLE[depth][moves] = depth/5 + moves/5 + 1 | 0
         } else {
