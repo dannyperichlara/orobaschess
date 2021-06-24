@@ -40,6 +40,10 @@ AI.MIDGAME = 1
 AI.EARLY_ENDGAME = 2
 AI.LATE_ENDGAME = 3
 
+AI.LOWERBOUND = -1
+AI.EXACT = 0
+AI.UPPERBOUND = 1
+
 ///// VALOR RELATIVO DE LAS PIEZAS
 AI.VPAWN = 270
 AI.VPAWN2 = AI.VPAWN / 2 | 0
@@ -66,9 +70,9 @@ AI.EMPTY = new Chess.Bitboard()
 //VALORES POSICIONALES
 let twm = -AI.VPAWN  // El peor movimiento
 let vbm = -AI.VPAWN2 // Muy mal movimiento
-let abm = -AI.VPAWN3 // Mal movimiento
-let anm = 0          // Movimiento neutral
-let AGM = AI.VPAWN4  // Buen movimiento
+let abm = -AI.VPAWN3 // Un mal movimiento
+let anm = 0          // Un movimiento neutral
+let AGM = AI.VPAWN4  // Un buen movimiento
 let VGM = AI.VPAWN3  // Muy buen movimiento
 let TBM = AI.VPAWN2  // El mejor movimiento
 
@@ -127,7 +131,7 @@ AI.MOBILITY_VALUES = [
 
 // SEGURIDAD DEL REY
 // Valor se asigna dependiendo del número de piezas que rodea al rey
-AI.SAFETY_VALUES = [-2, -1, 0, 1, 2, -1, -2, -3, -3].map(e => AI.VPAWN5 * e)
+AI.SAFETY_VALUES = [-2, -1, 0, 1, 2, 2, 2, 2, 2].map(e => AI.VPAWN5 * e)
 
 // PEONES PASADOS
 // Al detectar un peón pasado, se asigna un valor extra al peón correspondiente
@@ -498,19 +502,19 @@ AI.getMaterialValue = function (pieces, us) {
     if (us) {
         bishops = pieces.B.popcnt()
 
-        value = AI.PIECE_VALUES[AI.phase][0] * pieces.P.popcnt() +
-            AI.PIECE_VALUES[AI.phase][1] * pieces.N.popcnt() +
-            AI.PIECE_VALUES[AI.phase][2] * bishops +
-            AI.PIECE_VALUES[AI.phase][3] * pieces.R.popcnt() +
-            AI.PIECE_VALUES[AI.phase][4] * pieces.Q.popcnt()
+        value = AI.PIECE_VALUES[AI.phase][AI.P] * pieces.P.popcnt() +
+                AI.PIECE_VALUES[AI.phase][AI.N] * pieces.N.popcnt() +
+                AI.PIECE_VALUES[AI.phase][AI.B] * bishops +
+                AI.PIECE_VALUES[AI.phase][AI.R] * pieces.R.popcnt() +
+                AI.PIECE_VALUES[AI.phase][AI.Q] * pieces.Q.popcnt()
     } else {
         bishops = pieces.Bx.popcnt()
 
-        value = AI.PIECE_VALUES[AI.phase][0] * pieces.Px.popcnt() +
-            AI.PIECE_VALUES[AI.phase][1] * pieces.Nx.popcnt() +
-            AI.PIECE_VALUES[AI.phase][2] * bishops +
-            AI.PIECE_VALUES[AI.phase][3] * pieces.Rx.popcnt() +
-            AI.PIECE_VALUES[AI.phase][4] * pieces.Qx.popcnt()
+        value = AI.PIECE_VALUES[AI.phase][AI.P] * pieces.Px.popcnt() +
+                AI.PIECE_VALUES[AI.phase][AI.N] * pieces.Nx.popcnt() +
+                AI.PIECE_VALUES[AI.phase][AI.B] * bishops +
+                AI.PIECE_VALUES[AI.phase][AI.R] * pieces.Rx.popcnt() +
+                AI.PIECE_VALUES[AI.phase][AI.Q] * pieces.Qx.popcnt()
     }
 
     if (bishops >= 2) value += AI.BISHOP_PAIR
@@ -553,14 +557,14 @@ AI.getPSQTvalue = function (pieces, turn, us) {
     }
 
 
-    let value = 0
+    let score = 0
 
     let whatpieces
 
-    if (AI.phase === 0) whatpieces = [0, 1, 2, 3, 4, 5]
-    if (AI.phase === 1) whatpieces = [0, 3, 5]
-    if (AI.phase === 2) whatpieces = [0, 3, 5]
-    if (AI.phase === 3) whatpieces = [0, 5]
+    if (AI.phase === AI.OPENING) whatpieces = [AI.P, AI.N, AI.B, AI.R, AI.Q, AI.K]
+    if (AI.phase === AI.MIDGAME) whatpieces = [AI.P, AI.R, AI.K]
+    if (AI.phase === AI.EARLY_ENDGAME) whatpieces = [AI.P, AI.R, AI.K]
+    if (AI.phase === AI.LATE_ENDGAME) whatpieces = [AI.P, AI.K]
 
     for (let i = 0, len = whatpieces.length; i < len; i++) {
         let pieces = allpieces[i]
@@ -568,13 +572,11 @@ AI.getPSQTvalue = function (pieces, turn, us) {
         while (!pieces.isEmpty()) {
             let index = pieces.extractLowestBitPosition()
             // white: 56^index // black: index
-            let sqvalue = AI.PSQT[i][turn ? index : (56 ^ index)]
-
-            value += sqvalue
+            score += AI.PSQT[i][turn ? index : (56 ^ index)]
         }
     }
 
-    return value
+    return score
 }
 
 // ORDENA LOS MOVIMIENTOS
@@ -636,7 +638,7 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         }
 
         // CRITERIO 4: La jugada es un movimiento Killer
-        // (Los killers son movimientos que anteriormente han generado Fail-Highs)
+        // (Los killers son movimientos que anteriormente han generado Fail-Highs en el mismo ply)
         if (killer1 && killer1.value === move.value) {
             move.killer1 = true
             move.score = 2e6
@@ -669,7 +671,7 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
     }
 
     // ORDENA LOS MOVIMIENTOS
-    // El tiempo de esta función toma cerca del 10% del total de cada búsqueda.
+    // El tiempo de esta función toma hasta unb 10% del total de cada búsqueda.
     // Sería conveniente utilizar un mejor método de ordenamiento.
     moves.sort((a, b) => {
         return b.score - a.score
@@ -748,6 +750,11 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
 AI.ttSave = function (hashkey, score, flag, depth, move) {
     if (!move) console.log('no move')
     if (AI.stop || !move) return
+
+    //Siempre guarda la posición en la Tabla de Trasposición.
+    //Sería conveniente establecer criterios, como el depth a la hora
+    //de guardar. Sin embargo, se ha intentado pero no se aprecian
+    //diferencias debido a la merma en rendimiento.
 
     AI.hashtable[hashkey % AI.htlength] = {
         hashkey,
@@ -829,17 +836,18 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
     if (AI.stop && AI.iteration > AI.mindepth[AI.phase]) return alpha
 
+    // Busca la posición en la Tabla de Trasposición (lookup)
+
     let ttEntry = AI.ttGet(hashkey)
 
-    //Hash table lookup
     if (ttEntry && ttEntry.depth >= depth) {
         AI.ttnodes++
 
-        if (ttEntry.flag === 0) {
+        if (ttEntry.flag === AI.EXACT) {
             return ttEntry.score
-        } else if (ttEntry.flag === -1) {
+        } else if (ttEntry.flag === AI.LOWERBOUND) {
             if (ttEntry.score > alpha) alpha = ttEntry.score
-        } else if (ttEntry.flag === 1) {
+        } else if (ttEntry.flag === AI.UPPERBOUND) {
             if (ttEntry.score < beta) beta = ttEntry.score
         }
 
@@ -848,11 +856,13 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         }
     }
 
+    //Búsqueda QS para evitar efecto horizonte
+
     if (depth <= 0) {
         return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
     }
 
-    //IID (if there's no ttEntry, get one for ordering moves)
+    //IID (si no hay entrada en ttEntry, busca una para mejorar el orden de movimientos)
     if (pvNode && !ttEntry && depth > 2) {
         AI.PVS(board, alpha, beta, depth - 2, ply) //depth - 2 tested ok + 31 ELO
         ttEntry = AI.ttGet(hashkey)
@@ -874,7 +884,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     let reverseval = staticeval - margin
 
     if (!incheck && depth <= 3 && reverseval > beta) {
-        AI.ttSave(hashkey, reverseval, -1, depth, moves[0])
+        AI.ttSave(hashkey, reverseval, AI.LOWERBOUND, depth, moves[0])
         return reverseval
     }
 
@@ -887,7 +897,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         if (board.makeMove(move)) {
             legal++
 
-            //Reductions (legal)
+            //Reducciones
             if (AI.nofpieces <= 4) {
                 R = 0
             } else {
@@ -900,7 +910,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                 }
             }
 
-            //Extensions
+            //Extensiones
             if (pvNode && depth <= 3) {
                 if (incheck) {
                     E = 1
@@ -908,6 +918,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             }
 
             if (legal === 1) {
+                // El primer movimiento se busca con ventana total y sin reducciones
                 score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1)
             } else {
                 if (AI.stop) return score
@@ -923,7 +934,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
             if (AI.stop) return oAlpha //tested ok
 
-            //Beta cut-off
+            // Fail-high
             if (score >= beta) {
                 if (legal === 1) {
                     AI.fhf++
@@ -932,10 +943,13 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                 AI.fh++
 
                 //LOWERBOUND
-                AI.ttSave(hashkey, score, -1, depth, move)
+                AI.ttSave(hashkey, score, AI.LOWERBOUND, depth, move)
 
                 if (!move.capture) {
-                    if (AI.killers[turn | 0][ply][0] && AI.killers[turn | 0][ply][0].value != move.value) {
+                    if (
+                        AI.killers[turn | 0][ply][0] &&
+                        AI.killers[turn | 0][ply][0].value != move.value
+                    ) {
                         AI.killers[turn | 0][ply][1] = AI.killers[turn | 0][ply][0]
                     }
 
@@ -958,33 +972,33 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     }
 
     if (legal === 0) {
-        // Stalemate
+        // Ahogado
         if (!board.isKingInCheck()) {
-            AI.ttSave(hashkey, AI.DRAW + ply, 0, depth, bestmove)
+            AI.ttSave(hashkey, AI.DRAW + ply, AI.EXACT, depth, bestmove)
             return AI.DRAW
         }
 
-        // Checkmate
-        AI.ttSave(hashkey, -AI.MATE + ply, 0, depth, bestmove)
+        // Mate
+        AI.ttSave(hashkey, -AI.MATE + ply, AI.EXACT, depth, bestmove)
         return -AI.MATE + ply
 
     } else {
-
+        // Tablas
         if (board.isDraw()) {
-            AI.ttSave(hashkey, AI.DRAW + ply, 1, depth, bestmove)
+            AI.ttSave(hashkey, AI.DRAW + ply, AI.EXACT, depth, bestmove)
             return AI.DRAW
         }
 
         if (bestscore > oAlpha) {
-            // Exact
+            // Mejor movimiento
             if (bestmove) {
-                AI.ttSave(hashkey, bestscore + ply, 0, depth, bestmove)
+                AI.ttSave(hashkey, bestscore + ply, AI.EXACT, depth, bestmove)
             }
 
             return bestscore
         } else {
             //Upperbound
-            AI.ttSave(hashkey, oAlpha, 1, depth, bestmove)
+            AI.ttSave(hashkey, oAlpha, AI.UPPERBOUND, depth, bestmove)
 
             return oAlpha
         }
@@ -1007,8 +1021,8 @@ AI.bin2map = function (bin, color) {
         }
     }
 
-    map.push(reverse(dec.slice(0, 8), color))
-    map.push(reverse(dec.slice(8, 16), color))
+    map.push(reverse(dec.slice( 0,  8), color))
+    map.push(reverse(dec.slice( 8, 16), color))
     map.push(reverse(dec.slice(16, 24), color))
     map.push(reverse(dec.slice(24, 32), color))
     map.push(reverse(dec.slice(32, 40), color))
@@ -1038,14 +1052,14 @@ AI.createPSQT = function (board) {
 
         // Knight
         [
-            vbm, abm, abm, abm, abm, abm, abm, vbm,
+            twm, abm, abm, abm, abm, abm, abm, twm,
             vbm, abm, abm, abm, abm, abm, abm, vbm,
             vbm, abm, anm, anm, anm, anm, abm, vbm,
             twm, abm, anm, AGM, AGM, anm, abm, twm,
             twm, abm, twm, TBM, TBM, twm, abm, twm,
             twm, abm, AGM, anm, anm, AGM, abm, twm,
             vbm, abm, abm, AGM, anm, abm, abm, vbm,
-            vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
+            twm, vbm, vbm, vbm, vbm, vbm, vbm, twm,
 
         ],
         // Bishop
@@ -1112,14 +1126,14 @@ AI.createPSQT = function (board) {
 
         // Knight
         [
-            vbm, abm, abm, abm, abm, abm, abm, vbm,
+            twm, abm, abm, abm, abm, abm, abm, twm,
             vbm, abm, abm, abm, abm, abm, abm, vbm,
             vbm, abm, VGM, VGM, VGM, VGM, abm, vbm,
             vbm, abm, VGM, TBM, TBM, VGM, abm, vbm,
             vbm, abm, AGM, TBM, TBM, AGM, abm, vbm,
             vbm, abm, anm, anm, anm, anm, abm, vbm,
             vbm, abm, abm, abm, abm, abm, abm, vbm,
-            vbm, twm, vbm, vbm, vbm, vbm, twm, vbm,
+            twm, twm, vbm, vbm, vbm, vbm, twm, twm,
 
         ],
         // Bishop
@@ -1186,14 +1200,14 @@ AI.createPSQT = function (board) {
 
         // Knight
         [
-            vbm, abm, abm, abm, abm, abm, abm, vbm,
+            twm, abm, abm, abm, abm, abm, abm, twm,
             vbm, anm, anm, anm, anm, anm, anm, vbm,
             vbm, anm, AGM, AGM, AGM, AGM, anm, vbm,
             vbm, anm, AGM, TBM, TBM, AGM, anm, vbm,
             vbm, anm, AGM, TBM, TBM, AGM, anm, vbm,
             vbm, anm, AGM, AGM, AGM, AGM, anm, vbm,
             vbm, anm, anm, anm, anm, anm, anm, vbm,
-            vbm, twm, vbm, vbm, vbm, vbm, twm, vbm,
+            twm, twm, vbm, vbm, vbm, vbm, twm, twm,
 
         ],
         // Bishop
@@ -1260,14 +1274,14 @@ AI.createPSQT = function (board) {
 
         // Knight
         [
-            vbm, abm, abm, abm, abm, abm, abm, vbm,
+            twm, abm, abm, abm, abm, abm, abm, twm,
             vbm, anm, anm, anm, anm, anm, anm, vbm,
             vbm, anm, AGM, AGM, AGM, AGM, anm, vbm,
             vbm, anm, AGM, TBM, TBM, AGM, anm, vbm,
             vbm, anm, AGM, TBM, TBM, AGM, anm, vbm,
             vbm, anm, AGM, AGM, AGM, AGM, anm, vbm,
             vbm, anm, anm, anm, anm, anm, anm, vbm,
-            vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
+            twm, vbm, vbm, vbm, vbm, vbm, vbm, twm,
 
         ],
         // Bishop
@@ -1374,41 +1388,41 @@ AI.preprocessor = function (board) {
     let color = board.getTurnColor()
     let sign = color === 0 ? 1 : -1
 
-    let P  = board.getPieceColorBitboard(0,  color).dup()
-    let N  = board.getPieceColorBitboard(1,  color).dup()
-    let B  = board.getPieceColorBitboard(2,  color).dup()
-    let R  = board.getPieceColorBitboard(3,  color).dup()
-    let Q  = board.getPieceColorBitboard(4,  color).dup()
-    let K  = board.getPieceColorBitboard(5,  color).dup()
-    let PX = board.getPieceColorBitboard(0, !color).dup()
-    let NX = board.getPieceColorBitboard(1, !color).dup()
-    let BX = board.getPieceColorBitboard(2, !color).dup()
-    let RX = board.getPieceColorBitboard(3, !color).dup()
-    let QX = board.getPieceColorBitboard(4, !color).dup()
-    let KX = board.getPieceColorBitboard(5, !color).dup()
+
+    let P  = board.getPieceColorBitboard(AI.P,  color).dup()
+    let N  = board.getPieceColorBitboard(AI.N,  color).dup()
+    let B  = board.getPieceColorBitboard(AI.B,  color).dup()
+    let R  = board.getPieceColorBitboard(AI.R,  color).dup()
+    let Q  = board.getPieceColorBitboard(AI.Q,  color).dup()
+    let K  = board.getPieceColorBitboard(AI.K,  color).dup()
+    let PX = board.getPieceColorBitboard(AI.P, !color).dup()
+    let NX = board.getPieceColorBitboard(AI.N, !color).dup()
+    let BX = board.getPieceColorBitboard(AI.B, !color).dup()
+    let RX = board.getPieceColorBitboard(AI.R, !color).dup()
+    let QX = board.getPieceColorBitboard(AI.Q, !color).dup()
+    let KX = board.getPieceColorBitboard(AI.K, !color).dup()
 
     let pawnmask = Chess.Position.makePawnAttackMask(color, P)
-    let pawnmap = AI.bin2map(P, color)
+    let pawnAttackMap = AI.bin2map(P, color)
     let pawnstructure = AI.bin2map({ high: P.high | pawnmask.high, low: P.low | pawnmask.low }, color)
 
     let pawnmaskX = Chess.Position.makePawnAttackMask(!color, PX).not(PX)
-    let pawnXmap = AI.bin2map(PX, color)
+    let pawnXAttackMap = AI.bin2map(PX, color)
 
     let kingmap = AI.bin2map(K, color)
     let kingXmap = AI.bin2map(KX, color)
 
     let kingposition = kingmap.indexOf(1)
-
     let kingXposition = kingXmap.indexOf(1)
 
     //Castiga captura y maniobras con peón frontal del rey
     if (
-        (color === 0 && (
+        (color === AI.WHITE && (
             kingposition >= 61 ||
             (kingposition >= 56 && kingposition <= 58)
         )
         ) ||
-        (color === 1 && (
+        (color === AI.BLACK && (
             kingposition <= 2 ||
             (kingposition >= 5 && kingposition <= 7)
         )
@@ -1441,8 +1455,8 @@ AI.preprocessor = function (board) {
     //Premia enrocar
     if (board.hasCastlingRight(color, true) &&
         (
-            (pawnmap[kingposition - 5 * sign] && pawnmap[kingposition - 6 * sign]) ||
-            (pawnmap[kingposition - 5 * sign] && pawnmap[kingposition - 7 * sign] && pawnmap[kingposition - 14 * sign])
+            (pawnAttackMap[kingposition - 5 * sign] && pawnAttackMap[kingposition - 6 * sign]) ||
+            (pawnAttackMap[kingposition - 5 * sign] && pawnAttackMap[kingposition - 7 * sign] && pawnAttackMap[kingposition - 14 * sign])
         )
     ) {
         // white
@@ -1451,7 +1465,7 @@ AI.preprocessor = function (board) {
         AI.PSQT_MIDGAME[3][kingposition + 1] += AI.VPAWN2
     }
 
-    if (board.hasCastlingRight(color, false) && pawnmap[kingposition - 10 * sign] && pawnmap[kingposition - 11 * sign]) {
+    if (board.hasCastlingRight(color, false) && pawnAttackMap[kingposition - 10 * sign] && pawnAttackMap[kingposition - 11 * sign]) {
         // console.log('rook QUEENSIDE')
         AI.PSQT_MIDGAME[3][kingposition - 4] -= AI.VPAWN4
         AI.PSQT_MIDGAME[3][kingposition - 3] -= AI.VPAWN4
@@ -1465,7 +1479,7 @@ AI.preprocessor = function (board) {
     let pawnfiles = [0, 0, 0, 0, 0, 0, 0, 0]
 
     for (let i = 0; i < 64; i++) {
-        if (pawnmap[i]) {
+        if (pawnAttackMap[i]) {
             let col = i % 8
 
             pawnfiles[col]++
@@ -1473,7 +1487,7 @@ AI.preprocessor = function (board) {
     }
 
     for (let i = 0; i < 64; i++) {
-        if (pawnXmap[i]) {
+        if (pawnXAttackMap[i]) {
             let col = i % 8
 
             if (pawnfiles[col]) {
@@ -1521,8 +1535,8 @@ AI.preprocessor = function (board) {
         // console.log('KINGSIDE')
 
         if (
-            (pawnmap[kingposition - 5 * sign] && pawnmap[kingposition - 6 * sign]) ||
-            (pawnmap[kingposition - 5 * sign] && pawnmap[kingposition - 7 * sign] && pawnmap[kingposition - 14 * sign])
+            (pawnAttackMap[kingposition - 5 * sign] && pawnAttackMap[kingposition - 6 * sign]) ||
+            (pawnAttackMap[kingposition - 5 * sign] && pawnAttackMap[kingposition - 7 * sign] && pawnAttackMap[kingposition - 14 * sign])
         ) {
             AI.PSQT_MIDGAME[5][kingposition] -= AI.VPAWN2
             AI.PSQT_MIDGAME[5][kingposition + 1] -= AI.VPAWN4
@@ -1537,7 +1551,7 @@ AI.preprocessor = function (board) {
     if (board.hasCastlingRight(color, false)) {
         // console.log('QUEENSIDE')
 
-        if (pawnmap[kingposition - 10 * sign] && pawnmap[kingposition - 11 * sign]) {
+        if (pawnAttackMap[kingposition - 10 * sign] && pawnAttackMap[kingposition - 11 * sign]) {
             AI.PSQT_MIDGAME[5][kingposition - 2] += AI.VPAWN2
             AI.PSQT_MIDGAME[5][kingposition - 1] -= AI.VPAWN2
             AI.PSQT_MIDGAME[5][kingposition] -= AI.VPAWN4
@@ -1557,7 +1571,7 @@ AI.preprocessor = function (board) {
     pawnfiles = [0, 0, 0, 0, 0, 0, 0, 0]
 
     for (let i = 0; i < 64; i++) {
-        if (pawnmap[i]) {
+        if (pawnAttackMap[i]) {
             let col = i % 8
 
             pawnfiles[col]++
@@ -1693,42 +1707,48 @@ AI.preprocessor = function (board) {
 
     /************* ABSURD MOVES *****************/
 
-    AI.PSQT_OPENING[1] = AI.PSQT_OPENING[1].map((e, i) => { return e - 20 * pawnXmap[i] })
-    AI.PSQT_OPENING[2] = AI.PSQT_OPENING[2].map((e, i) => { return e - 20 * pawnXmap[i] })
-    AI.PSQT_OPENING[3] = AI.PSQT_OPENING[3].map((e, i) => { return e - 20 * pawnXmap[i] })
-    AI.PSQT_OPENING[4] = AI.PSQT_OPENING[4].map((e, i) => { return e - 20 * pawnXmap[i] })
+    AI.PSQT_OPENING[1] = AI.PSQT_OPENING[1].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    AI.PSQT_OPENING[2] = AI.PSQT_OPENING[2].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    AI.PSQT_OPENING[3] = AI.PSQT_OPENING[3].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    AI.PSQT_OPENING[4] = AI.PSQT_OPENING[4].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
 
-    AI.PSQT_MIDGAME[1] = AI.PSQT_MIDGAME[1].map((e, i) => { return e - 20 * pawnXmap[i] })
-    AI.PSQT_MIDGAME[2] = AI.PSQT_MIDGAME[2].map((e, i) => { return e - 20 * pawnXmap[i] })
-    AI.PSQT_MIDGAME[3] = AI.PSQT_MIDGAME[3].map((e, i) => { return e - 20 * pawnXmap[i] })
-    AI.PSQT_MIDGAME[4] = AI.PSQT_MIDGAME[4].map((e, i) => { return e - 20 * pawnXmap[i] })
+    AI.PSQT_MIDGAME[1] = AI.PSQT_MIDGAME[1].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    AI.PSQT_MIDGAME[2] = AI.PSQT_MIDGAME[2].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    AI.PSQT_MIDGAME[3] = AI.PSQT_MIDGAME[3].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    AI.PSQT_MIDGAME[4] = AI.PSQT_MIDGAME[4].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
 
-    AI.PSQT_EARLY_ENDGAME[1] = AI.PSQT_EARLY_ENDGAME[1].map((e, i) => { return e - 20 * pawnXmap[i] })
-    AI.PSQT_EARLY_ENDGAME[2] = AI.PSQT_EARLY_ENDGAME[2].map((e, i) => { return e - 20 * pawnXmap[i] })
-    AI.PSQT_EARLY_ENDGAME[3] = AI.PSQT_EARLY_ENDGAME[3].map((e, i) => { return e - 20 * pawnXmap[i] })
-    AI.PSQT_EARLY_ENDGAME[4] = AI.PSQT_EARLY_ENDGAME[4].map((e, i) => { return e - 20 * pawnXmap[i] })
+    AI.PSQT_EARLY_ENDGAME[1] = AI.PSQT_EARLY_ENDGAME[1].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    AI.PSQT_EARLY_ENDGAME[2] = AI.PSQT_EARLY_ENDGAME[2].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    AI.PSQT_EARLY_ENDGAME[3] = AI.PSQT_EARLY_ENDGAME[3].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    AI.PSQT_EARLY_ENDGAME[4] = AI.PSQT_EARLY_ENDGAME[4].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
 
-    AI.PSQT_LATE_ENDGAME[1] = AI.PSQT_LATE_ENDGAME[1].map((e, i) => { return e - 20 * pawnXmap[i] })
-    AI.PSQT_LATE_ENDGAME[2] = AI.PSQT_LATE_ENDGAME[2].map((e, i) => { return e - 20 * pawnXmap[i] })
-    AI.PSQT_LATE_ENDGAME[3] = AI.PSQT_LATE_ENDGAME[3].map((e, i) => { return e - 20 * pawnXmap[i] })
-    AI.PSQT_LATE_ENDGAME[4] = AI.PSQT_LATE_ENDGAME[4].map((e, i) => { return e - 20 * pawnXmap[i] })
+    AI.PSQT_LATE_ENDGAME[1] = AI.PSQT_LATE_ENDGAME[1].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    AI.PSQT_LATE_ENDGAME[2] = AI.PSQT_LATE_ENDGAME[2].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    AI.PSQT_LATE_ENDGAME[3] = AI.PSQT_LATE_ENDGAME[3].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    AI.PSQT_LATE_ENDGAME[4] = AI.PSQT_LATE_ENDGAME[4].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
 }
 
 AI.setPhase = function (board) {
-    AI.phase = 0 //OPENING
+    //OPENING
+    AI.phase = 0
     let color = board.getTurnColor()
 
-    if (AI.nofpieces <= 28 || (board.movenumber && board.movenumber > 10)) {
-        AI.phase = 1 //MIDGAME
+    //MIDGAME
+    if (AI.nofpieces <= 28 || (board.movenumber && board.movenumber > 8)) {
+        AI.phase = 1
     }
 
     let queens = board.getPieceColorBitboard(4, color).popcnt() + board.getPieceColorBitboard(4, !color).popcnt()
 
-    if (AI.nofpieces <= 20 && queens === 0 || Math.abs(AI.lastscore) > AI.VPAWN * 3) { // ¿Debería ser queens < 2? Hay que testearlo
-        AI.phase = 2 //ENDGAME (the king enters)
+    //EARLY ENDGAME (the king enters)
+    if (AI.nofpieces <= 20 && queens === 0 || Math.abs(AI.lastscore) > AI.VPAWN * 3) {
+        AI.phase = 2
     }
 
-    if (AI.nofpieces <= 12 || Math.abs(AI.lastscore) > AI.PIECE_VALUES[0][3]) AI.phase = 3 //LATE ENGDAME
+    //LATE ENDGAME
+    if (AI.nofpieces <= 12 || Math.abs(AI.lastscore) > AI.PIECE_VALUES[0][3]) {
+        AI.phase = 3
+    }
 
     AI.createPSQT(board)
     AI.randomizePSQT()
@@ -1767,15 +1787,12 @@ AI.getPV = function (board, length) {
                             return e.value === ttEntry.move.value
                         })
 
-                        if (already.length === 0) {
+                        if (already.length < 3) {
                             PV.push(ttEntry.move)
                         } else {
                             break
                         }
-
-
                     }
-
                 }
             }
         } else {
@@ -1849,9 +1866,9 @@ AI.search = function (board, options) {
 
         AI.color = color
 
-        let white = color == 0
+        let isWhite = color == 0
 
-        if (white) {
+        if (isWhite) {
             AI.TESTER = true
         } else {
             AI.TESTER = false
@@ -1877,7 +1894,7 @@ AI.search = function (board, options) {
 
         AI.fh = AI.fhf = 0.001
 
-        AI.f = 0
+        AI.f = AI.lastscore
 
         //Iterative Deepening
         for (let depth = 1; depth <= AI.totaldepth; depth += 1) {
@@ -1888,7 +1905,7 @@ AI.search = function (board, options) {
             AI.iteration++
             AI.f = AI.MTDF(board, AI.f, depth)
 
-            score = (white ? 1 : -1) * AI.f
+            score = (isWhite ? 1 : -1) * AI.f
 
             AI.PV = AI.getPV(board, depth)
 
