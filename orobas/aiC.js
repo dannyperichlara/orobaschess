@@ -50,6 +50,7 @@ AI.VPAWN2 = AI.VPAWN / 2 | 0
 AI.VPAWN3 = AI.VPAWN / 3 | 0
 AI.VPAWN4 = AI.VPAWN / 4 | 0
 AI.VPAWN5 = AI.VPAWN / 5 | 0
+AI.VPAWN10= AI.VPAWN /10 | 0
 
 AI.PIECE_VALUES = [
     //Obtenidos mediante TDL
@@ -218,6 +219,18 @@ AI.distance = function (sq1, sq2) {
     rankDistance = Math.abs(rank2 - rank1);
     fileDistance = Math.abs(file2 - file1);
     return Math.max(rankDistance, fileDistance);
+}
+
+AI.DISTANCE = new Array(64)
+
+for (let i = 0; i<64; i++) {
+    let subarray = []
+
+    for (let j=0; j<64; j++) {
+        subarray.push(AI.distance(i,j))
+    }
+
+    AI.DISTANCE[i] = subarray
 }
 
 // CREA TABLAS DE TRASPOSICIÓN / PEONES / HISTORIA
@@ -535,8 +548,11 @@ AI.getPSQT = function (pieces, turn, notturn) {
 AI.getPSQTvalue = function (pieces, turn, us) {
 
     let allpieces
+    let enemyKingIndex
 
     if (us) {
+        enemyKingIndex = pieces.Kx.dup().extractLowestBitPosition()
+
         allpieces = [
             pieces.P.dup(),
             pieces.N.dup(),
@@ -545,7 +561,10 @@ AI.getPSQTvalue = function (pieces, turn, us) {
             pieces.Q.dup(),
             pieces.K.dup()
         ]
+
     } else {
+        enemyKingIndex = pieces.K.dup().extractLowestBitPosition()
+
         allpieces = [
             pieces.Px.dup(),
             pieces.Nx.dup(),
@@ -554,17 +573,17 @@ AI.getPSQTvalue = function (pieces, turn, us) {
             pieces.Qx.dup(),
             pieces.Kx.dup()
         ]
+
     }
 
-
     let score = 0
-
+    let tropism = 0
     let whatpieces
 
     if (AI.phase === AI.OPENING) whatpieces = [AI.P, AI.N, AI.B, AI.R, AI.Q, AI.K]
-    if (AI.phase === AI.MIDGAME) whatpieces = [AI.P, AI.R, AI.K]
-    if (AI.phase === AI.EARLY_ENDGAME) whatpieces = [AI.P, AI.R, AI.K]
-    if (AI.phase === AI.LATE_ENDGAME) whatpieces = [AI.P, AI.K]
+    if (AI.phase === AI.MIDGAME) whatpieces = [AI.P, AI.R, AI.Q, AI.K]
+    if (AI.phase === AI.EARLY_ENDGAME) whatpieces = [AI.P, AI.N, AI.B, AI.R, AI.Q, AI.K]
+    if (AI.phase === AI.LATE_ENDGAME) whatpieces = [AI.P, AI.N, AI.B, AI.R, AI.Q, AI.K]
 
     for (let i = 0, len = whatpieces.length; i < len; i++) {
         let pieces = allpieces[i]
@@ -573,10 +592,15 @@ AI.getPSQTvalue = function (pieces, turn, us) {
             let index = pieces.extractLowestBitPosition()
             // white: 56^index // black: index
             score += AI.PSQT[i][turn ? index : (56 ^ index)]
+
+            // Distancia entre piezas y rey enemigo en el Endgame (King Tropism?)
+            if (AI.phase > 1) {
+                tropism += (7 - AI.DISTANCE[index][enemyKingIndex]) * AI.VPAWN5 * (i===4? 2 : 1)
+            }
         }
     }
 
-    return score
+    return score + tropism
 }
 
 // ORDENA LOS MOVIMIENTOS
@@ -1117,10 +1141,10 @@ AI.createPSQT = function (board) {
             anm, anm, anm, anm, anm, anm, anm, anm,
             anm, anm, anm, anm, anm, anm, anm, vbm,
             anm, anm, anm, anm, anm, anm, anm, vbm,
-            anm, anm, AGM, AGM, AGM, AGM, vbm, vbm,
-            anm, AGM, AGM, AGM, AGM, vbm, vbm, vbm,
-            AGM, AGM, AGM, anm, AGM, vbm, anm, anm,
-            VGM, AGM, vbm, vbm, vbm, VGM, VGM, VGM,
+            anm, anm, AGM, TBM, TBM, AGM, vbm, vbm,
+            anm, AGM, AGM, TBM, TBM, AGM, vbm, vbm,
+            AGM, AGM, AGM, anm, anm, anm, anm, anm,
+            VGM, AGM, vbm, twm, twm, anm, VGM, VGM,
             anm, anm, anm, anm, anm, anm, anm, anm,
         ],
 
@@ -1180,7 +1204,7 @@ AI.createPSQT = function (board) {
             vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
             vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
             abm, abm, abm, twm, twm, vbm, anm, anm,
-            abm, AGM, AGM, twm, vbm, vbm, TBM, anm,
+            abm, AGM, AGM, twm, vbm, vbm, TBM, AGM,
 
         ],
     ]
