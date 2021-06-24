@@ -86,12 +86,14 @@ for (let depth = 1; depth < AI.totaldepth + 1; ++depth) {
 
     for (let moves = 1; moves < 218; ++moves) {
         if (depth >= 3) {
-            AI.LMR_TABLE[depth][moves] = depth / 5 + moves / 5 + 1 | 0
+            AI.LMR_TABLE[depth][moves] = depth/5 + moves/5 + 1 | 0
         } else {
             AI.LMR_TABLE[depth][moves] = 0
         }
     }
+
 }
+console.log(AI.LMR_TABLE)
 
 // VALORES PARA VALORAR MOBILIDAD
 // El valor se asigna dependiendo del número de movimientos por pieza, desde el caballo hasta la dama

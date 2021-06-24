@@ -50,6 +50,7 @@ AI.VPAWN2 = AI.VPAWN / 2 | 0
 AI.VPAWN3 = AI.VPAWN / 3 | 0
 AI.VPAWN4 = AI.VPAWN / 4 | 0
 AI.VPAWN5 = AI.VPAWN / 5 | 0
+AI.VPAWN10= AI.VPAWN /10 | 0
 
 AI.PIECE_VALUES = [
     //Obtenidos mediante TDL
@@ -85,12 +86,14 @@ for (let depth = 1; depth < AI.totaldepth + 1; ++depth) {
 
     for (let moves = 1; moves < 218; ++moves) {
         if (depth >= 3) {
-            AI.LMR_TABLE[depth][moves] = depth / 5 + moves / 5 + 1 | 0
+            AI.LMR_TABLE[depth][moves] = depth/5 + moves/5 + 1 | 0
         } else {
             AI.LMR_TABLE[depth][moves] = 0
         }
     }
+
 }
+console.log(AI.LMR_TABLE)
 
 // VALORES PARA VALORAR MOBILIDAD
 // El valor se asigna dependiendo del número de movimientos por pieza, desde el caballo hasta la dama
@@ -576,12 +579,13 @@ AI.getPSQTvalue = function (pieces, turn, us) {
     }
 
     let score = 0
+    let tropism = 0
     let whatpieces
 
     if (AI.phase === AI.OPENING) whatpieces = [AI.P, AI.N, AI.B, AI.R, AI.Q, AI.K]
-    if (AI.phase === AI.MIDGAME) whatpieces = [AI.P, AI.N, AI.B, AI.R, AI.K]
-    if (AI.phase === AI.EARLY_ENDGAME) whatpieces = [AI.P, AI.R, AI.K]
-    if (AI.phase === AI.LATE_ENDGAME) whatpieces = [AI.P, AI.K]
+    if (AI.phase === AI.MIDGAME) whatpieces = [AI.P, AI.R, AI.Q, AI.K]
+    if (AI.phase === AI.EARLY_ENDGAME) whatpieces = [AI.P, AI.N, AI.B, AI.R, AI.Q, AI.K]
+    if (AI.phase === AI.LATE_ENDGAME) whatpieces = [AI.P, AI.N, AI.B, AI.R, AI.Q, AI.K]
 
     for (let i = 0, len = whatpieces.length; i < len; i++) {
         let pieces = allpieces[i]
@@ -592,13 +596,13 @@ AI.getPSQTvalue = function (pieces, turn, us) {
             score += AI.PSQT[i][turn ? index : (56 ^ index)]
 
             // Distancia entre piezas y rey enemigo en el Endgame (King Tropism?)
-            // if (AI.phase > 1) {
-            //     score += (7 - AI.DISTANCE[index][enemyKingIndex]) * AI.VPAWN5
-            // }
+            if (AI.phase > 1) {
+                tropism += (7 - AI.DISTANCE[index][enemyKingIndex]) * AI.VPAWN5 * (i===4? 2 : 1)
+            }
         }
     }
 
-    return score
+    return score + tropism
 }
 
 // ORDENA LOS MOVIMIENTOS
