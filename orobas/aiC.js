@@ -150,7 +150,7 @@ AI.PASSER_VALUES = [
 
 // PEONES DOBLADOS
 // Se asigna un valor negativo dependiendo del número de peones doblados
-AI.DOUBLED_VALUES = [0, -1, -2, -4, -8, -9, -10, -11, -12].map(e => e * AI.VPAWN2 | 0)
+AI.DOUBLED_VALUES = [0, -1, -2, -3, -4, -5, -6, -7, -8].map(e => e * AI.VPAWN2 | 0)
 
 // ESTRUCTURA DE PEONES
 // Se asigna un valor dependiendo del número de peones defendidos por otro peón en cada fase
@@ -596,7 +596,7 @@ AI.getPSQTvalue = function (pieces, turn, us) {
 
             // Distancia entre piezas y rey enemigo en el Endgame (King Tropism?)
             if (AI.phase > 1) {
-                tropism += (7 - AI.DISTANCE[index][enemyKingIndex]) * AI.VPAWN5 * (i===4? 2 : 1)
+                tropism += (7 - AI.DISTANCE[index][enemyKingIndex]) * AI.VPAWN10 * (i===4? 2 : 1)
             }
         }
     }
