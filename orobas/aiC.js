@@ -1069,7 +1069,7 @@ AI.createPSQT = function (board) {
             twm, twm, twm, twm, twm, vbm, vbm, vbm,
             twm, vbm, abm, abm, abm, vbm, vbm, vbm,
             vbm, abm, anm, VGM, VGM, vbm, vbm, vbm,
-            twm, anm, anm, TBM, TBM, twm, twm, twm,
+            twm, anm, anm, TBM, VGM, twm, twm, twm,
             anm, AGM, AGM, anm, twm, vbm, AGM, anm,
             AGM, AGM, AGM, abm, abm, AGM, TBM, TBM,
             anm, anm, anm, anm, anm, anm, anm, anm,
@@ -1081,8 +1081,8 @@ AI.createPSQT = function (board) {
             vbm, abm, abm, abm, abm, abm, abm, vbm,
             vbm, abm, anm, anm, anm, anm, abm, vbm,
             twm, abm, anm, AGM, AGM, anm, abm, twm,
-            twm, abm, twm, TBM, TBM, twm, abm, twm,
-            twm, abm, AGM, anm, anm, AGM, abm, twm,
+            twm, abm, twm, AGM, AGM, twm, abm, twm,
+            twm, abm, AGM, anm, anm, TBM, abm, twm,
             vbm, abm, abm, AGM, anm, abm, abm, vbm,
             twm, vbm, vbm, vbm, vbm, vbm, vbm, twm,
 
@@ -1157,7 +1157,7 @@ AI.createPSQT = function (board) {
             vbm, abm, VGM, TBM, TBM, VGM, abm, vbm,
             vbm, abm, AGM, TBM, TBM, AGM, abm, vbm,
             vbm, abm, anm, anm, anm, anm, abm, vbm,
-            vbm, abm, abm, abm, abm, abm, abm, vbm,
+            vbm, abm, abm, AGM, AGM, abm, abm, vbm,
             twm, twm, vbm, vbm, vbm, vbm, twm, twm,
 
         ],
@@ -1181,7 +1181,7 @@ AI.createPSQT = function (board) {
             anm, anm, anm, anm, anm, anm, anm, anm,
             anm, anm, anm, anm, anm, anm, anm, anm,
             anm, anm, anm, AGM, AGM, anm, anm, anm,
-            twm, anm, anm, AGM, AGM, AGM, anm, twm,
+            twm, anm, anm, VGM, VGM, AGM, anm, twm,
         ],
 
         // Queen
