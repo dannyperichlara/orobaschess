@@ -71,11 +71,11 @@ AI.EMPTY = new Chess.Bitboard()
 //VALORES POSICIONALES
 let twm = -AI.VPAWN  // El peor movimiento
 let vbm = -AI.VPAWN2 // Muy mal movimiento
-let abm = -AI.VPAWN3 // Un mal movimiento
+let abm = -AI.VPAWN5 // Un mal movimiento
 let anm = 0          // Un movimiento neutral
-let AGM = AI.VPAWN4  // Un buen movimiento
-let VGM = AI.VPAWN3  // Muy buen movimiento
-let TBM = AI.VPAWN2  // El mejor movimiento
+let AGM = AI.VPAWN10  // Un buen movimiento
+let VGM = AI.VPAWN5  // Muy buen movimiento
+let TBM = AI.VPAWN4  // El mejor movimiento
 
 //CREA TABLA PARA REDUCCIONES
 AI.LMR_TABLE = new Array(AI.totaldepth + 1)
@@ -876,7 +876,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             if (ttEntry.score < beta) beta = ttEntry.score
         }
 
-        if (alpha >= beta) {
+        if (alpha >= beta && depth > 0) {
             return ttEntry.score
         }
     }
