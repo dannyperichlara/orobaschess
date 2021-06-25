@@ -93,7 +93,6 @@ for (let depth = 1; depth < AI.totaldepth + 1; ++depth) {
     }
 
 }
-console.log(AI.LMR_TABLE)
 
 // VALORES PARA VALORAR MOBILIDAD
 // El valor se asigna dependiendo del número de movimientos por pieza, desde el caballo hasta la dama
