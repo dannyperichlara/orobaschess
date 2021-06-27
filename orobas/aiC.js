@@ -906,13 +906,13 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     let score
 
     //Reverse Futility pruning (Static Null Move Pruning) TESTED OK
-    // let margin = AI.PIECE_VALUES[0][1] * depth
-    // let reverseval = staticeval - margin
+    let margin = AI.PIECE_VALUES[0][1] * depth
+    let reverseval = staticeval - margin
 
-    // if (!incheck && depth <= 3 && reverseval > beta) {
-    //     AI.ttSave(hashkey, reverseval, AI.LOWERBOUND, depth, moves[0])
-    //     return reverseval
-    // }
+    if (!incheck && depth <= 3 && reverseval > beta) {
+        AI.ttSave(hashkey, reverseval, AI.LOWERBOUND, depth, moves[0])
+        return reverseval
+    }
 
     for (let i = 0, len = moves.length; i < len; i++) {
         let move = moves[i]
@@ -937,11 +937,13 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             }
 
             //Extensiones
-            if (pvNode && depth <= 3) {
-                if (incheck) {
-                    E = 1
-                }
-            }
+            // if (pvNode && depth <= 3) {
+            //     if (incheck) {
+            //         E = 1
+            //     }
+            // }
+
+            if (depth === 1 && incheck) E++
 
             if (legal === 1) {
                 // El primer movimiento se busca con ventana total y sin reducciones
