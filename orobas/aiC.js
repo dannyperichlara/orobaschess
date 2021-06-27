@@ -326,10 +326,10 @@ AI.evaluate = function (board, ply, beta) {
     // Structure: Valoración de la estructura de peones (defendidos/doblados/pasados)
     // Mobility: Valoración de la capacidad de las piezas de moverse en el tablero
     positional += AI.getPSQT(pieces, turn, notturn)
-    positional += AI.getStructure(pieces.P, pieces.Px, turn, notturn)
     positional += AI.getMobility(pieces, board, turn, notturn)
     
     if (AI.phase > 0) {
+        positional += AI.getStructure(pieces.P, pieces.Px, turn, notturn)
         positional += AI.getKingSafety(pieces, turn, notturn)
     }
 
