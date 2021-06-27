@@ -747,6 +747,10 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
 
     let ttEntry = AI.ttGet(hashkey)
 
+    if (!ttEntry || !ttEntry.move.capture) {
+        ttEntry = null
+    }
+
     moves = AI.sortMoves(moves, turn, ply, board, ttEntry)
 
     for (let i = 0, len = moves.length; i < len; i++) {
