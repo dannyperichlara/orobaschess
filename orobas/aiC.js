@@ -327,14 +327,12 @@ AI.evaluate = function (board, ply, beta) {
     // Mobility: Valoración de la capacidad de las piezas de moverse en el tablero
     positional += AI.getPSQT(pieces, turn, notturn)
     positional += AI.getMobility(pieces, board, turn, notturn)
+    positional += AI.getStructure(pieces.P, pieces.Px, turn, notturn)
     
     if (AI.phase > 0) {
-        positional += AI.getStructure(pieces.P, pieces.Px, turn, notturn)
         positional += AI.getKingSafety(pieces, turn, notturn)
     }
-
-    score += AI.limit(positional)
-
+    
     return score | 0
 }
 
@@ -1929,7 +1927,7 @@ AI.search = function (board, options) {
         AI.f = AI.lastscore
 
         //Iterative Deepening
-        for (let depth = 1; depth <= AI.totaldepth; depth += 1) {
+        for (let depth = 0; depth <= AI.totaldepth; depth += 1) {
 
             if (AI.stop && AI.iteration > AI.mindepth[AI.phase]) break
 
