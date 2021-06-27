@@ -1735,25 +1735,25 @@ AI.preprocessor = function (board) {
 
     /************* ABSURD MOVES *****************/
 
-    AI.PSQT_OPENING[1] = AI.PSQT_OPENING[1].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
-    AI.PSQT_OPENING[2] = AI.PSQT_OPENING[2].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
-    AI.PSQT_OPENING[3] = AI.PSQT_OPENING[3].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
-    AI.PSQT_OPENING[4] = AI.PSQT_OPENING[4].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    // AI.PSQT_OPENING[1] = AI.PSQT_OPENING[1].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    // AI.PSQT_OPENING[2] = AI.PSQT_OPENING[2].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    // AI.PSQT_OPENING[3] = AI.PSQT_OPENING[3].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    // AI.PSQT_OPENING[4] = AI.PSQT_OPENING[4].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
 
-    AI.PSQT_MIDGAME[1] = AI.PSQT_MIDGAME[1].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
-    AI.PSQT_MIDGAME[2] = AI.PSQT_MIDGAME[2].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
-    AI.PSQT_MIDGAME[3] = AI.PSQT_MIDGAME[3].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
-    AI.PSQT_MIDGAME[4] = AI.PSQT_MIDGAME[4].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    // AI.PSQT_MIDGAME[1] = AI.PSQT_MIDGAME[1].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    // AI.PSQT_MIDGAME[2] = AI.PSQT_MIDGAME[2].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    // AI.PSQT_MIDGAME[3] = AI.PSQT_MIDGAME[3].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    // AI.PSQT_MIDGAME[4] = AI.PSQT_MIDGAME[4].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
 
-    AI.PSQT_EARLY_ENDGAME[1] = AI.PSQT_EARLY_ENDGAME[1].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
-    AI.PSQT_EARLY_ENDGAME[2] = AI.PSQT_EARLY_ENDGAME[2].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
-    AI.PSQT_EARLY_ENDGAME[3] = AI.PSQT_EARLY_ENDGAME[3].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
-    AI.PSQT_EARLY_ENDGAME[4] = AI.PSQT_EARLY_ENDGAME[4].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    // AI.PSQT_EARLY_ENDGAME[1] = AI.PSQT_EARLY_ENDGAME[1].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    // AI.PSQT_EARLY_ENDGAME[2] = AI.PSQT_EARLY_ENDGAME[2].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    // AI.PSQT_EARLY_ENDGAME[3] = AI.PSQT_EARLY_ENDGAME[3].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    // AI.PSQT_EARLY_ENDGAME[4] = AI.PSQT_EARLY_ENDGAME[4].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
 
-    AI.PSQT_LATE_ENDGAME[1] = AI.PSQT_LATE_ENDGAME[1].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
-    AI.PSQT_LATE_ENDGAME[2] = AI.PSQT_LATE_ENDGAME[2].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
-    AI.PSQT_LATE_ENDGAME[3] = AI.PSQT_LATE_ENDGAME[3].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
-    AI.PSQT_LATE_ENDGAME[4] = AI.PSQT_LATE_ENDGAME[4].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    // AI.PSQT_LATE_ENDGAME[1] = AI.PSQT_LATE_ENDGAME[1].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    // AI.PSQT_LATE_ENDGAME[2] = AI.PSQT_LATE_ENDGAME[2].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    // AI.PSQT_LATE_ENDGAME[3] = AI.PSQT_LATE_ENDGAME[3].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
+    // AI.PSQT_LATE_ENDGAME[4] = AI.PSQT_LATE_ENDGAME[4].map((e, i) => { return e - AI.VPAWN2 * pawnXAttackMap[i] })
 }
 
 AI.setPhase = function (board) {
