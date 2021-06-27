@@ -69,13 +69,13 @@ AI.INFINITY = AI.PIECE_VALUES[AI.OPENING][AI.K] * 2
 AI.EMPTY = new Chess.Bitboard()
 
 //VALORES POSICIONALES
-let twm = -AI.VPAWN/02|0  // El peor movimiento
-let vbm = -AI.VPAWN/07|0  // Muy mal movimiento
+let twm = -AI.VPAWN/2|0  // El peor movimiento
+let vbm = -AI.VPAWN/7|0  // Muy mal movimiento
 let abm = -AI.VPAWN/18|0  // Un mal movimiento
 let anm = 0          // Un movimiento neutral
 let AGM =  AI.VPAWN/45|0  // Un buen movimiento
 let VGM =  AI.VPAWN/18|0 // Muy buen movimiento
-let TBM =  AI.VPAWN/06|0  // El mejor movimiento
+let TBM =  AI.VPAWN/6|0  // El mejor movimiento
 
 //CREA TABLA PARA REDUCCIONES
 AI.LMR_TABLE = new Array(AI.totaldepth + 1)
