@@ -69,13 +69,13 @@ AI.INFINITY = AI.PIECE_VALUES[AI.OPENING][AI.K] * 2
 AI.EMPTY = new Chess.Bitboard()
 
 //VALORES POSICIONALES
-let twm = -AI.VPAWN  // El peor movimiento
-let vbm = -AI.VPAWN2 // Muy mal movimiento
-let abm = -AI.VPAWN5 // Un mal movimiento
+let twm = -AI.VPAWN/02|0  // El peor movimiento
+let vbm = -AI.VPAWN/07|0  // Muy mal movimiento
+let abm = -AI.VPAWN/18|0  // Un mal movimiento
 let anm = 0          // Un movimiento neutral
-let AGM = AI.VPAWN10  // Un buen movimiento
-let VGM = AI.VPAWN5  // Muy buen movimiento
-let TBM = AI.VPAWN4  // El mejor movimiento
+let AGM =  AI.VPAWN/45|0  // Un buen movimiento
+let VGM =  AI.VPAWN/18|0 // Muy buen movimiento
+let TBM =  AI.VPAWN/06|0  // El mejor movimiento
 
 //CREA TABLA PARA REDUCCIONES
 AI.LMR_TABLE = new Array(AI.totaldepth + 1)
@@ -94,39 +94,41 @@ for (let depth = 1; depth < AI.totaldepth + 1; ++depth) {
 
 }
 
+let MFACTOR = [null, 30, 12, 10, 5, null]
+
 // VALORES PARA VALORAR MOBILIDAD
 // El valor se asigna dependiendo del número de movimientos por pieza, desde el caballo hasta la dama
 AI.MOBILITY_VALUES = [
     [
         [],
-        [-4, -3, -2, -1, 0, 1, 2, 3, 4].map(e => e * 8 | 0),
-        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(e => e * 13 | 0),
-        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(e => e * 5 | 0),
-        [-4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map(e => e * 5 | 0),
+        [-4, -3, -2, -1, 0, 1, 2, 3, 4].map(e => e * MFACTOR[1] | 0),
+        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(e => e * MFACTOR[2] | 0),
+        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(e => e * MFACTOR[3] | 0),
+        [-4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map(e => e * MFACTOR[4] | 0),
         []
     ],
     [
         [],
-        [-4, -3, -2, -1, 0, 1, 2, 3, 4].map(e => e * 7.5 | 0),
-        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(e => e * 11 | 0),
-        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(e => e * 8 | 0),
-        [-4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map(e => e * 6.5 | 0),
+        [-4, -3, -2, -1, 0, 1, 2, 3, 4].map(e => e * MFACTOR[1] | 0),
+        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(e => e * MFACTOR[2] | 0),
+        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(e => e * MFACTOR[3] | 0),
+        [-4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map(e => e * MFACTOR[4] | 0),
         []
     ],
     [
         [],
-        [-4, -3, -2, -1, 0, 1, 2, 3, 4].map(e => e * 7 | 0),
-        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(e => e * 9 | 0),
-        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(e => e * 11 | 0),
-        [-4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map(e => e * 8 | 0),
+        [-4, -3, -2, -1, 0, 1, 2, 3, 4].map(e => e * MFACTOR[1] | 0),
+        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(e => e * MFACTOR[2] | 0),
+        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(e => e * MFACTOR[3] | 0),
+        [-4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map(e => e * MFACTOR[4] | 0),
         []
     ],
     [
         [],
-        [-4, -3, -2, -1, 0, 1, 2, 3, 4].map(e => e * 6.5 | 0),
-        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(e => e * 9 | 0),
-        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(e => e * 14 | 0),
-        [-4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map(e => e * 9.5 | 0),
+        [-4, -3, -2, -1, 0, 1, 2, 3, 4].map(e => e * MFACTOR[1] | 0),
+        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(e => e * MFACTOR[2] | 0),
+        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(e => e * MFACTOR[3] | 0),
+        [-4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map(e => e * MFACTOR[4] | 0),
         []
     ]
 ]
@@ -1068,33 +1070,33 @@ AI.createPSQT = function (board) {
             twm, twm, twm, twm, twm, vbm, vbm, vbm,
             twm, vbm, abm, abm, abm, vbm, vbm, vbm,
             vbm, abm, anm, VGM, VGM, vbm, vbm, vbm,
-            twm, anm, anm, TBM, VGM, twm, twm, twm,
-            anm, AGM, AGM, anm, twm, vbm, AGM, anm,
-            AGM, AGM, AGM, abm, abm, AGM, TBM, TBM,
+            twm, anm, anm, TBM, TBM, twm, twm, twm,
+            anm, AGM, AGM, anm, anm, vbm, AGM, anm,
+            AGM, AGM, AGM, twm, twm, AGM, TBM, TBM,
             anm, anm, anm, anm, anm, anm, anm, anm,
         ],
 
         // Knight
         [
             twm, abm, abm, abm, abm, abm, abm, twm,
-            vbm, abm, abm, abm, abm, abm, abm, vbm,
-            vbm, abm, anm, anm, anm, anm, abm, vbm,
-            twm, abm, anm, AGM, AGM, anm, abm, twm,
-            twm, abm, twm, AGM, AGM, twm, abm, twm,
+            vbm, abm, AGM, VGM, VGM, AGM, abm, vbm,
+            vbm, VGM, TBM, TBM, TBM, TBM, VGM, vbm,
+            twm, VGM, TBM, TBM, TBM, TBM, VGM, twm,
+            twm, AGM, TBM, TBM, TBM, TBM, AGM, twm,
             twm, abm, AGM, anm, anm, TBM, abm, twm,
             vbm, abm, abm, AGM, anm, abm, abm, vbm,
-            twm, vbm, vbm, vbm, vbm, vbm, vbm, twm,
+            twm, twm, vbm, vbm, vbm, vbm, twm, twm,
 
         ],
         // Bishop
         [
             vbm, abm, abm, abm, abm, abm, abm, vbm,
             vbm, abm, abm, abm, abm, abm, abm, vbm,
-            vbm, abm, anm, anm, anm, anm, abm, vbm,
-            vbm, vbm, anm, AGM, AGM, anm, twm, vbm,
-            vbm, abm, TBM, AGM, AGM, TBM, abm, vbm,
-            twm, abm, anm, abm, abm, anm, abm, twm,
-            vbm, TBM, abm, anm, anm, abm, TBM, vbm,
+            vbm, abm, anm, AGM, AGM, anm, abm, vbm,
+            vbm, AGM, AGM, TBM, TBM, AGM, AGM, vbm,
+            abm, AGM, AGM, TBM, TBM, AGM, AGM, abm,
+            twm, abm, abm, AGM, AGM, abm, abm, twm,
+            vbm, AGM, VGM, AGM, AGM, VGM, AGM, vbm,
             vbm, vbm, twm, vbm, vbm, twm, vbm, vbm,
         ],
         // Rook
@@ -1106,7 +1108,7 @@ AI.createPSQT = function (board) {
             anm, anm, anm, anm, anm, anm, anm, anm,
             anm, anm, anm, anm, anm, anm, anm, anm,
             anm, anm, anm, anm, anm, anm, anm, anm,
-            anm, anm, anm, TBM, TBM, AGM, anm, anm,
+            anm, anm, anm, VGM, VGM, AGM, anm, anm,
         ],
 
         // Queen
@@ -1151,12 +1153,12 @@ AI.createPSQT = function (board) {
         // Knight
         [
             twm, abm, abm, abm, abm, abm, abm, twm,
-            vbm, abm, abm, abm, abm, abm, abm, vbm,
-            vbm, abm, VGM, VGM, VGM, VGM, abm, vbm,
-            vbm, abm, VGM, TBM, TBM, VGM, abm, vbm,
-            vbm, abm, AGM, TBM, TBM, AGM, abm, vbm,
-            vbm, abm, anm, anm, anm, anm, abm, vbm,
-            vbm, abm, abm, AGM, AGM, abm, abm, vbm,
+            vbm, abm, AGM, VGM, VGM, AGM, abm, vbm,
+            vbm, VGM, TBM, TBM, TBM, TBM, VGM, vbm,
+            twm, VGM, TBM, TBM, TBM, TBM, VGM, twm,
+            twm, AGM, TBM, TBM, TBM, TBM, AGM, twm,
+            twm, abm, AGM, anm, anm, TBM, abm, twm,
+            vbm, abm, abm, AGM, anm, abm, abm, vbm,
             twm, twm, vbm, vbm, vbm, vbm, twm, twm,
 
         ],
@@ -1164,34 +1166,34 @@ AI.createPSQT = function (board) {
         [
             vbm, abm, abm, abm, abm, abm, abm, vbm,
             vbm, abm, abm, abm, abm, abm, abm, vbm,
-            vbm, abm, anm, anm, anm, anm, abm, vbm,
-            vbm, AGM, TBM, TBM, TBM, TBM, AGM, vbm,
-            vbm, AGM, AGM, AGM, AGM, AGM, AGM, vbm,
-            twm, AGM, AGM, AGM, AGM, AGM, AGM, twm,
-            vbm, AGM, abm, abm, abm, abm, AGM, vbm,
+            vbm, abm, anm, AGM, AGM, anm, abm, vbm,
+            vbm, AGM, AGM, TBM, TBM, AGM, AGM, vbm,
+            abm, AGM, AGM, TBM, TBM, AGM, AGM, abm,
+            twm, abm, abm, AGM, AGM, abm, abm, twm,
+            vbm, AGM, VGM, AGM, AGM, VGM, AGM, vbm,
             vbm, vbm, twm, vbm, vbm, twm, vbm, vbm,
         ],
         // Rook
         [
             anm, anm, anm, anm, anm, anm, anm, anm,
-            AGM, VGM, VGM, TBM, TBM, VGM, VGM, AGM,
-            anm, anm, anm, anm, anm, anm, anm, anm,
-            anm, anm, anm, anm, anm, anm, anm, anm,
-            anm, anm, anm, anm, anm, anm, anm, anm,
-            anm, anm, anm, anm, anm, anm, anm, anm,
+            abm, VGM, VGM, VGM, VGM, VGM, VGM, abm,
             anm, anm, anm, AGM, AGM, anm, anm, anm,
-            twm, anm, anm, VGM, VGM, AGM, anm, twm,
+            anm, anm, anm, anm, anm, anm, anm, anm,
+            anm, anm, anm, anm, anm, anm, anm, anm,
+            anm, anm, anm, anm, anm, anm, anm, anm,
+            anm, anm, anm, VGM, VGM, anm, anm, anm,
+            twm, anm, anm, AGM, AGM, anm, vbm, twm,
         ],
 
         // Queen
         [
             abm, abm, abm, anm, anm, anm, anm, anm,
-            abm, twm, abm, anm, anm, anm, anm, anm,
-            abm, abm, abm, anm, anm, anm, anm, anm,
-            anm, anm, anm, twm, twm, anm, anm, anm,
-            anm, anm, anm, twm, twm, anm, anm, anm,
-            anm, anm, anm, anm, anm, anm, anm, anm,
-            abm, abm, AGM, AGM, AGM, abm, abm, abm,
+            abm, AGM, AGM, AGM, AGM, AGM, AGM, anm,
+            abm, VGM, AGM, AGM, AGM, AGM, VGM, anm,
+            anm, VGM, VGM, AGM, AGM, VGM, VGM, anm,
+            anm, AGM, AGM, AGM, AGM, AGM, AGM, anm,
+            anm, anm, VGM, AGM, AGM, VGM, anm, anm,
+            abm, abm, AGM, VGM, VGM, AGM, abm, abm,
             vbm, vbm, vbm, twm, abm, vbm, vbm, vbm,
         ],
 
@@ -1231,7 +1233,7 @@ AI.createPSQT = function (board) {
             vbm, anm, AGM, TBM, TBM, AGM, anm, vbm,
             vbm, anm, AGM, AGM, AGM, AGM, anm, vbm,
             vbm, anm, anm, anm, anm, anm, anm, vbm,
-            twm, twm, vbm, vbm, vbm, vbm, twm, twm,
+            twm, twm, twm, twm, twm, twm, twm, twm,
 
         ],
         // Bishop
@@ -1243,7 +1245,7 @@ AI.createPSQT = function (board) {
             anm, anm, AGM, TBM, TBM, AGM, anm, anm,
             anm, anm, AGM, AGM, AGM, AGM, anm, anm,
             abm, anm, anm, anm, anm, anm, anm, abm,
-            vbm, vbm, twm, vbm, vbm, twm, vbm, vbm,
+            twm, twm, twm, twm, twm, twm, twm, twm,
 
         ],
         // Rook
@@ -1278,7 +1280,7 @@ AI.createPSQT = function (board) {
             twm, AGM, VGM, TBM, TBM, VGM, AGM, twm,
             twm, AGM, VGM, TBM, TBM, VGM, AGM, twm,
             twm, abm, AGM, VGM, VGM, AGM, abm, twm,
-            twm, abm, abm, abm, abm, abm, abm, twm,
+            twm, abm, abm, abm, abm, anm, anm, twm,
             twm, twm, twm, twm, twm, twm, twm, twm,
         ],
     ]
@@ -1305,7 +1307,7 @@ AI.createPSQT = function (board) {
             vbm, anm, AGM, TBM, TBM, AGM, anm, vbm,
             vbm, anm, AGM, AGM, AGM, AGM, anm, vbm,
             vbm, anm, anm, anm, anm, anm, anm, vbm,
-            twm, vbm, vbm, vbm, vbm, vbm, vbm, twm,
+            twm, twm, twm, twm, twm, twm, twm, twm,
 
         ],
         // Bishop
@@ -1317,7 +1319,7 @@ AI.createPSQT = function (board) {
             anm, anm, AGM, TBM, TBM, AGM, anm, anm,
             anm, anm, AGM, AGM, AGM, AGM, anm, anm,
             abm, anm, anm, anm, anm, anm, anm, abm,
-            vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
+            twm, twm, twm, twm, twm, twm, twm, twm,
 
         ],
         // Rook
@@ -1325,11 +1327,11 @@ AI.createPSQT = function (board) {
             anm, anm, anm, anm, anm, anm, anm, anm,
             anm, anm, anm, anm, anm, anm, anm, anm,
             anm, anm, anm, anm, anm, anm, anm, anm,
+            anm, anm, anm, AGM, AGM, anm, anm, anm,
+            anm, anm, anm, AGM, AGM, anm, anm, anm,
             anm, anm, anm, anm, anm, anm, anm, anm,
             anm, anm, anm, anm, anm, anm, anm, anm,
-            anm, anm, anm, anm, anm, anm, anm, anm,
-            anm, anm, anm, anm, anm, anm, anm, anm,
-            twm, twm, twm, anm, anm, twm, twm, twm,
+            twm, twm, twm, twm, twm, twm, twm, twm,
         ],
 
         // Queen
