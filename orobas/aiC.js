@@ -60,7 +60,7 @@ AI.PIECE_VALUES = [
     [1.66, 2.88, 3.00, 4.80, 9.60, 200].map(e => e * AI.VPAWN),
 ]
 
-AI.BISHOP_PAIR = 0.6*AI.VPAWN | 0
+AI.BISHOP_PAIR = 0.5*AI.VPAWN | 0
 
 // CONSTANTES
 AI.MATE = AI.PIECE_VALUES[AI.OPENING][AI.K]
@@ -94,7 +94,7 @@ for (let depth = 1; depth < AI.totaldepth + 1; ++depth) {
 
 }
 
-let MFACTOR = [null, 30, 12, 10, 5, null]
+let MFACTOR = [null, 10, 8, 6, 4, null]
 
 // VALORES PARA VALORAR MOBILIDAD
 // El valor se asigna dependiendo del número de movimientos por pieza, desde el caballo hasta la dama
@@ -102,32 +102,32 @@ AI.MOBILITY_VALUES = [
     [
         [],
         [-4, -3, -2, -1, 0, 1, 2, 3, 4].map(e => e * MFACTOR[1] | 0),
-        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(e => e * MFACTOR[2] | 0),
+        [-4, -2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(e => e * MFACTOR[2] | 0),
         [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(e => e * MFACTOR[3] | 0),
+        [-2, -1, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map(e => e * MFACTOR[4] | 0),
+        []
+    ],
+    [
+        [],
+        [-4, -3, -2, -1, 0, 1, 2, 3, 4].map(e => e * MFACTOR[1] | 0),
+        [-4, -3, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(e => e * MFACTOR[2] | 0),
+        [-4, -3, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(e => e * MFACTOR[3] | 0),
         [-4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map(e => e * MFACTOR[4] | 0),
         []
     ],
     [
         [],
         [-4, -3, -2, -1, 0, 1, 2, 3, 4].map(e => e * MFACTOR[1] | 0),
-        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(e => e * MFACTOR[2] | 0),
-        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(e => e * MFACTOR[3] | 0),
+        [-4, -3, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(e => e * MFACTOR[2] | 0),
+        [-4, -3, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(e => e * MFACTOR[3] | 0),
         [-4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map(e => e * MFACTOR[4] | 0),
         []
     ],
     [
         [],
         [-4, -3, -2, -1, 0, 1, 2, 3, 4].map(e => e * MFACTOR[1] | 0),
-        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(e => e * MFACTOR[2] | 0),
-        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(e => e * MFACTOR[3] | 0),
-        [-4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map(e => e * MFACTOR[4] | 0),
-        []
-    ],
-    [
-        [],
-        [-4, -3, -2, -1, 0, 1, 2, 3, 4].map(e => e * MFACTOR[1] | 0),
-        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(e => e * MFACTOR[2] | 0),
-        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(e => e * MFACTOR[3] | 0),
+        [-4, -2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(e => e * MFACTOR[2] | 0),
+        [-4, -2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(e => e * MFACTOR[3] | 0),
         [-4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map(e => e * MFACTOR[4] | 0),
         []
     ]
@@ -158,9 +158,9 @@ AI.DOUBLED_VALUES = [0, -1, -2, -3, -4, -5, -6, -7, -8].map(e => e * AI.VPAWN2 |
 // Se asigna un valor dependiendo del número de peones defendidos por otro peón en cada fase
 AI.DEFENDED_PAWN_VALUES = [
     [0,         0,         0,         0,         0,         0,         0,         0,         0],
-    [0, AI.VPAWN5, AI.VPAWN4, AI.VPAWN4, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2],
-    [0, AI.VPAWN5, AI.VPAWN4, AI.VPAWN4, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2],
-    [0, AI.VPAWN5, AI.VPAWN4, AI.VPAWN4, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2],
+    [0, AI.VPAWN10, AI.VPAWN5, AI.VPAWN4, AI.VPAWN3, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2],
+    [0, AI.VPAWN10, AI.VPAWN5, AI.VPAWN4, AI.VPAWN3, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2],
+    [0, AI.VPAWN10, AI.VPAWN5, AI.VPAWN4, AI.VPAWN3, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2, AI.VPAWN2],
 ]
 
 // MVV-LVA
@@ -237,38 +237,44 @@ for (let i = 0; i<64; i++) {
 }
 
 // CREA TABLAS DE TRASPOSICIÓN / PEONES / HISTORIA
-AI.createTables = function () {
-    console.log('Creating tables.................')
+AI.createTables = function (tt, hh, pp) {
+    console.log('Creating tables', tt, hh, pp)
 
-    delete AI.history
-    delete AI.hashtable
-    delete AI.pawntable
+    if (hh) {
+        delete AI.history
+        AI.history = [[], []]
+        
+        AI.history[AI.WHITE] = [
+            Array(64).fill(0),
+            Array(64).fill(0),
+            Array(64).fill(0),
+            Array(64).fill(0),
+            Array(64).fill(0),
+            Array(64).fill(0),
+        ]
+        
+        AI.history[AI.BLACK] = [
+            Array(64).fill(0),
+            Array(64).fill(0),
+            Array(64).fill(0),
+            Array(64).fill(0),
+            Array(64).fill(0),
+            Array(64).fill(0),
+        ]
+    }
+    
+    if (tt) {
+        delete AI.hashtable
+        AI.hashtable = new Array(this.htlength) // new Map() //positions
+    }
+    if (pp) {
+        delete AI.pawntable
+        AI.pawntable = [
+            (new Array(this.pawntlength)).fill(null),
+            (new Array(this.pawntlength)).fill(null),
+        ]
+    }
 
-    AI.history = [[], []]
-
-    AI.history[AI.WHITE] = [
-        Array(64).fill(0),
-        Array(64).fill(0),
-        Array(64).fill(0),
-        Array(64).fill(0),
-        Array(64).fill(0),
-        Array(64).fill(0),
-    ]
-
-    AI.history[AI.BLACK] = [
-        Array(64).fill(0),
-        Array(64).fill(0),
-        Array(64).fill(0),
-        Array(64).fill(0),
-        Array(64).fill(0),
-        Array(64).fill(0),
-    ]
-
-    AI.hashtable = new Array(this.htlength) // new Map() //positions
-    AI.pawntable = [
-        (new Array(this.pawntlength)).fill(null),
-        (new Array(this.pawntlength)).fill(null),
-    ] // [new Map(), new Map()] //positions
 }
 
 //ESTABLECE VALORES ALEATORIAS EN LA APERTURA (PARA TESTEOS)
@@ -317,23 +323,68 @@ AI.evaluate = function (board, ply, beta) {
     let pieces = AI.getPieces(board, turn, notturn)
     let score = 0
     let positional = 0
+    let forceking = 0
 
     // Valor material del tablero
-    score += AI.getMaterial(pieces)
+    score += AI.getMaterial(pieces) | 0
 
     // Valor posicional del tablero
     // PSQT: Plusvalor o minusvalor por situar una pieza en determinada casilla
     // Structure: Valoración de la estructura de peones (defendidos/doblados/pasados)
     // Mobility: Valoración de la capacidad de las piezas de moverse en el tablero
-    positional += AI.getPSQT(pieces, turn, notturn)
-    positional += AI.getMobility(pieces, board, turn, notturn)
-    positional += AI.getStructure(pieces.P, pieces.Px, turn, notturn)
+    positional += AI.getPSQT(pieces, turn, notturn) | 0
+    positional += AI.getMobility(pieces, board, turn, notturn) | 0
+    positional += AI.getStructure(pieces.P, pieces.Px, turn, notturn) | 0
     
     if (AI.phase > 0) {
-        positional += AI.getKingSafety(pieces, turn, notturn)
+        positional += AI.getKingSafety(pieces, turn, notturn) | 0
     }
+
+    positional = AI.limit(positional, AI.VPAWN5) | 0
+
+    forceking = AI.mopUpEval(pieces.K, pieces.Kx, score)
     
-    return score | 0
+    return score + positional + forceking | 0
+}
+
+AI.cols = [
+    0, 1, 2, 3, 4, 5, 6, 7,
+    0, 1, 2, 3, 4, 5, 6, 7,
+    0, 1, 2, 3, 4, 5, 6, 7,
+    0, 1, 2, 3, 4, 5, 6, 7,
+    0, 1, 2, 3, 4, 5, 6, 7,
+    0, 1, 2, 3, 4, 5, 6, 7,
+    0, 1, 2, 3, 4, 5, 6, 7,
+]
+
+AI.rows = [
+    0, 0, 0, 0, 0, 0, 0, 0,
+    1, 1, 1, 1, 1, 1, 1, 1,
+    2, 2, 2, 2, 2, 2, 2, 2,
+    3, 3, 3, 3, 3, 3, 3, 3,
+    4, 4, 4, 4, 4, 4, 4, 4,
+    5, 5, 5, 5, 5, 5, 5, 5,
+    6, 6, 6, 6, 6, 6, 6, 6,
+    7, 7, 7, 7, 7, 7, 7, 7,
+]
+
+AI.mopUpEval = (K, Kx, score)=>{
+    let mscore = AI.forceKing2corner(K.dup(), Kx.dup(), score) - AI.forceKing2corner(Kx.dup(), K.dup(), score)
+    return mscore
+}
+
+// Not well implemented
+AI.forceKing2corner = (K, Kx, score)=>{
+    return 0
+    // if (score > AI.PIECE_VALUES[0][1]) {
+    //     let kingposition = K.extractLowestBitPosition()
+    //     let kingXposition = Kx.extractLowestBitPosition()
+    //     let mscore = 10 * AI.manhattanCenterDistance(kingXposition)
+    //                 + 4 * (14 - AI.manhattanDistance(kingposition, kingXposition)) | 0
+    //     return mscore
+    // } else {
+    //     return 0
+    // }
 }
 
 AI.getDoubled = function (_P, white) {
@@ -535,9 +586,9 @@ AI.getMaterialValue = function (pieces, us) {
     return value | 0
 }
 
-// Limita el valor posicional a 1 peón
-AI.limit = (value) => {
-    return (AI.VPAWN * 2) / (1 + Math.exp(-value / (AI.VPAWN / 2))) - AI.VPAWN | 0
+// Limita el valor posicional
+AI.limit = (value, limit) => {
+    return (limit * 2) / (1 + Math.exp(-value / (limit / 2))) - limit | 0
 }
 
 AI.getPSQT = function (pieces, turn, notturn) {
@@ -631,6 +682,7 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         move.killer1 = 0
         move.killer2 = 0
         move.score = 0
+        move.capture = false
 
         // CRITERIO 1: La jugada está en la Tabla de Trasposición
         if (ttEntry && move.value === ttEntry.move.value) {
@@ -741,14 +793,14 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
 
     if (standpat > alpha) alpha = standpat
 
-    let moves = board.getMoves(true, !board.isKingInCheck()) //+0 ELO
-
+    
     let ttEntry = AI.ttGet(hashkey)
-
+        
     if (!ttEntry || !ttEntry.move.capture) {
         ttEntry = null
     }
-
+    
+    let moves = board.getMoves(true, !board.isKingInCheck()) //+0 ELO
     moves = AI.sortMoves(moves, turn, ply, board, ttEntry)
 
     for (let i = 0, len = moves.length; i < len; i++) {
@@ -891,7 +943,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     }
 
     //IID (si no hay entrada en ttEntry, busca una para mejorar el orden de movimientos)
-    if (pvNode && !ttEntry && depth > 2) {
+    if (!ttEntry && depth > 2) {
         AI.PVS(board, alpha, beta, depth - 2, ply) //depth - 2 tested ok + 31 ELO
         ttEntry = AI.ttGet(hashkey)
     }
@@ -1372,8 +1424,8 @@ AI.createPSQT = function (board) {
 }
 
 AI.PSQT2Sigmoid = function () {
-    let upperlimit = AI.VPAWN2
-    let lowerlimit = AI.VPAWN2
+    let upperlimit = AI.VPAWN5
+    let lowerlimit = AI.VPAWN5
 
     for (let i = 1; i <= 4; i++) {
         AI.PSQT[i] = AI.PSQT[i].map(psqv => {
@@ -1798,7 +1850,7 @@ AI.getPV = function (board, length) {
         let hashkey = board.hashKey.getHashKey()
         ttEntry = AI.ttGet(hashkey)
 
-        if (ttEntry && ttEntry.flag <= 0) {
+        if (ttEntry) {
             let moves = board.getMoves(false, false).filter(move => {
                 return move.value === ttEntry.move.value
             })
@@ -1839,6 +1891,7 @@ AI.getPV = function (board, length) {
 
 AI.MTDF = function (board, f, d) {
     let g = f
+    console.log(f)
 
     let upperBound =  AI.INFINITY
     let lowerBound = -AI.INFINITY
@@ -1850,13 +1903,19 @@ AI.MTDF = function (board, f, d) {
     let beta
 
     while (lowerBound < upperBound && !AI.stop) {
-        g === lowerBound ? beta = g + 1 : beta = g
+        beta = Math.max(g, lowerBound + 1)
 
         g = AI.PVS(board, beta - 1, beta, d, 1)
 
-        g < beta ? upperBound = g : lowerBound = g
-    }
+        if (g < beta) {
+            upperBound = g
+        } else {
+            lowerBound = g
+        }
 
+        AI.PV = AI.getPV(board, d)
+        AI.bestmove = [...AI.PV][1]
+    }
 
     return g
 }
@@ -1886,8 +1945,14 @@ AI.search = function (board, options) {
     AI.lastphase = AI.phase
 
     if (board.movenumber && board.movenumber <= 1/* || changeofphase*/) {
-        AI.createTables()
+        AI.createTables(true, true, true)
+        AI.lastscore = 0
+        AI.f = 0
+    } else {
+        AI.createTables(true, true, false)
     }
+
+    if (!AI.f) AI.f = 0
 
     AI.reduceHistory()
 
@@ -1924,10 +1989,8 @@ AI.search = function (board, options) {
 
         AI.fh = AI.fhf = 0.001
 
-        AI.f = AI.lastscore
-
         //Iterative Deepening
-        for (let depth = 0; depth <= AI.totaldepth; depth += 1) {
+        for (let depth = 1; depth <= AI.totaldepth; depth++) {
 
             if (AI.stop && AI.iteration > AI.mindepth[AI.phase]) break
 
@@ -1981,6 +2044,6 @@ AI.search = function (board, options) {
     })
 }
 
-AI.createTables()
+AI.createTables(true, true, true)
 
 module.exports = AI
