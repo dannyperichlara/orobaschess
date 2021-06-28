@@ -45,7 +45,7 @@ AI.EXACT = 0
 AI.UPPERBOUND = 1
 
 ///// VALOR RELATIVO DE LAS PIEZAS
-AI.VPAWN = 270
+AI.VPAWN = 100
 AI.VPAWN2 = AI.VPAWN / 2 | 0
 AI.VPAWN3 = AI.VPAWN / 3 | 0
 AI.VPAWN4 = AI.VPAWN / 4 | 0
@@ -340,7 +340,7 @@ AI.evaluate = function (board, ply, beta) {
         positional += AI.getKingSafety(pieces, turn, notturn) | 0
     }
 
-    positional = AI.limit(positional, AI.VPAWN5) | 0
+    positional = AI.limit(positional, AI.VPAWN10) | 0
 
     forceking = AI.mopUpEval(pieces.K, pieces.Kx, score)
     
@@ -1039,7 +1039,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
                 score = -AI.PVS(board, -alpha - 1, -alpha, depth + E - R - 1, ply + 1)
 
-                if (!AI.stop && score > alpha) {
+                if (!AI.stop && score > alpha && score < beta) {
                     score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1)
                 }
             }
@@ -1944,8 +1944,8 @@ AI.MTDF = function (board, f, d) {
             lowerBound = g
         }
 
-        AI.PV = AI.getPV(board, d)
-        AI.bestmove = [...AI.PV][1]
+        // AI.PV = AI.getPV(board, d)
+        // AI.bestmove = [...AI.PV][1]
     }
 
     return g
@@ -1981,6 +1981,7 @@ AI.search = function (board, options) {
         AI.f = 0
     } else {
         AI.createTables(true, true, false)
+        AI.f = AI.lastscore
     }
 
     if (!AI.f) AI.f = 0
