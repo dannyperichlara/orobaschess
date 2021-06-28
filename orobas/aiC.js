@@ -13,10 +13,10 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 0,
+    random: 20,
     phase: 1,
     htlength: 1 << 24,
-    pawntlength: 5e5,
+    pawntlength: 1e6,
     reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda
     mindepth: [3, 3, 3, 3],
     secondspermove: 3,
@@ -685,7 +685,7 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         move.capture = false
 
         // CRITERIO 1: La jugada está en la Tabla de Trasposición
-        if (ttEntry && move.value === ttEntry.move.value) {
+        if (ttEntry && ttEntry.flag !== AI.UPPERBOUND && move.value === ttEntry.move.value) {
             move.tt = true
             move.score = 1e8
             continue
@@ -854,6 +854,7 @@ AI.ttSave = function (hashkey, score, flag, depth, move) {
 }
 
 AI.ttGet = function (hashkey) {
+    AI.ttnodes++
     return AI.hashtable[hashkey % AI.htlength]
 }
 
@@ -930,8 +931,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     let ttEntry = AI.ttGet(hashkey)
 
     if (ttEntry && ttEntry.depth >= depth) {
-        AI.ttnodes++
-
         if (ttEntry.flag === AI.EXACT) {
             return ttEntry.score
         } else if (ttEntry.flag === AI.LOWERBOUND) {
@@ -2045,7 +2044,8 @@ AI.search = function (board, options) {
 
             if (!AI.stop) AI.lastscore = score
 
-            if (AI.PV && !AI.stop) console.log(AI.iteration, depth, AI.PV.map(e => { return e && e.getString ? e.getString() : '---' }).join(' '), '|Fhf ' + fhfperc + '%', 'Pawn hit ' + (AI.phnodes / AI.pnodes * 100 | 0), score, AI.nodes.toString(), AI.qsnodes.toString())
+            if (AI.PV && !AI.stop) console.log(AI.iteration, depth, AI.PV.map(e => { return e && e.getString ? e.getString() : '---' }).join(' '), '|Fhf ' + fhfperc + '%',
+                    'Pawn hit ' + (AI.phnodes / AI.pnodes * 100 | 0), score, AI.nodes.toString(), AI.qsnodes.toString(), AI.ttnodes.toString())
         }
 
         if (AI.TESTER) {
