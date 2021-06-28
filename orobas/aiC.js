@@ -793,6 +793,14 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
 
     if (standpat > alpha) alpha = standpat
 
+    // delta pruning
+    if (!board.isKingInCheck()) {
+        let futilityMargin = AI.PIECE_VALUES[0][4]
+    
+        if (standpat + futilityMargin <= alpha) {
+            return standpat
+        }
+    }
     
     let ttEntry = AI.ttGet(hashkey)
         
@@ -882,6 +890,7 @@ AI.givescheck = function (board, move) {
 // El método PVS es Negamax + Ventana-Nula
 AI.PVS = function (board, alpha, beta, depth, ply) {
     let pvNode = beta - alpha > 1 // PV-Node
+    let cutNode = beta - alpha === 1 // Cut-Node
 
     AI.nodes++
 
@@ -936,6 +945,28 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         }
     }
 
+    let staticeval = AI.evaluate(board, ply, beta)
+    let incheck = board.isKingInCheck()
+
+    //Razoring (idea from Strelka) //+34 ELO
+    if (cutNode && !incheck) {
+        let value = staticeval + AI.PAWN
+
+        if (value < beta) {
+            if (depth === 1) {
+                let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
+                return Math.max(new_value, value)
+            }
+            value += 2*AI.PAWN
+
+            if (value < beta && depth <= 3) {
+                let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
+                if (new_value < beta)
+                return Math.max(new_value, value)
+            }
+        }
+      }
+
     //Búsqueda QS para evitar efecto horizonte
 
     if (depth <= 0) {
@@ -948,8 +979,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         ttEntry = AI.ttGet(hashkey)
     }
 
-    let staticeval = AI.evaluate(board, ply, beta)
-    let incheck = board.isKingInCheck()
     let moves = board.getMoves(true, false)
 
     moves = AI.sortMoves(moves, turn, ply, board, ttEntry)
@@ -966,6 +995,16 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     if (!incheck && depth <= 3 && reverseval > beta) {
         AI.ttSave(hashkey, reverseval, AI.LOWERBOUND, depth, moves[0])
         return reverseval
+    }
+
+    // futility pruning
+    if (!incheck) {
+      let futilityMargin = depth * AI.PIECE_VALUES[0][1]
+
+      if (staticeval + futilityMargin <= alpha) {
+        AI.ttSave(hashkey, staticeval, AI.UPPERBOUND, depth, moves[0])
+        return staticeval
+      }
     }
 
     for (let i = 0, len = moves.length; i < len; i++) {
@@ -989,13 +1028,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                     }
                 }
             }
-
-            //Extensiones
-            // if (pvNode && depth <= 3) {
-            //     if (incheck) {
-            //         E = 1
-            //     }
-            // }
 
             if (depth === 1 && incheck) E++
 
@@ -1891,7 +1923,6 @@ AI.getPV = function (board, length) {
 
 AI.MTDF = function (board, f, d) {
     let g = f
-    console.log(f)
 
     let upperBound =  AI.INFINITY
     let lowerBound = -AI.INFINITY
@@ -1990,12 +2021,13 @@ AI.search = function (board, options) {
         AI.fh = AI.fhf = 0.001
 
         //Iterative Deepening
-        for (let depth = 1; depth <= AI.totaldepth; depth++) {
+        for (let depth = 1; depth <= AI.totaldepth; depth+=1) {
 
             if (AI.stop && AI.iteration > AI.mindepth[AI.phase]) break
 
             AI.bestmove = [...AI.PV][1]
             AI.iteration++
+
             AI.f = AI.MTDF(board, AI.f, depth)
 
             score = (isWhite ? 1 : -1) * AI.f
