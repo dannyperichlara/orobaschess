@@ -2021,7 +2021,7 @@ AI.search = function (board, options) {
         AI.fh = AI.fhf = 0.001
 
         //Iterative Deepening
-        for (let depth = 0; depth <= AI.totaldepth; depth+=1) {
+        for (let depth = 1; depth <= AI.totaldepth; depth+=1) {
 
             if (AI.stop && AI.iteration > AI.mindepth[AI.phase]) break
 
