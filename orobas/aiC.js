@@ -1478,7 +1478,7 @@ AI.createPSQT = function (board) {
 
 AI.PSQT2Sigmoid = function () {
     let upperlimit = AI.VPAWN5
-    let lowerlimit = AI.VPAWN5
+    let lowerlimit = AI.VPAWN
 
     for (let i = 1; i <= 4; i++) {
         AI.PSQT[i] = AI.PSQT[i].map(psqv => {
