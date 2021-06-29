@@ -1085,6 +1085,8 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     }
 
     if (legal === 0) {
+        if (ply === 1) AI.stop = true
+        
         // Ahogado
         if (!board.isKingInCheck()) {
             AI.ttSave(hashkey, AI.DRAW + ply, AI.EXACT, depth, bestmove)
