@@ -332,7 +332,7 @@ AI.evaluate = function (board, ply, beta) {
     // PSQT: Plusvalor o minusvalor por situar una pieza en determinada casilla
     // Structure: Valoración de la estructura de peones (defendidos/doblados/pasados)
     // Mobility: Valoración de la capacidad de las piezas de moverse en el tablero
-    positional += AI.phase === 0 || AI.phase === 3? AI.getPSQT(pieces, turn, notturn) : 0 | 0
+    positional += AI.getPSQT(pieces, turn, notturn) | 0
     positional += AI.getMobility(pieces, board, turn, notturn) | 0
     positional += AI.getStructure(pieces.P, pieces.Px, turn, notturn) | 0
     
@@ -1868,7 +1868,7 @@ AI.setPhase = function (board) {
     let color = board.getTurnColor()
 
     //MIDGAME
-    if (AI.nofpieces <= 29 || (board.movenumber && board.movenumber > 8)) {
+    if (AI.nofpieces <= 28 || (board.movenumber && board.movenumber > 8)) {
         AI.phase = 1
     }
 
