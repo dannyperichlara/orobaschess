@@ -1014,12 +1014,13 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         let E = 0
 
         //Absurd maneuvers reductions (AMR)
-        let doAMP
-
-        if (legal >= 1 && AI.phase <= 1 && AI.absurd[turn][piece] >= 2) doAMP = true
-
-        if (doAMP) {
+        if (legal >= 1 && AI.phase <= 1 && AI.absurd[turn][piece] >= 2) {
           R+=2
+        }
+
+        // Move count reductions
+        if (depth >=3 && !move.capture && legal >= (3 + deph**2) / 2) {
+            R+=2
         }
 
         if (board.makeMove(move)) {
