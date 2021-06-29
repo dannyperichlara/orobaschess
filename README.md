@@ -3,6 +3,8 @@ v1.3.0
 
 Orobas es una Inteligencia Artificial de Ajedrez creada en 2020 para fines educacionales y de investigación. El generador de movimientos es externo, y pertenece a @kbjorklu (https://github.com/kbjorklu/chess).
 
+Puedes probar Orobas en http://45.58.62.235:3665
+
 --------------
 ## Características (en inglés)
 * Principal Variation Search = Negamax + Alpha-Beta Pruning + Null Window Search.
