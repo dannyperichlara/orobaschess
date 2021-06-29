@@ -85,7 +85,7 @@ for (let depth = 1; depth < AI.totaldepth + 1; ++depth) {
     AI.LMR_TABLE[depth] = new Array(218)
 
     for (let moves = 1; moves < 218; ++moves) {
-        if (depth >= 3) {
+        if (depth >= 2) {
             AI.LMR_TABLE[depth][moves] = depth/5 + moves/5 + 1 | 0
         } else {
             AI.LMR_TABLE[depth][moves] = 0
@@ -332,7 +332,7 @@ AI.evaluate = function (board, ply, beta) {
     // PSQT: Plusvalor o minusvalor por situar una pieza en determinada casilla
     // Structure: Valoración de la estructura de peones (defendidos/doblados/pasados)
     // Mobility: Valoración de la capacidad de las piezas de moverse en el tablero
-    positional += AI.getPSQT(pieces, turn, notturn) | 0
+    positional += AI.phase === 0 || AI.phase === 3? AI.getPSQT(pieces, turn, notturn) : 0 | 0
     positional += AI.getMobility(pieces, board, turn, notturn) | 0
     positional += AI.getStructure(pieces.P, pieces.Px, turn, notturn) | 0
     
@@ -1008,12 +1008,24 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
     for (let i = 0, len = moves.length; i < len; i++) {
         let move = moves[i]
+        let piece = move.getPiece()
 
         let R = 0
         let E = 0
 
+        //Absurd maneuvers reductions (AMP)
+        let doAMP
+
+        if (legal >= 1 && AI.phase <= 1 && AI.absurd[turn][piece] >= 2) doAMP = true
+
+        if (doAMP) {
+          R+=2
+        }
+
         if (board.makeMove(move)) {
             legal++
+
+            AI.absurd[turn][piece]++
 
             //Reducciones
             if (AI.nofpieces <= 4) {
@@ -1044,6 +1056,8 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             }
 
             board.unmakeMove()
+
+            AI.absurd[turn][piece]--
 
             if (AI.stop) return oAlpha //tested ok
 
@@ -1854,7 +1868,7 @@ AI.setPhase = function (board) {
     let color = board.getTurnColor()
 
     //MIDGAME
-    if (AI.nofpieces <= 28 || (board.movenumber && board.movenumber > 8)) {
+    if (AI.nofpieces <= 29 || (board.movenumber && board.movenumber > 8)) {
         AI.phase = 1
     }
 
@@ -1993,6 +2007,11 @@ AI.search = function (board, options) {
     if (!AI.f) AI.f = 0
 
     AI.reduceHistory()
+    
+    AI.absurd = [
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+    ]
 
     return new Promise((resolve, reject) => {
         let color = board.getTurnColor()
