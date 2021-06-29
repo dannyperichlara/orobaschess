@@ -1019,7 +1019,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         }
 
         // Move count reductions
-        if (depth >=3 && !move.capture && legal >= (3 + deph**2) / 2) {
+        if (depth >=3 && !move.capture && legal >= (3 + depth**2) / 2) {
             R+=2
         }
 
