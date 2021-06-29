@@ -1492,7 +1492,7 @@ AI.PSQT2Sigmoid = function () {
 }
 
 AI.softenPSQT = function () {
-    for (let p = 0; p <= 5; p++) {
+    for (let p = 1; p <= 4; p++) {
         AI.PSQT[p] = AI.PSQT[p].map((e, i) => {
             if (e) return e
 
