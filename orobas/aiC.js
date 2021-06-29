@@ -342,7 +342,7 @@ AI.evaluate = function (board, ply, beta) {
 
     positional = AI.limit(positional, AI.VPAWN10) | 0
 
-    forceking = AI.mopUpEval(pieces.K, pieces.Kx, score)
+    // forceking = AI.mopUpEval(pieces.K, pieces.Kx, score)
     
     return score + positional + forceking | 0
 }
