@@ -1013,7 +1013,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         let R = 0
         let E = 0
 
-        //Absurd maneuvers reductions (AMP)
+        //Absurd maneuvers reductions (AMR)
         let doAMP
 
         if (legal >= 1 && AI.phase <= 1 && AI.absurd[turn][piece] >= 2) doAMP = true
