@@ -1023,7 +1023,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                     R += AI.LMR_TABLE[depth][legal]
 
                     if (AI.phase === AI.LATE_ENDGAME) {
-                        R = R / 4 | 0
+                        R = R / 2 | 0
                     }
                 }
             }
