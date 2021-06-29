@@ -13,12 +13,12 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 20,
+    random: 80,
     phase: 1,
     htlength: 1 << 24,
     pawntlength: 1e6,
     reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda
-    mindepth: [3, 3, 3, 3],
+    mindepth: [6, 6, 6, 6],
     secondspermove: 3,
     lastmove: null,
     f: 0
@@ -45,7 +45,7 @@ AI.EXACT = 0
 AI.UPPERBOUND = 1
 
 ///// VALOR RELATIVO DE LAS PIEZAS
-AI.VPAWN = 100
+AI.VPAWN = 270
 AI.VPAWN2 = AI.VPAWN / 2 | 0
 AI.VPAWN3 = AI.VPAWN / 3 | 0
 AI.VPAWN4 = AI.VPAWN / 4 | 0
@@ -344,7 +344,7 @@ AI.evaluate = function (board, ply, beta) {
 
     // forceking = AI.mopUpEval(pieces.K, pieces.Kx, score)
     
-    return score + positional + forceking | 0
+    return (score + positional + forceking)/6 | 0
 }
 
 AI.cols = [
@@ -1038,7 +1038,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
                 score = -AI.PVS(board, -alpha - 1, -alpha, depth + E - R - 1, ply + 1)
 
-                if (!AI.stop && score > alpha && score < beta) {
+                if (!AI.stop && score > alpha) {
                     score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1)
                 }
             }
@@ -1927,7 +1927,7 @@ AI.MTDF = function (board, f, d) {
     let lowerBound = -AI.INFINITY
 
     //Esta línea permite que el algoritmo funcione como PVS normal
-    return AI.PVS(board, lowerBound, upperBound, d, 1)
+    // return AI.PVS(board, lowerBound, upperBound, d, 1)
     // console.log('INICIO DE MTDF')
     let i = 0
     let beta
@@ -2021,7 +2021,7 @@ AI.search = function (board, options) {
         AI.fh = AI.fhf = 0.001
 
         //Iterative Deepening
-        for (let depth = 1; depth <= AI.totaldepth; depth+=1) {
+        for (let depth = 0; depth <= AI.totaldepth; depth+=1) {
 
             if (AI.stop && AI.iteration > AI.mindepth[AI.phase]) break
 
