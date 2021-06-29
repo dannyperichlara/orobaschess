@@ -18,7 +18,7 @@ let AI = {
     htlength: 1 << 24,
     pawntlength: 1e6,
     reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda
-    mindepth: [6, 6, 6, 6],
+    mindepth: [1, 1, 1, 1],
     secondspermove: 3,
     lastmove: null,
     f: 0
