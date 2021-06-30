@@ -629,25 +629,14 @@ AI.getPSQTvalue = function (pieces, turn, us) {
 
     let score = 0
     let tropism = 0
-    let whatpieces
 
-    if (AI.phase === AI.OPENING) whatpieces = [AI.P, AI.N, AI.B, AI.R, AI.Q, AI.K]
-    if (AI.phase === AI.MIDGAME) whatpieces = [AI.P, AI.R, AI.Q, AI.K]
-    if (AI.phase === AI.EARLY_ENDGAME) whatpieces = [AI.P, AI.N, AI.B, AI.R, AI.Q, AI.K]
-    if (AI.phase === AI.LATE_ENDGAME) whatpieces = [AI.P, AI.N, AI.B, AI.R, AI.Q, AI.K]
-
-    for (let i = 0, len = whatpieces.length; i < len; i++) {
+    for (let i = 0; i <= 5; i++) {
         let pieces = allpieces[i]
 
         while (!pieces.isEmpty()) {
             let index = pieces.extractLowestBitPosition()
             // white: 56^index // black: index
             score += AI.PSQT[i][turn ? index : (56 ^ index)]
-
-            // Distancia entre piezas y rey enemigo en el Endgame (King Tropism?)
-            if (AI.phase > 1) {
-                tropism += (7 - AI.DISTANCE[index][enemyKingIndex]) * AI.VPAWN10 * (i===4? 2 : 1)
-            }
         }
     }
 
@@ -1285,7 +1274,7 @@ AI.createPSQT = function (board) {
         // Rook
         [
             anm, anm, anm, anm, anm, anm, anm, anm,
-            abm, VGM, VGM, VGM, VGM, VGM, VGM, abm,
+            abm, VGM, VGM, TBM, TBM, VGM, VGM, abm,
             anm, anm, anm, AGM, AGM, anm, anm, anm,
             anm, anm, anm, anm, anm, anm, anm, anm,
             anm, anm, anm, anm, anm, anm, anm, anm,
@@ -1299,8 +1288,8 @@ AI.createPSQT = function (board) {
             abm, abm, abm, anm, anm, anm, anm, anm,
             abm, AGM, AGM, AGM, AGM, AGM, AGM, anm,
             abm, VGM, AGM, AGM, AGM, AGM, VGM, anm,
-            anm, VGM, VGM, AGM, AGM, VGM, VGM, anm,
-            anm, AGM, AGM, AGM, AGM, AGM, AGM, anm,
+            anm, VGM, VGM, TBM, TBM, VGM, VGM, anm,
+            anm, AGM, AGM, TBM, TBM, AGM, AGM, anm,
             anm, anm, VGM, AGM, AGM, VGM, anm, anm,
             abm, abm, AGM, VGM, VGM, AGM, abm, abm,
             vbm, vbm, vbm, twm, abm, vbm, vbm, vbm,
@@ -1949,7 +1938,7 @@ AI.MTDF = function (board, f, d) {
     let lowerBound = -AI.INFINITY
 
     //Esta línea permite que el algoritmo funcione como PVS normal
-    // return AI.PVS(board, lowerBound, upperBound, d, 1)
+    return AI.PVS(board, lowerBound, upperBound, d, 1)
     // console.log('INICIO DE MTDF')
     let i = 0
     let beta
