@@ -25,32 +25,32 @@ let AI = {
 }
 
 // ÍNDICES
-let PAWN = 0
-let KNIGHT = 1
-let BISHOP = 2
-let ROOK = 3
-let QUEEN = 4
-let KING = 5
+const PAWN = 0
+const KNIGHT = 1
+const BISHOP = 2
+const ROOK = 3
+const QUEEN = 4
+const KING = 5
 
-let WHITE = 0
-let BLACK = 1
+const WHITE = 0
+const BLACK = 1
 
-let OPENING = 0
-let MIDGAME = 1
-let EARLY_ENDGAME = 2
-let LATE_ENDGAME = 3
+const OPENING = 0
+const MIDGAME = 1
+const EARLY_ENDGAME = 2
+const LATE_ENDGAME = 3
 
-let LOWERBOUND = -1
-let EXACT = 0
-let UPPERBOUND = 1
+const LOWERBOUND = -1
+const EXACT = 0
+const UPPERBOUND = 1
 
 ///// VALOR RELATIVO DE LAS PIEZAS
-let VPAWN = 100
-let VPAWN2 = VPAWN / 2 | 0
-let VPAWN3 = VPAWN / 3 | 0
-let VPAWN4 = VPAWN / 4 | 0
-let VPAWN5 = VPAWN / 5 | 0
-let VPAWN10= VPAWN /10 | 0
+const VPAWN = 100
+const VPAWN2 = VPAWN / 2 | 0
+const VPAWN3 = VPAWN / 3 | 0
+const VPAWN4 = VPAWN / 4 | 0
+const VPAWN5 = VPAWN / 5 | 0
+const VPAWN10= VPAWN /10 | 0
 
 AI.PIECE_VALUES = [
     //Obtenidos mediante TDL
@@ -60,7 +60,7 @@ AI.PIECE_VALUES = [
     [1.66, 2.88, 3.00, 4.80, 9.60, 200].map(e => e * VPAWN),
 ]
 
-let BISHOP_PAIR = 0.5*VPAWN | 0
+const BISHOP_PAIR = 0.5*VPAWN | 0
 
 AI.PIECE_VALUES_SUM = []
 
@@ -77,20 +77,20 @@ for (let i in [OPENING, MIDGAME, EARLY_ENDGAME, LATE_ENDGAME]) {
 }
 
 // CONSTANTES
-let MATE = AI.PIECE_VALUES[OPENING][KING]
-let DRAW = -AI.PIECE_VALUES[OPENING][KNIGHT]
-let INFINITY = AI.PIECE_VALUES[OPENING][KING] * 2
+const MATE = AI.PIECE_VALUES[OPENING][KING]
+const DRAW = -AI.PIECE_VALUES[OPENING][KNIGHT]
+const INFINITY = AI.PIECE_VALUES[OPENING][KING] * 2
 
 AI.EMPTY = new Chess.Bitboard()
 
 //VALORES POSICIONALES
-let twm = -VPAWN/2|0  // El peor movimiento
-let vbm = -VPAWN/7|0  // Muy mal movimiento
-let abm = -VPAWN/18|0  // Un mal movimiento
-let anm = 0          // Un movimiento neutral
-let AGM =  VPAWN/45|0  // Un buen movimiento
-let VGM =  VPAWN/18|0 // Muy buen movimiento
-let TBM =  VPAWN/6|0  // El mejor movimiento
+const twm = -VPAWN/2|0  // El peor movimiento
+const vbm = -VPAWN/7|0  // Muy mal movimiento
+const abm = -VPAWN/18|0  // Un mal movimiento
+const anm = 0          // Un movimiento neutral
+const AGM =  VPAWN/45|0  // Un buen movimiento
+const VGM =  VPAWN/18|0 // Muy buen movimiento
+const TBM =  VPAWN/6|0  // El mejor movimiento
 
 //CREA TABLA PARA REDUCCIONES
 AI.LMR_TABLE = new Array(AI.totaldepth + 1)
@@ -109,7 +109,7 @@ for (let depth = 1; depth < AI.totaldepth + 1; ++depth) {
 
 }
 
-let MFACTOR = [null, 10, 8, 6, 4, null]
+const MFACTOR = [null, 10, 8, 6, 4, null]
 
 // VALORES PARA VALORAR MOBILIDAD
 // El valor se asigna dependiendo del número de movimientos por pieza, desde el caballo hasta la dama
@@ -118,8 +118,8 @@ AI.MOBILITY_VALUES = [
         [],
         [-4, -3, -2, -1, 0, 1, 2, 3, 4].map(e => e * MFACTOR[1] | 0),
         [-4, -2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(e => e * MFACTOR[2] | 0),
-        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(e => e * MFACTOR[3] | 0),
-        [-2, -1, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map(e => e * MFACTOR[4] | 0),
+        [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(e => e * 0 | 0),
+        [-2, -1, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map(e => e * 0 | 0),
         []
     ],
     [
@@ -349,14 +349,14 @@ AI.evaluate = function (board, ply, beta, pvNode) {
     // Structure: Valoración de la estructura de peones (defendidos/doblados/pasados)
     // Mobility: Valoración de la capacidad de las piezas de moverse en el tablero
     positional += AI.getPSQT(pieces, turn, notturn) | 0
-    positional += AI.getMobility(pieces, board, turn, notturn) | 0
+    positional += ply < 4 || pvNode? AI.getMobility(pieces, board, turn, notturn) | 0 : 0
     
     if (AI.phase > 0) {
         positional += AI.getKingSafety(pieces, turn, notturn) | 0
 
     }
 
-    if (!pvNode && AI.iteration > 3) {
+    if (!pvNode && !board.hasCastlingRight()) {
         positional = AI.limit(positional, VPAWN10) | 0
     }
 
@@ -705,6 +705,11 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         move.killer2 = 0
         move.score = 0
         move.capture = false
+
+        if (move.isCastle()) {
+            move.score = 2e8
+            continue
+        }
 
         // CRITERIO 1: La jugada está en la Tabla de Trasposición
         if (ttEntry && ttEntry.flag !== UPPERBOUND && move.value === ttEntry.move.value) {
