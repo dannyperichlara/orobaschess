@@ -60,6 +60,22 @@ AI.PIECE_VALUES = [
     [1.66, 2.88, 3.00, 4.80, 9.60, 200].map(e => e * AI.VPAWN),
 ]
 
+AI.PIECE_VALUES_SUM = []
+
+for (let i in [AI.OPENING, AI.MIDGAME, AI.EARLY_ENDGAME, AI.LATE_ENDGAME]) {
+    AI.PIECE_VALUES_SUM[i] = []
+
+    for (let piece = AI.P; piece <= AI.K; piece++) {
+        AI.PIECE_VALUES_SUM[i][piece] = []
+
+        for (let j=0; j<=8; j++) {
+            AI.PIECE_VALUES_SUM[i][piece][j] = j * AI.PIECE_VALUES[i][piece] | 0
+        }
+    }
+}
+
+console.log(AI.PIECE_VALUES_SUM )
+
 AI.BISHOP_PAIR = 0.5*AI.VPAWN | 0
 
 // CONSTANTES
@@ -343,8 +359,10 @@ AI.evaluate = function (board, ply, beta) {
     positional = AI.limit(positional, AI.VPAWN10) | 0
 
     // forceking = AI.mopUpEval(pieces.K, pieces.Kx, score)
-    
-    return (score + positional + forceking)/6 | 0
+
+    score = (score + positional + forceking)/6 | 0
+
+    return score
 }
 
 AI.cols = [
@@ -485,11 +503,23 @@ AI.getStructureValue = function (turn, P, Px) {
     let white = turn === 0
 
     let score = 0
+
+    let psqt = 0
+    let pawns = P.dup()
+    
+    let material = AI.PIECE_VALUES_SUM[AI.phase][AI.P][pawns.popcnt()]
+
+    while (!pawns.isEmpty()) {
+        let index = pawns.extractLowestBitPosition()
+        // white: 56^index // black: index
+        psqt += AI.PSQT[0][turn ? index : (56 ^ index)]
+    }
+
     let doubled = AI.getDoubled(P, white)
     let defended = AI.getDefended(P, turn)
     let passers = AI.getPassers(P, Px, white)
 
-    score = defended + doubled + passers
+    score = material + psqt + defended + doubled + passers
 
     AI.pawntable[turn][hashkey % AI.pawntlength] = score
 
@@ -566,19 +596,17 @@ AI.getMaterialValue = function (pieces, us) {
     if (us) {
         bishops = pieces.B.popcnt()
 
-        value = AI.PIECE_VALUES[AI.phase][AI.P] * pieces.P.popcnt() +
-                AI.PIECE_VALUES[AI.phase][AI.N] * pieces.N.popcnt() +
-                AI.PIECE_VALUES[AI.phase][AI.B] * bishops +
-                AI.PIECE_VALUES[AI.phase][AI.R] * pieces.R.popcnt() +
-                AI.PIECE_VALUES[AI.phase][AI.Q] * pieces.Q.popcnt()
+        value = AI.PIECE_VALUES_SUM[AI.phase][AI.N][pieces.N.popcnt()] +
+                AI.PIECE_VALUES_SUM[AI.phase][AI.B][bishops] +
+                AI.PIECE_VALUES_SUM[AI.phase][AI.R][pieces.R.popcnt()] +
+                AI.PIECE_VALUES_SUM[AI.phase][AI.Q][pieces.Q.popcnt()]
     } else {
         bishops = pieces.Bx.popcnt()
 
-        value = AI.PIECE_VALUES[AI.phase][AI.P] * pieces.Px.popcnt() +
-                AI.PIECE_VALUES[AI.phase][AI.N] * pieces.Nx.popcnt() +
-                AI.PIECE_VALUES[AI.phase][AI.B] * bishops +
-                AI.PIECE_VALUES[AI.phase][AI.R] * pieces.Rx.popcnt() +
-                AI.PIECE_VALUES[AI.phase][AI.Q] * pieces.Qx.popcnt()
+        value = AI.PIECE_VALUES_SUM[AI.phase][AI.N][pieces.Nx.popcnt()] +
+                AI.PIECE_VALUES_SUM[AI.phase][AI.B][bishops] +
+                AI.PIECE_VALUES_SUM[AI.phase][AI.R][pieces.Rx.popcnt()] +
+                AI.PIECE_VALUES_SUM[AI.phase][AI.Q][pieces.Qx.popcnt()]
     }
 
     if (bishops >= 2) value += AI.BISHOP_PAIR
@@ -630,7 +658,7 @@ AI.getPSQTvalue = function (pieces, turn, us) {
     let score = 0
     let tropism = 0
 
-    for (let i = 0; i <= 5; i++) {
+    for (let i = 1; i <= 5; i++) {
         let pieces = allpieces[i]
 
         while (!pieces.isEmpty()) {
@@ -1094,15 +1122,11 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         if (!board.isKingInCheck()) {
             AI.ttSave(hashkey, AI.DRAW + ply, AI.EXACT, depth, bestmove)
             
-            if (ply === 1) AI.stop = true
-            
             return AI.DRAW
         }
         
         // Mate
         AI.ttSave(hashkey, -AI.MATE + ply, AI.EXACT, depth, bestmove)
-        
-        if (ply === 1) AI.stop = true
 
         return -AI.MATE + ply
 
@@ -1938,7 +1962,7 @@ AI.MTDF = function (board, f, d) {
     let lowerBound = -AI.INFINITY
 
     //Esta línea permite que el algoritmo funcione como PVS normal
-    return AI.PVS(board, lowerBound, upperBound, d, 1)
+    // return AI.PVS(board, lowerBound, upperBound, d, 1)
     // console.log('INICIO DE MTDF')
     let i = 0
     let beta
@@ -1990,7 +2014,7 @@ AI.search = function (board, options) {
         AI.lastscore = 0
         AI.f = 0
     } else {
-        // AI.createTables(true, true, false)
+        AI.createTables(true, true, false)
         AI.f = AI.lastscore
     }
 
