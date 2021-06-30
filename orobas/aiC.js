@@ -363,7 +363,7 @@ AI.evaluate = function (board, ply, beta, pvNode) {
 
     // forceking = AI.mopUpEval(pieces.K, pieces.Kx, score)
 
-    score = (score + positional + forceking)/6 | 0
+    score = score + positional + forceking | 0
 
     return score
 }
@@ -1972,7 +1972,7 @@ AI.MTDF = function (board, f, d) {
     let lowerBound = -INFINITY
 
     //Esta línea permite que el algoritmo funcione como PVS normal
-    // return AI.PVS(board, lowerBound, upperBound, d, 1)
+    return AI.PVS(board, lowerBound, upperBound, d, 1)
     // console.log('INICIO DE MTDF')
     let i = 0
     let beta
