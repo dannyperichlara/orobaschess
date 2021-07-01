@@ -45,7 +45,7 @@ const EXACT = 0
 const UPPERBOUND = 1
 
 ///// VALOR RELATIVO DE LAS PIEZAS
-const VPAWN = 20
+const VPAWN = 100
 const VPAWN2 = VPAWN / 2 | 0
 const VPAWN3 = VPAWN / 3 | 0
 const VPAWN4 = VPAWN / 4 | 0
@@ -1944,7 +1944,7 @@ AI.MTDF = function (board, f, d) {
     let lowerBound = -INFINITY
 
     //Esta línea permite que el algoritmo funcione como PVS normal
-    // return AI.PVS(board, lowerBound, upperBound, d, 1)
+    return AI.PVS(board, lowerBound, upperBound, d, 1)
     // console.log('INICIO DE MTDF')
     let i = 0
     let beta
