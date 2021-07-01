@@ -2076,7 +2076,9 @@ AI.search = function (board, options) {
             console.info('________________________________________________________________________________')
         }
 
-        let sigmoid = 1 / (1 + Math.pow(10, -AI.lastscore / (4 * VPAWN)))
+        let score100 = AI.lastscore * (100/VPAWN)
+
+        let sigmoid = 1 / (1 + Math.pow(10, -score100 / 400))
 
         AI.lastmove = AI.bestmove
 
