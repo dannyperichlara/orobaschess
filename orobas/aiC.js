@@ -683,11 +683,6 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         move.score = 0
         move.capture = false
 
-        if (AI.phase <= MIDGAME && move.isCastle()) {
-            move.score = 2e8
-            continue
-        }
-
         // CRITERIO 1: La jugada está en la Tabla de Trasposición
         if (ttEntry && ttEntry.flag !== UPPERBOUND && move.value === ttEntry.move.value) {
             move.tt = true
@@ -728,6 +723,11 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         if (killer2 && killer2.value === move.value) {
             move.killer2 = true
             move.score = 1e6
+            continue
+        }
+
+        if (AI.phase <= MIDGAME && move.isCastle()) {
+            move.score = 1e5
             continue
         }
 
@@ -1945,6 +1945,7 @@ AI.MTDF = function (board, f, d) {
 
     //Esta línea permite que el algoritmo funcione como PVS normal
     return AI.PVS(board, lowerBound, upperBound, d, 1)
+    // r1bqk2r/ppp1bppp/4p3/3pP3/3P2n1/2PQ1N1P/PP3PP1/RNB2RK1 b kq - 0 9
     // console.log('INICIO DE MTDF')
     let i = 0
     let beta
