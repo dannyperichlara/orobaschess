@@ -59,7 +59,7 @@ AI.PIECE_VALUES = [
     [1, 3, 3, 5, 10, 200].map(e => e * VPAWN),
 ]
 
-const BISHOP_PAIR = 0.5*VPAWN | 0
+const BISHOP_PAIR = VPAWN2 | 0
 
 AI.PIECE_VALUES_SUM = []
 
