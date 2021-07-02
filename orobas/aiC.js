@@ -53,11 +53,10 @@ const VPAWN5 = VPAWN / 5 | 0
 const VPAWN10= VPAWN /10 | 0
 
 AI.PIECE_VALUES = [
-    //Obtenidos mediante TDL
-    [1.00, 3.00, 3.00, 5.00, 10.00, 200].map(e => e * VPAWN),
-    [1.00, 3.00, 3.00, 5.00, 10.00, 200].map(e => e * VPAWN),
-    [1.00, 3.00, 3.00, 5.00, 10.00, 200].map(e => e * VPAWN),
-    [1.00, 3.00, 3.00, 5.00, 10.00, 200].map(e => e * VPAWN),
+    [1, 3, 3, 5, 10, 200].map(e => e * VPAWN),
+    [1, 3, 3, 5, 10, 200].map(e => e * VPAWN),
+    [1, 3, 3, 5, 10, 200].map(e => e * VPAWN),
+    [1, 3, 3, 5, 10, 200].map(e => e * VPAWN),
 ]
 
 const BISHOP_PAIR = 0.5*VPAWN | 0
@@ -78,7 +77,7 @@ for (let i in [OPENING, MIDGAME, EARLY_ENDGAME, LATE_ENDGAME]) {
 
 // CONSTANTES
 const MATE = AI.PIECE_VALUES[OPENING][KING]
-const DRAW = -AI.PIECE_VALUES[OPENING][KNIGHT]
+const DRAW = 0 //-AI.PIECE_VALUES[OPENING][KNIGHT]
 const INFINITY = AI.PIECE_VALUES[OPENING][KING] * 2
 
 AI.EMPTY = new Chess.Bitboard()
@@ -101,6 +100,7 @@ for (let depth = 1; depth < AI.totaldepth + 1; ++depth) {
 
     for (let moves = 1; moves < 218; ++moves) {
         if (depth >= 2) {
+            // AI.LMR_TABLE[depth][moves] = Math.log(depth)*Math.log(moves)/1.95 | 0
             AI.LMR_TABLE[depth][moves] = depth/5 + moves/5 + 1 | 0
         } else {
             AI.LMR_TABLE[depth][moves] = 0
@@ -110,7 +110,8 @@ for (let depth = 1; depth < AI.totaldepth + 1; ++depth) {
 }
 
 // Max mobility score: 20
-const MFACTOR = [null, 2.5, 1.54, 1.43, 0.74, null]
+const MFACTOR = [null, 3.4, 2.1, 1.9, 1, null]
+// const MFACTOR = [null, 1, 1, 1, 1, null]
 
 // VALORES PARA VALORAR MOBILIDAD
 // El valor se asigna dependiendo del número de movimientos por pieza, desde el caballo hasta la dama
@@ -151,32 +152,32 @@ AI.MOBILITY_VALUES = [
 
 // SEGURIDAD DEL REY
 // Valor se asigna dependiendo del número de piezas que rodea al rey
-AI.SAFETY_VALUES = [0, 1, 3, 4, 5, 6, 7, 8, 9].map(e => VPAWN5 * e)
+AI.SAFETY_VALUES = [0, 1, 3, 4, 5, 6, 7, 8, 9]//.map(e => VPAWN5 * e)
 
 // PEONES PASADOS
 // Al detectar un peón pasado, se asigna un valor extra al peón correspondiente
 AI.PASSER_VALUES = [
-             0,         0,         0,         0,         0,         0,         0,         0,
-     VPAWN2, VPAWN2, VPAWN2, VPAWN2, VPAWN2, VPAWN2, VPAWN2, VPAWN2,
-     VPAWN3, VPAWN3, VPAWN3, VPAWN3, VPAWN3, VPAWN3, VPAWN3, VPAWN3,
-     VPAWN4, VPAWN4, VPAWN4, VPAWN4, VPAWN4, VPAWN4, VPAWN4, VPAWN4,
-     VPAWN5, VPAWN5, VPAWN5, VPAWN5, VPAWN5, VPAWN5, VPAWN5, VPAWN5,
-     VPAWN10, VPAWN10, VPAWN10, VPAWN10, VPAWN10, VPAWN10, VPAWN10, VPAWN10,
-             0,         0,         0,         0,         0,         0,         0,         0,
-             0,         0,         0,         0,         0,         0,         0,         0,
+    54,	54,	54,	54,	54,	54,	54,	54,
+    27,	27,	27,	27,	27,	27,	27,	27,
+    14,	14,	14,	14,	14,	14,	14,	14,
+    7,	7,	7,	7,	7,	7,	7,	7,
+    3,	3,	3,	3,	3,	3,	3,	3,
+    2,	2,	2,	2,	2,	2,	2,	2,
+    1,	1,	1,	1,	1,	1,	1,	1,
+    0,	0,	0,	0,	0,	0,	0,	0,
 ]
 
 // PEONES DOBLADOS
 // Se asigna un valor negativo dependiendo del número de peones doblados
-AI.DOUBLED_VALUES = [0, -1, -2, -3, -4, -5, -6, -7, -8].map(e => e * VPAWN2 | 0)
+AI.DOUBLED_VALUES = [0, -1, -2, -3, -4, -5, -6, -7, -8].map(e => e * VPAWN | 0)
 
 // ESTRUCTURA DE PEONES
 // Se asigna un valor dependiendo del número de peones defendidos por otro peón en cada fase
 AI.DEFENDED_PAWN_VALUES = [
-    [0,         0,         0,         0,         0,         0,         0,         0,         0],
-    [0, VPAWN10, VPAWN5, VPAWN4, VPAWN3, VPAWN2, VPAWN2, VPAWN2, VPAWN2],
-    [0, VPAWN10, VPAWN5, VPAWN4, VPAWN3, VPAWN2, VPAWN2, VPAWN2, VPAWN2],
-    [0, VPAWN10, VPAWN5, VPAWN4, VPAWN3, VPAWN2, VPAWN2, VPAWN2, VPAWN2],
+    [0, 1, 2, 2, 2, 2, 2, 2, 2],
+    [0, 1, 2, 3, 4, 5, 5, 5, 5],
+    [0, 1, 2, 3, 4, 5, 5, 5, 5],
+    [0, 1, 2, 3, 4, 5, 5, 5, 5],
 ]
 
 // MVV-LVA
@@ -342,25 +343,25 @@ AI.evaluate = function (board, ply, beta, pvNode) {
 
     // Valor material del tablero
     let material = AI.getMaterial(pieces) | 0
+    
+    // Structure: Valoración de la estructura de peones (defendidos/doblados/pasados)
     let structure = AI.getStructure(pieces.P, pieces.Px, turn, notturn) | 0
     
+    // Lazy evaluation
+    let matstruct = material + structure
+    if (matstruct >= beta + AI.VPAWN) return matstruct
+
     // Valor posicional del tablero
     // PSQT: Plusvalor o minusvalor por situar una pieza en determinada casilla
-    // Structure: Valoración de la estructura de peones (defendidos/doblados/pasados)
     // Mobility: Valoración de la capacidad de las piezas de moverse en el tablero
+    
     let psqt = AI.getPSQT(pieces, turn, notturn) | 0
-
-    let mobility = AI.getMobility(pieces, board, turn, notturn) | 0
+    let mobility = (pvNode? AI.getMobility(pieces, board, turn, notturn) : 0) | 0
 
     
-    if (AI.phase > 0) {
-        kingSafety += AI.getKingSafety(pieces, turn, notturn) | 0
-    }
+    if (AI.phase > 0) kingSafety += AI.getKingSafety(pieces, turn, notturn) | 0
     
-    score = material + structure + psqt + mobility + kingSafety | 0
-    // console.log(material, mobility, score)
-
-    // console.log(score, material, structure, psqt, mobility, kingSafety)
+    score = matstruct + psqt + mobility + kingSafety | 0
 
     return score
 }
@@ -640,7 +641,7 @@ AI.getPSQTvalue = function (pieces, turn) {
 
     let score = 0
 
-    for (let i = KNIGHT; i <= KING; i++) {
+    for (let i = PAWN; i <= KING; i++) {
         let piece = pieces[i]
 
         while (!piece.isEmpty()) {
@@ -952,23 +953,23 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     let incheck = board.isKingInCheck()
 
     //Razoring (idea from Strelka) //+34 ELO
-    // if (cutNode && !incheck) {
-    //     let value = staticeval + AI.PAWN
+    if (cutNode && !incheck) {
+        let value = staticeval + AI.PAWN
 
-    //     if (value < beta) {
-    //         if (depth === 1) {
-    //             let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
-    //             return Math.max(new_value, value)
-    //         }
-    //         value += 2*AI.PAWN
+        if (value < beta) {
+            if (depth === 1) {
+                let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
+                return Math.max(new_value, value)
+            }
+            value += 2*AI.PAWN
 
-    //         if (value < beta && depth <= 3) {
-    //             let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
-    //             if (new_value < beta)
-    //             return Math.max(new_value, value)
-    //         }
-    //     }
-    //   }
+            if (value < beta && depth <= 3) {
+                let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
+                if (new_value < beta)
+                return Math.max(new_value, value)
+            }
+        }
+      }
 
     //Búsqueda QS para evitar efecto horizonte
 
@@ -992,12 +993,11 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     let score
 
     //Reverse Futility pruning (Static Null Move Pruning) TESTED OK
-    let margin = AI.PIECE_VALUES[0][1] * depth
-    let reverseval = staticeval - margin
+    let reverseval = staticeval - AI.PIECE_VALUES[0][1] * depth
 
-    if (!incheck && depth <= 3 && reverseval > beta) {
-        AI.ttSave(hashkey, reverseval, LOWERBOUND, depth, moves[0])
-        return reverseval
+    if (!incheck && reverseval > beta) {
+        AI.ttSave(hashkey, beta, LOWERBOUND, depth, moves[0])
+        return beta
     }
 
     // futility pruning
@@ -1005,8 +1005,8 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
       let futilityMargin = depth * AI.PIECE_VALUES[0][1]
 
       if (staticeval + futilityMargin <= alpha) {
-        AI.ttSave(hashkey, staticeval, UPPERBOUND, depth, moves[0])
-        return staticeval
+        AI.ttSave(hashkey, oAlpha, UPPERBOUND, depth, moves[0])
+        return oAlpha
       }
     }
 
@@ -1019,12 +1019,12 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
         //Absurd maneuvers reductions (AMR)
         if (legal >= 1 && AI.phase <= 1 && AI.absurd[turn][piece] >= 2) {
-          R+=2
+          R++
         }
 
         // Move count reductions
         if (depth >=3 && !move.capture && legal >= (3 + depth**2) / 2) {
-            R+=2
+            R++
         }
 
         if (board.makeMove(move)) {
@@ -1041,7 +1041,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                 }
             }
 
-            if (depth === 1 && incheck) E++
+            if (depth <= 2 && incheck) E++
 
             if (legal === 1) {
                 // El primer movimiento se busca con ventana total y sin reducciones
@@ -1171,73 +1171,73 @@ AI.createPSQT = function (board) {
     AI.PSQT_OPENING = [
         // Pawn
         [
-            anm, anm, anm, anm, anm, anm, anm, anm,
-            twm, twm, twm, twm, twm, vbm, vbm, vbm,
-            twm, vbm, abm, abm, abm, vbm, vbm, vbm,
-            vbm, abm, anm, VGM, VGM, vbm, vbm, vbm,
-            twm, anm, anm, TBM, TBM, twm, twm, twm,
-            anm, AGM, AGM, anm, anm, vbm, AGM, anm,
-            AGM, AGM, AGM, twm, twm, AGM, TBM, TBM,
-            anm, anm, anm, anm, anm, anm, anm, anm,
+            0,	0,	0,	0,	0,	0,	0,	0,
+            0,	0,	0,	0,	0,	0,	0,	0,
+            0,	0,	0,	0,	0,	0,	0,	0,
+            0,	0,	1,	1,	1,	1,	0,	0,
+            0,	0,	3,	4,	4,	3,	0,	0,
+            1,	2,	2,	1,	1,	2,	2,	1,
+            2,	3,	2,	1,	1,	2,	3,	2,
+            0,	0,	0,	0,	0,	0,	0,	0,
         ],
 
         // Knight
         [
-            twm, abm, abm, abm, abm, abm, abm, twm,
-            vbm, abm, AGM, VGM, VGM, AGM, abm, vbm,
-            vbm, VGM, TBM, TBM, TBM, TBM, VGM, vbm,
-            twm, VGM, TBM, TBM, TBM, TBM, VGM, twm,
-            twm, AGM, TBM, TBM, TBM, TBM, AGM, twm,
-            twm, abm, AGM, anm, anm, TBM, abm, twm,
-            vbm, abm, abm, AGM, anm, abm, abm, vbm,
-            twm, twm, vbm, vbm, vbm, vbm, twm, twm,
+            2,	3,	4,	4,	4,	4,	3,	2,
+            3,	4,	6,	6,	6,	6,	4,	3,
+            4,	6,	8,	8,	8,	8,	6,	4,
+            4,	6,	8,	8,	8,	8,	6,	4,
+            4,	6,	8,	8,	8,	8,	6,	4,
+            4,	6,	8,	8,	8,	8,	6,	4,
+            3,	4,	6,	6,	6,	6,	4,	3,
+            2,	3,	4,	4,	4,	4,	3,	2,
 
         ],
         // Bishop
         [
-            vbm, abm, abm, abm, abm, abm, abm, vbm,
-            vbm, abm, abm, abm, abm, abm, abm, vbm,
-            vbm, abm, anm, AGM, AGM, anm, abm, vbm,
-            vbm, AGM, AGM, TBM, TBM, AGM, AGM, vbm,
-            abm, AGM, AGM, TBM, TBM, AGM, AGM, abm,
-            twm, abm, abm, AGM, AGM, abm, abm, twm,
-            vbm, AGM, VGM, AGM, AGM, VGM, AGM, vbm,
-            vbm, vbm, twm, vbm, vbm, twm, vbm, vbm,
+            7,	7,	7,	7,	7,	7,	7,	7,
+            7,	9,	9,	9,	9,	9,	9,	7,
+            7,	9, 11, 11, 11, 11,	9,	7,
+            7,	9, 11, 13, 13, 11,	9,	7,
+            7,	9, 11, 13, 13, 11,	9,	7,
+            7,	9, 11, 11, 11, 11,	9,	7,
+            7,	9,	9,	9,	9,	9,	9,	7,
+            7,	7,	7,	7,	7,	7,	7,	7,
         ],
         // Rook
         [
-            anm, anm, anm, anm, anm, anm, anm, anm,
-            AGM, AGM, AGM, TBM, TBM, AGM, AGM, AGM,
-            twm, twm, twm, twm, twm, twm, twm, twm,
-            twm, twm, twm, twm, twm, twm, twm, twm,
-            anm, anm, anm, anm, anm, anm, anm, anm,
-            anm, anm, anm, anm, anm, anm, anm, anm,
-            anm, anm, anm, anm, anm, anm, anm, anm,
-            anm, anm, anm, VGM, VGM, AGM, anm, anm,
+            5,	6,	7,	8,	8,	7,	6,	5,
+            6,	7,	8,	9,	9,	8,	7,	6,
+            5,	6,	7,	8,	8,	7,	6,	5,
+            4,	5,	6,	7,	7,	6,	5,	4,
+            3,	4,	5,	6,	6,	5,	4,	3,
+            2,	3,	4,	5,	5,	4,	3,	2,
+            0,	2,	3,	4,	4,	3,	2,	0,
+            0,	1,	2,	3,	3,	2,	1,	0,
         ],
 
         // Queen
         [
-            twm, twm, twm, twm, twm, twm, twm, twm,
-            twm, twm, twm, twm, twm, twm, twm, twm,
-            twm, twm, twm, twm, twm, twm, twm, twm,
-            twm, twm, twm, twm, twm, twm, twm, twm,
-            abm, abm, abm, abm, abm, abm, abm, abm,
-            abm, abm, abm, vbm, abm, abm, abm, abm,
-            abm, abm, AGM, AGM, AGM, abm, abm, abm,
-            twm, vbm, twm, anm, twm, vbm, vbm, twm,
+            21,	21,	21,	21,	21,	21,	21,	21,
+            21,	23,	23,	23,	23,	23,	23,	21,
+            21,	23,	25,	25,	25,	25,	23,	21,
+            21,	23,	25,	27,	27,	25,	23,	21,
+            21,	23,	25,	27,	27,	25,	23,	21,
+            21,	23,	25,	25,	25,	25,	23,	21,
+            21,	23,	23,	23,	23,	23,	23,	21,
+            21,	21,	21,	21,	21,	21,	21,	21,
         ],
 
         // King
         [
-            twm, twm, twm, twm, twm, twm, twm, twm,
-            twm, twm, twm, twm, twm, twm, twm, twm,
-            twm, twm, twm, twm, twm, twm, twm, twm,
-            twm, twm, twm, twm, twm, twm, twm, twm,
-            twm, twm, twm, twm, twm, twm, twm, twm,
-            vbm, vbm, vbm, twm, twm, vbm, vbm, vbm,
-            abm, abm, abm, vbm, vbm, vbm, anm, anm,
-            abm, abm, TBM, twm, abm, vbm, TBM, anm
+            0,	0,	0,	0,	0,	0,	0,	0,
+            0,	0,	0,	0,	0,	0,	0,	0,
+            0,	0,	0,	0,	0,	0,	0,	0,
+            0,	0,	0,	0,	0,	0,	0,	0,
+            0,	0,	0,	0,	0,	0,	0,	0,
+            5,	6,	0,	0,	0,	0,	6,	5,
+            9,	10,	2,	2,	2,	2,	10,	9,
+            12,	13,	6,	4,	4,	6,	13,	12,
 
         ],
     ]
@@ -1245,226 +1245,222 @@ AI.createPSQT = function (board) {
     AI.PSQT_MIDGAME = [
         // Pawn
         [
-            anm, anm, anm, anm, anm, anm, anm, anm,
-            anm, anm, anm, anm, anm, anm, anm, vbm,
-            anm, anm, anm, anm, anm, anm, anm, vbm,
-            anm, anm, AGM, TBM, TBM, AGM, vbm, vbm,
-            anm, AGM, AGM, TBM, TBM, AGM, vbm, vbm,
-            AGM, AGM, AGM, anm, anm, anm, anm, anm,
-            VGM, AGM, vbm, twm, twm, anm, VGM, VGM,
-            anm, anm, anm, anm, anm, anm, anm, anm,
+            0,	0,	0,	0,	0,	0,	0,	0,
+            0,	0,	0,	0,	0,	0,	0,	0,
+            0,	0,	0,	0,	0,	0,	0,	0,
+            0,	0,	1,	1,	1,	1,	0,	0,
+            0,	0,	3,	4,	4,	3,	0,	0,
+            1,	2,	2,	1,	1,	2,	2,	1,
+            2,	3,	2,	1,	1,	2,	3,	2,
+            0,	0,	0,	0,	0,	0,	0,	0,
         ],
 
         // Knight
         [
-            twm, abm, abm, abm, abm, abm, abm, twm,
-            vbm, abm, AGM, VGM, VGM, AGM, abm, vbm,
-            vbm, VGM, TBM, TBM, TBM, TBM, VGM, vbm,
-            twm, VGM, TBM, TBM, TBM, TBM, VGM, twm,
-            twm, AGM, TBM, TBM, TBM, TBM, AGM, twm,
-            twm, abm, AGM, anm, anm, TBM, abm, twm,
-            vbm, abm, abm, AGM, anm, abm, abm, vbm,
-            twm, twm, vbm, vbm, vbm, vbm, twm, twm,
-
+            2,	3,	4,	4,	4,	4,	3,	2,
+            3,	4,	6,	6,	6,	6,	4,	3,
+            3,	4,	6,	6,	6,	6,	4,	3,
+            2,	3,	4,	4,	4,	4,	3,	2,
+            2,	3,	4,	4,	4,	4,	3,	2,
+            1,	2,	2,	2,	2,	2,	2,	1,
+            0,	0,	0,	0,	0,	0,	0,	0,
+            0,	0,	0,	0,	0,	0,	0,	0,
         ],
         // Bishop
         [
-            vbm, abm, abm, abm, abm, abm, abm, vbm,
-            vbm, abm, abm, abm, abm, abm, abm, vbm,
-            vbm, abm, anm, AGM, AGM, anm, abm, vbm,
-            vbm, AGM, AGM, TBM, TBM, AGM, AGM, vbm,
-            abm, AGM, AGM, TBM, TBM, AGM, AGM, abm,
-            twm, abm, abm, AGM, AGM, abm, abm, twm,
-            vbm, AGM, VGM, AGM, AGM, VGM, AGM, vbm,
-            vbm, vbm, twm, vbm, vbm, twm, vbm, vbm,
+            3,	4,	5,	6,	6,	5,	4,	3,
+            3,	5,	6,	6,	6,	6,	5,	3,
+            3,	5,	6,	6,	6,	6,	5,	3,
+            3,	4,	5,	6,	6,	5,	4,	3,
+            4,	5,	6,	7,	7,	6,	5,	4,
+            4,	4,	5,	5,	5,	5,	4,	4,
+            4,	4,	3,	3,	3,	3,	4,	4,
+            4,	3,	2,	1,	1,	2,	3,	4,
         ],
         // Rook
         [
-            anm, anm, anm, anm, anm, anm, anm, anm,
-            abm, VGM, VGM, TBM, TBM, VGM, VGM, abm,
-            anm, anm, anm, AGM, AGM, anm, anm, anm,
-            anm, anm, anm, anm, anm, anm, anm, anm,
-            anm, anm, anm, anm, anm, anm, anm, anm,
-            anm, anm, anm, anm, anm, anm, anm, anm,
-            anm, anm, anm, VGM, VGM, anm, anm, anm,
-            twm, anm, anm, AGM, AGM, anm, vbm, twm,
+            5,	6,	7,	8,	8,	7,	6,	5,
+            6,	7,	8,	9,	9,	8,	7,	6,
+            5,	6,	7,	8,	8,	7,	6,	5,
+            4,	5,	6,	7,	7,	6,	5,	4,
+            3,	4,	5,	6,	6,	5,	4,	3,
+            2,	3,	4,	5,	5,	4,	3,	2,
+            0,	2,	3,	4,	4,	3,	2,	0,
+            0,	1,	2,	3,	3,	2,	1,	0,
         ],
 
         // Queen
         [
-            abm, abm, abm, anm, anm, anm, anm, anm,
-            abm, AGM, AGM, AGM, AGM, AGM, AGM, anm,
-            abm, VGM, AGM, AGM, AGM, AGM, VGM, anm,
-            anm, VGM, VGM, TBM, TBM, VGM, VGM, anm,
-            anm, AGM, AGM, TBM, TBM, AGM, AGM, anm,
-            anm, anm, VGM, AGM, AGM, VGM, anm, anm,
-            abm, abm, AGM, VGM, VGM, AGM, abm, abm,
-            vbm, vbm, vbm, twm, abm, vbm, vbm, vbm,
+            13,	14,	15,	16,	16,	15,	14,	13,
+            13,	15,	16,	16,	16,	16,	15,	13,
+            13,	15,	16,	16,	16,	16,	15,	13,
+            13,	14,	15,	16,	16,	15,	14,	13,
+            8,	9,	10,	11,	11,	10,	9,	8,
+            8,	8,	9,	9,	9,	9,	8,	8,
+            8,	8,	3,	3,	3,	3,	8,	8,
+            8,	7,	0,	1,	1,	0,	7,	8,
         ],
 
         // King
         [
-            vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
-            vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
-            vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
-            vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
-            vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
-            vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
-            abm, abm, abm, twm, twm, vbm, anm, anm,
-            abm, AGM, AGM, twm, vbm, vbm, TBM, AGM,
-
+            0,	0,	0,	0,	0,	0,	0,	0,
+            0,	0,	0,	0,	0,	0,	0,	0,
+            0,	0,	0,	0,	0,	0,	0,	0,
+            0,	0,	0,	0,	0,	0,	0,	0,
+            0,	0,	0,	0,	0,	0,	0,	0,
+            5,	6,	0,	0,	0,	0,	6,	5,
+            9,	10,	2,	2,	2,	2,	10,	9,
+            12,	13,	6,	4,	4,	6,	13,	12,
         ],
     ]
 
     AI.PSQT_EARLY_ENDGAME = [
         // Pawn
         [
-            anm, anm, anm, anm, anm, anm, anm, anm,
-            TBM, TBM, TBM, TBM, TBM, TBM, TBM, TBM,
-            VGM, VGM, VGM, VGM, VGM, VGM, VGM, VGM,
-            AGM, AGM, AGM, AGM, AGM, AGM, AGM, AGM,
-            abm, abm, abm, abm, abm, abm, abm, abm,
-            vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
-            twm, twm, twm, twm, twm, twm, twm, twm,
-            anm, anm, anm, anm, anm, anm, anm, anm,
+            9,	9,	9,	9,	9,	9,	9,	9,
+            8,	7,	6,	5,	5,	6,	7,	8,
+            7,	6,	5,	4,	4,	5,	6,	7,
+            6,	5,	4,	3,	3,	4,	5,	6,
+            5,	4,	3,	2,	2,	3,	4,	5,
+            4,	3,	2,	1,	1,	2,	3,	4,
+            3,	2,	1,	0,	0,	1,	2,	3,
+            0,	0,	0,	0,	0,	0,	0,	0,
         ],
 
         // Knight
         [
-            twm, abm, abm, abm, abm, abm, abm, twm,
-            vbm, anm, anm, anm, anm, anm, anm, vbm,
-            vbm, anm, AGM, AGM, AGM, AGM, anm, vbm,
-            vbm, anm, AGM, TBM, TBM, AGM, anm, vbm,
-            vbm, anm, AGM, TBM, TBM, AGM, anm, vbm,
-            vbm, anm, AGM, AGM, AGM, AGM, anm, vbm,
-            vbm, anm, anm, anm, anm, anm, anm, vbm,
-            twm, twm, twm, twm, twm, twm, twm, twm,
-
+            2,	3,	4,	4,	4,	4,	3,	2,
+            3,	4,	6,	6,	6,	6,	4,	3,
+            3,	4,	6,	6,	6,	6,	4,	3,
+            2,	3,	4,	4,	4,	4,	3,	2,
+            2,	3,	4,	4,	4,	4,	3,	2,
+            1,	2,	2,	2,	2,	2,	2,	1,
+            0,	0,	0,	0,	0,	0,	0,	0,
+            0,	0,	0,	0,	0,	0,	0,	0,
         ],
         // Bishop
         [
-            vbm, abm, abm, abm, abm, abm, abm, vbm,
-            abm, anm, anm, anm, anm, anm, anm, abm,
-            anm, anm, AGM, AGM, AGM, AGM, anm, anm,
-            anm, anm, AGM, TBM, TBM, AGM, anm, anm,
-            anm, anm, AGM, TBM, TBM, AGM, anm, anm,
-            anm, anm, AGM, AGM, AGM, AGM, anm, anm,
-            abm, anm, anm, anm, anm, anm, anm, abm,
-            twm, twm, twm, twm, twm, twm, twm, twm,
+            3,	4,	5,	6,	6,	5,	4,	3,
+            3,	5,	6,	6,	6,	6,	5,	3,
+            3,	5,	6,	6,	6,	6,	5,	3,
+            3,	4,	5,	6,	6,	5,	4,	3,
+            4,	5,	6,	7,	7,	6,	5,	4,
+            4,	4,	5,	5,	5,	5,	4,	4,
+            4,	4,	3,	3,	3,	3,	4,	4,
+            4,	3,	2,	1,	1,	2,	3,	4,
 
         ],
         // Rook
         [
-            VGM, VGM, VGM, VGM, VGM, VGM, VGM, VGM,
-            AGM, AGM, AGM, TBM, TBM, AGM, AGM, AGM,
-            anm, anm, anm, AGM, AGM, anm, anm, anm,
-            anm, anm, anm, AGM, AGM, anm, anm, anm,
-            anm, anm, anm, AGM, AGM, anm, anm, anm,
-            anm, anm, anm, AGM, AGM, anm, anm, anm,
-            anm, anm, anm, AGM, AGM, anm, anm, anm,
-            twm, twm, twm, AGM, AGM, twm, twm, twm,
+            5,	6,	7,	8,	8,	7,	6,	5,
+            6,	7,	8,	9,	9,	8,	7,	6,
+            5,	6,	7,	8,	8,	7,	6,	5,
+            4,	5,	6,	7,	7,	6,	5,	4,
+            3,	4,	5,	6,	6,	5,	4,	3,
+            2,	3,	4,	5,	5,	4,	3,	2,
+            1,	2,	3,	4,	4,	3,	2,	1,
+            0,	1,	2,	3,	3,	2,	1,	0,
         ],
 
         // Queen
         [
-            anm, anm, anm, anm, anm, anm, anm, anm,
-            anm, AGM, AGM, AGM, AGM, AGM, AGM, anm,
-            anm, AGM, AGM, AGM, AGM, AGM, AGM, anm,
-            anm, AGM, AGM, TBM, TBM, AGM, AGM, anm,
-            anm, AGM, AGM, TBM, TBM, AGM, AGM, anm,
-            anm, AGM, AGM, AGM, AGM, AGM, AGM, anm,
-            anm, AGM, AGM, AGM, AGM, AGM, AGM, anm,
-            anm, anm, anm, anm, anm, anm, anm, anm,
+            13,	14,	15,	16,	16,	15,	14,	13,
+            13,	15,	16,	16,	16,	16,	15,	13,
+            13,	15,	16,	16,	16,	16,	15,	13,
+            13,	14,	15,	16,	16,	15,	14,	13,
+            8,	9,	10,	11,	11,	10,	9,	8,
+            8,	8,	9,	9,	9,	9,	8,	8,
+            8,	8,	3,	3,	3,	3,	8,	8,
+            8,	7,	0,	1,	1,	0,	7,	8,
         ],
 
         // King
         [
-            twm, twm, twm, twm, twm, twm, twm, twm,
-            twm, abm, abm, abm, abm, abm, abm, twm,
-            twm, abm, AGM, VGM, VGM, AGM, abm, twm,
-            twm, AGM, VGM, TBM, TBM, VGM, AGM, twm,
-            twm, AGM, VGM, TBM, TBM, VGM, AGM, twm,
-            twm, abm, AGM, VGM, VGM, AGM, abm, twm,
-            twm, abm, abm, abm, abm, anm, anm, twm,
-            twm, twm, twm, twm, twm, twm, twm, twm,
+            0,	0,	0,	0,	0,	0,	0,	0,
+            0,	1,	2,	4,	4,	2,	1,	0,
+            0,	2,	3,	5,	5,	3,	2,	0,
+            0,	4,	5,	6,	6,	5,	4,	0,
+            0,	4,	5,	6,	6,	5,	4,	0,
+            0,	2,	3,	5,	5,	3,	2,	0,
+            0,	1,	2,	4,	4,	2,	1,	0,
+            0,	0,	0,	0,	0,	0,	0,	0,
         ],
     ]
 
     AI.PSQT_LATE_ENDGAME = [
         // Pawn
         [
-            anm, anm, anm, anm, anm, anm, anm, anm,
-            TBM, TBM, TBM, TBM, TBM, TBM, TBM, TBM,
-            VGM, VGM, VGM, VGM, VGM, VGM, VGM, VGM,
-            AGM, AGM, AGM, AGM, AGM, AGM, AGM, AGM,
-            abm, abm, abm, abm, abm, abm, abm, abm,
-            vbm, vbm, vbm, vbm, vbm, vbm, vbm, vbm,
-            twm, twm, twm, twm, twm, twm, twm, twm,
-            anm, anm, anm, anm, anm, anm, anm, anm,
+            9,	9,	9,	9,	9,	9,	9,	9,
+            8,	7,	6,	5,	5,	6,	7,	8,
+            7,	6,	5,	4,	4,	5,	6,	7,
+            6,	5,	4,	3,	3,	4,	5,	6,
+            5,	4,	3,	2,	2,	3,	4,	5,
+            4,	3,	2,	1,	1,	2,	3,	4,
+            3,	2,	1,	0,	0,	1,	2,	3,
+            0,	0,	0,	0,	0,	0,	0,	0,
         ],
 
         // Knight
         [
-            twm, abm, abm, abm, abm, abm, abm, twm,
-            vbm, anm, anm, anm, anm, anm, anm, vbm,
-            vbm, anm, AGM, AGM, AGM, AGM, anm, vbm,
-            vbm, anm, AGM, TBM, TBM, AGM, anm, vbm,
-            vbm, anm, AGM, TBM, TBM, AGM, anm, vbm,
-            vbm, anm, AGM, AGM, AGM, AGM, anm, vbm,
-            vbm, anm, anm, anm, anm, anm, anm, vbm,
-            twm, twm, twm, twm, twm, twm, twm, twm,
+            2,	3,	4,	4,	4,	4,	3,	2,
+            3,	4,	6,	6,	6,	6,	4,	3,
+            4,	6,	8,	8,	8,	8,	6,	4,
+            4,	6,	8,	8,	8,	8,	6,	4,
+            4,	6,	8,	8,	8,	8,	6,	4,
+            4,	6,	8,	8,	8,	8,	6,	4,
+            3,	4,	6,	6,	6,	6,	4,	3,
+            2,	3,	4,	4,	4,	4,	3,	2,
 
         ],
         // Bishop
         [
-            vbm, abm, abm, abm, abm, abm, abm, vbm,
-            abm, anm, anm, anm, anm, anm, anm, abm,
-            anm, anm, AGM, AGM, AGM, AGM, anm, anm,
-            anm, anm, AGM, TBM, TBM, AGM, anm, anm,
-            anm, anm, AGM, TBM, TBM, AGM, anm, anm,
-            anm, anm, AGM, AGM, AGM, AGM, anm, anm,
-            abm, anm, anm, anm, anm, anm, anm, abm,
-            twm, twm, twm, twm, twm, twm, twm, twm,
-
+            7,	7,	7,	7,	7,	7,	7,	7,
+            7,	9,	9,	9,	9,	9,	9,	7,
+            7,	9, 11, 11, 11, 11,	9,	7,
+            7,	9, 11, 13, 13, 11,	9,	7,
+            7,	9, 11, 13, 13, 11,	9,	7,
+            7,	9, 11, 11, 11, 11,	9,	7,
+            7,	9,	9,	9,	9,	9,	9,	7,
+            7,	7,	7,	7,	7,	7,	7,	7,
         ],
         // Rook
         [
-            anm, anm, anm, anm, anm, anm, anm, anm,
-            anm, anm, anm, anm, anm, anm, anm, anm,
-            anm, anm, anm, anm, anm, anm, anm, anm,
-            anm, anm, anm, AGM, AGM, anm, anm, anm,
-            anm, anm, anm, AGM, AGM, anm, anm, anm,
-            anm, anm, anm, anm, anm, anm, anm, anm,
-            anm, anm, anm, anm, anm, anm, anm, anm,
-            twm, twm, twm, twm, twm, twm, twm, twm,
+            0,	0,	4,	4,	4,	4,	0,	0,
+            0,	0,	4,	4,	4,	4,	0,	0,
+            4,	4,	6,	6,	6,	6,	4,	4,
+            4,	4,	6,	6,	6,	6,	4,	4,
+            4,	4,	6,	6,	6,	6,	4,	4,
+            4,	4,	6,	6,	6,	6,	4,	4,
+            0,	0,	4,	4,	4,	4,	0,	0,
+            0,	0,	4,	4,	4,	4,	0,	0,
         ],
 
         // Queen
         [
-            anm, anm, anm, anm, anm, anm, anm, anm,
-            anm, AGM, AGM, AGM, AGM, AGM, AGM, anm,
-            anm, AGM, AGM, AGM, AGM, AGM, AGM, anm,
-            anm, AGM, AGM, TBM, TBM, AGM, AGM, anm,
-            anm, AGM, AGM, TBM, TBM, AGM, AGM, anm,
-            anm, AGM, AGM, AGM, AGM, AGM, AGM, anm,
-            anm, AGM, AGM, AGM, AGM, AGM, AGM, anm,
-            anm, anm, anm, anm, anm, anm, anm, anm,
+            21,	21,	21,	21,	21,	21,	21,	21,
+            21,	23,	23,	23,	23,	23,	23,	21,
+            21,	23,	25,	25,	25,	25,	23,	21,
+            21,	23,	25,	27,	27,	25,	23,	21,
+            21,	23,	25,	27,	27,	25,	23,	21,
+            21,	23,	25,	25,	25,	25,	23,	21,
+            21,	23,	23,	23,	23,	23,	23,	21,
+            21,	21,	21,	21,	21,	21,	21,	21,
         ],
 
         // King
         [
-            twm, twm, twm, twm, twm, twm, twm, twm,
-            twm, abm, abm, abm, abm, abm, abm, twm,
-            twm, abm, AGM, VGM, VGM, AGM, abm, twm,
-            twm, AGM, VGM, TBM, TBM, VGM, AGM, twm,
-            twm, AGM, VGM, TBM, TBM, VGM, AGM, twm,
-            twm, abm, AGM, VGM, VGM, AGM, abm, twm,
-            twm, abm, abm, abm, abm, abm, abm, twm,
-            twm, twm, twm, twm, twm, twm, twm, twm,
+            0,	0,	0,	0,	0,	0,	0,	0,
+            0,	1,	2,	4,	4,	2,	1,	0,
+            0,	2,	3,	5,	5,	3,	2,	0,
+            0,	4,	5,	6,	6,	5,	4,	0,
+            0,	4,	5,	6,	6,	5,	4,	0,
+            0,	2,	3,	5,	5,	3,	2,	0,
+            0,	1,	2,	4,	4,	2,	1,	0,
+            0,	0,	0,	0,	0,	0,	0,	0,
         ],
     ]
 
-    AI.preprocessor(board)
+    // AI.preprocessor(board)
 
     if (AI.phase === 0) AI.PSQT = [...AI.PSQT_OPENING]
     if (AI.phase === 1) AI.PSQT = [...AI.PSQT_MIDGAME]
@@ -2072,7 +2068,7 @@ AI.search = function (board, options) {
         }
 
         if (AI.TESTER) {
-            console.info('___________________________________ AI.TESTER _____________________________________')
+            console.info(`_ AI.TESTER ${AI.phase} _____________________________________`)
         } else {
             console.info('________________________________________________________________________________')
         }
