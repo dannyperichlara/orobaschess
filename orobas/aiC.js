@@ -53,10 +53,10 @@ const VPAWN5 = VPAWN / 5 | 0
 const VPAWN10= VPAWN /10 | 0
 
 AI.PIECE_VALUES = [
-    [1, 3, 3, 5, 10, 200].map(e => e * VPAWN),
-    [1, 3, 3, 5, 10, 200].map(e => e * VPAWN),
-    [1, 3, 3, 5, 10, 200].map(e => e * VPAWN),
-    [1, 3, 3, 5, 10, 200].map(e => e * VPAWN),
+    [1, 2.88, 3, 4.8, 9.6, 200].map(e => e * VPAWN),
+    [1, 2.88, 3, 4.8, 9.6, 200].map(e => e * VPAWN),
+    [1, 2.88, 3, 4.8, 9.6, 200].map(e => e * VPAWN),
+    [1, 2.88, 3, 4.8, 9.6, 200].map(e => e * VPAWN),
 ]
 
 const BISHOP_PAIR = VPAWN2 | 0
@@ -157,10 +157,10 @@ AI.SAFETY_VALUES = [0, 1, 3, 4, 5, 6, 7, 8, 9]//.map(e => VPAWN5 * e)
 // PEONES PASADOS
 // Al detectar un peón pasado, se asigna un valor extra al peón correspondiente
 AI.PASSER_VALUES = [
-    54,	54,	54,	54,	54,	54,	54,	54,
-    27,	27,	27,	27,	27,	27,	27,	27,
-    14,	14,	14,	14,	14,	14,	14,	14,
     7,	7,	7,	7,	7,	7,	7,	7,
+    6,	6,	6,	6,	6,	6,	6,	6,
+    5,	5,	5,	5,	5,	5,	5,	5,
+    4,	4,	4,	4,	4,	4,	4,	4,
     3,	3,	3,	3,	3,	3,	3,	3,
     2,	2,	2,	2,	2,	2,	2,	2,
     1,	1,	1,	1,	1,	1,	1,	1,
@@ -169,12 +169,12 @@ AI.PASSER_VALUES = [
 
 // PEONES DOBLADOS
 // Se asigna un valor negativo dependiendo del número de peones doblados
-AI.DOUBLED_VALUES = [0, -1, -2, -3, -4, -5, -6, -7, -8].map(e => e * VPAWN | 0)
+AI.DOUBLED_VALUES = [0, -1, -2, -3, -4, -5, -6, -7, -8].map(e => e * VPAWN10 | 0)
 
 // ESTRUCTURA DE PEONES
 // Se asigna un valor dependiendo del número de peones defendidos por otro peón en cada fase
 AI.DEFENDED_PAWN_VALUES = [
-    [0, 1, 2, 2, 2, 2, 2, 2, 2],
+    [0, 1, 2, 3, 4, 5, 6, 7, 8].map(e=>10*e),
     [0, 1, 2, 3, 4, 5, 5, 5, 5],
     [0, 1, 2, 3, 4, 5, 5, 5, 5],
     [0, 1, 2, 3, 4, 5, 5, 5, 5],
@@ -286,10 +286,7 @@ AI.createTables = function (tt, hh, pp) {
     }
     if (pp) {
         delete AI.pawntable
-        AI.pawntable = [
-            (new Array(this.pawntlength)).fill(null),
-            (new Array(this.pawntlength)).fill(null),
-        ]
+        AI.pawntable = (new Array(this.pawntlength)).fill(null)
     }
 
 }
@@ -312,25 +309,25 @@ AI.randomizePSQT = function () {
 // Cuidar el hecho de que es un objeto y, por lo tanto,
 // al pasarse como parámetro, los cambios en sus propiedades
 // cambian el objeto original (no existe ámbito).
-AI.getPieces = function (board, turn, notturn) {
-    let P = board.getPieceColorBitboard(PAWN, turn)
-    let N = board.getPieceColorBitboard(KNIGHT, turn)
-    let B = board.getPieceColorBitboard(BISHOP, turn)
-    let R = board.getPieceColorBitboard(ROOK, turn)
-    let Q = board.getPieceColorBitboard(QUEEN, turn)
-    let K = board.getPieceColorBitboard(KING, turn)
+AI.getPieces = function (board) {
+    let Pw = board.getPieceColorBitboard(PAWN, WHITE)
+    let Nw = board.getPieceColorBitboard(KNIGHT, WHITE)
+    let Bw = board.getPieceColorBitboard(BISHOP, WHITE)
+    let Rw = board.getPieceColorBitboard(ROOK, WHITE)
+    let Qw = board.getPieceColorBitboard(QUEEN, WHITE)
+    let Kw = board.getPieceColorBitboard(KING, WHITE)
 
-    let Px = board.getPieceColorBitboard(PAWN, notturn)
-    let Nx = board.getPieceColorBitboard(KNIGHT, notturn)
-    let Bx = board.getPieceColorBitboard(BISHOP, notturn)
-    let Rx = board.getPieceColorBitboard(ROOK, notturn)
-    let Qx = board.getPieceColorBitboard(QUEEN, notturn)
-    let Kx = board.getPieceColorBitboard(KING, notturn)
+    let Pb = board.getPieceColorBitboard(PAWN, BLACK)
+    let Nb = board.getPieceColorBitboard(KNIGHT, BLACK)
+    let Bb = board.getPieceColorBitboard(BISHOP, BLACK)
+    let Rb = board.getPieceColorBitboard(ROOK, BLACK)
+    let Qb = board.getPieceColorBitboard(QUEEN, BLACK)
+    let Kb = board.getPieceColorBitboard(KING, BLACK)
 
-    let us = board.getColorBitboard(turn)
-    let usx = board.getColorBitboard(notturn)
+    let white = board.getColorBitboard(WHITE)
+    let black = board.getColorBitboard(BLACK)
 
-    return { P, N, B, R, Q, K, Px, Nx, Bx, Rx, Qx, Kx, us, usx }
+    return { Pw, Nw, Bw, Rw, Qw, Kw, Pb, Nb, Bb, Rb, Qb, Kb, white, black }
 }
 
 // FUNCIÓN DE EVALUACIÓN DE LA POSICIÓN
@@ -340,30 +337,29 @@ AI.evaluate = function (board, ply, beta, pvNode) {
     let pieces = AI.getPieces(board, turn, notturn)
     let score = 0
     let kingSafety = 0
-
+    let sign = turn === 0? 1: -1
+    
     // Valor material del tablero
     let material = AI.getMaterial(pieces) | 0
     
     // Structure: Valoración de la estructura de peones (defendidos/doblados/pasados)
-    let structure = AI.getStructure(pieces.P, pieces.Px, turn, notturn) | 0
+    let structure = AI.getStructure(pieces.Pw, pieces.Pb) | 0
     
     // Lazy evaluation
-    let matstruct = material + structure
+    let matstruct = sign * (material + structure)
     if (matstruct >= beta + AI.VPAWN) return matstruct
-
+    
     // Valor posicional del tablero
     // PSQT: Plusvalor o minusvalor por situar una pieza en determinada casilla
     // Mobility: Valoración de la capacidad de las piezas de moverse en el tablero
     
-    let psqt = AI.getPSQT(pieces, turn, notturn) | 0
-    let mobility = (pvNode? AI.getMobility(pieces, board, turn, notturn) : 0) | 0
-
+    let psqt = AI.getPSQT(pieces) | 0 // -4 a 6 depths
+    let mobility = AI.getMobility(pieces, board) | 0
     
-    if (AI.phase > 0) kingSafety += AI.getKingSafety(pieces, turn, notturn) | 0
     
-    score = matstruct + psqt + mobility + kingSafety | 0
-
-    return score
+    kingSafety += AI.getKingSafety(pieces) | 0
+    
+    return sign * (material + structure + psqt + mobility)
 }
 
 AI.cols = [
@@ -406,59 +402,107 @@ AI.forceKing2corner = (K, Kx, score)=>{
     // }
 }
 
-AI.getDoubled = function (_P, white) {
-    let pawns = _P.dup()
-    let doubled = 0
+AI.getDoubled = function (Pw, Pb) {
+    let pawnsWhite = Pw.dup()
+    let pawnsBlack = Pb.dup()
+    let doubledWhite = 0
+    let doubledBlack = 0
 
-    let score = 0
+    let scoreWhite = 0
+    let scoreBlack = 0
 
-    while (!pawns.isEmpty()) {
-        let index = pawns.extractLowestBitPosition()
+    let pawnsWhiteDup = pawnsWhite.dup()
+
+    while (!pawnsWhiteDup.isEmpty()) {
+        let index = pawnsWhiteDup.extractLowestBitPosition()
         let pawn = (new Chess.Bitboard(0, 0)).setBit(index)
-        let advancemask = AI.pawnAdvanceMask(pawn, white)
+        let advancemask = AI.pawnAdvanceMask(pawn, true)
         let adcnt = advancemask.popcnt()
         let encounters = 0
 
         if (adcnt > 0) {
-            encounters = advancemask.and(pawns).popcnt()
+            encounters = advancemask.and(pawnsWhite).popcnt()
 
             if (encounters > 0) {
-                doubled++
-                score += AI.DOUBLED_VALUES[doubled]
+                doubledWhite++
+                scoreWhite += AI.DOUBLED_VALUES[doubledWhite]
             }
         }
     }
 
-    return score
-}
+    let pawnsBlackDup = pawnsBlack.dup()
 
-AI.getPassers = function (_P, _Px, white) {
-    let P = _P.dup()
-    let Px = _Px.dup()
-
-    let passers = 0
-    let pxmask = Px.or(Chess.Position.makePawnAttackMask(!white, Px))
-
-    let score = 0
-
-    while (!P.isEmpty()) {
-        let index = P.extractLowestBitPosition()
+    while (!pawnsBlackDup.isEmpty()) {
+        let index = pawnsBlackDup.extractLowestBitPosition()
         let pawn = (new Chess.Bitboard(0, 0)).setBit(index)
-        let advancemask = AI.pawnAdvanceMask(pawn, white)
+        let advancemask = AI.pawnAdvanceMask(pawn, true)
         let adcnt = advancemask.popcnt()
-        let encounters
+        let encounters = 0
 
         if (adcnt > 0) {
-            encounters = advancemask.and(pxmask).popcnt()
+            encounters = advancemask.and(pawnsBlack).popcnt()
 
-            if (encounters === 0) {
-                passers++
-                score += AI.PASSER_VALUES[white ? 56 ^ index : index]
+            if (encounters > 0) {
+                doubledBlack++
+                scoreBlack += AI.DOUBLED_VALUES[doubledBlack]
             }
         }
     }
 
-    return score
+    return scoreWhite - scoreBlack
+}
+
+AI.getPassers = function (Pw, Pb) {
+    let pawnsWhite = Pw.dup()
+    let pawnsBlack = Pb.dup()
+
+    let passersWhite = 0
+    let passersBlack = 0
+    let whiteMask = pawnsWhite.or(Chess.Position.makePawnAttackMask(WHITE, pawnsWhite))
+    let blackMask = pawnsBlack.or(Chess.Position.makePawnAttackMask(BLACK, pawnsBlack))
+
+    let scoreWhite = 0
+    let scoreBlack = 0
+
+    let pawnsWhiteDup = pawnsWhite.dup()
+
+    while (!pawnsWhiteDup.isEmpty()) {
+        let index = pawnsWhiteDup.extractLowestBitPosition()
+        let pawn = (new Chess.Bitboard(0, 0)).setBit(index)
+        let advancemask = AI.pawnAdvanceMask(pawn, true)
+        let adcnt = advancemask.popcnt()
+        let encounters = 0
+
+        if (adcnt > 0) {
+            encounters = advancemask.and(blackMask).popcnt()
+
+            if (encounters === 0) {
+                passersWhite++
+                scoreWhite += AI.PASSER_VALUES[56 ^ index]
+            }
+        }
+    }
+
+    let pawnsBlackDup = pawnsBlack.dup()
+
+    while (!pawnsBlackDup.isEmpty()) {
+        let index = pawnsBlackDup.extractLowestBitPosition()
+        let pawn = (new Chess.Bitboard(0, 0)).setBit(index)
+        let advancemask = AI.pawnAdvanceMask(pawn, false)
+        let adcnt = advancemask.popcnt()
+        let encounters = 0
+
+        if (adcnt > 0) {
+            encounters = advancemask.and(whiteMask).popcnt()
+
+            if (encounters === 0) {
+                passersBlack++
+                scoreBlack += AI.PASSER_VALUES[index]
+            }
+        }
+    }
+
+    return scoreWhite - scoreBlack
 }
 
 AI.pawnAdvanceMask = function (fromBB, white) {
@@ -471,19 +515,20 @@ AI.pawnAdvanceMask = function (fromBB, white) {
     }
 };
 
-AI.getKingSafety = function (pieces, turn, notturn) {
-    return AI.getKingSafetyValue(pieces.K, pieces.us, turn) - AI.getKingSafetyValue(pieces.Kx, pieces.usx, notturn)
+AI.getKingSafety = function (pieces) {
+    let maskWhite = Chess.Position.makeKingDefenseMask(WHITE, pieces.Kw).and(pieces.Pw)
+    let safetyWhite = AI.SAFETY_VALUES[maskWhite.popcnt()]
+
+    let maskBlack = Chess.Position.makeKingDefenseMask(BLACK, pieces.Kb).and(pieces.Pb)
+    let safetyBlack = AI.SAFETY_VALUES[maskBlack.popcnt()]
+
+    return safetyWhite - safetyBlack
 }
 
 AI.getKingSafetyValue = function (K, us, turn) {
-    let mask = Chess.Position.makeKingDefenseMask(turn, K).and(us)
-    let safety = AI.SAFETY_VALUES[mask.popcnt()]
+    
 
     return safety
-}
-
-AI.getStructure = function (P, Px, turn, notturn) {
-    return AI.getStructureValue(turn, P, Px) - AI.getStructureValue(notturn, Px, P)
 }
 
 // IMPORTANTE: Esta función devuelve el valor de la estructura de peones.
@@ -491,10 +536,10 @@ AI.getStructure = function (P, Px, turn, notturn) {
 // en una tabla hash y es devuelto en caso que se requiera evaluar la misma
 // estructura. La tasa de acierto de las entradas hash es mayor al 95%, por lo
 // que esta función es esencial para mantener un buen rendimiento.
-AI.getStructureValue = function (turn, P, Px) {
-    let hashkey = (P.low ^ P.high) >>> 0
+AI.getStructure = function (Pw, Pb) {
+    let hashkey = (Pw.low ^ Pw.high ^ Pb.low ^ Pb.high) >>> 0
 
-    let hashentry = AI.pawntable[turn][hashkey % AI.pawntlength]
+    let hashentry = AI.pawntable[hashkey % AI.pawntlength]
 
     AI.pnodes++
 
@@ -503,34 +548,34 @@ AI.getStructureValue = function (turn, P, Px) {
         return hashentry
     }
 
-    let white = turn === 0
+    let doubled = AI.getDoubled(Pw, Pb)
+    let defended = 0//AI.getDefended(Pw, Pb) // Afecta rendimiento +/- 3 depths
+    let passers = AI.getPassers(Pw, Pb)
 
-    let score = 0
+    let score = doubled + defended + passers
 
-    let doubled = AI.getDoubled(P, white)
-    let defended = 0//AI.getDefended(P, turn)
-    let passers = AI.getPassers(P, Px, white)
-
-    score = defended + doubled + passers
-
-    AI.pawntable[turn][hashkey % AI.pawntlength] = score
+    AI.pawntable[hashkey % AI.pawntlength] = score
 
     return score
 }
 
-AI.getDefended = function (_P, color) {
-    let P = _P.dup()
+AI.getDefended = function (Pw, Pb) {
+    let pawnsWhite = Pw.dup()
+    let pawnsBlack = Pb.dup()
 
-    let mask = Chess.Position.makePawnAttackMask(color, P).dup()
-    let defendedpawns = mask.and(P).popcnt()
+    let maskWhite = Chess.Position.makePawnDefenseMask(0, pawnsWhite).dup()
+    let maskBlack = Chess.Position.makePawnDefenseMask(1, pawnsBlack).dup()
+    
+    let defendedWhite = maskWhite.and(pawnsWhite).popcnt()
+    let defendedBlack = maskBlack.and(pawnsBlack).popcnt()
 
-    return AI.DEFENDED_PAWN_VALUES[AI.phase][defendedpawns]
+    return AI.DEFENDED_PAWN_VALUES[AI.phase][defendedWhite] - AI.DEFENDED_PAWN_VALUES[AI.phase][defendedBlack]
 }
 
-AI.getMobility = function (pieces, board, turn, notturn) {
-    let us = AI.getMobilityValues(pieces.P, pieces.N, pieces.B, pieces.R, pieces.Q, pieces.K, pieces.Px, board, turn)
-    let them = AI.getMobilityValues(pieces.Px, pieces.Nx, pieces.Bx, pieces.Rx, pieces.Qx, pieces.Kx, pieces.P, board, notturn)
-    return us - them
+AI.getMobility = function (pieces, board) {
+    let white = AI.getMobilityValues(pieces.Pw, pieces.Nw, pieces.Bw, pieces.Rw, pieces.Qw, pieces.Kw, pieces.Pb, board, WHITE)
+    let black = AI.getMobilityValues(pieces.Pb, pieces.Nb, pieces.Bb, pieces.Rb, pieces.Qb, pieces.Kb, pieces.Pw, board, BLACK)
+    return white - black
 }
 
 AI.getMobilityValues = function (_P, _N, _B, _R, _Q, _K, _Px, board, color) {
@@ -580,35 +625,35 @@ AI.getMobilityValues = function (_P, _N, _B, _R, _Q, _K, _Px, board, color) {
     return mobility
 }
 
-AI.getMaterial = function (pieces) {
-    return AI.getMaterialValue(pieces, true) - AI.getMaterialValue(pieces, false)
-}
+AI.getMaterial = function (pieces, us) {
+    let whiteScore = 0
+    let blackScore = 0
+    let whiteBishops
+    let blackBishops
 
-AI.getMaterialValue = function (pieces, us) {
-    let value = 0
-    let bishops
+    // Blancas
+    whiteBishops = pieces.Bw.popcnt()
 
-    if (us) {
-        bishops = pieces.B.popcnt()
+    whiteScore = AI.PIECE_VALUES_SUM[AI.phase][PAWN][pieces.Pw.popcnt()] +
+    AI.PIECE_VALUES_SUM[AI.phase][KNIGHT][pieces.Nw.popcnt()] +
+    AI.PIECE_VALUES_SUM[AI.phase][BISHOP][whiteBishops] +
+    AI.PIECE_VALUES_SUM[AI.phase][ROOK][pieces.Rw.popcnt()] +
+    AI.PIECE_VALUES_SUM[AI.phase][QUEEN][pieces.Qw.popcnt()]
+    
+    if (whiteBishops >= 2) whiteScore += BISHOP_PAIR
+    
+    // Negras
+    blackBishops = pieces.Bb.popcnt()
+    
+    blackScore = AI.PIECE_VALUES_SUM[AI.phase][PAWN][pieces.Pb.popcnt()] +
+    AI.PIECE_VALUES_SUM[AI.phase][KNIGHT][pieces.Nb.popcnt()] +
+    AI.PIECE_VALUES_SUM[AI.phase][BISHOP][blackBishops] +
+    AI.PIECE_VALUES_SUM[AI.phase][ROOK][pieces.Rb.popcnt()] +
+    AI.PIECE_VALUES_SUM[AI.phase][QUEEN][pieces.Qb.popcnt()]
+    
+    if (blackBishops >= 2) blackScore += BISHOP_PAIR
 
-        value = AI.PIECE_VALUES_SUM[AI.phase][PAWN][pieces.P.popcnt()] +
-                AI.PIECE_VALUES_SUM[AI.phase][KNIGHT][pieces.N.popcnt()] +
-                AI.PIECE_VALUES_SUM[AI.phase][BISHOP][bishops] +
-                AI.PIECE_VALUES_SUM[AI.phase][ROOK][pieces.R.popcnt()] +
-                AI.PIECE_VALUES_SUM[AI.phase][QUEEN][pieces.Q.popcnt()]
-    } else {
-        bishops = pieces.Bx.popcnt()
-
-        value = AI.PIECE_VALUES_SUM[AI.phase][PAWN][pieces.Px.popcnt()] +
-                AI.PIECE_VALUES_SUM[AI.phase][KNIGHT][pieces.Nx.popcnt()] +
-                AI.PIECE_VALUES_SUM[AI.phase][BISHOP][bishops] +
-                AI.PIECE_VALUES_SUM[AI.phase][ROOK][pieces.Rx.popcnt()] +
-                AI.PIECE_VALUES_SUM[AI.phase][QUEEN][pieces.Qx.popcnt()]
-    }
-
-    if (bishops >= 2) value += BISHOP_PAIR
-
-    return value | 0
+    return whiteScore - blackScore | 0
 }
 
 // Limita el valor posicional
@@ -616,42 +661,44 @@ AI.limit = (value, limit) => {
     return (limit * 2) / (1 + Math.exp(-value / (limit / 2))) - limit | 0
 }
 
-AI.getPSQT = function (pieces, turn, notturn) {
-    let psqt = AI.getPSQTvalue([
-            pieces.P.dup(),
-            pieces.N.dup(),
-            pieces.B.dup(),
-            pieces.R.dup(),
-            pieces.Q.dup(),
-            pieces.K.dup(),
-        ], turn) 
+AI.getPSQT = function (pieces) {
+    let white = [
+        pieces.Pw.dup(),
+        pieces.Nw.dup(),
+        pieces.Bw.dup(),
+        pieces.Rw.dup(),
+        pieces.Qw.dup(),
+        pieces.Kw.dup(),
+    ]
         
-        - AI.getPSQTvalue([
-            pieces.Px.dup(),
-            pieces.Nx.dup(),
-            pieces.Bx.dup(),
-            pieces.Rx.dup(),
-            pieces.Qx.dup(),
-            pieces.Kx.dup(),
-        ], notturn)
-    return psqt
-}
+    let black = [
+        pieces.Pb.dup(),
+        pieces.Nb.dup(),
+        pieces.Bb.dup(),
+        pieces.Rb.dup(),
+        pieces.Qb.dup(),
+        pieces.Kb.dup(),
+    ]
 
-AI.getPSQTvalue = function (pieces, turn) {
-
-    let score = 0
+    let scoreWhite = 0
+    let scoreBlack = 0
 
     for (let i = PAWN; i <= KING; i++) {
-        let piece = pieces[i]
+        let pieceWhite = white[i]
+        let pieceBlack = black[i]
 
-        while (!piece.isEmpty()) {
-            let index = piece.extractLowestBitPosition()
-            // white: 56^index // black: index
-            score += AI.PSQT[i][turn ? index : (56 ^ index)]
-        }
+        do {
+            let index = pieceWhite.extractLowestBitPosition()
+            scoreWhite += AI.PSQT[i][56 ^ index]
+        } while (!pieceWhite.isEmpty())
+        
+        do {
+            let index = pieceBlack.extractLowestBitPosition()
+            scoreBlack += AI.PSQT[i][index]
+        } while (!pieceBlack.isEmpty())
     }
 
-    return score
+    return scoreWhite - scoreBlack
 }
 
 // ORDENA LOS MOVIMIENTOS
@@ -728,7 +775,7 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         }
 
         if (AI.phase <= MIDGAME && move.isCastle()) {
-            move.score = 1e5
+            move.score = 1e9
             continue
         }
 
@@ -742,6 +789,8 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
             move.score = 1000 + hvalue
             continue
         } else {
+            // move.score = 0
+            // continue
             // CRITERIO 7
             // Las jugadas restantes se orden de acuerdo a donde se estima sería
             // su mejor posición absoluta en el tablero
