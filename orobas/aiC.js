@@ -165,7 +165,7 @@ AI.PASSER_VALUES = [
     2,	2,	2,	2,	2,	2,	2,	2,
     1,	1,	1,	1,	1,	1,	1,	1,
     0,	0,	0,	0,	0,	0,	0,	0,
-]
+].map(e=>e*VPAWN5)
 
 // PEONES DOBLADOS
 // Se asigna un valor negativo dependiendo del número de peones doblados
