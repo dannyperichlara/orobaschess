@@ -325,7 +325,7 @@ module.exports = orobas = {
                         }
                         
                     } else {
-                        let to = from + this.pieces[piece].offsets[j]
+                        let to = from + this.pieces[piece].offsets[0]
 
                         if (to & 0x88) continue
 
@@ -342,15 +342,12 @@ module.exports = orobas = {
 
                         if (whitePawns || blackPawns) {
                             let epsquare = to
-                            to = to + this.pieces[piece].offsets[j]
+                            
+                            to = to + this.pieces[piece].offsets[0]
 
                             if (to & 0x88) continue
 
-                            let blockingPiece = this.board[to]
-
-                            if (blockingPiece) {
-                                continue
-                            }
+                            if (this.board[to]) continue
 
                             //Doble push
                             let doublePushMove = this.createMove(piece, from, to, isCapture=false, capturedPiece=0, castleSide=0, epsquare)
@@ -392,6 +389,7 @@ module.exports = orobas = {
                         to += this.pieces[piece].offsets[j]
                         
                         if (to & 0x88) break
+                        
                         let isCapture = false
 
                         let capturedPiece = this.board[to]

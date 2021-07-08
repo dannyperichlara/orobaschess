@@ -13,7 +13,7 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 4,
+    random: 0,
     phase: 1,
     htlength: 1 << 24,
     pawntlength: 1e6,
@@ -336,7 +336,6 @@ AI.evaluate = function (board, ply, beta, pvNode) {
     let notturn = ~turn & 1
     let pieces = AI.getPieces(board, turn, notturn)
     let score = 0
-    let kingSafety = 0
     let sign = turn === 0? 1: -1
     
     // Valor material del tablero
@@ -345,21 +344,20 @@ AI.evaluate = function (board, ply, beta, pvNode) {
     // Structure: Valoración de la estructura de peones (defendidos/doblados/pasados)
     let structure = AI.getStructure(pieces.Pw, pieces.Pb) | 0
     
-    // Lazy evaluation
-    let matstruct = sign * (material + structure)
-    if (matstruct >= beta + AI.VPAWN) return matstruct
+    if (ply >= 3) return sign*(material + structure)
     
     // Valor posicional del tablero
     // PSQT: Plusvalor o minusvalor por situar una pieza en determinada casilla
     // Mobility: Valoración de la capacidad de las piezas de moverse en el tablero
+
     
+    let kingSafety = (AI.phase > 0? AI.getKingSafety(pieces) : 0) | 0
     let psqt = AI.getPSQT(pieces) | 0 // -4 a 6 depths
     let mobility = AI.getMobility(pieces, board) | 0
     
     
-    kingSafety += AI.getKingSafety(pieces) | 0
     
-    return sign * (material + structure + psqt + mobility)
+    return sign * (material + structure + psqt + mobility + kingSafety)
 }
 
 AI.cols = [
@@ -820,6 +818,8 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
 // donde la última jugada haya sido una captura). Cuando se logra esta posición
 // "en calma", se evalúa la posición.
 AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
+    let oAlpha = alpha
+
     AI.qsnodes++
 
     let mateScore = MATE - ply
@@ -861,9 +861,15 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
     if (!ttEntry || !ttEntry.move.capture) {
         ttEntry = null
     }
+
+    let score = -INFINITY
     
     let moves = board.getMoves(true, !board.isKingInCheck()) //+0 ELO
     moves = AI.sortMoves(moves, turn, ply, board, ttEntry)
+
+    if (moves.length === 0) return alpha
+
+    let bestmove = moves[0]
 
     for (let i = 0, len = moves.length; i < len; i++) {
 
@@ -872,19 +878,23 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
         if (board.makeMove(move)) {
             legal++
 
-            let score = -AI.quiescenceSearch(board, -beta, -alpha, depth - 1, ply + 1, pvNode)
+            score = -AI.quiescenceSearch(board, -beta, -alpha, depth - 1, ply + 1, pvNode)
 
             board.unmakeMove()
 
             if (score >= beta) {
+                AI.ttSave(hashkey, score, LOWERBOUND, 0, move)
                 return score
             }
-
+            
             if (score > alpha) {
                 alpha = score
+                bestmove = move
             }
         }
     }
+
+    AI.ttSave(hashkey, score, score > oAlpha? EXACT : UPPERBOUND, 0, bestmove)
 
     return alpha
 }
