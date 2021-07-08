@@ -344,18 +344,12 @@ AI.evaluate = function (board, ply, beta, pvNode) {
     // Structure: Valoración de la estructura de peones (defendidos/doblados/pasados)
     let structure = AI.getStructure(pieces.Pw, pieces.Pb) | 0
     
-    if (ply >= 3 && !pvNode) return sign*(material + structure)
-    
     // Valor posicional del tablero
     // PSQT: Plusvalor o minusvalor por situar una pieza en determinada casilla
     // Mobility: Valoración de la capacidad de las piezas de moverse en el tablero
-
-    
-    let kingSafety = (AI.phase > 0? AI.getKingSafety(pieces) : 0) | 0
     let psqt = AI.getPSQT(pieces) | 0 // -4 a 6 depths
+    let kingSafety = (AI.phase > 0? AI.getKingSafety(pieces) : 0) | 0
     let mobility = AI.getMobility(pieces, board) | 0
-    
-    
     
     return sign * (material + structure + psqt + mobility + kingSafety)
 }
