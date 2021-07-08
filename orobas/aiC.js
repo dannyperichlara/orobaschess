@@ -772,10 +772,10 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
             continue
         }
 
-        // if (AI.phase <= MIDGAME && move.isCastle()) {
-        //     move.score = 1e9
-        //     continue
-        // }
+        if (AI.phase <= MIDGAME && move.isCastle()) {
+            move.score = 1e9
+            continue
+        }
 
         // CRITERIO 6: Movimientos históricos
         // Se da preferencia a movimientos posicionales que han tenido 
