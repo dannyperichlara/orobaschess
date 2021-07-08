@@ -344,7 +344,7 @@ AI.evaluate = function (board, ply, beta, pvNode) {
     // Structure: Valoración de la estructura de peones (defendidos/doblados/pasados)
     let structure = AI.getStructure(pieces.Pw, pieces.Pb) | 0
     
-    if (ply >= 3) return sign*(material + structure)
+    if (ply >= 3 && !pvNode) return sign*(material + structure)
     
     // Valor posicional del tablero
     // PSQT: Plusvalor o minusvalor por situar una pieza en determinada casilla
