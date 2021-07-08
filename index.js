@@ -42,17 +42,17 @@ let fromto = [
   'a8','b8','c8','d8','e8','f8','g8','h8',
 ]
 
-const tf = require('@tensorflow/tfjs');
+// const tf = require('@tensorflow/tfjs');
 
-require('@tensorflow/tfjs-node')
+// require('@tensorflow/tfjs-node')
 
-let model = null
+// let model = null
 
-loadModel = async ()=> {
-    model = await tf.loadLayersModel("file://orobas/neural/model.json")
-}
+// loadModel = async ()=> {
+//     model = await tf.loadLayersModel("file://orobas/neural/model.json")
+// }
 
-loadModel()
+// loadModel()
 
 app.get('/', function (req, res) {
 
@@ -110,7 +110,7 @@ app.get('/', function (req, res) {
   
   Chess.AI.search(chessPosition, {
     seconds: req.query.seconds? req.query.seconds : null
-  }, tf, model).then(move=>{
+  }/*, tf, model*/).then(move=>{
   	res.send(move);
   })
 });
