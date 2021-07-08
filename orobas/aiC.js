@@ -772,17 +772,17 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
             continue
         }
 
-        if (AI.phase <= MIDGAME && move.isCastle()) {
-            move.score = 1e9
-            continue
-        }
+        // if (AI.phase <= MIDGAME && move.isCastle()) {
+        //     move.score = 1e9
+        //     continue
+        // }
 
         // CRITERIO 6: Movimientos históricos
         // Se da preferencia a movimientos posicionales que han tenido 
         // éxito en otras posiciones.
         let hvalue = AI.history[turn][piece][to]
 
-        if (hvalue) {
+        if (false && hvalue) {
             move.hvalue = hvalue
             move.score = 1000 + hvalue
             continue
