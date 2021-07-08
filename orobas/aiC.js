@@ -776,7 +776,7 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         // éxito en otras posiciones.
         let hvalue = AI.history[turn][piece][to]
 
-        if (false && hvalue) {
+        if (hvalue) {
             move.hvalue = hvalue
             move.score = 1000 + hvalue
             continue
@@ -2046,7 +2046,7 @@ AI.search = function (board, options) {
         AI.lastscore = 0
         AI.f = 0
     } else {
-        // AI.createTables(true, true, false)
+        AI.createTables(true, true, false)
         AI.f = AI.lastscore
     }
 
