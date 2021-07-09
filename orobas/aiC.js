@@ -13,7 +13,7 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 0,
+    random: 4,
     phase: 1,
     htlength: 1 << 24,
     pawntlength: 1e6,
@@ -1513,7 +1513,7 @@ AI.createPSQT = function (board) {
         ],
     ]
 
-    // AI.preprocessor(board)
+    AI.preprocessor(board)
 
     if (AI.phase === 0) AI.PSQT = [...AI.PSQT_OPENING]
     if (AI.phase === 1) AI.PSQT = [...AI.PSQT_MIDGAME]
