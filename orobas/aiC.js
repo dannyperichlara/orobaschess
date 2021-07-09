@@ -722,6 +722,12 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         move.killer2 = 0
         move.score = 0
         move.capture = false
+        
+        // CRITERIO 0: Enroque
+        if (AI.phase <= MIDGAME && move.isCastle()) {
+            move.score = 1e9
+            continue
+        }
 
         // CRITERIO 1: La jugada está en la Tabla de Trasposición
         if (ttEntry && ttEntry.flag !== UPPERBOUND && move.value === ttEntry.move.value) {
@@ -763,11 +769,6 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         if (killer2 && killer2.value === move.value) {
             move.killer2 = true
             move.score = 1e6
-            continue
-        }
-
-        if (AI.phase <= MIDGAME && move.isCastle()) {
-            move.score = 1e9
             continue
         }
 
