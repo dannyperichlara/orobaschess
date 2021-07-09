@@ -2134,6 +2134,8 @@ AI.search = function (board, options) {
         }
 
         if (true || Math.abs(AI.previousls - AI.lastscore) < VPAWN) {
+            AI.iteration = 0
+            
             // AI.createTables(true, false, false)
             AI.stop=false
             AI.timer = (new Date()).getTime()
