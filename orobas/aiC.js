@@ -61,6 +61,13 @@ AI.PIECE_VALUES = [
     [1, 2.88, 3, 4.8, 9.6, 200].map(e => e * VPAWN),
 ]
 
+AI.PIECE_ORDER = [
+    [ 4, 8, 16, 1, 0, 2],
+    [ 1,16,  8, 4, 2, 0],
+    [16, 2,  4, 8, 0, 1],
+    [16, 1,  2, 4, 0, 8],
+]
+
 const BISHOP_PAIR = VPAWN2 | 0
 
 AI.PIECE_VALUES_SUM = []
@@ -339,11 +346,14 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly) {
     let pieces = AI.getPieces(board, turn, notturn)
     let score = 0
     let sign = turn === 0? 1: -1
+    let lazymargin = beta + AI.PIECE_VALUES[0][1]
     
     // Valor material del tablero
     let material = AI.getMaterial(pieces) | 0
 
-    if (materialOnly) return sign * material
+    score = material
+
+    if ((materialOnly && ply > 2) || score > lazymargin) return sign*score
     
     // Structure: Valoración de la estructura de peones (defendidos/doblados/pasados)
     let structure = AI.getStructure(pieces.Pw, pieces.Pb) | 0
@@ -352,10 +362,17 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly) {
     // PSQT: Plusvalor o minusvalor por situar una pieza en determinada casilla
     // Mobility: Valoración de la capacidad de las piezas de moverse en el tablero
     let psqt = AI.getPSQT(pieces) | 0 // -4 a 6 depths
+
+    score += structure + 2*psqt
+
+    if (materialOnly || score > lazymargin) return sign * score
+
     let kingSafety = (AI.phase > 0? AI.getKingSafety(pieces) : 0) | 0
     let mobility = AI.getMobility(pieces, board) | 0
+
+    score += kingSafety + mobility
     
-    return sign * (material + structure + 2*psqt + mobility + kingSafety)
+    return sign * score
 }
 
 AI.cols = [
@@ -724,19 +741,20 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         move.promotion = 0
         move.killer1 = 0
         move.killer2 = 0
-        move.score = 0
+        move.score = AI.PIECE_ORDER[0][piece]
+
         move.capture = false
         
         // CRITERIO 0: Enroque
         if (AI.phase <= MIDGAME && move.isCastle()) {
-            move.score = 1e9
+            move.score += 1e9
             continue
         }
 
         // CRITERIO 1: La jugada está en la Tabla de Trasposición
         if (ttEntry && ttEntry.flag !== UPPERBOUND && move.value === ttEntry.move.value) {
             move.tt = true
-            move.score = 1e8
+            move.score += 1e8
             continue
         }
 
@@ -753,10 +771,10 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
             
             if (move.mvvlva > 6000) {
                 // CRITERIO 3: La jugada es una captura posiblemente ganadora
-                move.score = 1e7 + move.mvvlva
+                move.score += 1e7 + move.mvvlva
             } else {
                 // CRITERIO 5: La jugada es una captura probablemente perdedora
-                move.score = 1e5 + move.mvvlva
+                move.score += 1e5 + move.mvvlva
             }
 
             continue
@@ -766,13 +784,13 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         // (Los killers son movimientos que anteriormente han generado Fail-Highs en el mismo ply)
         if (killer1 && killer1.value === move.value) {
             move.killer1 = true
-            move.score = 2e6
+            move.score += 2e6
             continue
         }
 
         if (killer2 && killer2.value === move.value) {
             move.killer2 = true
-            move.score = 1e6
+            move.score += 1e6
             continue
         }
 
@@ -783,7 +801,7 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
 
         if (hvalue) {
             move.hvalue = hvalue
-            move.score = 1000 + hvalue
+            move.score += 1000 + hvalue
             continue
         } else {
             // move.score = 0
@@ -792,7 +810,7 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
             // Las jugadas restantes se orden de acuerdo a donde se estima sería
             // su mejor posición absoluta en el tablero
             move.psqtvalue = AI.PSQT[piece][turn === 0 ? 56 ^ to : to]
-            move.score = move.psqtvalue
+            move.score += move.psqtvalue
             continue
         }
     }
@@ -959,7 +977,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
 
     AI.nodes++
 
-    if ((new Date()).getTime() > AI.timer + (materialOnly? 600 : 400) * AI.secondspermove) {
+    if ((new Date()).getTime() > AI.timer + (materialOnly? 400 : 600) * AI.secondspermove) {
         if (AI.iteration > AI.mindepth[AI.phase] && !pvNode) {
             AI.stop = true
         }
@@ -2149,12 +2167,13 @@ AI.search = function (board, options) {
                 AI.bestmove = [...AI.PV][1]
                 AI.iteration++
 
+                
                 AI.f = AI.MTDF(board, AI.f, depth, true)
-
+                
                 score = (isWhite ? 1 : -1) * AI.f
-
+                
                 AI.PV = AI.getPV(board, depth)
-
+                
                 if ([...AI.PV][1] && AI.bestmove && [...AI.PV][1].value !== AI.bestmove.value) {
                     AI.changeinPV = true
                 } else {
