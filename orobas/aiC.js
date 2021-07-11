@@ -18,7 +18,7 @@ let AI = {
     htlength: 1 << 24,
     pawntlength: 1e6,
     reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda
-    mindepth: [1, 1, 1, 1],
+    mindepth: [6, 6, 8, 10],
     secondspermove: 3,
     lastmove: null,
     f: 0,
@@ -2125,7 +2125,7 @@ AI.search = function (board, options) {
             //Iterative Deepening
             for (let depth = 1; depth <= AI.totaldepth; depth+=1) {
 
-                if (AI.stop && AI.iteration > AI.mindepth[AI.phase]) break
+                if (AI.stop) break
 
                 AI.bestmove = [...AI.PV][1]
                 AI.iteration++
