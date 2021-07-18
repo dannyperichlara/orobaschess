@@ -927,16 +927,20 @@ AI.ttSave = function (hashkey, score, flag, depth, move) {
     let save = false
 
     if (ttEntry) {
-        if (depth >= ttEntry.depth && hashkey === ttEntry.hashkey) {
-            save = true
+        if (hashkey === ttEntry.hashkey) {
+            if (depth >= ttEntry.depth) {
+                save = true
+            } else {
+                save = false
+            }
         } else {
-            save = false
+            save = true
         }
     } else {
         save = true
     }
 
-    if (save) {
+    if (true) {
         AI.hashtable[hashkey % AI.htlength] = {
             hashkey,
             score,
@@ -2077,7 +2081,7 @@ AI.search = function (board, options) {
 
     AI.lastphase = AI.phase
 
-    if (board.movenumber && board.movenumber <= 1/* || changeofphase*/) {
+    if (board.movenumber && board.movenumber <= 1 || changeofphase) {
         AI.createTables(true, true, true)
         AI.lastscore = 0
         AI.f = 0
