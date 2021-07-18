@@ -162,7 +162,7 @@ AI.MOBILITY_VALUES = [
 
 // SEGURIDAD DEL REY
 // Valor se asigna dependiendo del número de piezas que rodea al rey
-AI.SAFETY_VALUES = [0, 1, 3, 4, 5, 6, 7, 8, 9]//.map(e => VPAWN5 * e)
+AI.SAFETY_VALUES = [0, 1, 3, 4, 5, 6, 7, 8, 9].map(e => VPAWN5 * e)
 
 // PEONES PASADOS
 // Al detectar un peón pasado, se asigna un valor extra al peón correspondiente
@@ -179,15 +179,15 @@ AI.PASSER_VALUES = [
 
 // PEONES DOBLADOS
 // Se asigna un valor negativo dependiendo del número de peones doblados
-AI.DOUBLED_VALUES = [0, -1, -2, -3, -4, -5, -6, -7, -8].map(e => e * VPAWN10 | 0)
+AI.DOUBLED_VALUES = [0, -1, -2, -3, -4, -5, -6, -7, -8].map(e => e * VPAWN2 | 0)
 
 // ESTRUCTURA DE PEONES
 // Se asigna un valor dependiendo del número de peones defendidos por otro peón en cada fase
 AI.DEFENDED_PAWN_VALUES = [
-    [0, 1, 2, 3, 4, 5, 6, 7, 8].map(e=>10*e),
-    [0, 1, 2, 3, 4, 5, 5, 5, 5],
-    [0, 1, 2, 3, 4, 5, 5, 5, 5],
-    [0, 1, 2, 3, 4, 5, 5, 5, 5],
+    [0, 1, 2, 3, 4, 5, 6, 7, 8].map(e=>VPAWN10*e),
+    [0, 1, 2, 3, 4, 5, 5, 5, 5].map(e=>VPAWN10*e),
+    [0, 1, 2, 3, 4, 5, 5, 5, 5].map(e=>VPAWN10*e),
+    [0, 1, 2, 3, 4, 5, 5, 5, 5].map(e=>VPAWN10*e),
 ]
 
 // MVV-LVA
@@ -372,8 +372,8 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly) {
     let mobility = AI.getMobility(pieces, board) | 0
 
     score += kingSafety + mobility
-    
-    return sign * score
+
+    return sign * (score - ply) | 0
 }
 
 AI.cols = [
@@ -918,21 +918,32 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
 }
 
 AI.ttSave = function (hashkey, score, flag, depth, move) {
-    if (!move) console.log('no move')
-    // if (AI.stop || !move) return
-    if (!move) return
+    if (!move) {
+        console.log('no move')
+        return
+    }
 
-    //Siempre guarda la posición en la Tabla de Trasposición.
-    //Sería conveniente establecer criterios, como el depth a la hora
-    //de guardar. Sin embargo, se ha intentado pero no se aprecian
-    //diferencias debido a la merma en rendimiento.
+    let ttEntry = AI.hashtable[hashkey % AI.htlength]
+    let save = false
 
-    AI.hashtable[hashkey % AI.htlength] = {
-        hashkey,
-        score,
-        flag,
-        depth,
-        move
+    if (ttEntry) {
+        if (depth >= ttEntry.depth && hashkey === ttEntry.hashkey) {
+            save = true
+        } else {
+            save = false
+        }
+    } else {
+        save = true
+    }
+
+    if (save) {
+        AI.hashtable[hashkey % AI.htlength] = {
+            hashkey,
+            score,
+            flag,
+            depth,
+            move
+        }
     }
 }
 
