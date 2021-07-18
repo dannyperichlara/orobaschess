@@ -64,9 +64,9 @@ AI.PIECE_VALUES = [
 
 AI.PIECE_ORDER = [
     [ 4, 8, 16, 1, 0, 2],
-    [ 1,16,  8, 4, 2, 0],
-    [16, 2,  4, 8, 0, 1],
-    [16, 1,  2, 4, 0, 8],
+    [ 1, 8, 16, 4, 2, 0],
+    [ 8, 2,  4,16, 0, 1],
+    [ 8, 1,  2,16, 0, 8],
 ]
 
 const BISHOP_PAIR = VPAWN2 | 0
@@ -120,7 +120,7 @@ for (let depth = 1; depth < AI.totaldepth + 1; ++depth) {
 }
 
 // Max mobility score: 40
-const MFACTOR = [null, 5.0, 3.0, 2.8, 1.4, null]
+const MFACTOR = [null, 2.5, 1.5, 1.4, 0.7, null]
 // const MFACTOR = [null, 1, 1, 1, 1, null]
 
 // VALORES PARA VALORAR MOBILIDAD
@@ -342,6 +342,7 @@ AI.getPieces = function (board) {
 
 // FUNCIÓN DE EVALUACIÓN DE LA POSICIÓN
 AI.evaluate = function (board, ply, beta, pvNode, materialOnly) {
+    // materialOnly = false
     let turn = board.getTurnColor()
     let notturn = ~turn & 1
     let pieces = AI.getPieces(board, turn, notturn)
@@ -351,20 +352,20 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly) {
     
     // Valor material del tablero
     let material = AI.getMaterial(pieces) | 0
+    // Structure: Valoración de la estructura de peones (defendidos/doblados/pasados)
+    let structure = AI.getStructure(pieces.Pw, pieces.Pb) | 0
 
-    score = material
+    score = material + structure
 
     if ((materialOnly && ply > 2) || score > lazymargin) return sign*score
     
-    // Structure: Valoración de la estructura de peones (defendidos/doblados/pasados)
-    let structure = 0//AI.getStructure(pieces.Pw, pieces.Pb) | 0
     
     // Valor posicional del tablero
     // PSQT: Plusvalor o minusvalor por situar una pieza en determinada casilla
     // Mobility: Valoración de la capacidad de las piezas de moverse en el tablero
     let psqt = AI.getPSQT(pieces) | 0 // -4 a 6 depths
 
-    score += structure + 2*psqt
+    score += psqt
 
     if (materialOnly || score > lazymargin) return sign * score
 
@@ -373,7 +374,7 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly) {
 
     score += kingSafety + mobility
 
-    return sign * (score - ply) | 0
+    return sign * score | 0
 }
 
 AI.cols = [
@@ -878,7 +879,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
     
     let ttEntry = AI.ttGet(hashkey)
         
-    if (!ttEntry || !ttEntry.move.capture) {
+    if (!ttEntry || !ttEntry.move.capture || ttEntry.flag === UPPERBOUND) {
         ttEntry = null
     }
 
@@ -895,6 +896,13 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
     for (let i = 0, len = moves.length; i < len; i++) {
 
         let move = moves[i]
+
+        // delta pruning para cada movimiento
+        if (!incheck) {
+            if (standpat + AI.PIECE_VALUES[AI.phase][move.getCapturedPiece()] <= alpha) {
+                continue
+            }
+        }
 
         if (board.makeMove(move)) {
             legal++
@@ -1050,14 +1058,14 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
 
     //Razoring (idea from Strelka) //+34 ELO
     if (cutNode && !incheck) {
-        let value = staticeval + AI.PAWN
+        let value = staticeval + VPAWN
 
         if (value < beta) {
             if (depth === 1) {
                 let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode, materialOnly)
                 return Math.max(new_value, value)
             }
-            value += 2*AI.PAWN
+            value += 2*VPAWN
 
             if (value < beta && depth <= 3) {
                 let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode, materialOnly)
@@ -1073,8 +1081,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
     }
 
     //IID (si no hay entrada en ttEntry, busca una para mejorar el orden de movimientos)
-    if (!ttEntry && depth > 2) {
-        AI.PVS(board, alpha, beta, depth - 2, ply, materialOnly) //depth - 2 tested ok + 31 ELO
+    if (!ttEntry && depth > 1) {
+        AI.PVS(board, alpha, beta, depth - 1, ply, materialOnly) //depth - 2 tested ok + 31 ELO
         ttEntry = AI.ttGet(hashkey)
     }
 
@@ -1091,7 +1099,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
     let reverseval = staticeval - AI.PIECE_VALUES[0][1] * depth
 
     if (!incheck && reverseval > beta) {
-        // AI.ttSave(hashkey, beta, LOWERBOUND, depth, moves[0])
+        AI.ttSave(hashkey, beta, LOWERBOUND, depth, moves[0])
         return beta
     }
 
@@ -1108,6 +1116,13 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
     for (let i = 0, len = moves.length; i < len; i++) {
         let move = moves[i]
         let piece = move.getPiece()
+
+        // futility pruning para cada movimiento
+        if (!incheck && legal >= 1) {
+            if (staticeval + AI.PIECE_VALUES[AI.phase][move.getCapturedPiece()] <= alpha) {
+                continue
+            }
+        }
 
         let R = 0
         let E = incheck && depth === 1? 1 : 0
