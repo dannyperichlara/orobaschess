@@ -1119,7 +1119,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
 
         // futility pruning para cada movimiento
         if (!incheck && legal >= 1) {
-            if (staticeval + AI.PIECE_VALUES[AI.phase][move.getCapturedPiece()] <= alpha) {
+            if (staticeval + AI.PIECE_VALUES[AI.phase][move.getCapturedPiece()] + 2*depth*VPAWN <= alpha) {
                 continue
             }
         }
@@ -2186,6 +2186,9 @@ AI.search = function (board, options) {
                         'Pawn hit ' + (AI.phnodes / AI.pnodes * 100 | 0), score, AI.nodes.toString(), AI.qsnodes.toString(), AI.ttnodes.toString())
             }
         }
+
+        depth--
+        AI.iteration--
 
         if (true || Math.abs(AI.previousls - AI.lastscore) < VPAWN) {            
             // AI.createTables(true, false, false)
