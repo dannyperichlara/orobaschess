@@ -1137,6 +1137,10 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
             R++
         }
 
+        if (ttEntry && move.value === ttEntry.value && ttEntry.move.isCapture()) {
+            R++
+        }
+
         if (board.makeMove(move)) {
             legal++
 
