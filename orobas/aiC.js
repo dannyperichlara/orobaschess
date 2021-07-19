@@ -1,5 +1,6 @@
 "use strict"
 
+const { map } = require('lodash')
 const Chess = require('../chess/chess.js')
 
 let AI = {
@@ -125,40 +126,56 @@ const MFACTOR = [null, 2.5, 1.5, 1.4, 0.7, null]
 
 // VALORES PARA VALORAR MOBILIDAD
 // El valor se asigna dependiendo del número de movimientos por pieza, desde el caballo hasta la dama
-AI.MOBILITY_VALUES = [
-    [
+
+AI.MOBILITY_VALUES = []
+
+for (let phase = OPENING; phase <= EARLY_ENDGAME; phase++) {
+    AI.MOBILITY_VALUES.push([
         [],
-        [0, 1, 2, 3, 4, 5, 6, 7, 8].map(e => e * MFACTOR[1] | 0),
-        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(e => e * MFACTOR[2] | 0),
-        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map(e => e * 0 | 0),
-        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27].map(e => e * 0 | 0),
-        []
-    ],
-    [
+        [...Array(9).keys()].map(e=>(13*Math.log(e+1)-20 | 0)),
+        [...Array(14).keys()].map(e=>(16*Math.log(e+1)-15 | 0)),
+        [...Array(15).keys()].map(e=>(29*Math.log(e+1)-25 | 0)),
+        [...Array(28).keys()].map(e=>(12*Math.log(e+1)-13 | 0)),
         [],
-        [0, 1, 2, 3, 4, 5, 6, 7, 8].map(e => e * MFACTOR[1] | 0),
-        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(e => e * MFACTOR[2] | 0),
-        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map(e => e * 0 | 0),
-        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27].map(e => e * 0 | 0),
-        []
-    ],
-    [
-        [],
-        [0, 1, 2, 3, 4, 5, 6, 7, 8].map(e => e * MFACTOR[1] | 0),
-        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(e => e * MFACTOR[2] | 0),
-        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map(e => e * 0 | 0),
-        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27].map(e => e * 0 | 0),
-        []
-    ],
-    [
-        [],
-        [0, 1, 2, 3, 4, 5, 6, 7, 8].map(e => e * MFACTOR[1] | 0),
-        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(e => e * MFACTOR[2] | 0),
-        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map(e => e * 0 | 0),
-        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27].map(e => e * 0 | 0),
-        []
-    ]
-]
+    ])
+}
+
+console.log(AI.MOBILITY_VALUES)
+
+// AI.MOBILITY_VALUES = [
+//     [
+//         [],
+//         [0, 1, 2, 3, 4, 5, 6, 7, 8].map(e => e * MFACTOR[1] | 0),
+//         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(e => e * MFACTOR[2] | 0),
+//         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map(e => e * 0 | 0),
+//         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27].map(e => e * 0 | 0),
+//         []
+//     ],
+//     [
+//         [],
+//         [0, 1, 2, 3, 4, 5, 6, 7, 8].map(e => e * MFACTOR[1] | 0),
+//         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(e => e * MFACTOR[2] | 0),
+//         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map(e => e * 0 | 0),
+//         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27].map(e => e * 0 | 0),
+//         []
+//     ],
+//     [
+//         [],
+//         [0, 1, 2, 3, 4, 5, 6, 7, 8].map(e => e * MFACTOR[1] | 0),
+//         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(e => e * MFACTOR[2] | 0),
+//         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map(e => e * 0 | 0),
+//         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27].map(e => e * 0 | 0),
+//         []
+//     ],
+//     [
+//         [],
+//         [0, 1, 2, 3, 4, 5, 6, 7, 8].map(e => e * MFACTOR[1] | 0),
+//         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(e => e * MFACTOR[2] | 0),
+//         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map(e => e * 0 | 0),
+//         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27].map(e => e * 0 | 0),
+//         []
+//     ]
+// ]
 
 // SEGURIDAD DEL REY
 // Valor se asigna dependiendo del número de piezas que rodea al rey
@@ -1215,7 +1232,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
         
         // Ahogado
         if (!board.isKingInCheck()) {
-            AI.ttSave(hashkey, DRAW + ply, EXACT, depth, bestmove)
+            AI.ttSave(hashkey, DRAW, EXACT, depth, bestmove)
             
             return DRAW
         }
@@ -1228,14 +1245,14 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
     } else {
         // Tablas
         if (board.isDraw()) {
-            AI.ttSave(hashkey, DRAW + ply, EXACT, depth, bestmove)
+            AI.ttSave(hashkey, DRAW, EXACT, depth, bestmove)
             return DRAW
         }
 
         if (bestscore > oAlpha) {
             // Mejor movimiento
             if (bestmove) {
-                AI.ttSave(hashkey, bestscore + ply, EXACT, depth, bestmove)
+                AI.ttSave(hashkey, bestscore, EXACT, depth, bestmove)
             }
 
             return bestscore
