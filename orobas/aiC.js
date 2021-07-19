@@ -129,7 +129,7 @@ const MFACTOR = [null, 2.5, 1.5, 1.4, 0.7, null]
 
 AI.MOBILITY_VALUES = []
 
-for (let phase = OPENING; phase <= EARLY_ENDGAME; phase++) {
+for (let phase = OPENING; phase <= LATE_ENDGAME; phase++) {
     AI.MOBILITY_VALUES.push([
         [],
         [...Array(9).keys()].map(e=>(13*Math.log(e+1)-20 | 0)),
