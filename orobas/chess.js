@@ -1,3 +1,7 @@
+var seedrandom = require('seedrandom')
+
+seedrandom('orobas19ffec57e6844cdb3b9cdc9537a25393', {global: true})
+
 const p =  -1
 const n =  -3
 const b =  -4
@@ -38,7 +42,17 @@ module.exports = orobas = {
         // P,  P,  P,  P,  P,  P,  P,  P,     -1,  0,  1,  2,  2,  1,  0, -1,
         // R,  N,  B,  Q,  K,  B,  N,  R,     -2, -4, -2,  1,  1, -2, -4, -2,
 
-        // r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -        (Kiwipete)
+        // r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1
+        // r,  0,  0,  0,  k,  0,  0,  r,     -2, -4, -2,  1,  1, -2, -4, -2,
+        // P,  p,  p,  p,  0,  p,  p,  p,     -1,  0,  1,  2,  2,  1,  0, -1,
+        // 0,  b,  0,  0,  0,  n,  b,  N,      0,  1,  2,  3,  3,  2,  1,  0,
+        // n,  P,  0,  0,  0,  0,  0,  0,      1,  2,  3,  4,  4,  3,  2,  1,
+        // B,  B,  P,  0,  P,  0,  0,  0,      1,  2,  3,  4,  4,  3,  2,  1,
+        // q,  0,  0,  0,  0,  N,  0,  0,      0,  1,  2,  3,  3,  2,  1,  0,
+        // P,  p,  0,  P,  0,  0,  P,  P,     -1,  0,  1,  2,  2,  1,  0, -1,
+        // R,  0,  0,  Q,  0,  R,  K,  0,     -2, -4, -2,  1,  1, -2, -4, -2,
+        
+        // r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R
         r,  0,  0,  0,  k,  0,  0,  r,     -2, -4, -2,  1,  1, -2, -4, -2,
         p,  0,  p,  p,  q,  p,  b,  0,     -1,  0,  1,  2,  2,  1,  0, -1,
         b,  n,  0,  0,  p,  n,  p,  0,      0,  1,  2,  3,  3,  2,  1,  0,
@@ -61,30 +75,104 @@ module.exports = orobas = {
     pieceList: [],
 
     turn: WHITE,
-    castleRights: [15], //8: wks, 4:wqs, 2:bks, 1: bqs
+    castlingRights: [15], //8: wks, 4:wqs, 2:bks, 1: bqs
     lastMove: {},
-    epsquare: null,
+    enPassantSquares: [null],
 
-    changeTurn(turn) { this.turn = this.turn === 1? -1 : 1}, // Esto es 35% más rápido que ~turn o -turn
+    hashkey: 0,
+
+    zobristKeys: {
+        positions: new Map(),
+        castlingRights: new Map(),
+        turn: new Map(),
+        enPassantSquares: new Map()
+    },
+
+    initZobrist() {
+        // Inicializa keys Pieza/Casilla
+        for (let piece of [k, q, r, b, n, p, P, N, B, R, Q, K]) {
+            this.zobristKeys.positions[piece] = new Map()
+
+            for (let i = 0; i < 128; i++) {
+                if (i & 0x88) {
+                    i += 7
+                    continue
+                }
+
+                this.zobristKeys.positions[piece][i] = (Math.random()*0xFFFFFFFF) >>> 0
+            }
+        }
+
+        // Inicializa keys de Turno
+        this.zobristKeys.turn[-1] = (Math.random()*0xFFFFFFFF) >>> 0
+        this.zobristKeys.turn[ 1] = (Math.random()*0xFFFFFFFF) >>> 0
+
+        // Inicializa keys de Derechos de Enroque
+        this.zobristKeys.castlingRights[8] = (Math.random()*0xFFFFFFFF) >>> 0
+        this.zobristKeys.castlingRights[4] = (Math.random()*0xFFFFFFFF) >>> 0
+        this.zobristKeys.castlingRights[2] = (Math.random()*0xFFFFFFFF) >>> 0
+        this.zobristKeys.castlingRights[1] = (Math.random()*0xFFFFFFFF) >>> 0
+
+        // Inicializa keys de Casillas En Passant (negras)
+        for (let i=32; i<=39; i++) {
+            this.zobristKeys.enPassantSquares[i] = (Math.random()*0xFFFFFFFF) >>> 0
+        }
+        
+        // Inicializa keys de Casillas En Passant (blancas)
+        for (let i=80; i<=87; i++) {
+            this.zobristKeys.enPassantSquares[i] = (Math.random()*0xFFFFFFFF) >>> 0
+        }
+
+        // Inicializa hashkey con piezas del tablero
+        for (let i = 0; i < 128; i++) {
+            if (i & 0x88) {
+                i += 7
+                continue
+            }
+
+            let piece = this.board[i]
+
+            if (piece === 0) continue
+
+            this.updateHashkey(this.zobristKeys.positions[piece][i])
+        }
+        
+        // Actualiza hashkey con turno
+        this.updateHashkey(this.zobristKeys.turn[this.turn])
+    },
+
+    updateHashkey(value) {
+        this.hashkey = ((this.hashkey ^ value) >>> 0)
+    },
+
+    changeTurn(turn) {
+        if (turn) {
+            this.turn = turn
+            this.updateHashkey(this.zobristKeys.turn[turn]) //this.turn, ya cambió el turn
+        } else {
+            this.turn = this.turn === 1? -1 : 1 // Esto es 35% más rápido que ~turn o -turn
+            this.updateHashkey(this.zobristKeys.turn[this.turn]) //this.turn, ya cambió el turn
+        }
+    },
 
     createPieces() {
         this.pieces[0] = {symbol: '.', offsets: []}
 
         //Blancas
-        this.pieces[P] = {symbol: 'P', offsets: [-16, -17, -15]}
-        this.pieces[N] = {symbol: 'N', offsets: [-18, -33, -31, -14, 18, 33, 31, 14]}
-        this.pieces[B] = {symbol: 'B', offsets: [-17, -15, 17, 15]}
-        this.pieces[R] = {symbol: 'R', offsets: [-16, 1, 16, -1]}
-        this.pieces[Q] = {symbol: 'Q', offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
-        this.pieces[K] = {symbol: 'K', offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
+        this.pieces[P] = {symbol: '\u2659', offsets: [-16, -17, -15]}
+        this.pieces[N] = {symbol: '\u2658', offsets: [-18, -33, -31, -14, 18, 33, 31, 14]}
+        this.pieces[B] = {symbol: '\u2657', offsets: [-17, -15, 17, 15]}
+        this.pieces[R] = {symbol: '\u2656', offsets: [-16, 1, 16, -1]}
+        this.pieces[Q] = {symbol: '\u2655', offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
+        this.pieces[K] = {symbol: '\u2654', offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
         
         //Negras
-        this.pieces[p] = {symbol: 'p', offsets: [16, 17, 15]}
-        this.pieces[n] = {symbol: 'n', offsets: [-18, -33, -31, -14, 18, 33, 31, 14]}
-        this.pieces[b] = {symbol: 'b', offsets: [-17, -15, 17, 15]}
-        this.pieces[r] = {symbol: 'r', offsets: [-16, 1, 16, -1]}
-        this.pieces[q] = {symbol: 'q', offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
-        this.pieces[k] = {symbol: 'k', offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
+        this.pieces[p] = {symbol: '\u265F', offsets: [16, 17, 15]}
+        this.pieces[n] = {symbol: '\u265E', offsets: [-18, -33, -31, -14, 18, 33, 31, 14]}
+        this.pieces[b] = {symbol: '\u265D', offsets: [-17, -15, 17, 15]}
+        this.pieces[r] = {symbol: '\u265C', offsets: [-16, 1, 16, -1]}
+        this.pieces[q] = {symbol: '\u265B', offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
+        this.pieces[k] = {symbol: '\u265A', offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
     },
 
     createPieceList() {
@@ -102,14 +190,18 @@ module.exports = orobas = {
         return piece === B || piece === R || piece === Q || piece === b || piece === r || piece === q
     },
 
-    createMove(piece, from, to, isCapture, capturedPiece, castleSide, epsquare, plindex) {
+    //Parameters: piece, from, to, isCapture, capturedPiece, castleSide, enPassantSquares, promotingPiece
+    createMove(m) {
         return {
-            piece, from, to, isCapture, capturedPiece, castleSide, epsquare, plindex
+            piece: m.piece,
+            from: m.from,
+            to: m.to,
+            isCapture: m.isCapture,
+            capturedPiece: m.capturedPiece,
+            castleSide: m.castleSide,
+            enPassantSquares: m.enPassantSquares,
+            promotingPiece: m.promotingPiece
         }
-    },
-
-    inCheck() {
-        return false
     },
 
     isSquareAttacked(square, side, count) {
@@ -127,7 +219,7 @@ module.exports = orobas = {
             }
         }
 
-        // //Caballos
+        // Caballos
         for (let i = 0; i < 8; i++) {
             let to = square + this.pieces[N].offsets[i]
 
@@ -138,7 +230,7 @@ module.exports = orobas = {
             }
         }
 
-        // //Alfiles
+        // Alfiles
         for (let i = 0; i <= 3; i++) {
             let to = square
             let blocked = false
@@ -251,14 +343,12 @@ module.exports = orobas = {
         console.log(attackString)
     },
 
-    getCastleRights() {
-        return this.castleRights[this.castleRights.length - 1]
+    getCastlingRights() {
+        return this.castlingRights[this.castlingRights.length - 1]
     },
 
     getMoves() {
         let moves = []
-
-        let castleRights = this.getCastleRights()
 
         for (let i = 0; i < 128; i++) {
             if (i & 0x88) {
@@ -271,28 +361,16 @@ module.exports = orobas = {
 
             if (this.sign(piece) !== this.turn) continue
 
-            if (piece === 20) {
-                //White kingside
-                if ((castleRights & 8) && this.board[116] === K && this.board[119] === R && !this.board[117] && !this.board[118]) {
-                    moves.push(this.createMove(piece=K, from=116, to=118, isCapture=false, capturedPiece=0, castleSide=8, epsquare=null))
-                }
-        
-                //White queenside
-                if ((castleRights & 4) && this.board[116] === K && this.board[112] === R && !this.board[115] && !this.board[114] && !this.board[113]) {
-                    moves.push(this.createMove(piece=K, from=116, to=114, isCapture=false, capturedPiece=0, castleSide=4, epsquare=null))
-                }
+            if (piece === K && i === 116) {
+                moves.push(this.createMove({piece: K, from:116, to:118, isCapture:false, capturedPiece:0, castleSide:8, enPassantSquares:null}))
+                moves.push(this.createMove({piece:K, from:116, to:114, isCapture:false, capturedPiece:0, castleSide:4, enPassantSquares:null}))
+                // continue
             }
 
-            if (piece === -20) {
-                //Black kingside
-                if ((castleRights & 2) && this.board[4] === k && this.board[7] === r && !this.board[5] && !this.board[6]) {
-                    moves.push(this.createMove(piece=k, from=4, to=7, isCapture=false, capturedPiece=0, castleSide=2, epsquare=null))
-                }
-        
-                //Black queenside
-                if ((castleRights & 1) && this.board[4] === k && this.board[0] === r && !this.board[1] && !this.board[2] && !this.board[3]) {
-                    moves.push(this.createMove(piece=k, from=4, to=0, isCapture=false, capturedPiece=0, castleSide=1, epsquare=null))
-                }
+            if (piece === k && i === 4) {
+                moves.push(this.createMove({piece:k, from:4, to:6, isCapture:false, capturedPiece:0, castleSide:2, enPassantSquares:null}))
+                moves.push(this.createMove({piece:k, from:4, to:2, isCapture:false, capturedPiece:0, castleSide:1, enPassantSquares:null}))
+                // continue
             }
 
             //Peones
@@ -314,12 +392,12 @@ module.exports = orobas = {
                             } else {
                                 isCapture = true
 
-                                moves.push(this.createMove(piece, from, to, isCapture, capturedPiece, castleSide=0, epsquare=null))
+                                moves.push(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
                             }
                         } else {
-                            if (to === this.epsquare) {
+                            if (to === this.enPassantSquares) {
                                 //En passant
-                                moves.push(this.createMove(piece, from, to, isCapture, capturedPiece, castleSide=0, epsquare=null))
+                                moves.push(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
                                 epnodes++
                             }
                         }
@@ -335,13 +413,13 @@ module.exports = orobas = {
                             continue
                         }
 
-                        moves.push(this.createMove(piece, from, to, isCapture=false, capturedPiece=0, castleSide=0, epsquare=null))
+                        moves.push(this.createMove({piece, from, to, isCapture:false, capturedPiece:0, castleSide:0, enPassantSquares:null}))
 
                         let whitePawns = this.turn === WHITE && from >= 96 && from <= 103
                         let blackPawns = this.turn === BLACK && from >= 16 && from <= 23
 
                         if (whitePawns || blackPawns) {
-                            let epsquare = to
+                            let enPassantSquares = to
                             
                             to = to + this.pieces[piece].offsets[0]
 
@@ -350,11 +428,13 @@ module.exports = orobas = {
                             if (this.board[to]) continue
 
                             //Doble push
-                            let doublePushMove = this.createMove(piece, from, to, isCapture=false, capturedPiece=0, castleSide=0, epsquare)
+                            let doublePushMove = this.createMove({piece, from, to, isCapture:false, capturedPiece:0, castleSide:0, enPassantSquares})
                             moves.push(doublePushMove)
                         }
                     }
                 }
+
+                continue
             }
             
             //Caballos y rey
@@ -376,8 +456,10 @@ module.exports = orobas = {
                         isCapture = true
                     }
 
-                    moves.push(this.createMove(piece, from, to, isCapture, capturedPiece, castleSide=0, epsquare=null))
+                    moves.push(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
                 }
+
+                continue
             }
             
             //Alfiles, Torres y Dama
@@ -402,7 +484,7 @@ module.exports = orobas = {
                             }
                         }
 
-                        moves.push(this.createMove(piece, from, to, isCapture, capturedPiece, castleSide=0, epsquare=null))
+                        moves.push(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
 
                         if (isCapture) break
                     }
@@ -445,134 +527,224 @@ module.exports = orobas = {
         console.log(board)
     },
 
+    makeMove(move) {
+        let me = this.turn
+        let enemy = this.turn === WHITE? BLACK : WHITE
+
+        if (move.castleSide) {
+            let canCastle = move.castleSide & this.getCastlingRights()
+
+            if (!canCastle) {
+                return false
+            }
+            
+            let from
+            let square1
+            let to
+            if (move.castleSide === 8)  {
+                if (this.board[117] || this.board[118]) return false
+
+                if (!this.board[119]) return false
+
+                from = 116; square1 = 117; to = 118
+            }
+            if (move.castleSide === 4)  {
+                if (this.board[115] || this.board[114] || this.board[113]) return false
+
+                if (!this.board[112]) return false
+                
+                from = 116; square1 = 115; to = 114
+            }
+            if (move.castleSide === 2)  {
+                if (this.board[5] || this.board[6]) return false
+                if (!this.board[7]) return false
+                
+                from = 4; square1 = 5; to = 6
+            }
+            if (move.castleSide === 1)  {
+                if (this.board[3] || this.board[2] || this.board[1]) return false
+                if (!this.board[0]) return false
+
+                from = 4; square1 = 3; to = 2
+            }
+            
+            if (this.isSquareAttacked(from, enemy)) {
+                return false
+            }
+            if (this.isSquareAttacked(square1, enemy)) {
+                return false
+            }
+            if (this.isSquareAttacked(to, enemy)) {
+                return false
+            }
+        }
+        
+        if (move.piece === K || move.piece === k) {
+            if (this.isKingInCheck()) return false
+        }
+        
+        this.makeEffectiveMove(move)
+
+        //Chequea legalidad
+        this.changeTurn()
+        if (this.isKingInCheck()) {
+            this.unmakeMove(move)
+            this.changeTurn()
+            return false
+        }
+        this.changeTurn()
+
+        return true
+    },
+
     makeEffectiveMove(move) {
-        this.lastepsquare = this.epsquare
+        // Mueve la la pieza de from a to
+        this.updateHashkey(this.zobristKeys.positions[move.piece][move.from]) //Quita pieza del hashkey de su casilla original
+        
+        if (move.capturedPiece) {
+            this.updateHashkey(this.zobristKeys.positions[move.capturedPiece][move.to]) // Remueve pieza capturada del hashkey
+        }
+        
+        this.updateHashkey(this.zobristKeys.positions[move.piece][move.to]) //Agrega pieza al hashkey en casilla de destino
+
         this.board[move.to] = this.board[move.from]
         this.board[move.from] = 0
-        this.epsquare = move.epsquare
+        
+        if (move.enPassantSquares) {
+            let lastEnPassantSquare = this.enPassantSquares[this.enPassantSquares.length - 1]
+            this.updateHashkey(this.zobristKeys.enPassantSquares[lastEnPassantSquare]) // Quita última casilla e.p.
+            this.updateHashkey(this.zobristKeys.enPassantSquares[move.enPassantSquares]) // Agrega nuevo e.p.
+        }
+        
+        this.enPassantSquares.push(move.enPassantSquares)
 
-        let castleRights = this.getCastleRights()
+        let castlingRights = this.getCastlingRights()
 
         if (move.castleSide) {
             if (move.castleSide === 8) {
                 this.board[119] = 0
                 this.board[117] = R
 
-                this.castleRights.push(castleRights ^ 8 ^ 4)
+                this.updateHashkey(this.zobristKeys.positions[R][119]) //Agrega torre al hashkey
+                this.updateHashkey(this.zobristKeys.positions[R][117]) //Quita torre del hashkey
+
+                this.castlingRights.push(castlingRights ^ 8 ^ 4)
             }
 
             if (move.castleSide === 4) {
                 this.board[112] = 0
                 this.board[115] = R
 
-                this.castleRights.push(castleRights ^ 8 ^ 4)
+                this.updateHashkey(this.zobristKeys.positions[R][112]) //Quita torre del hashkey
+                this.updateHashkey(this.zobristKeys.positions[R][115]) //Agrega torre al hashkey
+
+                this.castlingRights.push(castlingRights ^ 8 ^ 4)
             }
 
             if (move.castleSide === 2) {
                 this.board[7] = 0
                 this.board[5] = r
 
-                this.castleRights.push(castleRights ^ 2 ^ 1)
+                this.updateHashkey(this.zobristKeys.positions[r][7]) //Quita torre del hashkey
+                this.updateHashkey(this.zobristKeys.positions[r][5]) //Agrega torre al hashkey
+
+                this.castlingRights.push(castlingRights ^ 2 ^ 1)
             }
 
             if (move.castleSide === 1) {
                 this.board[0] = 0
                 this.board[3] = r
 
-                this.castleRights.push(castleRights ^ 2 ^ 1)
+                this.updateHashkey(this.zobristKeys.positions[r][0]) //Quita torre del hashkey
+                this.updateHashkey(this.zobristKeys.positions[r][3]) //Agrega torre al hashkey
+
+                this.castlingRights.push(castlingRights ^ 2 ^ 1)
             }
         } else {
-            if ((castleRights & 8) && (move.piece === K || (move.piece === R && move.from === 119) || move.to === 119)) {
-                castleRights = castleRights ^ 8
+            if ((castlingRights & 8) && (move.piece === K || (move.piece === R && move.from === 119) || move.to === 119)) {
+                castlingRights = castlingRights ^ 8
             }
 
-            if ((castleRights & 4) && (move.piece === K || (move.piece === R && move.from === 112) || move.to === 112)) {
-                castleRights = castleRights ^ 4
+            if ((castlingRights & 4) && (move.piece === K || (move.piece === R && move.from === 112) || move.to === 112)) {
+                castlingRights = castlingRights ^ 4
+            
             }
 
-            if ((castleRights & 2) && (move.piece === k || (move.piece === r && move.from === 7) || move.to === 7)) {
-                castleRights = castleRights ^ 2
+            if ((castlingRights & 2) && (move.piece === k || (move.piece === r && move.from === 7) || move.to === 7)) {
+                castlingRights = castlingRights ^ 2
             }
 
-            if ((castleRights & 1) && (move.piece === k || (move.piece === r && move.from === 0) || move.to === 0)) {
-                castleRights = castleRights ^ 1
+            if ((castlingRights & 1) && (move.piece === k || (move.piece === r && move.from === 0) || move.to === 0)) {
+                castlingRights = castlingRights ^ 1
             }
 
-            this.castleRights.push(castleRights)
+            this.castlingRights.push(castlingRights)
         }
-
-
+        
         this.changeTurn()
     },
 
     unmakeMove(move) {
-        this.epsquare = this.lastepsquare
+        this.updateHashkey(this.zobristKeys.positions[move.piece][move.to]) //Quita pieza al hashkey en casilla de destino
+        
+        if (move.capturedPiece) {
+            this.updateHashkey(this.zobristKeys.positions[move.capturedPiece][move.to]) // Agrega pieza capturada al hashkey
+        }
+        
+        this.updateHashkey(this.zobristKeys.positions[move.piece][move.from]) //Agrega pieza del hashkey de su casilla original
 
         this.board[move.to] = move.capturedPiece
         this.board[move.from] = move.piece
+
 
         if (move.castleSide) {
             if (move.castleSide === 8) {
                 this.board[117] = 0
                 this.board[119] = R
+                
+                this.updateHashkey(this.zobristKeys.positions[R][117]) //Quita torre del hashkey
+                this.updateHashkey(this.zobristKeys.positions[R][119]) //Agrega torre al hashkey
             }
-
+            
             if (move.castleSide === 4) {
                 this.board[115] = 0
                 this.board[112] = R
+                
+                this.updateHashkey(this.zobristKeys.positions[R][115]) //Quita torre del hashkey
+                this.updateHashkey(this.zobristKeys.positions[R][112]) //Agrega torre al hashkey
             }
-
+            
             if (move.castleSide === 2) {
                 this.board[5] = 0
                 this.board[7] = r
+
+                this.updateHashkey(this.zobristKeys.positions[r][5]) //Quita torre del hashkey
+                this.updateHashkey(this.zobristKeys.positions[r][7]) //Agrega torre al hashkey
             }
 
             if (move.castleSide === 1) {
                 this.board[3] = 0
                 this.board[0] = r
+
+                this.updateHashkey(this.zobristKeys.positions[r][3]) //Quita torre del hashkey
+                this.updateHashkey(this.zobristKeys.positions[r][0]) //Agrega torre al hashkey
             }
         }
 
-        this.castleRights.pop()
+
+        this.castlingRights.pop()
+
+
+        if (move.enPassantSquares) {
+            let lastEnPassantSquare = this.enPassantSquares[this.enPassantSquares.length - 2] // El penúltimo
+            this.updateHashkey(this.zobristKeys.enPassantSquares[lastEnPassantSquare]) // Quita última casilla e.p.
+            this.updateHashkey(this.zobristKeys.enPassantSquares[move.enPassantSquares]) // Agrega nuevo e.p.
+        }
+        
+        this.enPassantSquares.pop()
 
         this.changeTurn()
-    },
 
-    makeMove(move) {
-        let me = this.turn
-        let enemy = this.turn === WHITE? BLACK : WHITE
-
-        if (move.castleSide) {
-            let square1
-            let square2
-            if (move.castleSide === 8)  {square1 = 117; square2 = 118}
-            if (move.castleSide === 4)  {square1 = 115; square2 = 114}
-            if (move.castleSide === 2)  {square1 = 5; square2 = 6}
-            if (move.castleSide === 1)  {square1 = 3; square2 = 2}
-
-            if (this.isSquareAttacked(square1, enemy)) {
-                return false
-            }
-            if (this.isSquareAttacked(square2, enemy)) {
-                return false
-            }
-        }
-
-        if (move.piece === me*K) {
-            if (this.isSquareAttacked(move.to, enemy)) return false
-        }
-        
-        let kingPosition = this.board.indexOf(me*K)
-
-        this.makeEffectiveMove(move)
-        
-        if (this.isSquareAttacked(kingPosition, enemy)) {
-            this.unmakeMove(move)
-
-            return false
-        }
-
-        return true
     },
 
     sign(n) {
@@ -584,7 +756,14 @@ module.exports = orobas = {
         castles: 0,
         captures: 0,
         enpassant: 0,
-        checkmates: 0
+        checkmates: 0,
+        checks: 0
+    },
+
+    isKingInCheck() {
+        let kingIndex = this.turn === WHITE? this.board.indexOf(K) : this.board.indexOf(k)
+
+        return this.isSquareAttacked(kingIndex, -this.turn, false)
     },
 
     perft(depth) {
@@ -594,34 +773,45 @@ module.exports = orobas = {
             return 1
         }
         
-        nodes = 0
+        let nodes = 0
         let moves = this.getMoves()
         
-        legal = 0
+        let legal = 0
 
+        let lastEnPassantSquare = this.enPassantSquares[this.enPassantSquares.length - 1]
+        
         for (let j = 0; j < moves.length; j++) {
+            
             if (orobas.makeMove(moves[j])) {
                 legal++
+                
+                let incheck = this.isKingInCheck()
+
+                if (incheck) this.perftData.checks++
 
                 if (moves[j].isCapture) this.perftData.captures++
                 if (moves[j].castleSide) this.perftData.castles++
-                if (this.lastepsquare && (moves[j].piece === P || moves[j].piece === p) && this.lastepsquare === moves[j].to) {
+                if (lastEnPassantSquare && (moves[j].piece === P || moves[j].piece === p) && lastEnPassantSquare === moves[j].to) {
                     this.perftData.enpassant++
                 }
 
                 nodes += this.perft(depth - 1)
+
                 orobas.unmakeMove(moves[j])
             }
         }
 
-        if (legal === 0) this.perftData.checkmates++
+        if (legal === 0) {
+            this.perftData.checkmates++
+        }
 
         return nodes
     },
 
     init() {
-        orobas.createPieces()
-        orobas.createPieceList()
+        this.createPieces()
+        this.createPieceList()
+        this.initZobrist()
     }
 }
 
@@ -629,15 +819,15 @@ let epnodes = 0
 
 orobas.init()
 orobas.draw()
+console.log(orobas.hashkey)
 
-// console.log('Evaluation:', orobas.evaluate())
+// console.log('PERFT 1', orobas.perft(1), 20, 48)
+// console.log('PERFT 2', orobas.perft(2), 400, 2039)
+console.log('PERFT 3', orobas.perft(3), 8902, 97862)
+// console.log('PERFT 4', orobas.perft(4), 197281, 422333)
+// console.log(orobas.perftData)
+// orobas.drawAttackZone(orobas.getAttackZone(WHITE))
+// console.log(moves.map(e=>{return orobas.coords[e.from] + '-' + orobas.coords[e.to]}))
 
-console.time()
-// // console.log('PERTF 1', orobas.perft(1), 20, 48); console.log(epnodes)
-// console.log('PERTF 2', orobas.perft(2), 400, 2039); console.log(epnodes)
-console.log('PER∫TF 3', orobas.perft(3), 8902, 97862); console.log(epnodes)
-// // console.log('PERTF 4', orobas.perft(4), 197281, 4085603); console.log(epnodes)
-console.timeEnd()
-console.log(orobas.perftData)
-orobas.drawAttackZone(orobas.getAttackZone(WHITE))
-// console.log(orobas.getMoves().map(e=>{return orobas.coords[e.from] + '-' + orobas.coords[e.to]}))
+orobas.draw()
+console.log(orobas.hashkey)
