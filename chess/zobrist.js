@@ -1,5 +1,9 @@
 "use strict";
 
+var seedrandom = require('seedrandom')
+
+seedrandom('orobas19ffec57e6844cdb3b9cdc9537a25393', {global: true})
+
 let Chess = require('./chess.js')
 
 /**
@@ -83,7 +87,7 @@ Zobrist.prototype.isEqual = function(zobrist) {
  */
 Zobrist.prototype.update = function(position) {
 	this.low = (this.low ^ Zobrist.RANDOM_VALUES[position]) >>> 0;
-	this.high = (this.high ^ Zobrist.RANDOM_VALUES[position + 1]) >>> 0;
+	this.high = (this.high ^ Zobrist.RANDOM_VALUES[position + 237984]) >>> 0; //237984 is a random number
 	return this;
 };
 

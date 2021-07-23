@@ -764,15 +764,15 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry, isQS) {
 
         move.capture = false
         
-        // CRITERIO 0: Enroque
-        if (!isQS && AI.phase <= MIDGAME && move.isCastle()) {
+        // CRITERIO 0: La jugada está en la Tabla de Trasposición
+        if (ttEntry && ttEntry.flag < UPPERBOUND && move.value === ttEntry.move.value) {
+            move.tt = true
             move.score += 1e9
             continue
         }
 
-        // CRITERIO 1: La jugada está en la Tabla de Trasposición
-        if (!isQS && ttEntry && ttEntry.flag !== UPPERBOUND && move.value === ttEntry.move.value) {
-            move.tt = true
+        // CRITERIO 1: Enroque
+        if (AI.phase <= MIDGAME && move.isCastle()) {
             move.score += 1e8
             continue
         }
