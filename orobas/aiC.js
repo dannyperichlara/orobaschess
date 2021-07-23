@@ -823,12 +823,10 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry, isQS) {
             move.score += 1000 + hvalue
             continue
         } else {
-            // move.score = 0
-            // continue
             // CRITERIO 7
             // Las jugadas restantes se orden de acuerdo a donde se estima sería
             // su mejor posición absoluta en el tablero
-            move.psqtvalue = AI.PSQT[piece][turn === 0 ? 56 ^ to : to]
+            move.psqtvalue = AI.PSQT[piece][turn === 0 ? 56 ^ to : to] - AI.PSQT[piece][turn === 0 ? 56 ^ from : from]
             move.score += move.psqtvalue
             continue
         }

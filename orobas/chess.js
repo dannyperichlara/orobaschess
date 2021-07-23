@@ -33,14 +33,14 @@ module.exports = orobas = {
         "a1","b1","c1","d1","e1","f1","g1","h1",    0,0,0,0,0,0,0,0,
     ],
     board: [
-        // r,  n,  b,  q,  k,  b,  n,  r,     -2, -4, -2,  1,  1, -2, -4, -2,
-        // p,  p,  p,  p,  p,  p,  p,  p,     -1,  0,  1,  2,  2,  1,  0, -1,
-        // 0,  0,  0,  0,  0,  0,  0,  0,      0,  1,  2,  3,  3,  2,  1,  0,
-        // 0,  0,  0,  0,  0,  0,  0,  0,      1,  2,  3,  4,  4,  3,  2,  1,
-        // 0,  0,  0,  0,  0,  0,  0,  0,      1,  2,  3,  4,  4,  3,  2,  1,
-        // 0,  0,  0,  0,  0,  0,  0,  0,      0,  1,  2,  3,  3,  2,  1,  0,
-        // P,  P,  P,  P,  P,  P,  P,  P,     -1,  0,  1,  2,  2,  1,  0, -1,
-        // R,  N,  B,  Q,  K,  B,  N,  R,     -2, -4, -2,  1,  1, -2, -4, -2,
+        r,  n,  b,  q,  k,  b,  n,  r,     -8, -4, -4, -2, -2, -4, -4, -8,
+        p,  p,  p,  p,  p,  p,  p,  p,     -1,  0,  1, -1, -1,  1,  0, -1,
+        0,  0,  0,  0,  0,  0,  0,  0,      0,  1,  2,  3,  3,  2,  1,  0,
+        0,  0,  0,  0,  0,  0,  0,  0,      1,  2,  3,  4,  4,  3,  2,  1,
+        0,  0,  0,  0,  0,  0,  0,  0,      1,  2,  3,  4,  4,  3,  2,  1,
+        0,  0,  0,  0,  0,  0,  0,  0,      0,  1,  2,  3,  3,  2,  1,  0,
+        P,  P,  P,  P,  P,  P,  P,  P,     -1,  0,  1, -1, -1,  1,  0, -1,
+        R,  N,  B,  Q,  K,  B,  N,  R,     -8, -4, -4, -2, -2, -4, -4, -8,
 
         // r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1
         // r,  0,  0,  0,  k,  0,  0,  r,     -2, -4, -2,  1,  1, -2, -4, -2,
@@ -53,14 +53,14 @@ module.exports = orobas = {
         // R,  0,  0,  Q,  0,  R,  K,  0,     -2, -4, -2,  1,  1, -2, -4, -2,
         
         // r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R
-        r,  0,  0,  0,  k,  0,  0,  r,     -2, -4, -2,  1,  1, -2, -4, -2,
-        p,  0,  p,  p,  q,  p,  b,  0,     -1,  0,  1,  2,  2,  1,  0, -1,
-        b,  n,  0,  0,  p,  n,  p,  0,      0,  1,  2,  3,  3,  2,  1,  0,
-        0,  0,  0,  P,  N,  0,  0,  0,      1,  2,  3,  4,  4,  3,  2,  1,
-        0,  p,  0,  0,  P,  0,  0,  0,      1,  2,  3,  4,  4,  3,  2,  1,
-        0,  0,  N,  0,  0,  Q,  0,  p,      0,  1,  2,  3,  3,  2,  1,  0,
-        P,  P,  P,  B,  B,  P,  P,  P,     -1,  0,  1,  2,  2,  1,  0, -1,
-        R,  0,  0,  0,  K,  0,  0,  R,     -2, -4, -2,  1,  1, -2, -4, -2,
+        // r,  0,  0,  0,  k,  0,  0,  r,     -2, -4, -2,  1,  1, -2, -4, -2,
+        // p,  0,  p,  p,  q,  p,  b,  0,     -1,  0,  1,  2,  2,  1,  0, -1,
+        // b,  n,  0,  0,  p,  n,  p,  0,      0,  1,  2,  3,  3,  2,  1,  0,
+        // 0,  0,  0,  P,  N,  0,  0,  0,      1,  2,  3,  4,  4,  3,  2,  1,
+        // 0,  p,  0,  0,  P,  0,  0,  0,      1,  2,  3,  4,  4,  3,  2,  1,
+        // 0,  0,  N,  0,  0,  Q,  0,  p,      0,  1,  2,  3,  3,  2,  1,  0,
+        // P,  P,  P,  B,  B,  P,  P,  P,     -1,  0,  1,  2,  2,  1,  0, -1,
+        // R,  0,  0,  0,  K,  0,  0,  R,     -2, -4, -2,  1,  1, -2, -4, -2,
 
         // 0,0,0,0,0,0,0,0,    0,0,0,0,0,0,0,0,
         // 0,0,p,0,0,0,0,0,    0,0,0,0,0,0,0,0,
@@ -159,20 +159,20 @@ module.exports = orobas = {
         this.pieces[0] = {symbol: '.', offsets: []}
 
         //Blancas
-        this.pieces[P] = {symbol: '\u2659', offsets: [-16, -17, -15]}
-        this.pieces[N] = {symbol: '\u2658', offsets: [-18, -33, -31, -14, 18, 33, 31, 14]}
-        this.pieces[B] = {symbol: '\u2657', offsets: [-17, -15, 17, 15]}
-        this.pieces[R] = {symbol: '\u2656', offsets: [-16, 1, 16, -1]}
-        this.pieces[Q] = {symbol: '\u2655', offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
-        this.pieces[K] = {symbol: '\u2654', offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
+        this.pieces[P] = {symbol: 'P', offsets: [-16, -17, -15]}
+        this.pieces[N] = {symbol: 'N', offsets: [-18, -33, -31, -14, 18, 33, 31, 14]}
+        this.pieces[B] = {symbol: 'B', offsets: [-17, -15, 17, 15]}
+        this.pieces[R] = {symbol: 'R', offsets: [-16, 1, 16, -1]}
+        this.pieces[Q] = {symbol: 'Q', offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
+        this.pieces[K] = {symbol: 'K', offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
         
         //Negras
-        this.pieces[p] = {symbol: '\u265F', offsets: [16, 17, 15]}
-        this.pieces[n] = {symbol: '\u265E', offsets: [-18, -33, -31, -14, 18, 33, 31, 14]}
-        this.pieces[b] = {symbol: '\u265D', offsets: [-17, -15, 17, 15]}
-        this.pieces[r] = {symbol: '\u265C', offsets: [-16, 1, 16, -1]}
-        this.pieces[q] = {symbol: '\u265B', offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
-        this.pieces[k] = {symbol: '\u265A', offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
+        this.pieces[p] = {symbol: 'p', offsets: [16, 17, 15]}
+        this.pieces[n] = {symbol: 'n', offsets: [-18, -33, -31, -14, 18, 33, 31, 14]}
+        this.pieces[b] = {symbol: 'b', offsets: [-17, -15, 17, 15]}
+        this.pieces[r] = {symbol: 'r', offsets: [-16, 1, 16, -1]}
+        this.pieces[q] = {symbol: 'q', offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
+        this.pieces[k] = {symbol: 'k', offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
     },
 
     createPieceList() {
@@ -363,13 +363,13 @@ module.exports = orobas = {
 
             if (piece === K && i === 116) {
                 moves.push(this.createMove({piece: K, from:116, to:118, isCapture:false, capturedPiece:0, castleSide:8, enPassantSquares:null}))
-                moves.push(this.createMove({piece:K, from:116, to:114, isCapture:false, capturedPiece:0, castleSide:4, enPassantSquares:null}))
+                moves.push(this.createMove({piece: K, from:116, to:114, isCapture:false, capturedPiece:0, castleSide:4, enPassantSquares:null}))
                 // continue
             }
 
             if (piece === k && i === 4) {
-                moves.push(this.createMove({piece:k, from:4, to:6, isCapture:false, capturedPiece:0, castleSide:2, enPassantSquares:null}))
-                moves.push(this.createMove({piece:k, from:4, to:2, isCapture:false, capturedPiece:0, castleSide:1, enPassantSquares:null}))
+                moves.push(this.createMove({piece: k, from:4, to:6, isCapture:false, capturedPiece:0, castleSide:2, enPassantSquares:null}))
+                moves.push(this.createMove({piece: k, from:4, to:2, isCapture:false, capturedPiece:0, castleSide:1, enPassantSquares:null}))
                 // continue
             }
 
@@ -498,16 +498,20 @@ module.exports = orobas = {
     evaluate() {
         let material = 0
         let psqt = 0
+        
         for (let i = 0; i < 128; i++) {
             if (i & 0x88) {
                 i+=7; continue
             }
             let piece = this.board[i]
             if (!piece) continue
-            material += piece
+            material += 100*piece
             psqt += this.board[i+8] * this.sign(piece)
         }
-        return 100*material + psqt
+
+        let score = orobas.sign(orobas.turn) * (material + psqt)
+
+        return  score
     },
 
     draw() {
