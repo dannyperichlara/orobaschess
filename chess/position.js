@@ -322,9 +322,12 @@ Position.makeKingDefenseMask = function(color, king) {
 	var attacks1 = king.dup().and_not(Chess.Bitboard.FILES[0]).shiftLeft(white ? 7 : -9);
 	var attacks2 = king.dup().and_not(Chess.Bitboard.FILES[Chess.LAST_FILE]).shiftLeft(white ? 9 : -7);
 	var attacks3 = king.dup().shiftLeft(white ? 8 : -8);
-	// var attacks4 = king.dup().and_not(Chess.Bitboard.FILES[0]).shiftLeft(white ? -1 : 1);
-	// var attacks5 = king.dup().and_not(Chess.Bitboard.FILES[Chess.LAST_FILE]).shiftLeft(white ? 1 : -1);
-	return attacks1.or(attacks2).or(attacks3)//.or(attacks4).or(attacks5);
+
+	var attacks4 = king.dup().and_not(Chess.Bitboard.FILES[0]).shiftLeft(white ? 15 : -17);
+	var attacks5 = king.dup().and_not(Chess.Bitboard.FILES[Chess.LAST_FILE]).shiftLeft(white ? 17 : -15);
+	var attacks6 = king.dup().shiftLeft(white ? 16 : -16);
+	
+	return attacks1.or(attacks2).or(attacks3).or(attacks4).or(attacks5).or(attacks6);
 };
 
 /**

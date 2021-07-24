@@ -179,7 +179,7 @@ console.log(AI.MOBILITY_VALUES)
 
 // SEGURIDAD DEL REY
 // Valor se asigna dependiendo del número de piezas que rodea al rey
-AI.SAFETY_VALUES = [0, 1, 3, 4, 5, 6, 7, 8, 9].map(e => VPAWN5 * e)
+AI.SAFETY_VALUES = [-4,-2, 0, 3, 3, 3, 3, 3, 3].map(e => VPAWN5 * e)
 
 // PEONES PASADOS
 // Al detectar un peón pasado, se asigna un valor extra al peón correspondiente
