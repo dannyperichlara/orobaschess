@@ -141,8 +141,6 @@ for (let phase = OPENING; phase <= LATE_ENDGAME; phase++) {
     ])
 }
 
-console.log(AI.MOBILITY_VALUES)
-
 // SEGURIDAD DEL REY
 // Valor se asigna dependiendo del número de piezas que rodea al rey
 AI.SAFETY_VALUES = [-4,-2, 0, 3, 3, 3, 3, 3, 3].map(e => VPAWN5 * e)
@@ -503,10 +501,10 @@ AI.pawnAdvanceMask = function (fromBB, white) {
 };
 
 AI.getKingSafety = function (pieces) {
-    let maskWhite = Chess.Position.makeKingDefenseMask(WHITE, pieces.Kw).and(pieces.Pw)
+    let maskWhite = Chess.Position.makeKingDefenseMask(WHITE, pieces.Kw).and(pieces.white)
     let safetyWhite = AI.SAFETY_VALUES[maskWhite.popcnt()]
 
-    let maskBlack = Chess.Position.makeKingDefenseMask(BLACK, pieces.Kb).and(pieces.Pb)
+    let maskBlack = Chess.Position.makeKingDefenseMask(BLACK, pieces.Kb).and(pieces.black)
     let safetyBlack = AI.SAFETY_VALUES[maskBlack.popcnt()]
 
     return safetyWhite - safetyBlack
@@ -1148,12 +1146,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
             AI.absurd[turn][piece]++
 
             //Reducciones
-            if (AI.nofpieces <= 4) {
-                R = 0
-            } else {
-                if (!incheck && depth >= 3) {
-                    R += AI.LMR_TABLE[depth][legal]
-                }
+            if (!incheck && depth >= 3) {
+                R += AI.LMR_TABLE[depth][legal]
             }
 
             if (legal === 1) {
