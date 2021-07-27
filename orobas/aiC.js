@@ -773,10 +773,11 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry, isQS) {
         let hvalue = AI.history[turn][piece][to]
 
         if (hvalue) {
-            move.hvalue = hvalue
+            move.hvalue = 10 * hvalue / ply | 0
             move.score += 1000 + hvalue
             continue
         } else {
+            // move.score = 0; continue
             // CRITERIO 7
             // Las jugadas restantes se orden de acuerdo a donde se estima sería
             // su mejor posición absoluta en el tablero
@@ -787,7 +788,7 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry, isQS) {
     }
 
     // ORDENA LOS MOVIMIENTOS
-    // El tiempo de esta función toma hasta unb 10% del total de cada búsqueda.
+    // El tiempo de esta función toma hasta un 10% del total de cada búsqueda.
     // Sería conveniente utilizar un mejor método de ordenamiento.
     moves.sort((a, b) => {
         return b.score - a.score
@@ -836,7 +837,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
 
     // delta pruning
     if (!incheck) {
-        let futilityMargin = AI.PIECE_VALUES[0][4]
+        let futilityMargin = AI.PIECE_VALUES[0][1]
     
         if (standpat + futilityMargin <= alpha) {
             return standpat
@@ -847,9 +848,9 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
     
     let ttEntry = AI.ttGet(hashkey)
         
-    if (!ttEntry || !ttEntry.move.capture || ttEntry.flag === UPPERBOUND) {
-        ttEntry = null
-    }
+    // if (!ttEntry || !ttEntry.move.capture || ttEntry.flag === UPPERBOUND) {
+    //     ttEntry = null
+    // }
 
     let score = -INFINITY
     
@@ -1130,6 +1131,11 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
         }
 
         if (ttEntry && move.value === ttEntry.value && ttEntry.move.isCapture()) {
+            R++
+        }
+
+        let historyScore = AI.history[turn][piece][move.getTo()]
+        if (historyScore < 64) {
             R++
         }
 
@@ -1564,7 +1570,7 @@ AI.createPSQT = function (board) {
         ],
     ]
 
-    // AI.preprocessor(board)
+    AI.preprocessor(board)
 
     if (AI.phase === 0) AI.PSQT = [...AI.PSQT_OPENING]
     if (AI.phase === 1) AI.PSQT = [...AI.PSQT_MIDGAME]
