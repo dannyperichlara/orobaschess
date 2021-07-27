@@ -18,7 +18,7 @@ let AI = {
     phase: 1,
     htlength: 1 << 24,
     pawntlength: 1e6,
-    reduceHistoryFactor: 0.5, //1, actúa sólo en la actual búsqueda
+    reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda
     mindepth: [6, 6, 8, 10],
     secondspermove: 3,
     lastmove: null,
@@ -535,7 +535,7 @@ AI.getStructure = function (Pw, Pb) {
     }
 
     let doubled = AI.getDoubled(Pw, Pb)
-    let defended = AI.getDefended(Pw, Pb) // Afecta rendimiento +/- 3 depths
+    let defended = AI.getDefended(Pw, Pb)
     let passers = AI.getPassers(Pw, Pb)
 
     let score = doubled + defended + passers
@@ -2103,7 +2103,7 @@ AI.search = function (board, options) {
         AI.lastscore = 0
         AI.f = 0
     } else {
-        // AI.createTables(true, true, false)
+        AI.createTables(true, true, false)
         AI.f = AI.lastscore
     }
 

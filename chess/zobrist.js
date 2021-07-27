@@ -2,7 +2,7 @@
 
 var seedrandom = require('seedrandom')
 
-seedrandom('orobas19ffec57e6844cdb3b9cdc9537a25393', {global: true})
+seedrandom('orobas34erg', {global: true})
 
 let Chess = require('./chess.js')
 
