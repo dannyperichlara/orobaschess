@@ -110,11 +110,10 @@ for (let depth = 1; depth < AI.totaldepth + 1; ++depth) {
     AI.LMR_TABLE[depth] = new Array(218)
 
     for (let moves = 1; moves < 218; ++moves) {
-        if (depth >= 2) {
-            // AI.LMR_TABLE[depth][moves] = Math.log(depth)*Math.log(moves)/1.95 | 0
+        if (depth >= 6) {
             AI.LMR_TABLE[depth][moves] = depth/5 + moves/5 + 1 | 0
         } else {
-            AI.LMR_TABLE[depth][moves] = 0
+            AI.LMR_TABLE[depth][moves] = Math.log(depth)*Math.log(moves)/2 | 0
         }
     }
 
@@ -124,6 +123,8 @@ for (let depth = 1; depth < AI.totaldepth + 1; ++depth) {
 const MFACTOR = [null, 2.5, 1.5, 1.4, 0.7, null]
 // const MFACTOR = [null, 1, 1, 1, 1, null]
 
+const PAWNFACTOR = VPAWN/127
+
 // VALORES PARA VALORAR MOBILIDAD
 // El valor se asigna dependiendo del número de movimientos por pieza, desde el caballo hasta la dama
 
@@ -132,13 +133,15 @@ AI.MOBILITY_VALUES = []
 for (let phase = OPENING; phase <= LATE_ENDGAME; phase++) {
     AI.MOBILITY_VALUES.push([
         [],
-        [...Array(9).keys()].map(e=>(13*Math.log(e+1)-20 | 0)),
-        [...Array(14).keys()].map(e=>(16*Math.log(e+1)-15 | 0)),
-        [...Array(15).keys()].map(e=>(29*Math.log(e+1)-25 | 0)),
-        [...Array(28).keys()].map(e=>(12*Math.log(e+1)-13 | 0)),
+        [...Array(9).keys()].map(e=>(PAWNFACTOR * (13*Math.log(e+1)-20) | 0)),
+        [...Array(14).keys()].map(e=>(PAWNFACTOR * (16*Math.log(e+1)-15) | 0)),
+        [...Array(15).keys()].map(e=>(PAWNFACTOR * (29*Math.log(e+1)-25) | 0)),
+        [...Array(28).keys()].map(e=>(PAWNFACTOR * (12*Math.log(e+1)-13) | 0)),
         [],
     ])
 }
+
+console.log(AI.MOBILITY_VALUES)
 
 // SEGURIDAD DEL REY
 // Valor se asigna dependiendo del número de piezas que rodea al rey
@@ -343,7 +346,7 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly) {
 
     score += material + structure + psqt + kingSafety + mobility
 
-    return sign * score | 0
+    return sign * score / 5 | 0
 }
 
 AI.cols = [
@@ -1570,7 +1573,7 @@ AI.createPSQT = function (board) {
         ],
     ]
 
-    AI.preprocessor(board)
+    // AI.preprocessor(board)
 
     if (AI.phase === 0) AI.PSQT = [...AI.PSQT_OPENING]
     if (AI.phase === 1) AI.PSQT = [...AI.PSQT_MIDGAME]
