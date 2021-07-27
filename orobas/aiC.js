@@ -18,7 +18,7 @@ let AI = {
     phase: 1,
     htlength: 1 << 24,
     pawntlength: 1e6,
-    reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda
+    reduceHistoryFactor: 0.5, //1, actúa sólo en la actual búsqueda
     mindepth: [6, 6, 8, 10],
     secondspermove: 3,
     lastmove: null,
@@ -88,7 +88,7 @@ for (let i in [OPENING, MIDGAME, EARLY_ENDGAME, LATE_ENDGAME]) {
 
 // CONSTANTES
 const MATE = AI.PIECE_VALUES[OPENING][KING]
-const DRAW = -2*VPAWN
+const DRAW = 0 //-2*VPAWN
 const INFINITY = AI.PIECE_VALUES[OPENING][KING] * 2
 
 AI.EMPTY = new Chess.Bitboard()
@@ -139,43 +139,6 @@ for (let phase = OPENING; phase <= LATE_ENDGAME; phase++) {
         [],
     ])
 }
-
-console.log(AI.MOBILITY_VALUES)
-
-// AI.MOBILITY_VALUES = [
-//     [
-//         [],
-//         [0, 1, 2, 3, 4, 5, 6, 7, 8].map(e => e * MFACTOR[1] | 0),
-//         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(e => e * MFACTOR[2] | 0),
-//         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map(e => e * 0 | 0),
-//         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27].map(e => e * 0 | 0),
-//         []
-//     ],
-//     [
-//         [],
-//         [0, 1, 2, 3, 4, 5, 6, 7, 8].map(e => e * MFACTOR[1] | 0),
-//         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(e => e * MFACTOR[2] | 0),
-//         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map(e => e * 0 | 0),
-//         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27].map(e => e * 0 | 0),
-//         []
-//     ],
-//     [
-//         [],
-//         [0, 1, 2, 3, 4, 5, 6, 7, 8].map(e => e * MFACTOR[1] | 0),
-//         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(e => e * MFACTOR[2] | 0),
-//         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map(e => e * 0 | 0),
-//         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27].map(e => e * 0 | 0),
-//         []
-//     ],
-//     [
-//         [],
-//         [0, 1, 2, 3, 4, 5, 6, 7, 8].map(e => e * MFACTOR[1] | 0),
-//         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(e => e * MFACTOR[2] | 0),
-//         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map(e => e * 0 | 0),
-//         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27].map(e => e * 0 | 0),
-//         []
-//     ]
-// ]
 
 // SEGURIDAD DEL REY
 // Valor se asigna dependiendo del número de piezas que rodea al rey
@@ -365,31 +328,20 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly) {
     let pieces = AI.getPieces(board, turn, notturn)
     let score = 0
     let sign = turn === 0? 1: -1
-    let lazymargin = beta + AI.PIECE_VALUES[0][1]
     
     // Valor material del tablero
     let material = AI.getMaterial(pieces) | 0
     // Structure: Valoración de la estructura de peones (defendidos/doblados/pasados)
     let structure = AI.getStructure(pieces.Pw, pieces.Pb) | 0
 
-    score = material + structure
-
-    if ((materialOnly && ply > 2) || score > lazymargin) return sign*score
-    
-    
     // Valor posicional del tablero
     // PSQT: Plusvalor o minusvalor por situar una pieza en determinada casilla
     // Mobility: Valoración de la capacidad de las piezas de moverse en el tablero
     let psqt = AI.getPSQT(pieces) | 0 // -4 a 6 depths
-
-    score += psqt
-
-    if (materialOnly || score > lazymargin) return sign * score
-
     let kingSafety = (AI.phase > 0? AI.getKingSafety(pieces) : 0) | 0
-    let mobility = AI.getMobility(pieces, board) | 0
+    let mobility = AI.iteration <= 2? (AI.getMobility(pieces, board) | 0) : 0
 
-    score += kingSafety + mobility
+    score += material + structure + psqt + kingSafety + mobility
 
     return sign * score | 0
 }
@@ -569,7 +521,9 @@ AI.getKingSafetyValue = function (K, us, turn) {
 // estructura. La tasa de acierto de las entradas hash es mayor al 95%, por lo
 // que esta función es esencial para mantener un buen rendimiento.
 AI.getStructure = function (Pw, Pb) {
-    let hashkey = (Pw.low ^ Pw.high ^ Pb.low ^ Pb.high) >>> 0
+    let hashkey = ((Pw.low ^ Pw.high ^ Pb.low ^ Pb.high) >>> 0)
+
+    // console.log(hashkey)
 
     let hashentry = AI.pawntable[hashkey % AI.pawntlength]
 
@@ -581,7 +535,7 @@ AI.getStructure = function (Pw, Pb) {
     }
 
     let doubled = AI.getDoubled(Pw, Pb)
-    let defended = 0//AI.getDefended(Pw, Pb) // Afecta rendimiento +/- 3 depths
+    let defended = AI.getDefended(Pw, Pb) // Afecta rendimiento +/- 3 depths
     let passers = AI.getPassers(Pw, Pb)
 
     let score = doubled + defended + passers
@@ -862,9 +816,9 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
         beta = mateScore
         if (alpha >= mateScore) return mateScore
     }
-
+    
     mateScore = -MATE + ply
-
+    
     if (mateScore > alpha) {
         alpha = mateScore
         if (beta <= mateScore) return mateScore
@@ -914,7 +868,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
 
         // delta pruning para cada movimiento
         if (!incheck) {
-            if (standpat + AI.PIECE_VALUES[AI.phase][move.getCapturedPiece()] <= alpha) {
+            if (standpat + AI.PIECE_VALUES[AI.phase][move.getCapturedPiece()] < alpha) {
                 continue
             }
         }
@@ -1015,11 +969,13 @@ AI.givescheck = function (board, move) {
 // El método PVS es Negamax + Ventana-Nula
 AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
     let pvNode = beta - alpha > 1 // PV-Node
+    
     let cutNode = beta - alpha === 1 // Cut-Node
+    // console.log(cutNode)
 
     AI.nodes++
 
-    if ((new Date()).getTime() > AI.timer + (materialOnly? 800 : 200) * AI.secondspermove) {
+    if ((new Date()).getTime() > AI.timer + (materialOnly? 0 : 1000) * AI.secondspermove) {
         if (AI.iteration > AI.mindepth[AI.phase] && !pvNode) {
             AI.stop = true
         }
@@ -1096,8 +1052,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
     }
 
     //IID (si no hay entrada en ttEntry, busca una para mejorar el orden de movimientos)
-    if (!ttEntry && depth > 1) {
-        AI.PVS(board, alpha, beta, depth - 1, ply, materialOnly) //depth - 2 tested ok + 31 ELO
+    if (!ttEntry && depth > 2) {
+        AI.PVS(board, alpha, beta, depth - 2, ply, materialOnly) //depth - 2 tested ok + 31 ELO
         ttEntry = AI.ttGet(hashkey)
     }
 
@@ -1115,7 +1071,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
 
     if (!incheck && reverseval > beta) {
         AI.ttSave(hashkey, beta, LOWERBOUND, depth, moves[0])
-        return beta
+        return staticeval
     }
 
     // futility pruning
@@ -1134,7 +1090,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
 
         // futility pruning para cada movimiento
         if (!incheck && legal >= 1) {
-            if (staticeval + AI.PIECE_VALUES[AI.phase][move.getCapturedPiece()] + 2*depth*VPAWN <= alpha) {
+            if (staticeval + AI.PIECE_VALUES[AI.phase][move.getCapturedPiece()] + 2*depth*VPAWN < alpha) {
                 continue
             }
         }
@@ -1176,7 +1132,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
             } else {
                 if (AI.stop) return oAlpha
 
-                score = -AI.PVS(board, -alpha - 1, -alpha, depth + E - R - 1, ply + 1, materialOnly)
+                //Null window left to MTDF
+                score = -AI.PVS(board, -alpha-1, -alpha, depth + E - R - 1, ply + 1, materialOnly)
 
                 if (!AI.stop && score > alpha) {
                     score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1, materialOnly)
@@ -1586,7 +1543,7 @@ AI.createPSQT = function (board) {
         ],
     ]
 
-    AI.preprocessor(board)
+    // AI.preprocessor(board)
 
     if (AI.phase === 0) AI.PSQT = [...AI.PSQT_OPENING]
     if (AI.phase === 1) AI.PSQT = [...AI.PSQT_MIDGAME]
@@ -2059,14 +2016,14 @@ AI.getPV = function (board, length) {
     return PV
 }
 
-AI.MTDF = function (board, f, d, materialOnly) {
+AI.MTDF = function (board, f, d, materialOnly, lowerBound, upperBound) {
     let g = f
 
-    let upperBound =  INFINITY
-    let lowerBound = -INFINITY
+    // let upperBound =  INFINITY
+    // let lowerBound = -INFINITY
 
     //Esta línea permite que el algoritmo funcione como PVS normal
-    return AI.PVS(board, lowerBound, upperBound, d, 1, materialOnly)
+    // return AI.PVS(board, lowerBound, upperBound, d, 1, materialOnly)
     // r1bqk2r/ppp1bppp/4p3/3pP3/3P2n1/2PQ1N1P/PP3PP1/RNB2RK1 b kq - 0 9
     // console.log('INICIO DE MTDF')
     let i = 0
@@ -2119,7 +2076,7 @@ AI.search = function (board, options) {
         AI.lastscore = 0
         AI.f = 0
     } else {
-        AI.createTables(true, true, false)
+        // AI.createTables(true, true, false)
         AI.f = AI.lastscore
     }
 
@@ -2167,21 +2124,39 @@ AI.search = function (board, options) {
         
         AI.previousls = AI.lastscore
 
-        AI.MTDF(board, 0, 1, false)
+        // AI.MTDF(board, 0, 1, false, -INFINITY, INFINITY)
 
         let depth = 1
+        let alpha = -INFINITY
+        let beta = INFINITY
+
+        console.log('sdfsdfsdfds', this.previousls)
         
         if (true) {
 
             //Iterative Deepening
-            for (; depth <= AI.totaldepth; depth++) {
+            for (; depth <= AI.totaldepth; ) {
 
                 if (AI.stop) break
 
                 AI.bestmove = [...AI.PV][1]
                 AI.iteration++
 
-                AI.f = AI.MTDF(board, AI.f, depth, false)
+                // AI.f = AI.MTDF(board, AI.f, depth, false, -INFINITY, INFINITY)
+                AI.f = AI.MTDF(board, AI.f, depth, false, alpha, beta)
+
+                if (AI.f < alpha) {
+                    alpha = -INFINITY
+                    continue
+                }
+
+                if (AI.f > beta) {
+                    beta = INFINITY
+                    continue
+                }
+
+                alpha -= VPAWN2
+                beta += VPAWN2
 
                 score = (isWhite ? 1 : -1) * AI.f
 
@@ -2199,49 +2174,12 @@ AI.search = function (board, options) {
 
                 if (AI.PV && !AI.stop) console.log(AI.iteration, depth, AI.PV.map(e => { return e && e.getString ? e.getString() : '---' }).join(' '), '|Fhf ' + fhfperc + '%',
                         'Pawn hit ' + (AI.phnodes / AI.pnodes * 100 | 0), score, AI.nodes.toString(), AI.qsnodes.toString(), AI.ttnodes.toString())
+            
+                depth++
             }
         }
 
-        depth--
-        AI.iteration--
-
-        if (true || Math.abs(AI.previousls - AI.lastscore) < VPAWN) {            
-            // AI.createTables(true, false, false)
-            AI.stop=false
-            AI.timer = (new Date()).getTime()
-
-            AI.PV = AI.getPV(board, 1)
-            //Iterative Deepening
-            for (; depth <= AI.totaldepth; depth++) {
-
-                if (AI.stop && AI.iteration > AI.mindepth[AI.phase]) break
-
-                AI.bestmove = [...AI.PV][1]
-                AI.iteration++
-
-                
-                AI.f = AI.MTDF(board, AI.f, depth, true)
-                
-                score = (isWhite ? 1 : -1) * AI.f
-                
-                AI.PV = AI.getPV(board, depth)
-                
-                if ([...AI.PV][1] && AI.bestmove && [...AI.PV][1].value !== AI.bestmove.value) {
-                    AI.changeinPV = true
-                } else {
-                    AI.changeinPV = false
-                }
-
-                fhfperc = Math.round(AI.fhf * 100 / AI.fh)
-
-                if (!AI.stop) AI.lastscore = score
-
-                if (AI.PV && !AI.stop) console.log(AI.iteration, depth, AI.PV.map(e => { return e && e.getString ? e.getString() : '---' }).join(' '), '|Fhf ' + fhfperc + '%',
-                        'Pawn hit ' + (AI.phnodes / AI.pnodes * 100 | 0), score, AI.nodes.toString(), AI.qsnodes.toString(), AI.ttnodes.toString())
-            }
-        }
-
-        console.log(AI.previousls, AI.lastscore)
+        // console.log(AI.previousls, AI.lastscore)
 
         if (AI.TESTER) {
             console.info(`_ AI.TESTER ${AI.phase} _____________________________________`)

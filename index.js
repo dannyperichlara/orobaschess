@@ -54,6 +54,9 @@ let fromto = [
 
 // loadModel()
 
+Chess.AI = require('./orobas/aiC.js')
+
+
 app.get('/', function (req, res) {
 
   let chessPosition = new Chess.Position()
@@ -104,7 +107,6 @@ app.get('/', function (req, res) {
 
     }
 
-  Chess.AI = require('./orobas/aiC.js')
 
   let options = req.body.options
   
