@@ -1011,7 +1011,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
     let ttEntry = AI.ttGet(hashkey)
 
     if (ttEntry && ttEntry.depth >= depth) {
-        if (ttEntry.flag === EXACT && depth > 0) {
+        if (ttEntry.flag === EXACT) {
             return ttEntry.score
         } else if (ttEntry.flag === LOWERBOUND) {
             if (ttEntry.score > alpha) alpha = ttEntry.score
@@ -1029,19 +1029,19 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
 
     //Razoring (idea from Strelka) //+34 ELO
     if (cutNode && !incheck) {
-        let value = staticeval + VPAWN
+        let score = staticeval + VPAWN
 
-        if (value < beta) {
+        if (score < beta) {
             if (depth === 1) {
-                let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode, materialOnly)
-                return Math.max(new_value, value)
+                let new_score = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode, materialOnly)
+                return Math.max(new_score, score)
             }
-            value += 2*VPAWN
+            score += 2*VPAWN
 
-            if (value < beta && depth <= 3) {
-                let new_value = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode, materialOnly)
-                if (new_value < beta)
-                return Math.max(new_value, value)
+            if (score < beta && depth <= 3) {
+                let new_score = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode, materialOnly)
+                if (new_score < beta)
+                return Math.max(new_score, score)
             }
         }
       }
@@ -1132,8 +1132,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
             } else {
                 if (AI.stop) return oAlpha
 
-                //Null window left to MTDF
-                score = -AI.PVS(board, -alpha-1, -alpha, depth + E - R - 1, ply + 1, materialOnly)
+                // (Null window left to MTDF)
+                score = -AI.PVS(board, -beta, -alpha, depth + E - R - 1, ply + 1, materialOnly)
 
                 if (!AI.stop && score > alpha) {
                     score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1, materialOnly)
