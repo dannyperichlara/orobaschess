@@ -810,32 +810,29 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
 
     AI.qsnodes++
 
-    let mateScore = MATE - ply
+    // let mateScore = MATE - ply
 
-    if (mateScore < beta) {
-        beta = mateScore
-        if (alpha >= mateScore) return mateScore
-    }
+    // if (mateScore < beta) {
+    //     beta = mateScore
+    //     if (alpha >= mateScore) return mateScore
+    // }
     
-    mateScore = -MATE + ply
+    // mateScore = -MATE + ply
     
-    if (mateScore > alpha) {
-        alpha = mateScore
-        if (beta <= mateScore) return mateScore
-    }
+    // if (mateScore > alpha) {
+    //     alpha = mateScore
+    //     if (beta <= mateScore) return mateScore
+    // }
 
     let turn = board.getTurnColor()
     let legal = 0
     let standpat = AI.evaluate(board, ply, beta, pvNode, materialOnly)
     let hashkey = board.hashKey.getHashKey()
+    let incheck = board.isKingInCheck()
 
-    if (standpat >= beta) {
+    if (!incheck && standpat >= beta) {
         return standpat
     }
-
-    if (standpat > alpha) alpha = standpat
-
-    let incheck = board.isKingInCheck()
 
     // delta pruning
     if (!incheck) {
@@ -845,6 +842,8 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
             return standpat
         }
     }
+
+    if (standpat > alpha) alpha = standpat
     
     let ttEntry = AI.ttGet(hashkey)
         
@@ -858,7 +857,9 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
     let moves = board.getMoves(true, true) //+0 ELO
     moves = AI.sortMoves(moves, turn, ply, board, ttEntry, true)
 
-    if (moves.length === 0) return alpha
+    if (moves.length === 0) {
+        return alpha
+    }
 
     let bestmove = moves[0]
 
@@ -892,9 +893,29 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
         }
     }
 
-    AI.ttSave(hashkey, score, score > oAlpha? EXACT : UPPERBOUND, 0, bestmove)
+    if (legal === 0) {
+        
+        // Ahogado
+        if (!board.isKingInCheck()) {
+            // AI.ttSave(hashkey, DRAW, EXACT, 0, bestmove)
+            
+            return DRAW
+        }
+        
+        // Mate
+        // AI.ttSave(hashkey, -MATE + ply, EXACT, 0, bestmove)
 
-    return alpha
+        return -MATE + ply
+
+    }
+    
+    if (alpha > oAlpha) {
+        // Mejor movimiento
+        return alpha
+    } else {
+        //Upperbound
+        return oAlpha
+    }
 }
 
 AI.ttSave = function (hashkey, score, flag, depth, move) {
@@ -1187,20 +1208,20 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
         
         // Ahogado
         if (!board.isKingInCheck()) {
-            AI.ttSave(hashkey, DRAW, EXACT, depth, bestmove)
+            // AI.ttSave(hashkey, DRAW, EXACT, depth, bestmove)
             
             return DRAW
         }
         
         // Mate
-        AI.ttSave(hashkey, -MATE + ply, EXACT, depth, bestmove)
+        // AI.ttSave(hashkey, -MATE + ply, EXACT, depth, bestmove)
 
         return -MATE + ply
 
     } else {
         // Tablas
         if (board.isDraw()) {
-            AI.ttSave(hashkey, DRAW, EXACT, depth, bestmove)
+            // AI.ttSave(hashkey, DRAW, EXACT, depth, bestmove)
             return DRAW
         }
 
