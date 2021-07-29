@@ -806,6 +806,8 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
 
         let move = moves[i]
 
+        if (!incheck && !move.capturedPiece) continue
+
         // delta pruning para cada movimiento
         if (!incheck && legal > 1) {
             if (standpat + AI.PIECE_VALUES[AI.phase][move.capturedPiece] < alpha) {
