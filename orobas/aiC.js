@@ -34,6 +34,18 @@ const BISHOP = 4
 const ROOK = 5
 const QUEEN = 9
 const KING = 20
+const K = KING
+const Q = QUEEN
+const R = ROOK
+const B = BISHOP
+const N = KNIGHT
+const P = PAWN
+const k = -KING
+const q = -QUEEN
+const r = -ROOK
+const b = -BISHOP
+const n = -KNIGHT
+const p = -PAWN
 
 const WHITE = 1
 const BLACK = -1
@@ -62,18 +74,18 @@ AI.PIECE_VALUES = [
     [],
 ]
 
-AI.PIECE_VALUES[0][-20] = -20000
-AI.PIECE_VALUES[0][-9] = -900
-AI.PIECE_VALUES[0][-5] = -500
-AI.PIECE_VALUES[0][-4] = -325
-AI.PIECE_VALUES[0][-3] = -300
-AI.PIECE_VALUES[0][-1] = -100
-AI.PIECE_VALUES[0][1] = 100
-AI.PIECE_VALUES[0][3] = 300
-AI.PIECE_VALUES[0][4] = 325
-AI.PIECE_VALUES[0][5] = 500
-AI.PIECE_VALUES[0][9] = 900
-AI.PIECE_VALUES[0][20] = 20000
+AI.PIECE_VALUES[0][k] = -20000
+AI.PIECE_VALUES[0][q] = -900
+AI.PIECE_VALUES[0][r] = -500
+AI.PIECE_VALUES[0][b] = -325
+AI.PIECE_VALUES[0][n] = -300
+AI.PIECE_VALUES[0][p] = -100
+AI.PIECE_VALUES[0][P] = 100
+AI.PIECE_VALUES[0][N] = 300
+AI.PIECE_VALUES[0][B] = 325
+AI.PIECE_VALUES[0][R] = 500
+AI.PIECE_VALUES[0][Q] = 900
+AI.PIECE_VALUES[0][K] = 20000
 
 // AI.PIECE_ORDER = [
 //     [ 4, 8, 16, 1, 0, 2],
@@ -293,7 +305,7 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly) {
 
         if (piece === 0) continue
 
-        score += AI.PIECE_VALUES[0][piece]
+        score += AI.PIECE_VALUES[OPENING][piece]
         // console.log(score)
     }
 
@@ -549,36 +561,36 @@ AI.getMobilityValues = function (_P, _N, _B, _R, _Q, _K, _Px, board, color) {
     return mobility
 }
 
-AI.getMaterial = function (pieces, us) {
-    let whiteScore = 0
-    let blackScore = 0
-    let whiteBishops
-    let blackBishops
+// AI.getMaterial = function (pieces, us) {
+//     let whiteScore = 0
+//     let blackScore = 0
+//     let whiteBishops
+//     let blackBishops
 
-    // Blancas
-    whiteBishops = pieces.Bw.popcnt()
+//     // Blancas
+//     whiteBishops = pieces.Bw.popcnt()
 
-    whiteScore = AI.PIECE_VALUES_SUM[AI.phase][PAWN][pieces.Pw.popcnt()] +
-    AI.PIECE_VALUES_SUM[AI.phase][KNIGHT][pieces.Nw.popcnt()] +
-    AI.PIECE_VALUES_SUM[AI.phase][BISHOP][whiteBishops] +
-    AI.PIECE_VALUES_SUM[AI.phase][ROOK][pieces.Rw.popcnt()] +
-    AI.PIECE_VALUES_SUM[AI.phase][QUEEN][pieces.Qw.popcnt()]
+//     whiteScore = AI.PIECE_VALUES_SUM[AI.phase][PAWN][pieces.Pw.popcnt()] +
+//     AI.PIECE_VALUES_SUM[AI.phase][KNIGHT][pieces.Nw.popcnt()] +
+//     AI.PIECE_VALUES_SUM[AI.phase][BISHOP][whiteBishops] +
+//     AI.PIECE_VALUES_SUM[AI.phase][ROOK][pieces.Rw.popcnt()] +
+//     AI.PIECE_VALUES_SUM[AI.phase][QUEEN][pieces.Qw.popcnt()]
     
-    if (whiteBishops >= 2) whiteScore += BISHOP_PAIR
+//     if (whiteBishops >= 2) whiteScore += BISHOP_PAIR
     
-    // Negras
-    blackBishops = pieces.Bb.popcnt()
+//     // Negras
+//     blackBishops = pieces.Bb.popcnt()
     
-    blackScore = AI.PIECE_VALUES_SUM[AI.phase][PAWN][pieces.Pb.popcnt()] +
-    AI.PIECE_VALUES_SUM[AI.phase][KNIGHT][pieces.Nb.popcnt()] +
-    AI.PIECE_VALUES_SUM[AI.phase][BISHOP][blackBishops] +
-    AI.PIECE_VALUES_SUM[AI.phase][ROOK][pieces.Rb.popcnt()] +
-    AI.PIECE_VALUES_SUM[AI.phase][QUEEN][pieces.Qb.popcnt()]
+//     blackScore = AI.PIECE_VALUES_SUM[AI.phase][PAWN][pieces.Pb.popcnt()] +
+//     AI.PIECE_VALUES_SUM[AI.phase][KNIGHT][pieces.Nb.popcnt()] +
+//     AI.PIECE_VALUES_SUM[AI.phase][BISHOP][blackBishops] +
+//     AI.PIECE_VALUES_SUM[AI.phase][ROOK][pieces.Rb.popcnt()] +
+//     AI.PIECE_VALUES_SUM[AI.phase][QUEEN][pieces.Qb.popcnt()]
     
-    if (blackBishops >= 2) blackScore += BISHOP_PAIR
+//     if (blackBishops >= 2) blackScore += BISHOP_PAIR
 
-    return whiteScore - blackScore | 0
-}
+//     return whiteScore - blackScore | 0
+// }
 
 // Limita el valor posicional
 AI.limit = (value, limit) => {
@@ -775,7 +787,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
 
     // delta pruning
     if (!incheck) {
-        let futilityMargin = AI.PIECE_VALUES[0][1]
+        let futilityMargin = AI.PIECE_VALUES[OPENING][KNIGHT]
     
         if (standpat + futilityMargin <= alpha) {
             return standpat
@@ -810,7 +822,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
 
         // delta pruning para cada movimiento
         if (!incheck && legal > 1) {
-            if (standpat + AI.PIECE_VALUES[AI.phase][move.capturedPiece] < alpha) {
+            if (standpat + AI.PIECE_VALUES[AI.phase][turn * move.capturedPiece] < alpha) {
                 continue
             }
         }
@@ -1030,7 +1042,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
     let score
 
     //Reverse Futility pruning (Static Null Move Pruning) TESTED OK
-    let reverseval = staticeval - AI.PIECE_VALUES[0][1] * depth
+    let reverseval = staticeval - AI.PIECE_VALUES[OPENING][KNIGHT] * depth
 
     if (!incheck && reverseval > beta) {
         AI.ttSave(hashkey, beta, LOWERBOUND, depth, moves[0])
@@ -1039,7 +1051,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
 
     // futility pruning
     if (!incheck) {
-      let futilityMargin = depth * AI.PIECE_VALUES[0][1]
+      let futilityMargin = depth * AI.PIECE_VALUES[OPENING][KNIGHT]
 
       if (staticeval + futilityMargin <= alpha) {
         AI.ttSave(hashkey, oAlpha, UPPERBOUND, depth, moves[0])
@@ -1053,7 +1065,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
 
         // futility pruning para cada movimiento
         if (!incheck && legal >= 1) {
-            if (staticeval + AI.PIECE_VALUES[AI.phase][move.capturedPiece] + 2*depth*VPAWN < alpha) {
+            if (staticeval + AI.PIECE_VALUES[AI.phase][turn*move.capturedPiece] + 2*depth*VPAWN < alpha) {
                 continue
             }
         }
@@ -1765,7 +1777,7 @@ AI.preprocessor = function (board) {
     for (let i = 8; i < 16; i++) AI.PSQT_EARLY_ENDGAME[3][i + sign * 8 * (kingXposition / 8 | 0)] += TBM
 
     //Rey cerca del rey enemigo
-    if (AI.phase === 3 && AI.lastscore >= AI.PIECE_VALUES[0][3]) {
+    if (AI.phase === 3 && AI.lastscore >= AI.PIECE_VALUES[OPENING][ROOK]) {
         AI.PSQT_EARLY_ENDGAME[5] = AI.PSQT_EARLY_ENDGAME[5].map((e, i) => {
             return TBM * (8 - AI.manhattanDistance(kingXposition, i))
         })
@@ -1914,12 +1926,12 @@ AI.setPhase = function () {
     // let queens = board.getPieceColorBitboard(4, color).popcnt() + board.getPieceColorBitboard(4, !color).popcnt()
 
     // //EARLY ENDGAME (the king enters)
-    // if (AI.nofpieces <= 20 && queens === 0 || Math.abs(AI.lastscore) > AI.PIECE_VALUES[0][3]) {
+    // if (AI.nofpieces <= 20 && queens === 0 || Math.abs(AI.lastscore) > AI.PIECE_VALUES[OPENING][ROOK]) {
     //     AI.phase = 2
     // }
 
     // //LATE ENDGAME
-    // if (AI.nofpieces <= 12 || Math.abs(AI.lastscore) >= AI.PIECE_VALUES[0][4]) {
+    // if (AI.nofpieces <= 12 || Math.abs(AI.lastscore) >= AI.PIECE_VALUES[OPENING][QUEEN]) {
     //     AI.phase = 3
     // }
 
@@ -1936,22 +1948,24 @@ AI.getPV = function (board, length) {
     let ttEntry
     let ttFound
 
+    console.log('inicio', board.hashkey)
+    
     for (let i = 0; i < length; i++) {
         ttFound = false
         let hashkey = board.hashkey
         ttEntry = AI.ttGet(hashkey)
-
+        
         if (ttEntry) {
-            let moves = board.getMoves(false, false).filter(move => {
+            let moves = board.getMoves().filter(move => {
                 return move.value === ttEntry.move.value
             })
-
+            
             if (moves.length) {
                 if (board.makeMove(ttEntry.move)) {
                     legal++
-
+                    
                     PV.push(ttEntry.move)
-
+                    
                     ttFound = true
                 }
             }
@@ -1959,22 +1973,28 @@ AI.getPV = function (board, length) {
             break
         }
     }
-
+    
     for (let i = legal; i > 0; i--) {
+        if (PV[i].piece) {
+            console.log(legal, 'si po')
+        } else {
+            console.log(legal, 'no po')
+        }
         board.unmakeMove(PV[i])
     }
-
+    
+    console.log('fin', board.hashkey)
     return PV
 }
 
 AI.MTDF = function (board, f, d, materialOnly, lowerBound, upperBound) {
     let g = f
-
+    
     // let upperBound =  INFINITY
     // let lowerBound = -INFINITY
 
     //Esta línea permite que el algoritmo funcione como PVS normal
-    return AI.PVS(board, lowerBound, upperBound, d, 1, materialOnly)
+    // return AI.PVS(board, lowerBound, upperBound, d, 1, materialOnly)
     // r1bqk2r/ppp1bppp/4p3/3pP3/3P2n1/2PQ1N1P/PP3PP1/RNB2RK1 b kq - 0 9
     // console.log('INICIO DE MTDF')
     let i = 0
