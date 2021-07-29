@@ -591,9 +591,9 @@ module.exports = orobas = {
             }
         }
         
-        if (move.piece === K || move.piece === k) {
-            if (this.isKingInCheck()) return false
-        }
+        // if (move.piece === K || move.piece === k) { //????? WTF
+        //     if (this.isKingInCheck()) return false
+        // }
         
         this.makeEffectiveMove(move)
 
