@@ -277,7 +277,7 @@ AI.randomizePSQT = function () {
 // }
 
 // FUNCIÓN DE EVALUACIÓN DE LA POSICIÓN
-AI.evaluate = function (board, ply, beta, pvNode, materialOnly) {
+AI.evaluate = function (board, ply, beta, pvNode, materialOnly, myMoves) {
     // materialOnly = false
     let turn = board.turn
     let notturn = -turn
@@ -295,22 +295,6 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly) {
     // let psqt = AI.getPSQT(pieces) | 0 // -4 a 6 depths
     // let kingSafety = (AI.phase > 0? AI.getKingSafety(pieces) : 0) | 0
     // let mobility = ply <= 2? (AI.getMobility(pieces, board) | 0) : 0
-
-    let mobility = 0
-    let myMoves = []
-    let opponentMoves = []
-
-    if (ply <= 2) {
-        myMoves = board.getMoves()
-        board.changeTurn()
-        
-        opponentMoves = board.getMoves()
-        board.changeTurn()
-
-        mobility = (myMoves.length - opponentMoves.length) | 0
-
-        score += mobility
-    }
 
     for (let i = 0; i < 128; i++) {
         if (i & 0x88) {
@@ -330,7 +314,19 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly) {
         score += material + psqt
     }
 
-    // score += material// + structure + psqt + kingSafety + mobility
+    let mobility = 0
+    let opponentMoves = []
+
+    if (ply <= 2) {
+        board.changeTurn()
+        
+        opponentMoves = board.getMoves()
+        board.changeTurn()
+
+        mobility = 3*(myMoves.length - opponentMoves.length) | 0
+
+        score += mobility
+    }
 
     return turn * score/5 | 0
 }
@@ -793,7 +789,11 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
 
     let turn = board.turn
     let legal = 0
-    let standpat = AI.evaluate(board, ply, beta, pvNode, materialOnly)
+
+    // let moves = board.getMoves(true, !incheck) //+0 ELO
+    let moves = board.getMoves(true, true) //+0 ELO
+
+    let standpat = AI.evaluate(board, ply, beta, pvNode, materialOnly, moves)
     let hashkey = board.hashkey
     let incheck = board.isKingInCheck()
 
@@ -819,9 +819,6 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
     }
 
     let score = -INFINITY
-    
-    // let moves = board.getMoves(true, !incheck) //+0 ELO
-    let moves = board.getMoves(true, true) //+0 ELO
 
     if (!incheck) {
         moves = moves.filter(e=>{
@@ -1020,7 +1017,9 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
         }
     }
 
-    let staticeval = AI.evaluate(board, ply, beta, pvNode, materialOnly)
+    let moves = board.getMoves(true, false)
+
+    let staticeval = AI.evaluate(board, ply, beta, pvNode, materialOnly, moves)
     let incheck = board.isKingInCheck()
 
     //Razoring (idea from Strelka) //+34 ELO
@@ -1047,8 +1046,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
         AI.PVS(board, alpha, beta, depth - 2, ply, materialOnly) //depth - 2 tested ok + 31 ELO
         ttEntry = AI.ttGet(hashkey)
     }
-
-    let moves = board.getMoves(true, false)
 
     moves = AI.sortMoves(moves, turn, ply, board, ttEntry, false)
 
