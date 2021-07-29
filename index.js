@@ -25,11 +25,7 @@ app.use(express.json());
 
 app.use(cors())
 
-let Chess = require('./chess/chess.js')
-    Chess.Bitboard = require('./chess/bitboard.js')
-    Chess.Zobrist = require('./chess/zobrist.js')
-    Chess.Move = require('./chess/move.js')
-    Chess.Position = require('./chess/position.js')
+let Chess = require('./orobas/chess.js')
 
 let fromto = [
   'a1','b1','c1','d1','e1','f1','g1','h1',
@@ -42,77 +38,47 @@ let fromto = [
   'a8','b8','c8','d8','e8','f8','g8','h8',
 ]
 
-// const tf = require('@tensorflow/tfjs');
-
-// require('@tensorflow/tfjs-node')
-
-// let model = null
-
-// loadModel = async ()=> {
-//     model = await tf.loadLayersModel("file://orobas/neural/model.json")
-// }
-
-// loadModel()
-
 Chess.AI = require('./orobas/aiC.js')
 
-
 app.get('/', function (req, res) {
+  if (req.query.fen) {
 
-  let chessPosition = new Chess.Position()
+      let fen = req.query.fen.split(' ')
+
+      let board = fen[0]
+      let turn = fen[1] === 'w'? 1 : -1
+      let castling = fen[2]
+      let enpassantsquare = fen[3]
+      let movenumber = fen[5]
+
+      Chess.movenumber = movenumber
   
-    if (req.query.fen) {
+      let castlingRights = 0
 
-        let fen = req.query.fen.split(' ')
 
-        let board = fen[0]
-        let turn = fen[1] === 'w'? 0 : 1
-        let castling = fen[2]
-        let enpassantsquare = fen[3]
-        let movenumber = fen[5]
+      if (castling.indexOf('K') > -1) castlingRights ^= 8
+      if (castling.indexOf('k') > -1) castlingRights ^= 4
+      if (castling.indexOf('Q') > -1) castlingRights ^= 2
+      if (castling.indexOf('q') > -1) castlingRights ^= 1
+      
+      Chess.castlingRights = [castlingRights]
 
-    //  * 1st bit: white can castle kingside
-	  //  * 2nd bit: black can castle kingside
-	  //  * 3rd bit: white can castle queenside
-	  //  * 4th bit: black can castle queenside
-    //  * @type {number} 0-15
-    
-        let castlingRights = 0
+      Chess.board = fen2board(board)
 
-        if (castling.indexOf('K') > -1) castlingRights +=    1
-        if (castling.indexOf('k') > -1) castlingRights +=   10
-        if (castling.indexOf('Q') > -1) castlingRights +=  100
-        if (castling.indexOf('q') > -1) castlingRights += 1000
-        
-        chessPosition.bitboards = fen2bitboards(board)
-        chessPosition.movenumber = parseInt(movenumber)
+      Chess.changeTurn(turn)
+      
+      if (enpassantsquare !== '-') {
+        Chess.enPassantSquare = [null]
+      }
 
-        chessPosition.setTurnColor(turn)
-
-        castlingRights = parseInt(castlingRights.toString(), 2)
-        chessPosition.castlingRights = castlingRights
-
-        
-        if (enpassantsquare !== '-') {
-          chessPosition.enPassantSquare = fromto.indexOf(enpassantsquare)
-          // console.log('enpassant', chessPosition.enPassantSquare)
-  
-          //En passant squares are defined different from FEN in the move generator:
-          if (turn === 0) chessPosition.enPassantSquare -= 8
-          if (turn === 1) chessPosition.enPassantSquare += 8
-        }
-
-        chessPosition.fillPiecesFromBitboards();
-	      chessPosition.updateHashKey();
-
-    }
-
+      Chess.draw()
+  }
 
   let options = req.body.options
   
-  Chess.AI.search(chessPosition, {
+  Chess.AI.search(Chess, {
     seconds: req.query.seconds? req.query.seconds : null
-  }/*, tf, model*/).then(move=>{
+  }).then(move=>{
   	res.send(move);
   })
 });
@@ -121,8 +87,8 @@ app.listen(3666, function () {
   console.log('Example app listening on port 3666!');
 });
 
-let fen2bitboards = function (board) {
-	let B = board.replace(/1/g, '0')
+let fen2board = function (fen) {
+	let board = fen.replace(/1/g, '0')
 				.replace(/2/g, '00')
 				.replace(/3/g, '000')
 				.replace(/4/g, '0000')
@@ -131,66 +97,35 @@ let fen2bitboards = function (board) {
 				.replace(/7/g, '0000000')
 				.replace(/8/g, '00000000')
 
-    B = B.split('/')
-    
-    B = B.map(e=>{
-        return e.split('').reverse().join('')
+    board = board.replace(/\//g, '').split('')
+
+    board = board.map(e=>{
+      let piece = 0
+
+      if (e === 'k') piece = -20
+      if (e === 'q') piece =  -9
+      if (e === 'r') piece =  -5
+      if (e === 'b') piece =  -4
+      if (e === 'n') piece =  -3
+      if (e === 'p') piece =  -1
+      if (e === 'K') piece =  20
+      if (e === 'Q') piece =   9
+      if (e === 'R') piece =   5
+      if (e === 'B') piece =   4
+      if (e === 'N') piece =   3
+      if (e === 'P') piece =   1
+
+      return piece 
     })
-    
-    B = B.join('')
 
-	let bitboards = {
-		black: B.replace(/[^a-z^//]/g, '0').replace(/[a-z]/g, '1').replace(/[//]/g,''),
-		white: B.replace(/[^A-Z^//]/g, '0').replace(/[A-Z]/g, '1').replace(/[//]/g,''),
-		WP: B.replace(/[^P^//]/g, '0').replace(/[P]/g, '1').replace(/[//]/g,''),
-		WN: B.replace(/[^N^//]/g, '0').replace(/[N]/g, '1').replace(/[//]/g,''),
-		WB: B.replace(/[^B^//]/g, '0').replace(/[B]/g, '1').replace(/[//]/g,''),
-		WR: B.replace(/[^R^//]/g, '0').replace(/[R]/g, '1').replace(/[//]/g,''),
-		WQ: B.replace(/[^Q^//]/g, '0').replace(/[Q]/g, '1').replace(/[//]/g,''),
-    WK: B.replace(/[^K^//]/g, '0').replace(/[K]/g, '1').replace(/[//]/g,''),
-		BP: B.replace(/[^p^//]/g, '0').replace(/[p]/g, '1').replace(/[//]/g,''),
-		BN: B.replace(/[^n^//]/g, '0').replace(/[n]/g, '1').replace(/[//]/g,''),
-		BB: B.replace(/[^b^//]/g, '0').replace(/[b]/g, '1').replace(/[//]/g,''),
-		BR: B.replace(/[^r^//]/g, '0').replace(/[r]/g, '1').replace(/[//]/g,''),
-		BQ: B.replace(/[^q^//]/g, '0').replace(/[q]/g, '1').replace(/[//]/g,''),
-		BK: B.replace(/[^k^//]/g, '0').replace(/[k]/g, '1').replace(/[//]/g,'')
-  }
+    let board0x88 = []
 
-  
-	bitboards = {
-		black: {low: parseInt(bitboards.black.substr(32, 32), 2), high: parseInt(bitboards.black.substr(0,32), 2)},
-		white: {low: parseInt(bitboards.white.substr(32, 32), 2), high: parseInt(bitboards.white.substr(0,32), 2)},
-		WP: {low: parseInt(bitboards.WP.substr(32, 32), 2), high: parseInt(bitboards.WP.substr(0,32), 2)},
-		WN: {low: parseInt(bitboards.WN.substr(32, 32), 2), high: parseInt(bitboards.WN.substr(0,32), 2)},
-		WB: {low: parseInt(bitboards.WB.substr(32, 32), 2), high: parseInt(bitboards.WB.substr(0,32), 2)},
-		WR: {low: parseInt(bitboards.WR.substr(32, 32), 2), high: parseInt(bitboards.WR.substr(0,32), 2)},
-		WQ: {low: parseInt(bitboards.WQ.substr(32, 32), 2), high: parseInt(bitboards.WQ.substr(0,32), 2)},
-		WK: {low: parseInt(bitboards.WK.substr(32, 32), 2), high: parseInt(bitboards.WK.substr(0,32), 2)},
-		BP: {low: parseInt(bitboards.BP.substr(32, 32), 2), high: parseInt(bitboards.BP.substr(0,32), 2)},
-		BN: {low: parseInt(bitboards.BN.substr(32, 32), 2), high: parseInt(bitboards.BN.substr(0,32), 2)},
-		BB: {low: parseInt(bitboards.BB.substr(32, 32), 2), high: parseInt(bitboards.BB.substr(0,32), 2)},
-		BR: {low: parseInt(bitboards.BR.substr(32, 32), 2), high: parseInt(bitboards.BR.substr(0,32), 2)},
-		BQ: {low: parseInt(bitboards.BQ.substr(32, 32), 2), high: parseInt(bitboards.BQ.substr(0,32), 2)},
-		BK: {low: parseInt(bitboards.BK.substr(32, 32), 2), high: parseInt(bitboards.BK.substr(0,32), 2)},
-  }
-  
-  let pawns = new Chess.Bitboard(bitboards.WP.low | bitboards.BP.low, bitboards.WP.high | bitboards.BP.high )
-  let knights = new Chess.Bitboard(bitboards.WN.low | bitboards.BN.low, bitboards.WN.high | bitboards.BN.high )
-  let bishops = new Chess.Bitboard(bitboards.WB.low | bitboards.BB.low, bitboards.WB.high | bitboards.BB.high )
-  let rooks = new Chess.Bitboard(bitboards.WR.low | bitboards.BR.low, bitboards.WR.high | bitboards.BR.high )
-  let queens = new Chess.Bitboard(bitboards.WQ.low | bitboards.BQ.low, bitboards.WQ.high | bitboards.BQ.high )
-  let kings = new Chess.Bitboard(bitboards.WK.low | bitboards.BK.low, bitboards.WK.high | bitboards.BK.high )
-  let white = new Chess.Bitboard(bitboards.white.low, bitboards.white.high)
-  let black = new Chess.Bitboard(bitboards.black.low, bitboards.black.high)
-  
-  return [
-    pawns, // pawns
-    knights, // knights
-    bishops, // bishops
-    rooks, // rooks
-    queens, // queens
-    kings, // kings
-    white, // white pieces
-    black // black pieces
-  ];
+    for (let i in board) {
+      if (i % 8 === 0 && i>0) board0x88 = [...board0x88, 0, 0, 0, 0, 0, 0, 0, 0]
+      board0x88.push(board[i])
+    }
+
+    board0x88 = [...board0x88, 0, 0, 0, 0, 0, 0, 0, 0]
+
+  return board0x88
 }
