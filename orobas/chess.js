@@ -400,6 +400,14 @@ module.exports = orobas = {
                             } else {
                                 isCapture = true
 
+                                if (to>=0 && to <= 7) {
+                                    promotingPiece = Q
+                                }
+                                
+                                if (to>=112 && to <= 119) {
+                                    promotingPiece = q
+                                }
+
                                 moves.push(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
                             }
                         } else {
@@ -411,17 +419,26 @@ module.exports = orobas = {
                         }
                         
                     } else {
-                        let to = from + this.pieces[piece].offsets[0]
+                        // let to = from + this.pieces[piece].offsets[0]
 
-                        if (to & 0x88) continue
+                        // if (to & 0x88) continue
 
                         let blockingPiece = this.board[to]
+                        let promotingPiece = null
 
                         if (blockingPiece) {
                             continue
                         }
 
-                        moves.push(this.createMove({piece, from, to, isCapture:false, capturedPiece:0, castleSide:0, enPassantSquares:null}))
+                        if (to>=0 && to <= 7) {
+                            promotingPiece = Q
+                        }
+
+                        if (to>=112 && to <= 119) {
+                            promotingPiece = q
+                        }
+
+                        moves.push(this.createMove({piece, from, to, isCapture:false, capturedPiece:0, castleSide:0, enPassantSquares:null, promotingPiece}))
 
                         let whitePawns = this.turn === WHITE && from >= 96 && from <= 103
                         let blackPawns = this.turn === BLACK && from >= 16 && from <= 23
@@ -619,7 +636,11 @@ module.exports = orobas = {
         
         this.updateHashkey(this.zobristKeys.positions[move.piece][move.to]) //Agrega pieza al hashkey en casilla de destino
 
-        this.board[move.to] = this.board[move.from]
+        if (move.promotingPiece) {
+            this.board[move.to] = move.promotingPiece
+        } else {
+            this.board[move.to] = this.board[move.from]
+        }
         this.board[move.from] = 0
         
         if (move.enPassantSquares) {

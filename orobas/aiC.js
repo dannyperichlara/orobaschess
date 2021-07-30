@@ -1123,7 +1123,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
             } else {
                 if (AI.stop) return oAlpha
 
-                // (Null window left to MTDF)
                 score = -AI.PVS(board, -alpha-1, -alpha, depth + E - R - 1, ply + 1, materialOnly)
 
                 if (!AI.stop && score > alpha) {
