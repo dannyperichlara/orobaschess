@@ -608,10 +608,6 @@ module.exports = orobas = {
             }
         }
         
-        // if (move.piece === K || move.piece === k) { //????? WTF
-        //     if (this.isKingInCheck()) return false
-        // }
-        
         this.makeEffectiveMove(move)
 
         //Chequea legalidad
