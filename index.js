@@ -122,11 +122,11 @@ let fen2board = function (fen) {
     let board0x88 = []
 
     for (let i in board) {
-      if (i % 8 === 0 && i>0) board0x88 = [...board0x88, 0, 0, 0, 0, 0, 0, 0, 0]
+      if (i % 8 === 0 && i>0) board0x88 = [...board0x88, null, null, null, null, null, null, null, null]
       board0x88.push(board[i])
     }
 
-    board0x88 = [...board0x88, 0, 0, 0, 0, 0, 0, 0, 0]
+    board0x88 = [...board0x88, null, null, null, null, null, null, null, null]
 
   return board0x88
 }

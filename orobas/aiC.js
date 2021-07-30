@@ -283,6 +283,9 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, myMoves) {
     let notturn = -turn
     // let pieces = AI.getPieces(board, turn, notturn)
     let score = 0
+    let safety = 0
+    let mobility = 0
+    let doubled = 0
     
     // Valor material del tablero
     // let material = AI.getMaterial() | 0
@@ -310,24 +313,38 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, myMoves) {
 
         let material = AI.PIECE_VALUES[OPENING][piece] //Material
         let psqt = turn*AI.PSQT[turn*piece][turn === 1? i : (112^i)]
-        let safety = 0
+        
+        score += material + psqt
 
+        // Escudo de peones
         if (piece === K && i !== 116) {
-            safety += (!(i - 17 & 0x88)) && board.board[i-17] === P? 20 : 0
+            safety += (!(i - 17 & 0x88)) && board.board[i-17] === P? 10 : 0
             safety += (!(i - 16 & 0x88)) && board.board[i-16] === P? 20 : 0
-            safety += (!(i - 15 & 0x88)) && board.board[i-15] === P? 20 : 0
+            safety += (!(i - 15 & 0x88)) && board.board[i-15] === P? 10 : 0
         }
 
         if (piece === k && i !== 4) {
-            safety += (!(i + 17 & 0x88)) && board.board[i+17] === p? -20 : 0
+            safety += (!(i + 17 & 0x88)) && board.board[i+17] === p? -10 : 0
             safety += (!(i + 16 & 0x88)) && board.board[i+16] === p? -20 : 0
-            safety += (!(i + 15 & 0x88)) && board.board[i+15] === p? -20 : 0
+            safety += (!(i + 15 & 0x88)) && board.board[i+15] === p? -10 : 0
         }
 
-        score += material + psqt + safety
+        // Peones doblados
+        if (piece === P) {
+            if (!(i - 16 & 0x88)) {
+                if (board.board[i-16] === P) doubled -= 20
+            }
+        }
+
+        if (piece === p) {
+            if (!(i + 16 & 0x88)) {
+                if (board.board[i+16] === p) doubled += 20
+            }
+        }
     }
 
-    let mobility = 0
+    score += safety + doubled
+
     let opponentMoves = []
 
     if (ply <= 2) {
@@ -1259,154 +1276,147 @@ AI.createPSQT = function (board) {
 
     AI.PSQT_OPENING = []
 
-        // Pawn
     AI.PSQT_OPENING[PAWN] = [
-            0,   0,   0,   0,   0,   0,  0,    0,    null,null,null,null,null,null,null,null,
-            98, 134,  61,  95,  68, 126, 34, -11,    null,null,null,null,null,null,null,null,
-            -6,   7,  26,  31,  65,  56, 25, -20,    null,null,null,null,null,null,null,null,
-           -14,  13,   6,  21,  23,  12, 17, -23,    null,null,null,null,null,null,null,null,
-           -27,  -2,  -5,  12,  17,   6, 10, -25,    null,null,null,null,null,null,null,null,
-           -26,  -4,  -4, -10,   3,   3, 33, -12,    null,null,null,null,null,null,null,null,
-           -35,  -1, -20, -23, -15,  24, 38, -22,    null,null,null,null,null,null,null,null,
-             0,   0,   0,   0,   0,   0,  0,   0,    null,null,null,null,null,null,null,null,
-        ]
+        0,   0,   0,   0,   0,   0,  0,    0,    null,null,null,null,null,null,null,null,
+        98, 134,  61,  95,  68, 126, 34, -11,    null,null,null,null,null,null,null,null,
+        -6,   7,  26,  31,  65,  56, 25, -20,    null,null,null,null,null,null,null,null,
+        -14,  13,   6,  21,  23,  12, 17, -23,    null,null,null,null,null,null,null,null,
+        -27,  -2,  -5,  12,  17,   6, 10, -25,    null,null,null,null,null,null,null,null,
+        -26,  -4,  -4, -10,   3,   3, 33, -12,    null,null,null,null,null,null,null,null,
+        -35,  -1, -20, -23, -15,  24, 38, -22,    null,null,null,null,null,null,null,null,
+          0,   0,   0,   0,   0,   0,  0,   0,    null,null,null,null,null,null,null,null,
+    ]
 
-        // Knight
     AI.PSQT_OPENING[KNIGHT] = [
-           -167, -89, -34, -49,  61, -97, -15, -107,    null,null,null,null,null,null,null,null,
-            -73, -41,  72,  36,  23,  62,   7,  -17,    null,null,null,null,null,null,null,null,
-            -47,  60,  37,  65,  84, 129,  73,   44,    null,null,null,null,null,null,null,null,
-             -9,  17,  19,  53,  37,  69,  18,   22,    null,null,null,null,null,null,null,null,
-            -13,   4,  16,  13,  28,  19,  21,   -8,    null,null,null,null,null,null,null,null,
-            -23,  -9,  12,  10,  19,  17,  25,  -16,    null,null,null,null,null,null,null,null,
-            -29, -53, -12,  -3,  -1,  18, -14,  -19,    null,null,null,null,null,null,null,null,
-           -105, -21, -58, -33, -17, -28, -19,  -23,    null,null,null,null,null,null,null,null,
+        -167, -89, -34, -49,  61, -97, -15, -107,    null,null,null,null,null,null,null,null,
+        -73, -41,  72,  36,  23,  62,   7,  -17,    null,null,null,null,null,null,null,null,
+        -47,  60,  37,  65,  84, 129,  73,   44,    null,null,null,null,null,null,null,null,
+            -9,  17,  19,  53,  37,  69,  18,   22,    null,null,null,null,null,null,null,null,
+        -13,   4,  16,  13,  28,  19,  21,   -8,    null,null,null,null,null,null,null,null,
+        -23,  -9,  12,  10,  19,  17,  25,  -16,    null,null,null,null,null,null,null,null,
+        -29, -53, -12,  -3,  -1,  18, -14,  -19,    null,null,null,null,null,null,null,null,
+        -105, -21, -58, -33, -17, -28, -19,  -23,    null,null,null,null,null,null,null,null,
 
-        ]
-        // Bishop
-        AI.PSQT_OPENING[BISHOP] = [
-            -29,   4, -82, -37, -25, -42,   7,  -8,    null,null,null,null,null,null,null,null,
-            -26,  16, -18, -13,  30,  59,  18, -47,    null,null,null,null,null,null,null,null,
-            -16,  37,  43,  40,  35,  50,  37,  -2,    null,null,null,null,null,null,null,null,
-             -4,   5,  19,  50,  37,  37,   7,  -2,    null,null,null,null,null,null,null,null,
-             -6,  13,  13,  26,  34,  12,  10,   4,    null,null,null,null,null,null,null,null,
-              0,  15,  15,  15,  14,  27,  18,  10,    null,null,null,null,null,null,null,null,
-              4,  15,  16,   0,   7,  21,  33,   1,    null,null,null,null,null,null,null,null,
-            -33,  -3, -14, -21, -13, -12, -39, -21,    null,null,null,null,null,null,null,null,
-        ]
-        // Rook
-        AI.PSQT_OPENING[ROOK] = [
-            32,  42,  32,  51, 63,  9,  31,  43,    null,null,null,null,null,null,null,null,
-            27,  32,  58,  62, 80, 67,  26,  44,    null,null,null,null,null,null,null,null,
-            -5,  19,  26,  36, 17, 45,  61,  16,    null,null,null,null,null,null,null,null,
-           -24, -11,   7,  26, 24, 35,  -8, -20,    null,null,null,null,null,null,null,null,
-           -36, -26, -12,  -1,  9, -7,   6, -23,    null,null,null,null,null,null,null,null,
-           -45, -25, -16, -17,  3,  0,  -5, -33,    null,null,null,null,null,null,null,null,
-           -44, -16, -20,  -9, -1, 11,  -6, -71,    null,null,null,null,null,null,null,null,
-           -19, -13,   1,  17, 16,  7, -37, -26,    null,null,null,null,null,null,null,null,
-        ]
-
-        // Queen
-        AI.PSQT_OPENING[QUEEN] = [
-            -28,   0,  29,  12,  59,  44,  43,  45,    null,null,null,null,null,null,null,null,
-            -24, -39,  -5,   1, -16,  57,  28,  54,    null,null,null,null,null,null,null,null,
-            -13, -17,   7,   8,  29,  56,  47,  57,    null,null,null,null,null,null,null,null,
-            -27, -27, -16, -16,  -1,  17,  -2,   1,    null,null,null,null,null,null,null,null,
-             -9, -26,  -9, -10,  -2,  -4,   3,  -3,    null,null,null,null,null,null,null,null,
-            -14,   2, -11,  -2,  -5,   2,  14,   5,    null,null,null,null,null,null,null,null,
-            -35,  -8,  11,   2,   8,  15,  -3,   1,    null,null,null,null,null,null,null,null,
-             -1, -18,  -9,  10, -15, -25, -31, -50,    null,null,null,null,null,null,null,null,
-        ]
-
-        // King
-        AI.PSQT_OPENING[KING] = [
-           -65,  23,  16, -15, -56, -34,   2,  13,    null,null,null,null,null,null,null,null,
-            29,  -1, -20,  -7,  -8,  -4, -38, -29,    null,null,null,null,null,null,null,null,
-            -9,  24,   2, -16, -20,   6,  22, -22,    null,null,null,null,null,null,null,null,
-           -17, -20, -12, -27, -30, -25, -14, -36,    null,null,null,null,null,null,null,null,
-           -49,  -1, -27, -39, -46, -44, -33, -51,    null,null,null,null,null,null,null,null,
-           -14, -14, -22, -46, -44, -30, -15, -27,    null,null,null,null,null,null,null,null,
-             1,   7,  -8, -64, -43, -16,   9,   8,    null,null,null,null,null,null,null,null,
-           -15,  36,  12, -54,   8, -28,  24,  14,    null,null,null,null,null,null,null,null,
-        ]
-
-
-    AI.PSQT_MIDGAME = [
-        // Pawn
-        [
-            0,   0,   0,   0,   0,   0,  0,   0,
-            98, 134,  61,  95,  68, 126, 34, -11,
-            -6,   7,  26,  31,  65,  56, 25, -20,
-           -14,  13,   6,  21,  23,  12, 17, -23,
-           -27,  -2,  -5,  12,  17,   6, 10, -25,
-           -26,  -4,  -4, -10,   3,   3, 33, -12,
-           -35,  -1, -20, -23, -15,  24, 38, -22,
-             0,   0,   0,   0,   0,   0,  0,   0,
-        ],
-
-        // Knight
-        [
-            -167, -89, -34, -49,  61, -97, -15, -107,
-            -73, -41,  72,  36,  23,  62,   7,  -17,
-            -47,  60,  37,  65,  84, 129,  73,   44,
-             -9,  17,  19,  53,  37,  69,  18,   22,
-            -13,   4,  16,  13,  28,  19,  21,   -8,
-            -23,  -9,  12,  10,  19,  17,  25,  -16,
-            -29, -53, -12,  -3,  -1,  18, -14,  -19,
-           -105, -21, -58, -33, -17, -28, -19,  -23,
-
-        ],
-        // Bishop
-        [
-            -29,   4, -82, -37, -25, -42,   7,  -8,
-            -26,  16, -18, -13,  30,  59,  18, -47,
-            -16,  37,  43,  40,  35,  50,  37,  -2,
-             -4,   5,  19,  50,  37,  37,   7,  -2,
-             -6,  13,  13,  26,  34,  12,  10,   4,
-              0,  15,  15,  15,  14,  27,  18,  10,
-              4,  15,  16,   0,   7,  21,  33,   1,
-            -33,  -3, -14, -21, -13, -12, -39, -21,
-        ],
-        // Rook
-        [
-            32,  42,  32,  51, 63,  9,  31,  43,
-            27,  32,  58,  62, 80, 67,  26,  44,
-            -5,  19,  26,  36, 17, 45,  61,  16,
-           -24, -11,   7,  26, 24, 35,  -8, -20,
-           -36, -26, -12,  -1,  9, -7,   6, -23,
-           -45, -25, -16, -17,  3,  0,  -5, -33,
-           -44, -16, -20,  -9, -1, 11,  -6, -71,
-           -19, -13,   1,  17, 16,  7, -37, -26,
-        ],
-
-        // Queen
-        [
-            -28,   0,  29,  12,  59,  44,  43,  45,
-            -24, -39,  -5,   1, -16,  57,  28,  54,
-            -13, -17,   7,   8,  29,  56,  47,  57,
-            -27, -27, -16, -16,  -1,  17,  -2,   1,
-             -9, -26,  -9, -10,  -2,  -4,   3,  -3,
-            -14,   2, -11,  -2,  -5,   2,  14,   5,
-            -35,  -8,  11,   2,   8,  15,  -3,   1,
-             -1, -18,  -9,  10, -15, -25, -31, -50,
-        ],
-
-        // King
-        [
-            -65,  23,  16, -15, -56, -34,   2,  13,
-            29,  -1, -20,  -7,  -8,  -4, -38, -29,
-            -9,  24,   2, -16, -20,   6,  22, -22,
-           -17, -20, -12, -27, -30, -25, -14, -36,
-           -49,  -1, -27, -39, -46, -44, -33, -51,
-           -14, -14, -22, -46, -44, -30, -15, -27,
-             1,   7,  -8, -64, -43, -16,   9,   8,
-           -15,  36,  12, -54,   8, -28,  24,  14,
-        ],
     ]
 
-    AI.PSQT_EARLY_ENDGAME = [
+    AI.PSQT_OPENING[BISHOP] = [
+        -29,   4, -82, -37, -25, -42,   7,  -8,    null,null,null,null,null,null,null,null,
+        -26,  16, -18, -13,  30,  59,  18, -47,    null,null,null,null,null,null,null,null,
+        -16,  37,  43,  40,  35,  50,  37,  -2,    null,null,null,null,null,null,null,null,
+            -4,   5,  19,  50,  37,  37,   7,  -2,    null,null,null,null,null,null,null,null,
+            -6,  13,  13,  26,  34,  12,  10,   4,    null,null,null,null,null,null,null,null,
+            0,  15,  15,  15,  14,  27,  18,  10,    null,null,null,null,null,null,null,null,
+            4,  15,  16,   0,   7,  21,  33,   1,    null,null,null,null,null,null,null,null,
+        -33,  -3, -14, -21, -13, -12, -39, -21,    null,null,null,null,null,null,null,null,
+    ]
+
+    AI.PSQT_OPENING[ROOK] = [
+        32,  42,  32,  51, 63,  9,  31,  43,    null,null,null,null,null,null,null,null,
+        27,  32,  58,  62, 80, 67,  26,  44,    null,null,null,null,null,null,null,null,
+        -5,  19,  26,  36, 17, 45,  61,  16,    null,null,null,null,null,null,null,null,
+        -24, -11,   7,  26, 24, 35,  -8, -20,    null,null,null,null,null,null,null,null,
+        -36, -26, -12,  -1,  9, -7,   6, -23,    null,null,null,null,null,null,null,null,
+        -45, -25, -16, -17,  3,  0,  -5, -33,    null,null,null,null,null,null,null,null,
+        -44, -16, -20,  -9, -1, 11,  -6, -71,    null,null,null,null,null,null,null,null,
+        -19, -13,   1,  17, 16,  7, -37, -26,    null,null,null,null,null,null,null,null,
+    ]
+
+    AI.PSQT_OPENING[QUEEN] = [
+        -28,   0,  29,  12,  59,  44,  43,  45,    null,null,null,null,null,null,null,null,
+        -24, -39,  -5,   1, -16,  57,  28,  54,    null,null,null,null,null,null,null,null,
+        -13, -17,   7,   8,  29,  56,  47,  57,    null,null,null,null,null,null,null,null,
+        -27, -27, -16, -16,  -1,  17,  -2,   1,    null,null,null,null,null,null,null,null,
+            -9, -26,  -9, -10,  -2,  -4,   3,  -3,    null,null,null,null,null,null,null,null,
+        -14,   2, -11,  -2,  -5,   2,  14,   5,    null,null,null,null,null,null,null,null,
+        -35,  -8,  11,   2,   8,  15,  -3,   1,    null,null,null,null,null,null,null,null,
+            -1, -18,  -9,  10, -15, -25, -31, -50,    null,null,null,null,null,null,null,null,
+    ]
+
+    AI.PSQT_OPENING[KING] = [
+        -65,  23,  16, -15, -56, -34,   2,  13,    null,null,null,null,null,null,null,null,
+        29,  -1, -20,  -7,  -8,  -4, -38, -29,    null,null,null,null,null,null,null,null,
+        -9,  24,   2, -16, -20,   6,  22, -22,    null,null,null,null,null,null,null,null,
+        -17, -20, -12, -27, -30, -25, -14, -36,    null,null,null,null,null,null,null,null,
+        -49,  -1, -27, -39, -46, -44, -33, -51,    null,null,null,null,null,null,null,null,
+        -14, -14, -22, -46, -44, -30, -15, -27,    null,null,null,null,null,null,null,null,
+            1,   7,  -8, -64, -43, -16,   9,   8,    null,null,null,null,null,null,null,null,
+        -15,  36,  12, -54,   8, -28,  24,  14,    null,null,null,null,null,null,null,null,
+    ]
+
+
+    AI.PSQT_MIDGAME = []
+
+    AI.PSQT_MIDGAME[PAWN] = [
+        0,   0,   0,   0,   0,   0,  0,    0,    null,null,null,null,null,null,null,null,
+        98, 134,  61,  95,  68, 126, 34, -11,    null,null,null,null,null,null,null,null,
+        -6,   7,  26,  31,  65,  56, 25, -20,    null,null,null,null,null,null,null,null,
+        -14,  13,   6,  21,  23,  12, 17, -23,    null,null,null,null,null,null,null,null,
+        -27,  -2,  -5,  12,  17,   6, 10, -25,    null,null,null,null,null,null,null,null,
+        -26,  -4,  -4, -10,   3,   3, 33, -12,    null,null,null,null,null,null,null,null,
+        -35,  -1, -20, -23, -15,  24, 38, -22,    null,null,null,null,null,null,null,null,
+          0,   0,   0,   0,   0,   0,  0,   0,    null,null,null,null,null,null,null,null,
+    ]
+
+    AI.PSQT_MIDGAME[KNIGHT] = [
+        -167, -89, -34, -49,  61, -97, -15, -107,    null,null,null,null,null,null,null,null,
+        -73, -41,  72,  36,  23,  62,   7,  -17,    null,null,null,null,null,null,null,null,
+        -47,  60,  37,  65,  84, 129,  73,   44,    null,null,null,null,null,null,null,null,
+            -9,  17,  19,  53,  37,  69,  18,   22,    null,null,null,null,null,null,null,null,
+        -13,   4,  16,  13,  28,  19,  21,   -8,    null,null,null,null,null,null,null,null,
+        -23,  -9,  12,  10,  19,  17,  25,  -16,    null,null,null,null,null,null,null,null,
+        -29, -53, -12,  -3,  -1,  18, -14,  -19,    null,null,null,null,null,null,null,null,
+        -105, -21, -58, -33, -17, -28, -19,  -23,    null,null,null,null,null,null,null,null,
+
+    ]
+
+    AI.PSQT_MIDGAME[BISHOP] = [
+        -29,   4, -82, -37, -25, -42,   7,  -8,    null,null,null,null,null,null,null,null,
+        -26,  16, -18, -13,  30,  59,  18, -47,    null,null,null,null,null,null,null,null,
+        -16,  37,  43,  40,  35,  50,  37,  -2,    null,null,null,null,null,null,null,null,
+            -4,   5,  19,  50,  37,  37,   7,  -2,    null,null,null,null,null,null,null,null,
+            -6,  13,  13,  26,  34,  12,  10,   4,    null,null,null,null,null,null,null,null,
+            0,  15,  15,  15,  14,  27,  18,  10,    null,null,null,null,null,null,null,null,
+            4,  15,  16,   0,   7,  21,  33,   1,    null,null,null,null,null,null,null,null,
+        -33,  -3, -14, -21, -13, -12, -39, -21,    null,null,null,null,null,null,null,null,
+    ]
+
+    AI.PSQT_MIDGAME[ROOK] = [
+        32,  42,  32,  51, 63,  9,  31,  43,    null,null,null,null,null,null,null,null,
+        27,  32,  58,  62, 80, 67,  26,  44,    null,null,null,null,null,null,null,null,
+        -5,  19,  26,  36, 17, 45,  61,  16,    null,null,null,null,null,null,null,null,
+        -24, -11,   7,  26, 24, 35,  -8, -20,    null,null,null,null,null,null,null,null,
+        -36, -26, -12,  -1,  9, -7,   6, -23,    null,null,null,null,null,null,null,null,
+        -45, -25, -16, -17,  3,  0,  -5, -33,    null,null,null,null,null,null,null,null,
+        -44, -16, -20,  -9, -1, 11,  -6, -71,    null,null,null,null,null,null,null,null,
+        -19, -13,   1,  17, 16,  7, -37, -26,    null,null,null,null,null,null,null,null,
+    ]
+
+    AI.PSQT_MIDGAME[QUEEN] = [
+        -28,   0,  29,  12,  59,  44,  43,  45,    null,null,null,null,null,null,null,null,
+        -24, -39,  -5,   1, -16,  57,  28,  54,    null,null,null,null,null,null,null,null,
+        -13, -17,   7,   8,  29,  56,  47,  57,    null,null,null,null,null,null,null,null,
+        -27, -27, -16, -16,  -1,  17,  -2,   1,    null,null,null,null,null,null,null,null,
+            -9, -26,  -9, -10,  -2,  -4,   3,  -3,    null,null,null,null,null,null,null,null,
+        -14,   2, -11,  -2,  -5,   2,  14,   5,    null,null,null,null,null,null,null,null,
+        -35,  -8,  11,   2,   8,  15,  -3,   1,    null,null,null,null,null,null,null,null,
+            -1, -18,  -9,  10, -15, -25, -31, -50,    null,null,null,null,null,null,null,null,
+    ]
+
+    AI.PSQT_MIDGAME[KING] = [
+        -65,  23,  16, -15, -56, -34,   2,  13,    null,null,null,null,null,null,null,null,
+        29,  -1, -20,  -7,  -8,  -4, -38, -29,    null,null,null,null,null,null,null,null,
+        -9,  24,   2, -16, -20,   6,  22, -22,    null,null,null,null,null,null,null,null,
+        -17, -20, -12, -27, -30, -25, -14, -36,    null,null,null,null,null,null,null,null,
+        -49,  -1, -27, -39, -46, -44, -33, -51,    null,null,null,null,null,null,null,null,
+        -14, -14, -22, -46, -44, -30, -15, -27,    null,null,null,null,null,null,null,null,
+            1,   7,  -8, -64, -43, -16,   9,   8,    null,null,null,null,null,null,null,null,
+        -15,  36,  12, -54,   8, -28,  24,  14,    null,null,null,null,null,null,null,null,
+    ]
+
+    AI.PSQT_EARLY_ENDGAME = []
+
         // Pawn
-        [
+        AI.PSQT_EARLY_ENDGAME[PAWN] = [
             0,   0,   0,   0,   0,   0,   0,   0,
             178, 173, 158, 134, 147, 132, 165, 187,
              94, 100,  85,  67,  56,  53,  82,  84,
@@ -1415,10 +1425,10 @@ AI.createPSQT = function (board) {
               4,   7,  -6,   1,   0,  -5,  -1,  -8,
              13,   8,   8,  10,  13,   0,   2,  -7,
               0,   0,   0,   0,   0,   0,   0,   0,
-        ],
+        ]
 
         // Knight
-        [
+        AI.PSQT_EARLY_ENDGAME[KNIGHT] = [
             -58, -38, -13, -28, -31, -27, -63, -99,
             -25,  -8, -25,  -2,  -9, -25, -24, -52,
             -24, -20,  10,   9,  -1,  -9, -19, -41,
@@ -1427,9 +1437,10 @@ AI.createPSQT = function (board) {
             -23,  -3,  -1,  15,  10,  -3, -20, -22,
             -42, -20, -10,  -5,  -2, -20, -23, -44,
             -29, -51, -23, -15, -22, -18, -50, -64,
-        ],
+        ]
+
         // Bishop
-        [
+        AI.PSQT_EARLY_ENDGAME[BISHOP] = [
             -14, -21, -11,  -8, -7,  -9, -17, -24,
             -8,  -4,   7, -12, -3, -13,  -4, -14,
              2,  -8,   0,  -1, -2,   6,   0,   4,
@@ -1438,9 +1449,9 @@ AI.createPSQT = function (board) {
            -12,  -3,   8,  10, 13,   3,  -7, -15,
            -14, -18,  -7,  -1,  4,  -9, -15, -27,
            -23,  -9, -23,  -5, -9, -16,  -5, -17,
-        ],
+        ]
         // Rook
-        [
+        AI.PSQT_EARLY_ENDGAME[ROOK] = [
             13, 10, 18, 15, 12,  12,   8,   5,
             11, 13, 13, 11, -3,   3,   8,   3,
              7,  7,  7,  5,  4,  -3,  -5,  -3,
@@ -1449,10 +1460,10 @@ AI.createPSQT = function (board) {
             -4,  0, -5, -1, -7, -12,  -8, -16,
             -6, -6,  0,  2, -9,  -9, -11,  -3,
             -9,  2,  3, -1, -5, -13,   4, -20,
-        ],
+        ]
 
         // Queen
-        [
+        AI.PSQT_EARLY_ENDGAME[QUEEN] = [
             -9,  22,  22,  27,  27,  19,  10,  20,
             -17,  20,  32,  41,  58,  25,  30,   0,
             -20,   6,   9,  49,  47,  35,  19,   9,
@@ -1461,10 +1472,10 @@ AI.createPSQT = function (board) {
             -16, -27,  15,   6,   9,  17,  10,   5,
             -22, -23, -30, -16, -16, -23, -36, -32,
             -33, -28, -22, -43,  -5, -32, -20, -41,
-        ],
+        ]
 
         // King
-        [
+        AI.PSQT_EARLY_ENDGAME[KING] = [
             -74, -35, -18, -18, -11,  15,   4, -17,
             -12,  17,  14,  17,  17,  38,  23,  11,
              10,  17,  23,  15,  20,  45,  44,  13,
@@ -1473,12 +1484,12 @@ AI.createPSQT = function (board) {
             -19,  -3,  11,  21,  23,  16,   7,  -9,
             -27, -11,   4,  13,  14,   4,  -5, -17,
             -53, -34, -21, -11, -28, -14, -24, -43
-        ],
-    ]
+        ]
 
-    AI.PSQT_LATE_ENDGAME = [
+        AI.PSQT_LATE_ENDGAME = []
+
         // Pawn
-        [
+        AI.PSQT_LATE_ENDGAME[PAWN] = [
             0,   0,   0,   0,   0,   0,   0,   0,
             178, 173, 158, 134, 147, 132, 165, 187,
              94, 100,  85,  67,  56,  53,  82,  84,
@@ -1487,10 +1498,10 @@ AI.createPSQT = function (board) {
               4,   7,  -6,   1,   0,  -5,  -1,  -8,
              13,   8,   8,  10,  13,   0,   2,  -7,
               0,   0,   0,   0,   0,   0,   0,   0,
-        ],
+        ]
 
         // Knight
-        [
+        AI.PSQT_LATE_ENDGAME[KNIGHT] = [
             -58, -38, -13, -28, -31, -27, -63, -99,
             -25,  -8, -25,  -2,  -9, -25, -24, -52,
             -24, -20,  10,   9,  -1,  -9, -19, -41,
@@ -1499,9 +1510,10 @@ AI.createPSQT = function (board) {
             -23,  -3,  -1,  15,  10,  -3, -20, -22,
             -42, -20, -10,  -5,  -2, -20, -23, -44,
             -29, -51, -23, -15, -22, -18, -50, -64,
-        ],
+        ]
+
         // Bishop
-        [
+        AI.PSQT_LATE_ENDGAME[BISHOP] = [
             -14, -21, -11,  -8, -7,  -9, -17, -24,
             -8,  -4,   7, -12, -3, -13,  -4, -14,
              2,  -8,   0,  -1, -2,   6,   0,   4,
@@ -1510,9 +1522,9 @@ AI.createPSQT = function (board) {
            -12,  -3,   8,  10, 13,   3,  -7, -15,
            -14, -18,  -7,  -1,  4,  -9, -15, -27,
            -23,  -9, -23,  -5, -9, -16,  -5, -17,
-        ],
+        ]
         // Rook
-        [
+        AI.PSQT_LATE_ENDGAME[ROOK] = [
             13, 10, 18, 15, 12,  12,   8,   5,
             11, 13, 13, 11, -3,   3,   8,   3,
              7,  7,  7,  5,  4,  -3,  -5,  -3,
@@ -1521,10 +1533,10 @@ AI.createPSQT = function (board) {
             -4,  0, -5, -1, -7, -12,  -8, -16,
             -6, -6,  0,  2, -9,  -9, -11,  -3,
             -9,  2,  3, -1, -5, -13,   4, -20,
-        ],
+        ]
 
         // Queen
-        [
+        AI.PSQT_LATE_ENDGAME[QUEEN] = [
             -9,  22,  22,  27,  27,  19,  10,  20,
             -17,  20,  32,  41,  58,  25,  30,   0,
             -20,   6,   9,  49,  47,  35,  19,   9,
@@ -1533,10 +1545,10 @@ AI.createPSQT = function (board) {
             -16, -27,  15,   6,   9,  17,  10,   5,
             -22, -23, -30, -16, -16, -23, -36, -32,
             -33, -28, -22, -43,  -5, -32, -20, -41,
-        ],
+        ]
 
         // King
-        [
+        AI.PSQT_LATE_ENDGAME[KING] = [
             -74, -35, -18, -18, -11,  15,   4, -17,
             -12,  17,  14,  17,  17,  38,  23,  11,
              10,  17,  23,  15,  20,  45,  44,  13,
@@ -1545,8 +1557,7 @@ AI.createPSQT = function (board) {
             -19,  -3,  11,  21,  23,  16,   7,  -9,
             -27, -11,   4,  13,  14,   4,  -5, -17,
             -53, -34, -21, -11, -28, -14, -24, -43
-        ],
-    ]
+        ]
 
     // AI.preprocessor(board)
 
@@ -1942,27 +1953,31 @@ AI.preprocessor = function (board) {
     AI.PSQT_LATE_ENDGAME[4] = AI.PSQT_LATE_ENDGAME[4].map((e, i) => { return e + twm * pawnXAttackMap[i] })
 }
 
-AI.setPhase = function () {
+AI.setPhase = function (board) {
     //OPENING
     AI.phase = 0
     let color = Chess.turn
 
-    // //MIDGAME
-    // if (AI.nofpieces <= 28 || (board.movenumber && board.movenumber > 8)) {
-    //     AI.phase = 1
-    // }
+    //MIDGAME
+    if (AI.nofpieces <= 28 || (board.movenumber && board.movenumber > 8)) {
+        AI.phase = 1
+    }
 
-    // let queens = board.getPieceColorBitboard(4, color).popcnt() + board.getPieceColorBitboard(4, !color).popcnt()
+    let queens = 0
 
-    // //EARLY ENDGAME (the king enters)
-    // if (AI.nofpieces <= 20 && queens === 0 || Math.abs(AI.lastscore) > AI.PIECE_VALUES[OPENING][ROOK]) {
-    //     AI.phase = 2
-    // }
+    for (let e of board.board) {
+        if (e === q || e === Q) queens++
+    }
 
-    // //LATE ENDGAME
-    // if (AI.nofpieces <= 12 || Math.abs(AI.lastscore) >= AI.PIECE_VALUES[OPENING][QUEEN]) {
-    //     AI.phase = 3
-    // }
+    //EARLY ENDGAME (the king enters)
+    if (AI.nofpieces <= 20 && queens === 0 || Math.abs(AI.lastscore) > AI.PIECE_VALUES[OPENING][ROOK]) {
+        AI.phase = 2
+    }
+
+    //LATE ENDGAME
+    if (AI.nofpieces <= 12 || Math.abs(AI.lastscore) >= AI.PIECE_VALUES[OPENING][QUEEN]) {
+        AI.phase = 3
+    }
 
     AI.createPSQT()
     AI.randomizePSQT()
@@ -2055,9 +2070,13 @@ AI.search = function (board, options) {
 
     if (options && options.seconds) AI.secondspermove = options.seconds
 
-    AI.nofpieces = 32
+    AI.nofpieces = 0
 
-    let nmoves = 0//board.madeMoves.length
+    for (let e of board.board) {
+        if (e !== null && e !== 0) AI.nofpieces++
+    }
+
+    let nmoves = board.movenumber * 2
     let changeofphase = false
 
     AI.setPhase(board)
@@ -2166,7 +2185,7 @@ AI.search = function (board, options) {
 
                 if (!AI.stop) AI.lastscore = score
 
-                if (AI.PV && !AI.stop) console.log(AI.iteration, depth, AI.PV.map(e => { return e && e.getString ? e.getString() : '---' }).join(' '), '|Fhf ' + fhfperc + '%',
+                if (AI.PV && !AI.stop) console.log(depth, AI.PV.map(e => { return e? [e.from,e.to] : '-'}).join(' '), '|Fhf ' + fhfperc + '%',
                         'Pawn hit ' + (AI.phnodes / AI.pnodes * 100 | 0), score, AI.nodes.toString(), AI.qsnodes.toString(), AI.ttnodes.toString())
             
                 depth++

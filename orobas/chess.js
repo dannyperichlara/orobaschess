@@ -33,14 +33,14 @@ module.exports = orobas = {
         "a1","b1","c1","d1","e1","f1","g1","h1",    0,0,0,0,0,0,0,0,
     ],
     board: [
-        r,  n,  b,  q,  k,  b,  n,  r,     -8, -4, -4, -2, -2, -4, -4, -8,
-        p,  p,  p,  p,  p,  p,  p,  p,     -1,  0,  1, -1, -1,  1,  0, -1,
-        0,  0,  0,  0,  0,  0,  0,  0,      0,  1,  2,  3,  3,  2,  1,  0,
-        0,  0,  0,  0,  0,  0,  0,  0,      1,  2,  3,  4,  4,  3,  2,  1,
-        0,  0,  0,  0,  0,  0,  0,  0,      1,  2,  3,  4,  4,  3,  2,  1,
-        0,  0,  0,  0,  0,  0,  0,  0,      0,  1,  2,  3,  3,  2,  1,  0,
-        P,  P,  P,  P,  P,  P,  P,  P,     -1,  0,  1, -1, -1,  1,  0, -1,
-        R,  N,  B,  Q,  K,  B,  N,  R,     -8, -4, -4, -2, -2, -4, -4, -8,
+        r,  n,  b,  q,  k,  b,  n,  r,  	null,	null,	null,	null,	null,	null,	null,	null,
+        p,  p,  p,  p,  p,  p,  p,  p,  	null,	null,	null,	null,	null,	null,	null,	null,
+        0,  0,  0,  0,  0,  0,  0,  0,  	null,	null,	null,	null,	null,	null,	null,	null,
+        0,  0,  0,  0,  0,  0,  0,  0,  	null,	null,	null,	null,	null,	null,	null,	null,
+        0,  0,  0,  0,  0,  0,  0,  0,  	null,	null,	null,	null,	null,	null,	null,	null,
+        0,  0,  0,  0,  0,  0,  0,  0,  	null,	null,	null,	null,	null,	null,	null,	null,
+        P,  P,  P,  P,  P,  P,  P,  P,  	null,	null,	null,	null,	null,	null,	null,	null,
+        R,  N,  B,  Q,  K,  B,  N,  R,  	null,	null,	null,	null,	null,	null,	null,	null,
     ],
 
     board64: [
