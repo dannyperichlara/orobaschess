@@ -315,34 +315,34 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, myMoves) {
         let psqt = turn*AI.PSQT[turn*piece][turn === 1? i : (112^i)]
         
         score += material + psqt
-
+        
         // Escudo de peones
         if (piece === K && i !== 116) {
             safety += (!(i - 17 & 0x88)) && board.board[i-17] === P? 10 : 0
             safety += (!(i - 16 & 0x88)) && board.board[i-16] === P? 20 : 0
             safety += (!(i - 15 & 0x88)) && board.board[i-15] === P? 10 : 0
         }
-
+        
         if (piece === k && i !== 4) {
             safety += (!(i + 17 & 0x88)) && board.board[i+17] === p? -10 : 0
             safety += (!(i + 16 & 0x88)) && board.board[i+16] === p? -20 : 0
             safety += (!(i + 15 & 0x88)) && board.board[i+15] === p? -10 : 0
         }
-
+        
         // Peones doblados
         if (piece === P) {
             if (!(i - 16 & 0x88)) {
                 if (board.board[i-16] === P) doubled -= 20
             }
         }
-
+        
         if (piece === p) {
             if (!(i + 16 & 0x88)) {
                 if (board.board[i+16] === p) doubled += 20
             }
         }
     }
-
+    
     score += safety + doubled
 
     let opponentMoves = []
@@ -358,7 +358,7 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, myMoves) {
         score += mobility
     }
 
-    return turn * score/5 | 0
+    return turn * score / 5 | 0
 }
 
 AI.cols = [
@@ -941,7 +941,7 @@ AI.ttSave = function (hashkey, score, flag, depth, move) {
         save = true
     }
 
-    if (true) {
+    if (save) {
         AI.hashtable[hashkey % AI.htlength] = {
             hashkey,
             score,
@@ -1126,12 +1126,11 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
             R++
         }
 
-        if (ttEntry && move.piece === ttEntry.piece && ttEntry.from === move.from && ttEntry.to === move.to && ttEntry.move.capture) {
-            console.log('si')
+        if (ttEntry && move.piece === ttEntry.move.piece && ttEntry.move.from === move.from && ttEntry.move.to === move.to && ttEntry.move.capture) {
             R++
         }
 
-         let historyScore = AI.history[piece][move.to]
+        let historyScore = AI.history[piece][move.to]
         if (historyScore < 64) {
             R++
         }
@@ -1154,6 +1153,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
                 if (AI.stop) return oAlpha
 
                 score = -AI.PVS(board, -alpha-1, -alpha, depth + E - R - 1, ply + 1, materialOnly)
+                // score = -AI.PVS(board, -beta, -alpha, depth + E - R - 1, ply + 1, materialOnly)
 
                 if (!AI.stop && score > alpha) {
                     score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1, materialOnly)
@@ -1208,13 +1208,13 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
         
         // Ahogado
         if (!board.isKingInCheck()) {
-            // AI.ttSave(hashkey, DRAW, EXACT, depth, bestmove)
+            AI.ttSave(hashkey, DRAW, EXACT, depth, bestmove)
             
             return DRAW
         }
         
         // Mate
-        // AI.ttSave(hashkey, -MATE + ply, EXACT, depth, bestmove)
+        AI.ttSave(hashkey, -MATE + ply, EXACT, depth, bestmove)
 
         return -MATE + ply
 
@@ -1417,146 +1417,146 @@ AI.createPSQT = function (board) {
 
         // Pawn
         AI.PSQT_EARLY_ENDGAME[PAWN] = [
-            0,   0,   0,   0,   0,   0,   0,   0,
-            178, 173, 158, 134, 147, 132, 165, 187,
-             94, 100,  85,  67,  56,  53,  82,  84,
-             32,  24,  13,   5,  -2,   4,  17,  17,
-             13,   9,  -3,  -7,  -7,  -8,   3,  -1,
-              4,   7,  -6,   1,   0,  -5,  -1,  -8,
-             13,   8,   8,  10,  13,   0,   2,  -7,
-              0,   0,   0,   0,   0,   0,   0,   0,
+            0,   0,   0,   0,   0,   0,   0,   0,    null,null,null,null,null,null,null,null,
+            178, 173, 158, 134, 147, 132, 165, 187,    null,null,null,null,null,null,null,null,
+             94, 100,  85,  67,  56,  53,  82,  84,    null,null,null,null,null,null,null,null,
+             32,  24,  13,   5,  -2,   4,  17,  17,    null,null,null,null,null,null,null,null,
+             13,   9,  -3,  -7,  -7,  -8,   3,  -1,    null,null,null,null,null,null,null,null,
+              4,   7,  -6,   1,   0,  -5,  -1,  -8,    null,null,null,null,null,null,null,null,
+             13,   8,   8,  10,  13,   0,   2,  -7,    null,null,null,null,null,null,null,null,
+              0,   0,   0,   0,   0,   0,   0,   0,    null,null,null,null,null,null,null,null,
         ]
 
         // Knight
         AI.PSQT_EARLY_ENDGAME[KNIGHT] = [
-            -58, -38, -13, -28, -31, -27, -63, -99,
-            -25,  -8, -25,  -2,  -9, -25, -24, -52,
-            -24, -20,  10,   9,  -1,  -9, -19, -41,
-            -17,   3,  22,  22,  22,  11,   8, -18,
-            -18,  -6,  16,  25,  16,  17,   4, -18,
-            -23,  -3,  -1,  15,  10,  -3, -20, -22,
-            -42, -20, -10,  -5,  -2, -20, -23, -44,
-            -29, -51, -23, -15, -22, -18, -50, -64,
+            -58, -38, -13, -28, -31, -27, -63, -99,    null,null,null,null,null,null,null,null,
+            -25,  -8, -25,  -2,  -9, -25, -24, -52,    null,null,null,null,null,null,null,null,
+            -24, -20,  10,   9,  -1,  -9, -19, -41,    null,null,null,null,null,null,null,null,
+            -17,   3,  22,  22,  22,  11,   8, -18,    null,null,null,null,null,null,null,null,
+            -18,  -6,  16,  25,  16,  17,   4, -18,    null,null,null,null,null,null,null,null,
+            -23,  -3,  -1,  15,  10,  -3, -20, -22,    null,null,null,null,null,null,null,null,
+            -42, -20, -10,  -5,  -2, -20, -23, -44,    null,null,null,null,null,null,null,null,
+            -29, -51, -23, -15, -22, -18, -50, -64,    null,null,null,null,null,null,null,null,
         ]
 
         // Bishop
         AI.PSQT_EARLY_ENDGAME[BISHOP] = [
-            -14, -21, -11,  -8, -7,  -9, -17, -24,
-            -8,  -4,   7, -12, -3, -13,  -4, -14,
-             2,  -8,   0,  -1, -2,   6,   0,   4,
-            -3,   9,  12,   9, 14,  10,   3,   2,
-            -6,   3,  13,  19,  7,  10,  -3,  -9,
-           -12,  -3,   8,  10, 13,   3,  -7, -15,
-           -14, -18,  -7,  -1,  4,  -9, -15, -27,
-           -23,  -9, -23,  -5, -9, -16,  -5, -17,
+            -14, -21, -11,  -8, -7,  -9, -17, -24,    null,null,null,null,null,null,null,null,
+            -8,  -4,   7, -12, -3, -13,  -4, -14,    null,null,null,null,null,null,null,null,
+             2,  -8,   0,  -1, -2,   6,   0,   4,    null,null,null,null,null,null,null,null,
+            -3,   9,  12,   9, 14,  10,   3,   2,    null,null,null,null,null,null,null,null,
+            -6,   3,  13,  19,  7,  10,  -3,  -9,    null,null,null,null,null,null,null,null,
+           -12,  -3,   8,  10, 13,   3,  -7, -15,    null,null,null,null,null,null,null,null,
+           -14, -18,  -7,  -1,  4,  -9, -15, -27,    null,null,null,null,null,null,null,null,
+           -23,  -9, -23,  -5, -9, -16,  -5, -17,    null,null,null,null,null,null,null,null,
         ]
         // Rook
         AI.PSQT_EARLY_ENDGAME[ROOK] = [
-            13, 10, 18, 15, 12,  12,   8,   5,
-            11, 13, 13, 11, -3,   3,   8,   3,
-             7,  7,  7,  5,  4,  -3,  -5,  -3,
-             4,  3, 13,  1,  2,   1,  -1,   2,
-             3,  5,  8,  4, -5,  -6,  -8, -11,
-            -4,  0, -5, -1, -7, -12,  -8, -16,
-            -6, -6,  0,  2, -9,  -9, -11,  -3,
-            -9,  2,  3, -1, -5, -13,   4, -20,
+            13, 10, 18, 15, 12,  12,   8,   5,    null,null,null,null,null,null,null,null,
+            11, 13, 13, 11, -3,   3,   8,   3,    null,null,null,null,null,null,null,null,
+             7,  7,  7,  5,  4,  -3,  -5,  -3,    null,null,null,null,null,null,null,null,
+             4,  3, 13,  1,  2,   1,  -1,   2,    null,null,null,null,null,null,null,null,
+             3,  5,  8,  4, -5,  -6,  -8, -11,    null,null,null,null,null,null,null,null,
+            -4,  0, -5, -1, -7, -12,  -8, -16,    null,null,null,null,null,null,null,null,
+            -6, -6,  0,  2, -9,  -9, -11,  -3,    null,null,null,null,null,null,null,null,
+            -9,  2,  3, -1, -5, -13,   4, -20,    null,null,null,null,null,null,null,null,
         ]
 
         // Queen
         AI.PSQT_EARLY_ENDGAME[QUEEN] = [
-            -9,  22,  22,  27,  27,  19,  10,  20,
-            -17,  20,  32,  41,  58,  25,  30,   0,
-            -20,   6,   9,  49,  47,  35,  19,   9,
-              3,  22,  24,  45,  57,  40,  57,  36,
-            -18,  28,  19,  47,  31,  34,  39,  23,
-            -16, -27,  15,   6,   9,  17,  10,   5,
-            -22, -23, -30, -16, -16, -23, -36, -32,
-            -33, -28, -22, -43,  -5, -32, -20, -41,
+            -9,  22,  22,  27,  27,  19,  10,  20,    null,null,null,null,null,null,null,null,
+            -17,  20,  32,  41,  58,  25,  30,   0,    null,null,null,null,null,null,null,null,
+            -20,   6,   9,  49,  47,  35,  19,   9,    null,null,null,null,null,null,null,null,
+              3,  22,  24,  45,  57,  40,  57,  36,    null,null,null,null,null,null,null,null,
+            -18,  28,  19,  47,  31,  34,  39,  23,    null,null,null,null,null,null,null,null,
+            -16, -27,  15,   6,   9,  17,  10,   5,    null,null,null,null,null,null,null,null,
+            -22, -23, -30, -16, -16, -23, -36, -32,    null,null,null,null,null,null,null,null,
+            -33, -28, -22, -43,  -5, -32, -20, -41,    null,null,null,null,null,null,null,null,
         ]
 
         // King
         AI.PSQT_EARLY_ENDGAME[KING] = [
-            -74, -35, -18, -18, -11,  15,   4, -17,
-            -12,  17,  14,  17,  17,  38,  23,  11,
-             10,  17,  23,  15,  20,  45,  44,  13,
-             -8,  22,  24,  27,  26,  33,  26,   3,
-            -18,  -4,  21,  24,  27,  23,   9, -11,
-            -19,  -3,  11,  21,  23,  16,   7,  -9,
-            -27, -11,   4,  13,  14,   4,  -5, -17,
-            -53, -34, -21, -11, -28, -14, -24, -43
+            -74, -35, -18, -18, -11,  15,   4, -17,    null,null,null,null,null,null,null,null,
+            -12,  17,  14,  17,  17,  38,  23,  11,    null,null,null,null,null,null,null,null,
+             10,  17,  23,  15,  20,  45,  44,  13,    null,null,null,null,null,null,null,null,
+             -8,  22,  24,  27,  26,  33,  26,   3,    null,null,null,null,null,null,null,null,
+            -18,  -4,  21,  24,  27,  23,   9, -11,    null,null,null,null,null,null,null,null,
+            -19,  -3,  11,  21,  23,  16,   7,  -9,    null,null,null,null,null,null,null,null,
+            -27, -11,   4,  13,  14,   4,  -5, -17,    null,null,null,null,null,null,null,null,
+            -53, -34, -21, -11, -28, -14, -24, -43,    null,null,null,null,null,null,null,null,
         ]
 
         AI.PSQT_LATE_ENDGAME = []
 
         // Pawn
         AI.PSQT_LATE_ENDGAME[PAWN] = [
-            0,   0,   0,   0,   0,   0,   0,   0,
-            178, 173, 158, 134, 147, 132, 165, 187,
-             94, 100,  85,  67,  56,  53,  82,  84,
-             32,  24,  13,   5,  -2,   4,  17,  17,
-             13,   9,  -3,  -7,  -7,  -8,   3,  -1,
-              4,   7,  -6,   1,   0,  -5,  -1,  -8,
-             13,   8,   8,  10,  13,   0,   2,  -7,
-              0,   0,   0,   0,   0,   0,   0,   0,
+            0,   0,   0,   0,   0,   0,   0,   0,    null,null,null,null,null,null,null,null,
+            178, 173, 158, 134, 147, 132, 165, 187,    null,null,null,null,null,null,null,null,
+             94, 100,  85,  67,  56,  53,  82,  84,    null,null,null,null,null,null,null,null,
+             32,  24,  13,   5,  -2,   4,  17,  17,    null,null,null,null,null,null,null,null,
+             13,   9,  -3,  -7,  -7,  -8,   3,  -1,    null,null,null,null,null,null,null,null,
+              4,   7,  -6,   1,   0,  -5,  -1,  -8,    null,null,null,null,null,null,null,null,
+             13,   8,   8,  10,  13,   0,   2,  -7,    null,null,null,null,null,null,null,null,
+              0,   0,   0,   0,   0,   0,   0,   0,    null,null,null,null,null,null,null,null,
         ]
 
         // Knight
         AI.PSQT_LATE_ENDGAME[KNIGHT] = [
-            -58, -38, -13, -28, -31, -27, -63, -99,
-            -25,  -8, -25,  -2,  -9, -25, -24, -52,
-            -24, -20,  10,   9,  -1,  -9, -19, -41,
-            -17,   3,  22,  22,  22,  11,   8, -18,
-            -18,  -6,  16,  25,  16,  17,   4, -18,
-            -23,  -3,  -1,  15,  10,  -3, -20, -22,
-            -42, -20, -10,  -5,  -2, -20, -23, -44,
-            -29, -51, -23, -15, -22, -18, -50, -64,
+            -58, -38, -13, -28, -31, -27, -63, -99,    null,null,null,null,null,null,null,null,
+            -25,  -8, -25,  -2,  -9, -25, -24, -52,    null,null,null,null,null,null,null,null,
+            -24, -20,  10,   9,  -1,  -9, -19, -41,    null,null,null,null,null,null,null,null,
+            -17,   3,  22,  22,  22,  11,   8, -18,    null,null,null,null,null,null,null,null,
+            -18,  -6,  16,  25,  16,  17,   4, -18,    null,null,null,null,null,null,null,null,
+            -23,  -3,  -1,  15,  10,  -3, -20, -22,    null,null,null,null,null,null,null,null,
+            -42, -20, -10,  -5,  -2, -20, -23, -44,    null,null,null,null,null,null,null,null,
+            -29, -51, -23, -15, -22, -18, -50, -64,    null,null,null,null,null,null,null,null,
         ]
 
         // Bishop
         AI.PSQT_LATE_ENDGAME[BISHOP] = [
-            -14, -21, -11,  -8, -7,  -9, -17, -24,
-            -8,  -4,   7, -12, -3, -13,  -4, -14,
-             2,  -8,   0,  -1, -2,   6,   0,   4,
-            -3,   9,  12,   9, 14,  10,   3,   2,
-            -6,   3,  13,  19,  7,  10,  -3,  -9,
-           -12,  -3,   8,  10, 13,   3,  -7, -15,
-           -14, -18,  -7,  -1,  4,  -9, -15, -27,
-           -23,  -9, -23,  -5, -9, -16,  -5, -17,
+            -14, -21, -11,  -8, -7,  -9, -17, -24,    null,null,null,null,null,null,null,null,
+            -8,  -4,   7, -12, -3, -13,  -4, -14,    null,null,null,null,null,null,null,null,
+             2,  -8,   0,  -1, -2,   6,   0,   4,    null,null,null,null,null,null,null,null,
+            -3,   9,  12,   9, 14,  10,   3,   2,    null,null,null,null,null,null,null,null,
+            -6,   3,  13,  19,  7,  10,  -3,  -9,    null,null,null,null,null,null,null,null,
+           -12,  -3,   8,  10, 13,   3,  -7, -15,    null,null,null,null,null,null,null,null,
+           -14, -18,  -7,  -1,  4,  -9, -15, -27,    null,null,null,null,null,null,null,null,
+           -23,  -9, -23,  -5, -9, -16,  -5, -17,    null,null,null,null,null,null,null,null,
         ]
         // Rook
         AI.PSQT_LATE_ENDGAME[ROOK] = [
-            13, 10, 18, 15, 12,  12,   8,   5,
-            11, 13, 13, 11, -3,   3,   8,   3,
-             7,  7,  7,  5,  4,  -3,  -5,  -3,
-             4,  3, 13,  1,  2,   1,  -1,   2,
-             3,  5,  8,  4, -5,  -6,  -8, -11,
-            -4,  0, -5, -1, -7, -12,  -8, -16,
-            -6, -6,  0,  2, -9,  -9, -11,  -3,
-            -9,  2,  3, -1, -5, -13,   4, -20,
+            13, 10, 18, 15, 12,  12,   8,   5,    null,null,null,null,null,null,null,null,
+            11, 13, 13, 11, -3,   3,   8,   3,    null,null,null,null,null,null,null,null,
+             7,  7,  7,  5,  4,  -3,  -5,  -3,    null,null,null,null,null,null,null,null,
+             4,  3, 13,  1,  2,   1,  -1,   2,    null,null,null,null,null,null,null,null,
+             3,  5,  8,  4, -5,  -6,  -8, -11,    null,null,null,null,null,null,null,null,
+            -4,  0, -5, -1, -7, -12,  -8, -16,    null,null,null,null,null,null,null,null,
+            -6, -6,  0,  2, -9,  -9, -11,  -3,    null,null,null,null,null,null,null,null,
+            -9,  2,  3, -1, -5, -13,   4, -20,    null,null,null,null,null,null,null,null,
         ]
 
         // Queen
         AI.PSQT_LATE_ENDGAME[QUEEN] = [
-            -9,  22,  22,  27,  27,  19,  10,  20,
-            -17,  20,  32,  41,  58,  25,  30,   0,
-            -20,   6,   9,  49,  47,  35,  19,   9,
-              3,  22,  24,  45,  57,  40,  57,  36,
-            -18,  28,  19,  47,  31,  34,  39,  23,
-            -16, -27,  15,   6,   9,  17,  10,   5,
-            -22, -23, -30, -16, -16, -23, -36, -32,
-            -33, -28, -22, -43,  -5, -32, -20, -41,
+            -9,  22,  22,  27,  27,  19,  10,  20,    null,null,null,null,null,null,null,null,
+            -17,  20,  32,  41,  58,  25,  30,   0,    null,null,null,null,null,null,null,null,
+            -20,   6,   9,  49,  47,  35,  19,   9,    null,null,null,null,null,null,null,null,
+              3,  22,  24,  45,  57,  40,  57,  36,    null,null,null,null,null,null,null,null,
+            -18,  28,  19,  47,  31,  34,  39,  23,    null,null,null,null,null,null,null,null,
+            -16, -27,  15,   6,   9,  17,  10,   5,    null,null,null,null,null,null,null,null,
+            -22, -23, -30, -16, -16, -23, -36, -32,    null,null,null,null,null,null,null,null,
+            -33, -28, -22, -43,  -5, -32, -20, -41,    null,null,null,null,null,null,null,null,
         ]
 
         // King
         AI.PSQT_LATE_ENDGAME[KING] = [
-            -74, -35, -18, -18, -11,  15,   4, -17,
-            -12,  17,  14,  17,  17,  38,  23,  11,
-             10,  17,  23,  15,  20,  45,  44,  13,
-             -8,  22,  24,  27,  26,  33,  26,   3,
-            -18,  -4,  21,  24,  27,  23,   9, -11,
-            -19,  -3,  11,  21,  23,  16,   7,  -9,
-            -27, -11,   4,  13,  14,   4,  -5, -17,
-            -53, -34, -21, -11, -28, -14, -24, -43
+            -74, -35, -18, -18, -11,  15,   4, -17,    null,null,null,null,null,null,null,null,
+            -12,  17,  14,  17,  17,  38,  23,  11,    null,null,null,null,null,null,null,null,
+             10,  17,  23,  15,  20,  45,  44,  13,    null,null,null,null,null,null,null,null,
+             -8,  22,  24,  27,  26,  33,  26,   3,    null,null,null,null,null,null,null,null,
+            -18,  -4,  21,  24,  27,  23,   9, -11,    null,null,null,null,null,null,null,null,
+            -19,  -3,  11,  21,  23,  16,   7,  -9,    null,null,null,null,null,null,null,null,
+            -27, -11,   4,  13,  14,   4,  -5, -17,    null,null,null,null,null,null,null,null,
+            -53, -34, -21, -11, -28, -14, -24, -43,    null,null,null,null,null,null,null,null,
         ]
 
     // AI.preprocessor(board)
@@ -1567,396 +1567,9 @@ AI.createPSQT = function (board) {
     if (AI.phase === 3) AI.PSQT = [...AI.PSQT_LATE_ENDGAME]
 }
 
-AI.PSQT2Sigmoid = function () {
-    let upperlimit = VPAWN5
-    let lowerlimit = VPAWN
-
-    for (let i = 1; i <= 4; i++) {
-        AI.PSQT[i] = AI.PSQT[i].map(psqv => {
-            if (psqv > 0) {
-                return (upperlimit * 2) / (1 + Math.exp(-psqv / (upperlimit / 2))) - upperlimit | 0
-            } else {
-                return (lowerlimit * 2) / (1 + Math.exp(-psqv / (lowerlimit / 2))) - lowerlimit | 0
-            }
-        })
-    }
-}
-
-AI.softenPSQT = function () {
-    for (let p = 1; p <= 4; p++) {
-        AI.PSQT[p] = AI.PSQT[p].map((e, i) => {
-            if (e) return e
-
-            let N = [...AI.PSQT[p]]
-            let sum = N[i]
-            let total = 1
-
-            if (i % 8 != 0 && N[i - 9]) { sum += N[i - 9]; total++ }
-            if ((i + 1) % 8 != 0 && N[i - 7]) { sum += N[i - 7]; total++ }
-
-            if (i % 8 != 0 && N[i + 7]) { sum += N[i + 7]; total++ }
-            if ((i + 1) % 8 != 0 && N[i + 9]) { sum += N[i + 9]; total++ }
-
-            if (i % 8 != 0 && N[i - 1]) { sum += N[i - 1]; total++ }
-            if ((i + 1) % 8 != 0 && N[i + 1]) { sum += N[i + 1]; total++ }
-
-            if (N[i - 8]) { sum += N[i - 8]; total++ }
-            if (N[i + 8]) { sum += N[i + 8]; total++ }
-
-            let average = sum / total
-
-            return average / 2 | 0
-        })
-    }
-}
-
-AI.preprocessor = function (board) {
-    let color = board.turn
-    let sign = color === 0 ? 1 : -1
-
-
-    let P  = board.getPieceColorBitboard(PAWN,  color).dup()
-    let N  = board.getPieceColorBitboard(KNIGHT,  color).dup()
-    let B  = board.getPieceColorBitboard(BISHOP,  color).dup()
-    let R  = board.getPieceColorBitboard(ROOK,  color).dup()
-    let Q  = board.getPieceColorBitboard(QUEEN,  color).dup()
-    let K  = board.getPieceColorBitboard(KING,  color).dup()
-    let PX = board.getPieceColorBitboard(PAWN, !color).dup()
-    let NX = board.getPieceColorBitboard(KNIGHT, !color).dup()
-    let BX = board.getPieceColorBitboard(BISHOP, !color).dup()
-    let RX = board.getPieceColorBitboard(ROOK, !color).dup()
-    let QX = board.getPieceColorBitboard(QUEEN, !color).dup()
-    let KX = board.getPieceColorBitboard(KING, !color).dup()
-
-    let pawnmask = Chess.Position.makePawnAttackMask(color, P)
-    let pawnAttackMap = AI.bin2map(P, color)
-    let pawnstructure = AI.bin2map({ high: P.high | pawnmask.high, low: P.low | pawnmask.low }, color)
-
-    let pawnmaskX = Chess.Position.makePawnAttackMask(!color, PX).not(PX)
-    let pawnXAttackMap = AI.bin2map(PX, color)
-
-    let kingmap = AI.bin2map(K, color)
-    let kingXmap = AI.bin2map(KX, color)
-
-    let kingposition = kingmap.indexOf(1)
-    let kingXposition = kingXmap.indexOf(1)
-
-    //Castiga captura y maniobras con peón frontal del rey
-    if (
-        (color === WHITE && (
-            kingposition >= 61 ||
-            (kingposition >= 56 && kingposition <= 58)
-        )
-        ) ||
-        (color === BLACK && (
-            kingposition <= 2 ||
-            (kingposition >= 5 && kingposition <= 7)
-        )
-        )
-    ) {
-        //Good
-        AI.PSQT_OPENING[0][kingposition - 7 * sign] += VGM
-        AI.PSQT_OPENING[0][kingposition - 8 * sign] += AGM
-        AI.PSQT_OPENING[0][kingposition - 9 * sign] += VGM
-
-        AI.PSQT_MIDGAME[0][kingposition - 7 * sign] += VGM
-        AI.PSQT_MIDGAME[0][kingposition - 8 * sign] += AGM
-        AI.PSQT_MIDGAME[0][kingposition - 9 * sign] += VGM
-
-        //Bad
-        AI.PSQT_OPENING[0][kingposition - 15 * sign] += twm
-        AI.PSQT_OPENING[0][kingposition - 17 * sign] += twm
-        AI.PSQT_OPENING[0][kingposition - 23 * sign] += twm
-        AI.PSQT_OPENING[0][kingposition - 24 * sign] += twm
-        AI.PSQT_OPENING[0][kingposition - 25 * sign] += twm
-
-        AI.PSQT_MIDGAME[0][kingposition - 15 * sign] += abm
-        AI.PSQT_MIDGAME[0][kingposition - 17 * sign] += abm
-        AI.PSQT_MIDGAME[0][kingposition - 23 * sign] += vbm
-        AI.PSQT_MIDGAME[0][kingposition - 24 * sign] += vbm
-        AI.PSQT_MIDGAME[0][kingposition - 25 * sign] += vbm
-    }
-
-    //Torre
-    //Premia enrocar
-    if (board.hasCastlingRight(color, true) &&
-        (
-            (pawnAttackMap[kingposition - 5 * sign] && pawnAttackMap[kingposition - 6 * sign]) ||
-            (pawnAttackMap[kingposition - 5 * sign] && pawnAttackMap[kingposition - 7 * sign] && pawnAttackMap[kingposition - 14 * sign])
-        )
-    ) {
-        // white
-        AI.PSQT_MIDGAME[3][kingposition + 3] -= VPAWN4
-        AI.PSQT_MIDGAME[3][kingposition + 2] -= VPAWN3
-        AI.PSQT_MIDGAME[3][kingposition + 1] += VPAWN2
-    }
-
-    if (board.hasCastlingRight(color, false) && pawnAttackMap[kingposition - 10 * sign] && pawnAttackMap[kingposition - 11 * sign]) {
-        // console.log('rook QUEENSIDE')
-        AI.PSQT_MIDGAME[3][kingposition - 4] -= VPAWN4
-        AI.PSQT_MIDGAME[3][kingposition - 3] -= VPAWN4
-        AI.PSQT_MIDGAME[3][kingposition - 2] -= VPAWN4
-        AI.PSQT_MIDGAME[3][kingposition - 1] += VPAWN2
-    }
-
-    //Torres en columnas abiertas
-
-    let pawnXfiles = [0, 0, 0, 0, 0, 0, 0, 0]
-    let pawnfiles = [0, 0, 0, 0, 0, 0, 0, 0]
-
-    for (let i = 0; i < 64; i++) {
-        if (pawnAttackMap[i]) {
-            let col = i % 8
-
-            pawnfiles[col]++
-        }
-    }
-
-    for (let i = 0; i < 64; i++) {
-        if (pawnXAttackMap[i]) {
-            let col = i % 8
-
-            if (pawnfiles[col]) {
-                //Si las columnas están abiertas en mi lado, cuento las del otro lado (antes no)
-                pawnXfiles[col]++
-            }
-
-        }
-    }
-
-    AI.PSQT_OPENING[3] = AI.PSQT_OPENING[3].map((e, i) => {
-        let col = i % 8
-        return e + (pawnfiles[col] ? abm : 0)
-    })
-
-    AI.PSQT_OPENING[3] = AI.PSQT_OPENING[3].map((e, i) => {
-        let col = i % 8
-        return e + (!pawnfiles[col] ? TBM : 0) + (!pawnXfiles[col] ? VGM : 0)
-    })
-
-    AI.PSQT_MIDGAME[3] = AI.PSQT_MIDGAME[3].map((e, i) => {
-        let col = i % 8
-        return e + (pawnfiles[col] ? abm : 0)
-    })
-
-    AI.PSQT_MIDGAME[3] = AI.PSQT_MIDGAME[3].map((e, i) => {
-        let col = i % 8
-        return e + (!pawnfiles[col] ? TBM : 0) + (!pawnXfiles[col] ? TBM : 0)
-    })
-
-    // Torres delante del rey enemigo ("torre en séptima")
-    for (let i = 8; i < 16; i++) AI.PSQT_MIDGAME[3][i + sign * 8 * (kingXposition / 8 | 0)] += TBM
-
-    //Torres conectadas
-    let RR = board.makeRookAttackMask(R, P.or(PX))
-    let RRmap = AI.bin2map(RR, color)
-
-    AI.PSQT_MIDGAME[3] = AI.PSQT_MIDGAME[3].map((e, i) => {
-        return e + AGM * RRmap[i]
-    })
-
-    //Premia enrocar
-    if (board.hasCastlingRight(color, true)) {
-        // console.log('KINGSIDE')
-
-        if (
-            (pawnAttackMap[kingposition - 5 * sign] && pawnAttackMap[kingposition - 6 * sign]) ||
-            (pawnAttackMap[kingposition - 5 * sign] && pawnAttackMap[kingposition - 7 * sign] && pawnAttackMap[kingposition - 14 * sign])
-        ) {
-            AI.PSQT_MIDGAME[5][kingposition] -= VPAWN2
-            AI.PSQT_MIDGAME[5][kingposition + 1] -= VPAWN4
-            AI.PSQT_MIDGAME[5][kingposition + 2] += 2*VPAWN
-        } else {
-            AI.PSQT_MIDGAME[5][kingposition + 2] -= VPAWN
-            AI.PSQT_OPENING[5][kingposition + 2] -= VPAWN //Evita enroque al vacío
-
-        }
-    }
-
-    if (board.hasCastlingRight(color, false)) {
-        // console.log('QUEENSIDE')
-
-        if (pawnAttackMap[kingposition - 10 * sign] && pawnAttackMap[kingposition - 11 * sign]) {
-            AI.PSQT_MIDGAME[5][kingposition - 2] += 2*VPAWN2
-            AI.PSQT_MIDGAME[5][kingposition - 1] -= VPAWN2
-            AI.PSQT_MIDGAME[5][kingposition] -= VPAWN4
-        } else {
-            AI.PSQT_MIDGAME[5][kingposition - 2] -= VPAWN
-            AI.PSQT_OPENING[5][kingposition - 2] -= VPAWN //Evita enroque al vacío
-        }
-    }
-
-    //***************** ENDGAME ***********************
-    //***************** ENDGAME ***********************
-    //***************** ENDGAME ***********************
-    //***************** ENDGAME ***********************
-
-    //Torres en columnas abiertas
-
-    pawnfiles = [0, 0, 0, 0, 0, 0, 0, 0]
-
-    for (let i = 0; i < 64; i++) {
-        if (pawnAttackMap[i]) {
-            let col = i % 8
-
-            pawnfiles[col]++
-        }
-    }
-
-    AI.PSQT_EARLY_ENDGAME[3] = AI.PSQT_EARLY_ENDGAME[3].map((e, i) => {
-        let col = i % 8
-        return e + (pawnfiles[col] ? vbm : 0)
-    })
-
-    AI.PSQT_EARLY_ENDGAME[3] = AI.PSQT_EARLY_ENDGAME[3].map((e, i) => {
-        let col = i % 8
-        return e + (!pawnfiles[col] ? TBM : 0)
-    })
-
-    //Torres delante del rey enemigo ("torre en séptima")
-    for (let i = 8; i < 16; i++) AI.PSQT_EARLY_ENDGAME[3][i + sign * 8 * (kingXposition / 8 | 0)] += TBM
-
-    //Rey cerca del rey enemigo
-    if (AI.phase === 3 && AI.lastscore >= AI.PIECE_VALUES[OPENING][ROOK]) {
-        AI.PSQT_EARLY_ENDGAME[5] = AI.PSQT_EARLY_ENDGAME[5].map((e, i) => {
-            return TBM * (8 - AI.manhattanDistance(kingXposition, i))
-        })
-    }
-
-    //////////////// X RAYS ///////////////////////
-    //////////////// X RAYS ///////////////////////
-    //////////////// X RAYS ///////////////////////
-    //////////////// X RAYS ///////////////////////
-    let KB = board.makeBishopAttackMask(KX, false)
-    let KBmap = AI.bin2map(KB, color)
-
-    let BB = board.makeBishopAttackMask(BX, false)
-    let BBmap = AI.bin2map(BB, color)
-
-    let RB = board.makeBishopAttackMask(RX, false)
-    let RBmap = AI.bin2map(RB, color)
-
-    let QB = board.makeBishopAttackMask(QX, false)
-    let QBmap = AI.bin2map(QB, color)
-
-    let KR = board.makeRookAttackMask(KX, false)
-    let KRmap = AI.bin2map(KR, color)
-
-    let RRx = board.makeRookAttackMask(RX, false)
-    let RRmapx = AI.bin2map(RRx, color)
-
-    let QR = board.makeRookAttackMask(KX, false)
-    let QRmap = AI.bin2map(QR, color)
-
-    //Alfiles apuntando a torres
-    AI.PSQT_MIDGAME[2] = AI.PSQT_MIDGAME[2].map((e, i) => {
-        return e + TBM * RBmap[i]
-    })
-
-    //Alfiles apuntando a dama
-    AI.PSQT_MIDGAME[2] = AI.PSQT_MIDGAME[2].map((e, i) => {
-        return e + TBM * QBmap[i]
-    })
-
-    //Alfiles apuntando al rey
-    AI.PSQT_MIDGAME[2] = AI.PSQT_MIDGAME[2].map((e, i) => {
-        return e + TBM * KBmap[i]
-    })
-
-    AI.PSQT_EARLY_ENDGAME[2] = AI.PSQT_EARLY_ENDGAME[2].map((e, i) => {
-        return e + TBM * KBmap[i]
-    })
-
-    if (kingXposition % 8 < 7) {
-        AI.PSQT_MIDGAME[2] = AI.PSQT_MIDGAME[2].map((e, i) => {
-            return e + TBM * (KBmap[i + 1] || 0)
-        })
-    }
-
-    if (kingXposition % 8 < 7) {
-        AI.PSQT_EARLY_ENDGAME[2] = AI.PSQT_EARLY_ENDGAME[2].map((e, i) => {
-            return e + TBM * (KBmap[i + 1] || 0)
-        })
-    }
-
-    if (kingXposition % 8 > 0) {
-        AI.PSQT_MIDGAME[2] = AI.PSQT_MIDGAME[2].map((e, i) => {
-            return e + TBM * (KBmap[i - 1] || 0)
-        })
-    }
-
-    if (kingXposition % 8 > 0) {
-        AI.PSQT_EARLY_ENDGAME[2] = AI.PSQT_EARLY_ENDGAME[2].map((e, i) => {
-            return e + TBM * (KBmap[i - 1] || 0)
-        })
-    }
-
-    //Torres apuntando a dama
-    AI.PSQT_MIDGAME[3] = AI.PSQT_MIDGAME[3].map((e, i) => {
-        return e + TBM * QRmap[i]
-    })
-
-    //Torres apuntando al rey
-    AI.PSQT_MIDGAME[3] = AI.PSQT_MIDGAME[3].map((e, i) => {
-        return e + TBM * KRmap[i]
-    })
-
-    AI.PSQT_EARLY_ENDGAME[3] = AI.PSQT_EARLY_ENDGAME[3].map((e, i) => {
-        return e + TBM * KRmap[i]
-    })
-
-    //Dama apuntando al rey
-    AI.PSQT_MIDGAME[4] = AI.PSQT_MIDGAME[4].map((e, i) => {
-        return e + TBM * KBmap[i]
-    })
-
-    //Dama apuntando a alfiles enemigos
-    AI.PSQT_MIDGAME[4] = AI.PSQT_MIDGAME[4].map((e, i) => {
-        return e + twm * BBmap[i]
-    })
-
-    //Dama apuntando a torres enemigas
-    AI.PSQT_MIDGAME[4] = AI.PSQT_MIDGAME[4].map((e, i) => {
-        return e + twm * RRmapx[i]
-    })
-
-    //Rey apuntando a alfiles enemigos
-    AI.PSQT_MIDGAME[5] = AI.PSQT_MIDGAME[5].map((e, i) => {
-        return e + twm * BBmap[i]
-    })
-
-    //Rey apuntando a torres enemigas
-    AI.PSQT_MIDGAME[5] = AI.PSQT_MIDGAME[5].map((e, i) => {
-        return e + twm * RRmapx[i]
-    })
-
-    /************* ABSURD MOVES *****************/
-
-    AI.PSQT_OPENING[1] = AI.PSQT_OPENING[1].map((e, i) => { return e + twm * pawnXAttackMap[i] })
-    AI.PSQT_OPENING[2] = AI.PSQT_OPENING[2].map((e, i) => { return e + twm * pawnXAttackMap[i] })
-    AI.PSQT_OPENING[3] = AI.PSQT_OPENING[3].map((e, i) => { return e + twm * pawnXAttackMap[i] })
-    AI.PSQT_OPENING[4] = AI.PSQT_OPENING[4].map((e, i) => { return e + twm * pawnXAttackMap[i] })
-
-    AI.PSQT_MIDGAME[1] = AI.PSQT_MIDGAME[1].map((e, i) => { return e + twm * pawnXAttackMap[i] })
-    AI.PSQT_MIDGAME[2] = AI.PSQT_MIDGAME[2].map((e, i) => { return e + twm * pawnXAttackMap[i] })
-    AI.PSQT_MIDGAME[3] = AI.PSQT_MIDGAME[3].map((e, i) => { return e + twm * pawnXAttackMap[i] })
-    AI.PSQT_MIDGAME[4] = AI.PSQT_MIDGAME[4].map((e, i) => { return e + twm * pawnXAttackMap[i] })
-
-    AI.PSQT_EARLY_ENDGAME[1] = AI.PSQT_EARLY_ENDGAME[1].map((e, i) => { return e + twm * pawnXAttackMap[i] })
-    AI.PSQT_EARLY_ENDGAME[2] = AI.PSQT_EARLY_ENDGAME[2].map((e, i) => { return e + twm * pawnXAttackMap[i] })
-    AI.PSQT_EARLY_ENDGAME[3] = AI.PSQT_EARLY_ENDGAME[3].map((e, i) => { return e + twm * pawnXAttackMap[i] })
-    AI.PSQT_EARLY_ENDGAME[4] = AI.PSQT_EARLY_ENDGAME[4].map((e, i) => { return e + twm * pawnXAttackMap[i] })
-
-    AI.PSQT_LATE_ENDGAME[1] = AI.PSQT_LATE_ENDGAME[1].map((e, i) => { return e + twm * pawnXAttackMap[i] })
-    AI.PSQT_LATE_ENDGAME[2] = AI.PSQT_LATE_ENDGAME[2].map((e, i) => { return e + twm * pawnXAttackMap[i] })
-    AI.PSQT_LATE_ENDGAME[3] = AI.PSQT_LATE_ENDGAME[3].map((e, i) => { return e + twm * pawnXAttackMap[i] })
-    AI.PSQT_LATE_ENDGAME[4] = AI.PSQT_LATE_ENDGAME[4].map((e, i) => { return e + twm * pawnXAttackMap[i] })
-}
-
 AI.setPhase = function (board) {
     //OPENING
     AI.phase = 0
-    let color = Chess.turn
 
     //MIDGAME
     if (AI.nofpieces <= 28 || (board.movenumber && board.movenumber > 8)) {
@@ -1981,8 +1594,6 @@ AI.setPhase = function (board) {
 
     AI.createPSQT()
     AI.randomizePSQT()
-    // AI.softenPSQT()
-    // AI.PSQT2Sigmoid()
 }
 
 AI.getPV = function (board, length) {
@@ -2004,7 +1615,7 @@ AI.getPV = function (board, length) {
                 return move.from === ttEntry.move.from && move.to === ttEntry.move.to
             })
             
-            if (moves.length) {
+            if (moves.length > 0) {
                 if (board.makeMove(ttEntry.move)) {
                     legal++
                     
@@ -2022,7 +1633,6 @@ AI.getPV = function (board, length) {
         board.unmakeMove(PV[i])
     }
     
-    // console.log('fin', board.hashkey)
     return PV
 }
 
@@ -2171,7 +1781,7 @@ AI.search = function (board, options) {
                 alpha -= VPAWN
                 beta += VPAWN
 
-                score = 5*AI.f//(isWhite ? 1 : -1) * AI.f
+                score = 10*AI.f//(isWhite ? 1 : -1) * AI.f
 
                 AI.PV = AI.getPV(board, depth)
 
