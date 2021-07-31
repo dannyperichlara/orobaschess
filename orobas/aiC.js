@@ -278,6 +278,9 @@ AI.randomizePSQT = function () {
 
 // FUNCIÓN DE EVALUACIÓN DE LA POSICIÓN
 AI.evaluate = function (board, ply, beta, pvNode, materialOnly, myMoves) {
+
+    // r1q2b1r/1Np1k3/p4p1p/3Qn3/6p1/P1P2BP1/1P3PP1/2R2RK1 w - - 1 22
+
     // materialOnly = false
     let turn = board.turn
     let notturn = -turn
@@ -852,7 +855,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
 
     if (!incheck) {
         moves = moves.filter(e=>{
-            return e.capturedPiece !== 0
+            return e.capturedPiece !== 0 && Math.abs(e.capturedPiece) >= Math.abs(e.piece)
         })
     }
 
@@ -924,31 +927,12 @@ AI.ttSave = function (hashkey, score, flag, depth, move) {
         return
     }
 
-    let ttEntry = AI.hashtable[hashkey % AI.htlength]
-    let save = false
-
-    if (ttEntry) {
-        if (hashkey === ttEntry.hashkey) {
-            if (depth >= ttEntry.depth) {
-                save = true
-            } else {
-                save = false
-            }
-        } else {
-            save = true
-        }
-    } else {
-        save = true
-    }
-
-    if (save) {
-        AI.hashtable[hashkey % AI.htlength] = {
-            hashkey,
-            score,
-            flag,
-            depth,
-            move
-        }
+    AI.hashtable[hashkey % AI.htlength] = {
+        hashkey,
+        score,
+        flag,
+        depth,
+        move
     }
 }
 

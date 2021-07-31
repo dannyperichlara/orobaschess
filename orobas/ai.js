@@ -1162,12 +1162,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
             AI.absurd[turn][piece]++
 
             //Reducciones
-            if (AI.nofpieces <= 4) {
-                R = 0
-            } else {
-                if (!incheck && depth >= 3) {
-                    R += AI.LMR_TABLE[depth][legal]
-                }
+            if (!incheck && depth >= 3) {
+                R += AI.LMR_TABLE[depth][legal]
             }
 
             if (legal === 1) {
