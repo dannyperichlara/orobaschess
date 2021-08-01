@@ -1071,6 +1071,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
         }
     }
 
+    let moves = board.getMoves(true, false)
+
     let staticeval = AI.evaluate(board, ply, beta, pvNode, materialOnly)
     let incheck = board.isKingInCheck()
 
@@ -1103,8 +1105,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
         AI.PVS(board, alpha, beta, depth - 2, ply, materialOnly) //depth - 2 tested ok + 31 ELO
         ttEntry = AI.ttGet(hashkey)
     }
-
-    let moves = board.getMoves(true, false)
 
     moves = AI.sortMoves(moves, turn, ply, board, ttEntry, false)
 
