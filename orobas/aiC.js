@@ -1243,7 +1243,7 @@ AI.MTDF = function (board, f, d, materialOnly, lowerBound, upperBound) {
     let g = f
     
     //Esta línea permite que el algoritmo funcione como PVS normal
-    // return AI.PVS(board, lowerBound, upperBound, d, 1, materialOnly)
+    return AI.PVS(board, lowerBound, upperBound, d, 1, materialOnly)
     
     let i = 0
     let beta
