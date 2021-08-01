@@ -429,17 +429,16 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry, isQS) {
         }
 
         // CRITERIO 1: Enroque
-        // if (AI.phase <= MIDGAME && move.castleSide) {
-        //     move.score += 1e8
-        //     continue
-        // }
+        if (AI.phase <= MIDGAME && move.castleSide) {
+            move.score += 1e8
+            continue
+        }
 
-        // CRITERIO 2: La jugada es una promoción de peón
-        // if (kind & 8) {
-        //     move.promotion = kind
-        //     move.score += 2e7
-        //     continue
-        // }
+        // CRITERIO 2: La jugada es una promoción
+        if (move.promotingPiece) {
+            move.score += 2e7
+            continue
+        }
 
         if (move.capturedPiece) {
             move.mvvlva = 100*Math.abs(move.capturedPiece / move.piece) | 0
@@ -1244,7 +1243,7 @@ AI.MTDF = function (board, f, d, materialOnly, lowerBound, upperBound) {
     let g = f
     
     //Esta línea permite que el algoritmo funcione como PVS normal
-    return AI.PVS(board, lowerBound, upperBound, d, 1, materialOnly)
+    // return AI.PVS(board, lowerBound, upperBound, d, 1, materialOnly)
     
     let i = 0
     let beta
@@ -1379,7 +1378,7 @@ AI.search = function (board, options) {
                 alpha -= VPAWN
                 beta += VPAWN
 
-                score = 10*AI.f//(isWhite ? 1 : -1) * AI.f
+                score = color*5*AI.f//(isWhite ? 1 : -1) * AI.f
 
                 AI.PV = AI.getPV(board, depth)
 

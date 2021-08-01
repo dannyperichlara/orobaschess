@@ -1765,7 +1765,7 @@ AI.search = function (board, options) {
                 alpha -= VPAWN
                 beta += VPAWN
 
-                score = 10*AI.f//(isWhite ? 1 : -1) * AI.f
+                score = color*5*AI.f//(isWhite ? 1 : -1) * AI.f
 
                 AI.PV = AI.getPV(board, depth)
 
