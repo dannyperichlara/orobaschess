@@ -125,6 +125,21 @@ AI.MVVLVASCORES = [
   /*K*/[3100,  3325,  3350,  3500,  3900, 26000],
 ]
 
+AI.ZEROINDEX = new Map()
+
+AI.ZEROINDEX[P] = 0
+AI.ZEROINDEX[N] = 1
+AI.ZEROINDEX[B] = 2
+AI.ZEROINDEX[R] = 3
+AI.ZEROINDEX[Q] = 4
+AI.ZEROINDEX[K] = 5
+AI.ZEROINDEX[p] = 0
+AI.ZEROINDEX[n] = 1
+AI.ZEROINDEX[b] = 2
+AI.ZEROINDEX[r] = 3
+AI.ZEROINDEX[q] = 4
+AI.ZEROINDEX[k] = 5
+
 AI.PSQT = [
     Array(64).fill(0),
     Array(64).fill(0),
@@ -441,10 +456,10 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry, isQS) {
         }
 
         if (move.capturedPiece) {
-            move.mvvlva = 100*Math.abs(move.capturedPiece / move.piece) | 0
+            move.mvvlva = AI.MVVLVASCORES[AI.ZEROINDEX[move.piece]][AI.ZEROINDEX[move.capturedPiece]]
             move.capture = true
             
-            if (move.mvvlva >= 100) {
+            if (move.mvvlva >= 6000) {
                 // CRITERIO 3: La jugada es una captura posiblemente ganadora
                 move.score += 1e7 + move.mvvlva
             } else {
@@ -782,7 +797,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
 
         let historyScore = AI.history[piece][move.to]
 
-        if (historyScore < 64) {
+        if (!move.capturedPiece && historyScore < 16) {
             R++
         }
 

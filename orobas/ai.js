@@ -17,7 +17,6 @@ let AI = {
     phase: 1,
     htlength: 1 << 24,
     pawntlength: 1e6,
-    reduceHistoryFactor: 1, //1, actúa sólo en la actual búsqueda
     mindepth: [3, 3, 3, 3],
     secondspermove: 3,
     lastmove: null,
@@ -63,7 +62,6 @@ const LOWERBOUND = -1
 const EXACT = 0
 const UPPERBOUND = 1
 
-///// VALOR RELATIVO DE LAS PIEZAS
 const VPAWN = 82
 const VPAWN2 = VPAWN / 2 | 0
 const VPAWN3 = VPAWN / 3 | 0
@@ -92,28 +90,10 @@ AI.PIECE_VALUES[0][R] = 480
 AI.PIECE_VALUES[0][Q] = 960
 AI.PIECE_VALUES[0][K] = 0
 
-// AI.PIECE_ORDER = [
-//     [ 4, 8, 16, 1, 0, 2],
-//     [ 1, 8, 16, 4, 2, 0],
-//     [ 8, 2,  4,16, 0, 1],
-//     [ 8, 1,  2,16, 0, 8],
-// ]
-
-const BISHOP_PAIR = VPAWN2 | 0
-
 // CONSTANTES
 const MATE = 20000
 const DRAW = 0 //-2*VPAWN
 const INFINITY = 21000
-
-//VALORES POSICIONALES
-const twm = -40  // El peor movimiento
-const vbm = -20  // Muy mal movimiento
-const abm = -10  // Un mal movimiento
-const anm =  0  // Un movimiento neutral
-const AGM =  10  // Un buen movimiento
-const VGM =  20  // Muy buen movimiento
-const TBM =  30  // El mejor movimiento
 
 //CREA TABLA PARA REDUCCIONES
 AI.LMR_TABLE = new Array(AI.totaldepth + 1)
@@ -123,7 +103,7 @@ for (let depth = 1; depth < AI.totaldepth + 1; ++depth) {
     AI.LMR_TABLE[depth] = new Array(218)
 
     for (let moves = 1; moves < 218; ++moves) {
-        if (depth >= 6) {
+        if (depth >= 3) {
             AI.LMR_TABLE[depth][moves] = depth/5 + moves/5 + 1 | 0
         } else {
             AI.LMR_TABLE[depth][moves] = Math.log(depth)*Math.log(moves)/2 | 0
@@ -131,54 +111,6 @@ for (let depth = 1; depth < AI.totaldepth + 1; ++depth) {
     }
 
 }
-
-const PAWNFACTOR = VPAWN/127
-
-// VALORES PARA VALORAR MOBILIDAD
-// El valor se asigna dependiendo del número de movimientos por pieza, desde el caballo hasta la dama
-
-AI.MOBILITY_VALUES = []
-
-for (let phase = OPENING; phase <= LATE_ENDGAME; phase++) {
-    AI.MOBILITY_VALUES.push([
-        [],
-        [...Array(9).keys()].map(e=>(PAWNFACTOR * (13*Math.log(e+1)-20) | 0)),
-        [...Array(14).keys()].map(e=>(PAWNFACTOR * (16*Math.log(e+1)-15) | 0)),
-        [...Array(15).keys()].map(e=>(PAWNFACTOR * (29*Math.log(e+1)-25) | 0)),
-        [...Array(28).keys()].map(e=>(PAWNFACTOR * (12*Math.log(e+1)-13) | 0)),
-        [],
-    ])
-}
-
-// SEGURIDAD DEL REY
-// Valor se asigna dependiendo del número de piezas que rodea al rey
-AI.SAFETY_VALUES = [-4,-2, 0, 3, 3, 3, 3, 3, 3].map(e => VPAWN5 * e)
-
-// PEONES PASADOS
-// Al detectar un peón pasado, se asigna un valor extra al peón correspondiente
-AI.PASSER_VALUES = [
-    7,	7,	7,	7,	7,	7,	7,	7,
-    6,	6,	6,	6,	6,	6,	6,	6,
-    5,	5,	5,	5,	5,	5,	5,	5,
-    4,	4,	4,	4,	4,	4,	4,	4,
-    3,	3,	3,	3,	3,	3,	3,	3,
-    2,	2,	2,	2,	2,	2,	2,	2,
-    1,	1,	1,	1,	1,	1,	1,	1,
-    0,	0,	0,	0,	0,	0,	0,	0,
-].map(e=>e*VPAWN5)
-
-// PEONES DOBLADOS
-// Se asigna un valor negativo dependiendo del número de peones doblados
-AI.DOUBLED_VALUES = [0, -1, -2, -3, -4, -5, -6, -7, -8].map(e => e * VPAWN2 | 0)
-
-// ESTRUCTURA DE PEONES
-// Se asigna un valor dependiendo del número de peones defendidos por otro peón en cada fase
-AI.DEFENDED_PAWN_VALUES = [
-    [0, 1, 2, 3, 4, 5, 6, 7, 8].map(e=>VPAWN10*e),
-    [0, 1, 2, 3, 4, 5, 5, 5, 5].map(e=>VPAWN10*e),
-    [0, 1, 2, 3, 4, 5, 5, 5, 5].map(e=>VPAWN10*e),
-    [0, 1, 2, 3, 4, 5, 5, 5, 5].map(e=>VPAWN10*e),
-]
 
 // MVV-LVA
 // Valor para determinar orden de capturas,
@@ -192,6 +124,21 @@ AI.MVVLVASCORES = [
   /*Q*/[4200,  4425,  4450,  4600,  6010, 26100],
   /*K*/[3100,  3325,  3350,  3500,  3900, 26000],
 ]
+
+AI.ZEROINDEX = new Map()
+
+AI.ZEROINDEX[P] = 0
+AI.ZEROINDEX[N] = 1
+AI.ZEROINDEX[B] = 2
+AI.ZEROINDEX[R] = 3
+AI.ZEROINDEX[Q] = 4
+AI.ZEROINDEX[K] = 5
+AI.ZEROINDEX[p] = 0
+AI.ZEROINDEX[n] = 1
+AI.ZEROINDEX[b] = 2
+AI.ZEROINDEX[r] = 3
+AI.ZEROINDEX[q] = 4
+AI.ZEROINDEX[k] = 5
 
 AI.PSQT = [
     Array(64).fill(0),
@@ -238,10 +185,9 @@ AI.createTables = function (tt, hh, pp) {
 
 //ESTABLECE VALORES ALEATORIAS EN LA APERTURA (PARA TESTEOS)
 AI.randomizePSQT = function () {
-    return
     if (AI.phase === OPENING) {
         //From Knight to Queen
-        for (let i = KNIGHT; i <= QUEEN; i++) {
+        for (let i of WHITEINDEX) {
             AI.PSQT[i] = AI.PSQT[i].map(e => {
                 return e + Math.random() * AI.random - AI.random / 2 | 0
             })
@@ -249,58 +195,14 @@ AI.randomizePSQT = function () {
     }
 }
 
-// FÓRMULA GENERAL PARA RECUPERAR INFORMACIÓN DE PIEZAS EN EL TABLERO
-// El resultado se guarda en un objecto que será trasapasado
-// a las distintas funciones de evaluación.
-// Cuidar el hecho de que es un objeto y, por lo tanto,
-// al pasarse como parámetro, los cambios en sus propiedades
-// cambian el objeto original (no existe ámbito).
-// AI.getPieces = function (board) {
-//     let Pw = board.getPieceColorBitboard(PAWN, WHITE)
-//     let Nw = board.getPieceColorBitboard(KNIGHT, WHITE)
-//     let Bw = board.getPieceColorBitboard(BISHOP, WHITE)
-//     let Rw = board.getPieceColorBitboard(ROOK, WHITE)
-//     let Qw = board.getPieceColorBitboard(QUEEN, WHITE)
-//     let Kw = board.getPieceColorBitboard(KING, WHITE)
-
-//     let Pb = board.getPieceColorBitboard(PAWN, BLACK)
-//     let Nb = board.getPieceColorBitboard(KNIGHT, BLACK)
-//     let Bb = board.getPieceColorBitboard(BISHOP, BLACK)
-//     let Rb = board.getPieceColorBitboard(ROOK, BLACK)
-//     let Qb = board.getPieceColorBitboard(QUEEN, BLACK)
-//     let Kb = board.getPieceColorBitboard(KING, BLACK)
-
-//     let white = board.getColorBitboard(WHITE)
-//     let black = board.getColorBitboard(BLACK)
-
-//     return { Pw, Nw, Bw, Rw, Qw, Kw, Pb, Nb, Bb, Rb, Qb, Kb, white, black }
-// }
-
 // FUNCIÓN DE EVALUACIÓN DE LA POSICIÓN
 AI.evaluate = function (board, ply, beta, pvNode, materialOnly, myMoves) {
-
-    // r1q2b1r/1Np1k3/p4p1p/3Qn3/6p1/P1P2BP1/1P3PP1/2R2RK1 w - - 1 22
-
-    // materialOnly = false
     let turn = board.turn
     let notturn = -turn
-    // let pieces = AI.getPieces(board, turn, notturn)
     let score = 0
     let safety = 0
     let mobility = 0
     let doubled = 0
-    
-    // Valor material del tablero
-    // let material = AI.getMaterial() | 0
-    // // Structure: Valoración de la estructura de peones (defendidos/doblados/pasados)
-    // let structure = AI.getStructure(pieces.Pw, pieces.Pb) | 0
-
-    // // Valor posicional del tablero
-    // // PSQT: Plusvalor o minusvalor por situar una pieza en determinada casilla
-    // // Mobility: Valoración de la capacidad de las piezas de moverse en el tablero
-    // let psqt = AI.getPSQT(pieces) | 0 // -4 a 6 depths
-    // let kingSafety = (AI.phase > 0? AI.getKingSafety(pieces) : 0) | 0
-    // let mobility = ply <= 2? (AI.getMobility(pieces, board) | 0) : 0
 
     for (let i = 0; i < 128; i++) {
         if (i & 0x88) {
@@ -363,27 +265,6 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, myMoves) {
 
     return turn * score / 5 | 0
 }
-
-AI.cols = [
-    0, 1, 2, 3, 4, 5, 6, 7,
-    0, 1, 2, 3, 4, 5, 6, 7,
-    0, 1, 2, 3, 4, 5, 6, 7,
-    0, 1, 2, 3, 4, 5, 6, 7,
-    0, 1, 2, 3, 4, 5, 6, 7,
-    0, 1, 2, 3, 4, 5, 6, 7,
-    0, 1, 2, 3, 4, 5, 6, 7,
-]
-
-AI.rows = [
-    0, 0, 0, 0, 0, 0, 0, 0,
-    1, 1, 1, 1, 1, 1, 1, 1,
-    2, 2, 2, 2, 2, 2, 2, 2,
-    3, 3, 3, 3, 3, 3, 3, 3,
-    4, 4, 4, 4, 4, 4, 4, 4,
-    5, 5, 5, 5, 5, 5, 5, 5,
-    6, 6, 6, 6, 6, 6, 6, 6,
-    7, 7, 7, 7, 7, 7, 7, 7,
-]
 
 AI.getDoubled = function (Pw, Pb) {
     let pawnsWhite = Pw.dup()
@@ -496,22 +377,6 @@ AI.pawnAdvanceMask = function (fromBB, white) {
         return Chess.Position.makeSlidingAttackMask(fromBB.dup(), 
         AI.EMPTY, -1, 0)
     }
-};
-
-AI.getKingSafety = function (pieces) {
-    let maskWhite = Chess.Position.makeKingDefenseMask(WHITE, pieces.Kw).and(pieces.white)
-    let safetyWhite = AI.SAFETY_VALUES[maskWhite.popcnt()]
-
-    let maskBlack = Chess.Position.makeKingDefenseMask(BLACK, pieces.Kb).and(pieces.black)
-    let safetyBlack = AI.SAFETY_VALUES[maskBlack.popcnt()]
-
-    return safetyWhite - safetyBlack
-}
-
-AI.getKingSafetyValue = function (K, us, turn) {
-    
-
-    return safety
 }
 
 // IMPORTANTE: Esta función devuelve el valor de la estructura de peones.
@@ -542,148 +407,6 @@ AI.getStructure = function (Pw, Pb) {
     AI.pawntable[hashkey % AI.pawntlength] = score
 
     return score
-}
-
-AI.getDefended = function (Pw, Pb) {
-    let pawnsWhite = Pw.dup()
-    let pawnsBlack = Pb.dup()
-
-    let maskWhite = Chess.Position.makePawnDefenseMask(0, pawnsWhite).dup()
-    let maskBlack = Chess.Position.makePawnDefenseMask(1, pawnsBlack).dup()
-    
-    let defendedWhite = maskWhite.and(pawnsWhite).popcnt()
-    let defendedBlack = maskBlack.and(pawnsBlack).popcnt()
-
-    return AI.DEFENDED_PAWN_VALUES[AI.phase][defendedWhite] - AI.DEFENDED_PAWN_VALUES[AI.phase][defendedBlack]
-}
-
-AI.getMobility = function (pieces, board) {
-    let white = AI.getMobilityValues(pieces.Pw, pieces.Nw, pieces.Bw, pieces.Rw, pieces.Qw, pieces.Kw, pieces.Pb, board, WHITE)
-    let black = AI.getMobilityValues(pieces.Pb, pieces.Nb, pieces.Bb, pieces.Rb, pieces.Qb, pieces.Kb, pieces.Pw, board, BLACK)
-    return white - black
-}
-
-AI.getMobilityValues = function (_P, _N, _B, _R, _Q, _K, _Px, board, color) {
-    let P = _P.dup()
-    let N = _N.dup()
-    let B = _B.dup()
-    let R = _R.dup()
-    let Q = _Q.dup()
-    let K = _K.dup()
-    let Px = _Px.dup()
-    let i = AI.phase
-
-    let us = board.getColorBitboard(color).dup()
-    let enemypawnattackmask = Chess.Position.makePawnAttackMask(!color, Px).dup()
-    let space = P.dup().or(K).or(enemypawnattackmask)
-    let mobility = 0
-
-    while (!N.isEmpty()) {
-        mobility += AI.MOBILITY_VALUES[i][1][Chess.Bitboard.KNIGHT_MOVEMENTS[N.extractLowestBitPosition()].dup().and_not(enemypawnattackmask).and_not(us).popcnt()]
-    }
-
-    while (!B.isEmpty()) {
-        let index = B.extractLowestBitPosition()
-        let bishop = (new Chess.Bitboard).setBit(index)
-        mobility += AI.MOBILITY_VALUES[i][2][board.makeBishopAttackMask(bishop, space).and_not(us).popcnt()]
-    }
-
-    while (!R.isEmpty()) {
-        let index = R.extractLowestBitPosition()
-        let rook = (new Chess.Bitboard).setBit(index)
-        mobility += AI.MOBILITY_VALUES[i][3][board.makeRookAttackMask(rook, space).and_not(us).popcnt()]
-    }
-
-    while (!Q.isEmpty()) {
-        let index = Q.extractLowestBitPosition()
-        let queen = (new Chess.Bitboard).setBit(index)
-        let qcount = board.makeBishopAttackMask(queen, space).or(board.makeRookAttackMask(queen, space)).and_not(us).popcnt()
-
-        mobility += AI.MOBILITY_VALUES[i][4][qcount]
-    }
-
-    if (isNaN(mobility)) {
-        console.log('NaN')
-        return 0
-    }
-
-    return mobility
-}
-
-// AI.getMaterial = function (pieces, us) {
-//     let whiteScore = 0
-//     let blackScore = 0
-//     let whiteBishops
-//     let blackBishops
-
-//     // Blancas
-//     whiteBishops = pieces.Bw.popcnt()
-
-//     whiteScore = AI.PIECE_VALUES_SUM[AI.phase][PAWN][pieces.Pw.popcnt()] +
-//     AI.PIECE_VALUES_SUM[AI.phase][KNIGHT][pieces.Nw.popcnt()] +
-//     AI.PIECE_VALUES_SUM[AI.phase][BISHOP][whiteBishops] +
-//     AI.PIECE_VALUES_SUM[AI.phase][ROOK][pieces.Rw.popcnt()] +
-//     AI.PIECE_VALUES_SUM[AI.phase][QUEEN][pieces.Qw.popcnt()]
-    
-//     if (whiteBishops >= 2) whiteScore += BISHOP_PAIR
-    
-//     // Negras
-//     blackBishops = pieces.Bb.popcnt()
-    
-//     blackScore = AI.PIECE_VALUES_SUM[AI.phase][PAWN][pieces.Pb.popcnt()] +
-//     AI.PIECE_VALUES_SUM[AI.phase][KNIGHT][pieces.Nb.popcnt()] +
-//     AI.PIECE_VALUES_SUM[AI.phase][BISHOP][blackBishops] +
-//     AI.PIECE_VALUES_SUM[AI.phase][ROOK][pieces.Rb.popcnt()] +
-//     AI.PIECE_VALUES_SUM[AI.phase][QUEEN][pieces.Qb.popcnt()]
-    
-//     if (blackBishops >= 2) blackScore += BISHOP_PAIR
-
-//     return whiteScore - blackScore | 0
-// }
-
-// Limita el valor posicional
-AI.limit = (value, limit) => {
-    return (limit * 2) / (1 + Math.exp(-value / (limit / 2))) - limit | 0
-}
-
-AI.getPSQT = function (pieces) {
-    let white = [
-        pieces.Pw.dup(),
-        pieces.Nw.dup(),
-        pieces.Bw.dup(),
-        pieces.Rw.dup(),
-        pieces.Qw.dup(),
-        pieces.Kw.dup(),
-    ]
-        
-    let black = [
-        pieces.Pb.dup(),
-        pieces.Nb.dup(),
-        pieces.Bb.dup(),
-        pieces.Rb.dup(),
-        pieces.Qb.dup(),
-        pieces.Kb.dup(),
-    ]
-
-    let scoreWhite = 0
-    let scoreBlack = 0
-
-    for (let i = PAWN; i <= KING; i++) {
-        let pieceWhite = white[i]
-        let pieceBlack = black[i]
-
-        do {
-            let index = pieceWhite.extractLowestBitPosition()
-            scoreWhite += AI.PSQT[i][56 ^ index]
-        } while (!pieceWhite.isEmpty())
-        
-        do {
-            let index = pieceBlack.extractLowestBitPosition()
-            scoreBlack += AI.PSQT[i][index]
-        } while (!pieceBlack.isEmpty())
-    }
-
-    return scoreWhite - scoreBlack
 }
 
 // ORDENA LOS MOVIMIENTOS
@@ -726,18 +449,17 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry, isQS) {
             continue
         }
 
-        // CRITERIO 2: La jugada es una promoción de peón
-        // if (kind & 8) {
-        //     move.promotion = kind
-        //     move.score += 2e7
-        //     continue
-        // }
+        // CRITERIO 2: La jugada es una promoción
+        if (move.promotingPiece) {
+            move.score += 2e7
+            continue
+        }
 
         if (move.capturedPiece) {
-            move.mvvlva = -100 * (move.capturedPiece / move.piece) | 0
+            move.mvvlva = AI.MVVLVASCORES[AI.ZEROINDEX[move.piece]][AI.ZEROINDEX[move.capturedPiece]]
             move.capture = true
             
-            if (move.mvvlva >= 100) {
+            if (move.mvvlva >= 6000) {
                 // CRITERIO 3: La jugada es una captura posiblemente ganadora
                 move.score += 1e7 + move.mvvlva
             } else {
@@ -771,14 +493,14 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry, isQS) {
             move.score += 1000 + hvalue
             continue
         } else {
-            move.score = 0; continue
+            // move.score = 0; continue
             // CRITERIO 7
             // Las jugadas restantes se orden de acuerdo a donde se estima sería
             // su mejor posición absoluta en el tablero
-            // move.psqtvalue = AI.PSQT[turn*move.piece][turn === 1 ? move.to : 112^move.to] -
-            //                  AI.PSQT[turn*move.piece][turn === 1 ? move.from : 112^move.from]
-            // move.score += move.psqtvalue
-            // continue
+            move.psqtvalue = AI.PSQT[turn*move.piece][turn === 1 ? move.to : 112^move.to] -
+                             AI.PSQT[turn*move.piece][turn === 1 ? move.from : 112^move.from]
+            move.score += move.psqtvalue
+            continue
         }
     }
 
@@ -806,25 +528,24 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
 
     AI.qsnodes++
 
-    // let mateScore = MATE - ply
+    let mateScore = MATE - ply
 
-    // if (mateScore < beta) {
-    //     beta = mateScore
-    //     if (alpha >= mateScore) return mateScore
-    // }
+    if (mateScore < beta) {
+        beta = mateScore
+        if (alpha >= mateScore) return mateScore
+    }
     
-    // mateScore = -MATE + ply
+    mateScore = -MATE + ply
     
-    // if (mateScore > alpha) {
-    //     alpha = mateScore
-    //     if (beta <= mateScore) return mateScore
-    // }
+    if (mateScore > alpha) {
+        alpha = mateScore
+        if (beta <= mateScore) return mateScore
+    }
 
     let turn = board.turn
     let legal = 0
 
-    // let moves = board.getMoves(true, !incheck) //+0 ELO
-    let moves = board.getMoves(true, true) //+0 ELO
+    let moves = board.getMoves() //+0 ELO
 
     let standpat = AI.evaluate(board, ply, beta, pvNode, materialOnly, moves)
     let hashkey = board.hashkey
@@ -834,28 +555,15 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
         return standpat
     }
 
-    // delta pruning
-    if (!incheck) {
-        let futilityMargin = AI.PIECE_VALUES[OPENING][KNIGHT]
-    
-        if (standpat + futilityMargin <= alpha) {
-            return standpat
-        }
-    }
-
     if (standpat > alpha) alpha = standpat
     
     let ttEntry = AI.ttGet(hashkey)
-        
-    if (!ttEntry || !ttEntry.move.capture || ttEntry.flag === UPPERBOUND) {
-        ttEntry = null
-    }
 
     let score = -INFINITY
 
     if (!incheck) {
         moves = moves.filter(e=>{
-            return e.capturedPiece !== 0 && Math.abs(e.capturedPiece) >= Math.abs(e.piece)
+            return e.capturedPiece// !== 0 && Math.abs(e.capturedPiece) >= Math.abs(e.piece)
         })
     }
 
@@ -865,14 +573,12 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
         return alpha
     }
 
-    let bestmove = moves[0]
-
     for (let i = 0, len = moves.length; i < len; i++) {
 
         let move = moves[i]
         // delta pruning para cada movimiento
-        if (!incheck && legal > 1) {
-            if (standpat + AI.PIECE_VALUES[AI.phase][turn * move.capturedPiece] < alpha) {
+        if (!incheck) {
+            if (standpat + AI.PIECE_VALUES[OPENING][Math.abs(move.capturedPiece)] + VPAWN < alpha) {
                 continue
             }
         }
@@ -891,7 +597,6 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
             
             if (score > alpha) {
                 alpha = score
-                bestmove = move
             }
         }
     }
@@ -900,14 +605,10 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
         
         // Ahogado
         if (!board.isKingInCheck()) {
-            // AI.ttSave(hashkey, DRAW, EXACT, 0, bestmove)
-            
             return DRAW
         }
         
         // Mate
-        // AI.ttSave(hashkey, -MATE + ply, EXACT, 0, bestmove)
-
         return -MATE + ply
 
     }
@@ -941,15 +642,6 @@ AI.ttGet = function (hashkey) {
     return AI.hashtable[hashkey % AI.htlength]
 }
 
-AI.reduceHistory = function () {
-    return
-    for (let piece of ALLINDEX) {
-        for (let to = 0; to < 64; to++) {
-            AI.history[piece][to] = ((1 - AI.reduceHistoryFactor) * AI.history[piece][to]) | 0
-        }
-    }
-}
-
 AI.saveHistory = function (turn, move, value) {
     AI.history[move.piece][move.to] += value | 0
 }
@@ -973,11 +665,10 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
     let pvNode = beta - alpha > 1 // PV-Node
     
     let cutNode = beta - alpha === 1 // Cut-Node
-    // console.log(cutNode)
 
     AI.nodes++
 
-    if ((new Date()).getTime() > AI.timer + (materialOnly? 0 : 1000) * AI.secondspermove) {
+    if ((new Date()).getTime() > AI.timer + 1000*AI.secondspermove) {
         if (AI.iteration > AI.mindepth[AI.phase]) {
             AI.stop = true
         }
@@ -1026,13 +717,12 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
             if (ttEntry.score < beta) beta = ttEntry.score
         }
 
-        if (alpha >= beta && depth > 0) {
+        if (alpha >= beta) {
             return ttEntry.score
         }
     }
 
     let moves = board.getMoves(true, false)
-
     let staticeval = AI.evaluate(board, ply, beta, pvNode, materialOnly, moves)
     let incheck = board.isKingInCheck()
 
@@ -1056,8 +746,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
     }
 
     //IID (si no hay entrada en ttEntry, busca una para mejorar el orden de movimientos)
-    if (!ttEntry && depth > 2) {
-        AI.PVS(board, alpha, beta, depth - 2, ply, materialOnly) //depth - 2 tested ok + 31 ELO
+    if (!ttEntry && depth > 1) {
+        AI.PVS(board, alpha, beta, depth - 1, ply, materialOnly) //depth - 2 tested ok + 31 ELO
         ttEntry = AI.ttGet(hashkey)
     }
 
@@ -1068,42 +758,33 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
     let bestscore = -INFINITY
     let score
 
-    //Reverse Futility pruning (Static Null Move Pruning) TESTED OK
-    let reverseval = staticeval - AI.PIECE_VALUES[OPENING][KNIGHT] * depth
+    //Reverse Futility pruning (Static Null Move Pruning)
+    let reverseval = staticeval - VPAWN
 
-    if (!incheck && reverseval > beta) {
-        AI.ttSave(hashkey, beta, LOWERBOUND, depth, moves[0])
-        return staticeval
-    }
-
-    // futility pruning
-    if (!incheck) {
-      let futilityMargin = depth * AI.PIECE_VALUES[OPENING][KNIGHT]
-
-      if (staticeval + futilityMargin <= alpha) {
-        AI.ttSave(hashkey, oAlpha, UPPERBOUND, depth, moves[0])
-        return oAlpha
-      }
+    if (!incheck && reverseval >= beta) {
+        return reverseval
     }
 
     for (let i = 0, len = moves.length; i < len; i++) {
         let move = moves[i]
         let piece = move.piece
 
-        // futility pruning para cada movimiento
+        // Futility Pruning
         if (!incheck && legal >= 1) {
-            if (staticeval + AI.PIECE_VALUES[AI.phase][turn*move.capturedPiece] + 2*depth*VPAWN < alpha) {
+            if (staticeval + AI.PIECE_VALUES[OPENING][Math.abs(move.capturedPiece)] + VPAWN < alpha) {
                 continue
             }
         }
 
-        let R = 0
-        let E = incheck && depth === 1? 1 : 0
+        // Extensiones
+        let E = incheck? 1 : 0
 
-        //Absurd maneuvers reductions (AMR)
-        // if (legal >= 1 && AI.phase <= 1 && AI.absurd[turn][piece] >= 2) {
-        //   R++
-        // }
+        //Reducciones
+        let R = 0
+
+        if (!incheck) {
+            R += AI.LMR_TABLE[depth][legal]
+        }
 
         // Move count reductions
         if (depth >=3 && !move.capture && legal >= (3 + depth**2) / 2) {
@@ -1115,19 +796,13 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
         }
 
         let historyScore = AI.history[piece][move.to]
-        if (historyScore < 64) {
+
+        if (!move.capturedPiece && historyScore < 16) {
             R++
         }
 
         if (board.makeMove(move)) {
             legal++
-
-            // AI.absurd[turn][piece]++
-
-            //Reducciones
-            if (!incheck && depth >= 3) {
-                R += AI.LMR_TABLE[depth][legal]
-            }
 
             if (legal === 1) {
                 // El primer movimiento se busca con ventana total y sin reducciones
@@ -1135,7 +810,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
                 score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1, materialOnly)
             } else {
                 if (AI.stop) return oAlpha
-
                 score = -AI.PVS(board, -alpha-1, -alpha, depth + E - R - 1, ply + 1, materialOnly)
                 // score = -AI.PVS(board, -beta, -alpha, depth + E - R - 1, ply + 1, materialOnly)
 
@@ -1145,8 +819,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
             }
 
             board.unmakeMove(move)
-
-            // AI.absurd[turn][piece]--
 
             if (AI.stop) return oAlpha //tested ok
 
@@ -1189,7 +861,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
     }
 
     if (legal === 0) {
-        
         // Ahogado
         if (!board.isKingInCheck()) {
             AI.ttSave(hashkey, DRAW, EXACT, depth, bestmove)
@@ -1204,11 +875,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
 
     } else {
         // Tablas
-        // if (board.isDraw()) {
-        //     // AI.ttSave(hashkey, DRAW, EXACT, depth, bestmove)
-        //     return DRAW
-        // }
-
         if (bestscore > oAlpha) {
             // Mejor movimiento
             if (bestmove) {
@@ -1225,37 +891,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
     }
 }
 
-AI.bin2map = function (bin, color) {
-    let dec = Array(32).fill('0').concat((bin.high >>> 0).toString(2).split('')).slice(-32)
-    dec = dec.concat(Array(32).fill('0').concat((bin.low >>> 0).toString(2).split('')).slice(-32))
-
-    if (color) dec.reverse()
-
-    let map = []
-
-    let reverse = function (array, color) {
-        if (color === 0) {
-            return array.reverse()
-        } else {
-            return array
-        }
-    }
-
-    map.push(reverse(dec.slice( 0,  8), color))
-    map.push(reverse(dec.slice( 8, 16), color))
-    map.push(reverse(dec.slice(16, 24), color))
-    map.push(reverse(dec.slice(24, 32), color))
-    map.push(reverse(dec.slice(32, 40), color))
-    map.push(reverse(dec.slice(40, 48), color))
-    map.push(reverse(dec.slice(48, 56), color))
-    map.push(reverse(dec.slice(56, 64), color))
-
-    let arraymap = map.join().split(',').map(e => { return parseInt(e) })
-
-    return arraymap
-}
-
-// PIECE SQUARE TABLES BASED ON PESTO
+// PIECE SQUARE TABLES basadas en PESTO
 AI.createPSQT = function (board) {
 
     AI.PSQT_OPENING = []
@@ -1587,8 +1223,6 @@ AI.getPV = function (board, length) {
     let ttEntry
     let ttFound
 
-    // console.log('inicio', board.hashkey)
-    
     for (let i = 0; i < length; i++) {
         ttFound = false
         let hashkey = board.hashkey
@@ -1623,13 +1257,9 @@ AI.getPV = function (board, length) {
 AI.MTDF = function (board, f, d, materialOnly, lowerBound, upperBound) {
     let g = f
     
-    // let upperBound =  INFINITY
-    // let lowerBound = -INFINITY
-
     //Esta línea permite que el algoritmo funcione como PVS normal
     return AI.PVS(board, lowerBound, upperBound, d, 1, materialOnly)
-    // r1bqk2r/ppp1bppp/4p3/3pP3/3P2n1/2PQ1N1P/PP3PP1/RNB2RK1 b kq - 0 9
-    // console.log('INICIO DE MTDF')
+    
     let i = 0
     let beta
 
@@ -1690,8 +1320,6 @@ AI.search = function (board, options) {
 
     if (!AI.f) AI.f = 0
 
-    AI.reduceHistory()
-    
     AI.absurd = [
         [0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0],
