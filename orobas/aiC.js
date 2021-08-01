@@ -797,7 +797,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
 
         let historyScore = AI.history[piece][move.to]
 
-        if (!move.capturedPiece && historyScore < 16) {
+        if (!move.capturedPiece && historyScore < 64) {
             R++
         }
 
