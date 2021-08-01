@@ -25,7 +25,7 @@ app.use(express.json());
 
 app.use(cors())
 
-let Chess = require('./orobas/chess.js')
+let Chess = require('./orobas/orobas.js')
 
 let fromto = [
   'a8','b8','c8','d8','e8','f8','g8','h8',    null,null,null,null,null,null,null,null,
