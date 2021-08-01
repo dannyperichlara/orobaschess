@@ -372,13 +372,11 @@ module.exports = orobas = {
             if (piece === K && i === 116) {
                 moves.push(this.createMove({piece: K, from:116, to:118, isCapture:false, capturedPiece:0, castleSide:8, enPassantSquares:null}))
                 moves.push(this.createMove({piece: K, from:116, to:114, isCapture:false, capturedPiece:0, castleSide:4, enPassantSquares:null}))
-                // continue
             }
 
             if (piece === k && i === 4) {
                 moves.push(this.createMove({piece: k, from:4, to:6, isCapture:false, capturedPiece:0, castleSide:2, enPassantSquares:null}))
                 moves.push(this.createMove({piece: k, from:4, to:2, isCapture:false, capturedPiece:0, castleSide:1, enPassantSquares:null}))
-                // continue
             }
 
             //Peones
@@ -623,7 +621,7 @@ module.exports = orobas = {
     },
 
     makeEffectiveMove(move) {
-        // Mueve la la pieza de from a to
+        // Mueve la pieza de from a to
         this.updateHashkey(this.zobristKeys.positions[move.piece][move.from]) //Quita pieza del hashkey de su casilla original
         
         if (move.capturedPiece) {
@@ -653,21 +651,21 @@ module.exports = orobas = {
             if (move.castleSide === 8) {
                 this.board[119] = 0
                 this.board[117] = R
-
+                
                 this.updateHashkey(this.zobristKeys.positions[R][119]) //Agrega torre al hashkey
                 this.updateHashkey(this.zobristKeys.positions[R][117]) //Quita torre del hashkey
-
-                this.castlingRights.push(castlingRights ^ 8 ^ 4)
+                
+                castlingRights = castlingRights ^ 8 ^ 4
             }
-
+            
             if (move.castleSide === 4) {
                 this.board[112] = 0
                 this.board[115] = R
-
+                
                 this.updateHashkey(this.zobristKeys.positions[R][112]) //Quita torre del hashkey
                 this.updateHashkey(this.zobristKeys.positions[R][115]) //Agrega torre al hashkey
-
-                this.castlingRights.push(castlingRights ^ 8 ^ 4)
+                
+                castlingRights = castlingRights ^ 8 ^ 4
             }
 
             if (move.castleSide === 2) {
@@ -677,8 +675,9 @@ module.exports = orobas = {
                 this.updateHashkey(this.zobristKeys.positions[r][7]) //Quita torre del hashkey
                 this.updateHashkey(this.zobristKeys.positions[r][5]) //Agrega torre al hashkey
 
-                this.castlingRights.push(castlingRights ^ 2 ^ 1)
+                castlingRights = castlingRights ^ 2 ^ 1
             }
+
 
             if (move.castleSide === 1) {
                 this.board[0] = 0
@@ -687,7 +686,7 @@ module.exports = orobas = {
                 this.updateHashkey(this.zobristKeys.positions[r][0]) //Quita torre del hashkey
                 this.updateHashkey(this.zobristKeys.positions[r][3]) //Agrega torre al hashkey
 
-                this.castlingRights.push(castlingRights ^ 2 ^ 1)
+                castlingRights = castlingRights ^ 2 ^ 1
             }
         } else {
             if ((castlingRights & 8) && (move.piece === K || (move.piece === R && move.from === 119) || move.to === 119)) {
@@ -707,9 +706,9 @@ module.exports = orobas = {
                 castlingRights = castlingRights ^ 1
             }
 
-            this.castlingRights.push(castlingRights)
         }
         
+        this.castlingRights.push(castlingRights)
         this.changeTurn()
     },
 
@@ -760,9 +759,7 @@ module.exports = orobas = {
             }
         }
 
-
         this.castlingRights.pop()
-
 
         if (move.enPassantSquares) {
             let lastEnPassantSquare = this.enPassantSquares[this.enPassantSquares.length - 2] // El penúltimo
