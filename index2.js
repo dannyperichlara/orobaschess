@@ -57,8 +57,8 @@ app.get('/', function (req, res) {
 
 
       if (castling.indexOf('K') > -1) castlingRights ^= 8
-      if (castling.indexOf('k') > -1) castlingRights ^= 4
-      if (castling.indexOf('Q') > -1) castlingRights ^= 2
+      if (castling.indexOf('Q') > -1) castlingRights ^= 4
+      if (castling.indexOf('k') > -1) castlingRights ^= 2
       if (castling.indexOf('q') > -1) castlingRights ^= 1
       
       Chess.castlingRights = [castlingRights]

@@ -13,7 +13,7 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 4,
+    random: 80,
     phase: 1,
     htlength: 1 << 24,
     pawntlength: 1e6,
