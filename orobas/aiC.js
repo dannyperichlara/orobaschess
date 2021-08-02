@@ -726,25 +726,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
     let staticeval = AI.evaluate(board, ply, beta, pvNode, materialOnly, moves)
     let incheck = board.isKingInCheck()
 
-    //Razoring (idea from Strelka) //+34 ELO
-    if (cutNode && !incheck) {
-        let score = staticeval + VPAWN
-
-        if (score < beta) {
-            if (depth === 1) {
-                let new_score = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode, materialOnly)
-                return Math.max(new_score, score)
-            }
-            score += 2*VPAWN
-
-            if (score < beta && depth <= 3) {
-                let new_score = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode, materialOnly)
-                if (new_score < beta)
-                return Math.max(new_score, score)
-            }
-        }
-    }
-
     //IID (si no hay entrada en ttEntry, busca una para mejorar el orden de movimientos)
     if (!ttEntry && depth > 1) {
         AI.PVS(board, alpha, beta, depth - 1, ply, materialOnly) //depth - 2 tested ok + 31 ELO
