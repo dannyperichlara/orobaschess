@@ -21,7 +21,21 @@ const BLACK = -1
 
 module.exports = orobas = {
     pieces: new Map(),
-    pieceList: new Array(32),
+    pieceList: {
+        pieces: new Map(),
+        [k]: 0,
+        [q]: 0,
+        [r]: 0,
+        [b]: 0,
+        [n]: 0,
+        [p]: 0,
+        [P]: 0,
+        [N]: 0,
+        [B]: 0,
+        [R]: 0,
+        [Q]: 0,
+        [K]: 0,
+    },
     coords: [
         "a8","b8","c8","d8","e8","f8","g8","h8",    0,0,0,0,0,0,0,0,
         "a7","b7","c7","d7","e7","f7","g7","h7",    0,0,0,0,0,0,0,0,
@@ -64,8 +78,6 @@ module.exports = orobas = {
         16,	17,	18,	19,	20,	21,	22,	23,
         0,	1,	2,	3,	4,	5,	6,	7,
     ],
-
-    pieceList: [],
 
     turn: WHITE,
     castlingRights: [15], //8: wks, 4:wqs, 2:bks, 1: bqs
@@ -184,14 +196,37 @@ module.exports = orobas = {
     },
 
     createPieceList() {
+        this.pieceList = {
+            pieces: new Map(),
+            [k]: 0,
+            [q]: 0,
+            [r]: 0,
+            [b]: 0,
+            [n]: 0,
+            [p]: 0,
+            [P]: 0,
+            [N]: 0,
+            [B]: 0,
+            [R]: 0,
+            [Q]: 0,
+            [K]: 0,
+        }
+
         for (let i = 0; i < 128; i++) {
             if (i & 0x88) {
                 i += 7
                 continue
             }
 
-            if (this.board[i]) this.pieceList.push({piece: this.board[i], index: i})
+            let piece = this.board[i]
+
+            if (piece) {
+                this.pieceList.pieces[piece*10 + this.pieceList[piece]] = i
+                this.pieceList[piece]++
+            }
         }
+
+        console.log(this.pieceList)
     },
 
     isSlidingPiece(piece) {

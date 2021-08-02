@@ -432,7 +432,7 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry, isQS) {
         move.promotion = 0
         move.killer1 = 0
         move.killer2 = 0
-        move.score = 0//AI.PIECE_ORDER[0][piece]
+        move.score = 0
 
         move.capture = false
         
@@ -674,11 +674,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
         }
     }
 
-    //Búsqueda QS
-    if (depth <= 0) {
-        return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode, materialOnly)
-    }
-
     let turn = board.turn
     let hashkey = board.hashkey
 
@@ -698,6 +693,11 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
         if (beta <= mateScore) {
             return mateScore
         }
+    }
+
+    //Búsqueda QS
+    if (depth <= 0) {
+        return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode, materialOnly)
     }
 
     let oAlpha = alpha
@@ -759,11 +759,24 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
     let score
 
     //Reverse Futility pruning (Static Null Move Pruning)
-    let reverseval = staticeval - VPAWN
+    // let reverseval = staticeval - VPAWN
 
-    if (!incheck && reverseval >= beta) {
-        return reverseval
-    }
+    // if (!incheck && reverseval >= beta) {
+    //     return reverseval
+    // }
+
+    // console.log(pvNode)
+
+    // // Null move pruning
+    // if (!incheck && !pvNode && AI.phase <= MIDGAME) {
+    //     board.changeTurn()
+    //     let nullR = 3
+    //     let nullScore = -AI.PVS(board, -beta, -beta+1, depth -nullR - 1, ply + 2, materialOnly)
+    //     board.changeTurn()
+    //     if (nullScore >= beta) {
+    //         return nullScore
+    //     }
+    // }
 
     for (let i = 0, len = moves.length; i < len; i++) {
         let move = moves[i]
@@ -788,16 +801,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
 
         // Move count reductions
         if (depth >=3 && !move.capture && legal >= (3 + depth**2) / 2) {
-            R++
-        }
-
-        if (ttEntry && move.piece === ttEntry.move.piece && ttEntry.move.from === move.from && ttEntry.move.to === move.to && ttEntry.move.capture) {
-            R++
-        }
-
-        let historyScore = AI.history[piece][move.to]
-
-        if (!move.capturedPiece && historyScore < 64) {
             R++
         }
 
