@@ -785,6 +785,17 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
             R++
         }
 
+        if (!move.capture && AI.phase <= EARLY_ENDGAME) {
+            // console.log('no')
+            if (board.turn === WHITE && board.board[move.to-17] === p || board.board[move.to-15] === p) {
+                R+=4
+            }
+            
+            if (board.turn === BLACK && board.board[move.to+17] === P || board.board[move.to+15] === P) {
+                R+=4
+            }
+        }
+
         if (board.makeMove(move)) {
             legal++
 
