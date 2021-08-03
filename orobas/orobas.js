@@ -1,6 +1,6 @@
 var seedrandom = require('seedrandom')
 
-seedrandom('orobas19ffec57e6844cdb3b9cdc9537a25393', {global: true})
+// seedrandom('orobas19ffec57e6844cdb3b9cdc9537a25393', {global: true})
 
 const p =  -1
 const n =  -3
@@ -171,7 +171,8 @@ module.exports = orobas = {
             this.updateHashkey(this.zobristKeys.turn[turn]) //this.turn, ya cambió el turn
         } else {
             this.turn = this.turn === 1? -1 : 1 // Esto es 35% más rápido que ~turn o -turn
-            this.updateHashkey(this.zobristKeys.turn[this.turn]) //this.turn, ya cambió el turn
+            // this.updateHashkey(this.zobristKeys.turn[this.turn]) //this.turn, ya cambió el turn
+            this.updateHashkey(this.zobristKeys.turn[WHITE]) //this.turn, ya cambió el turn
         }
     },
 

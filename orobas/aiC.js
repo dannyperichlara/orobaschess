@@ -250,15 +250,15 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, myMoves) {
     
     // score += safety + doubled
 
-    // let opponentMoves = []
+    let opponentMoves = []
 
-    // if (ply <= 2) {
+    // if (pvNode) {
     //     board.changeTurn()
         
     //     opponentMoves = board.getMoves()
     //     board.changeTurn()
 
-    //     mobility = 3*(myMoves.length - opponentMoves.length) | 0
+    //     mobility = 20*(myMoves.length+1)/(opponentMoves.length+1) - 10 | 0
 
     //     score += mobility
     // }
@@ -444,10 +444,10 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry, isQS) {
         }
 
         // CRITERIO 1: Enroque
-        if (AI.phase <= MIDGAME && move.castleSide) {
-            move.score += 1e8
-            continue
-        }
+        // if (AI.phase <= MIDGAME && move.castleSide) {
+        //     move.score += 1e8
+        //     continue
+        // }
 
         // CRITERIO 2: La jugada es una promoción
         if (move.promotingPiece) {
@@ -749,15 +749,15 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
     // console.log(pvNode)
 
     // // Null move pruning
-    // if (!incheck && !pvNode && AI.phase <= MIDGAME) {
-    //     board.changeTurn()
-    //     let nullR = 3
-    //     let nullScore = -AI.PVS(board, -beta, -beta+1, depth -nullR - 1, ply + 2, materialOnly)
-    //     board.changeTurn()
-    //     if (nullScore >= beta) {
-    //         return nullScore
-    //     }
-    // }
+    if (!incheck) {
+        board.changeTurn()
+        let nullR = AI.phase <= EARLY_ENDGAME? 3 : 2
+        let nullScore = -AI.PVS(board, -beta, -beta+1, depth -nullR - 1, ply + 2, materialOnly)
+        board.changeTurn()
+        if (nullScore >= beta) {
+            return nullScore
+        }
+    }
 
     for (let i = 0, len = moves.length; i < len; i++) {
         let move = moves[i]
@@ -785,6 +785,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
             R++
         }
 
+        // Bad moves reductions
         if (!move.capture && AI.phase <= EARLY_ENDGAME) {
             // console.log('no')
             if (board.turn === WHITE && board.board[move.to-17] === p || board.board[move.to-15] === p) {

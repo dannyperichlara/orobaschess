@@ -250,15 +250,15 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, myMoves) {
     
     // score += safety + doubled
 
-    // let opponentMoves = []
+    let opponentMoves = []
 
-    // if (ply <= 2) {
+    // if (pvNode) {
     //     board.changeTurn()
         
     //     opponentMoves = board.getMoves()
     //     board.changeTurn()
 
-    //     mobility = 3*(myMoves.length - opponentMoves.length) | 0
+    //     mobility = 20*(myMoves.length+1)/(opponentMoves.length+1) - 10 | 0
 
     //     score += mobility
     // }
@@ -444,10 +444,10 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry, isQS) {
         }
 
         // CRITERIO 1: Enroque
-        if (AI.phase <= MIDGAME && move.castleSide) {
-            move.score += 1e8
-            continue
-        }
+        // if (AI.phase <= MIDGAME && move.castleSide) {
+        //     move.score += 1e8
+        //     continue
+        // }
 
         // CRITERIO 2: La jugada es una promoción
         if (move.promotingPiece) {
@@ -783,6 +783,18 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
         // Move count reductions
         if (depth >=3 && !move.capture && legal >= (3 + depth**2) / 2) {
             R++
+        }
+
+        // Bad moves reductions
+        if (!move.capture && AI.phase <= EARLY_ENDGAME) {
+            // console.log('no')
+            if (board.turn === WHITE && board.board[move.to-17] === p || board.board[move.to-15] === p) {
+                R+=4
+            }
+            
+            if (board.turn === BLACK && board.board[move.to+17] === P || board.board[move.to+15] === P) {
+                R+=4
+            }
         }
 
         if (board.makeMove(move)) {
