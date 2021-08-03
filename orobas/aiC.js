@@ -252,16 +252,16 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, myMoves) {
 
     let opponentMoves = []
 
-    // if (pvNode) {
-    //     board.changeTurn()
+    if (pvNode) {
+        board.changeTurn()
         
-    //     opponentMoves = board.getMoves()
-    //     board.changeTurn()
+        opponentMoves = board.getMoves()
+        board.changeTurn()
 
-    //     mobility = 20*(myMoves.length+1)/(opponentMoves.length+1) - 10 | 0
+        mobility = 20*(myMoves.length+1)/(opponentMoves.length+1) - 10 | 0
 
-    //     score += mobility
-    // }
+        score += mobility
+    }
 
     return turn * score / 5 | 0
 }
