@@ -13,7 +13,7 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 40,
+    random: 20,
     phase: 1,
     htlength: 1 << 24,
     pawntlength: 1e6,
@@ -68,6 +68,7 @@ const VPAWN3 = VPAWN / 3 | 0
 const VPAWN4 = VPAWN / 4 | 0
 const VPAWN5 = VPAWN / 5 | 0
 const VPAWN10= VPAWN /10 | 0
+const VPAWNx2 = 2*VPAWN
 
 AI.PIECE_VALUES = [
     [],
@@ -103,11 +104,13 @@ for (let depth = 1; depth < AI.totaldepth + 1; ++depth) {
     AI.LMR_TABLE[depth] = new Array(218)
 
     for (let moves = 1; moves < 218; ++moves) {
-        if (depth >= 3) {
-            AI.LMR_TABLE[depth][moves] = depth/5 + moves/5 + 1 | 0
-        } else {
-            AI.LMR_TABLE[depth][moves] = Math.log(depth)*Math.log(moves)/2 | 0
-        }
+        AI.LMR_TABLE[depth][moves] = Math.log(depth)*Math.log(moves)/1.95 | 0
+
+        // if (depth >= 3) {
+        //     AI.LMR_TABLE[depth][moves] = depth/5 + moves/5 + 1 | 0
+        // } else {
+        //     AI.LMR_TABLE[depth][moves] = Math.log(depth)*Math.log(moves)/2 | 0
+        // }
     }
 
 }
@@ -196,7 +199,7 @@ AI.randomizePSQT = function () {
 }
 
 // FUNCIÓN DE EVALUACIÓN DE LA POSICIÓN
-AI.evaluate = function (board, ply, beta, pvNode, materialOnly, myMoves) {
+AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
     let turn = board.turn
     let notturn = -turn
     let score = 0
@@ -223,48 +226,47 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, myMoves) {
         
         // Escudo de peones
         // if (piece === K && i !== 116) {
-        //     safety += (!(i - 17 & 0x88)) && board.board[i-17] === P? 10 : 0
+        //     safety += (!(i - 17 & 0x88)) && board.board[i-17] === P? 20 : 0
+        //     safety += (!(i - 16 & 0x88)) && board.board[i-16] === 0?-60 : 0
         //     safety += (!(i - 16 & 0x88)) && board.board[i-16] === P? 20 : 0
-        //     safety += (!(i - 15 & 0x88)) && board.board[i-15] === P? 10 : 0
+        //     safety += (!(i - 16 & 0x88)) && board.board[i-16] === B? 20 : 0
+        //     safety += (!(i - 15 & 0x88)) && board.board[i-15] === P? 20 : 0
         // }
         
         // if (piece === k && i !== 4) {
-        //     safety += (!(i + 17 & 0x88)) && board.board[i+17] === p? -10 : 0
+        //     safety += (!(i + 17 & 0x88)) && board.board[i+17] === p? -20 : 0
+        //     safety += (!(i + 16 & 0x88)) && board.board[i+16] === 0?  60 : 0
         //     safety += (!(i + 16 & 0x88)) && board.board[i+16] === p? -20 : 0
-        //     safety += (!(i + 15 & 0x88)) && board.board[i+15] === p? -10 : 0
-        // }
-        
-        // Peones doblados
-        // if (piece === P) {
-        //     if (!(i - 16 & 0x88)) {
-        //         if (board.board[i-16] === P) doubled -= 20
-        //     }
-        // }
-        
-        // if (piece === p) {
-        //     if (!(i + 16 & 0x88)) {
-        //         if (board.board[i+16] === p) doubled += 20
-        //     }
+        //     safety += (!(i + 16 & 0x88)) && board.board[i+16] === b? -20 : 0
+        //     safety += (!(i + 15 & 0x88)) && board.board[i+15] === p? -20 : 0
         // }
     }
     
-    // score += safety + doubled
+    score += safety
 
-    let opponentMoves = []
+    mobility = 0 //pvNode? AI.getMobility(board, moves) : 0
 
-    // if (pvNode) {
-    //     board.changeTurn()
-        
-    //     opponentMoves = board.getMoves()
-    //     board.changeTurn()
-
-    //     mobility = 20*(myMoves.length+1)/(opponentMoves.length+1) - 10 | 0
-
-    //     score += mobility
-    // }
+    score += mobility
 
     return turn * score / 5 | 0
 }
+
+AI.getMobility = (board, moves)=>{
+    let mobility = 0
+    let opponentMoves = []
+
+    board.changeTurn()
+    
+    opponentMoves = board.getMoves()
+
+    board.changeTurn()
+
+    mobility = moves.length - opponentMoves.length
+
+    return mobility
+}
+
+let max = 0
 
 AI.getDoubled = function (Pw, Pb) {
     let pawnsWhite = Pw.dup()
@@ -749,15 +751,15 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
     // console.log(pvNode)
 
     // // Null move pruning
-    // if (!incheck && !pvNode && AI.phase <= MIDGAME) {
-    //     board.changeTurn()
-    //     let nullR = 3
-    //     let nullScore = -AI.PVS(board, -beta, -beta+1, depth -nullR - 1, ply + 2, materialOnly)
-    //     board.changeTurn()
-    //     if (nullScore >= beta) {
-    //         return nullScore
-    //     }
-    // }
+    if (!incheck && depth > 1) {
+        board.changeTurn()
+        let nullR = 4 - AI.phase
+        let nullScore = -AI.PVS(board, -beta, -beta+1, depth - nullR - 1, ply + 1, materialOnly)
+        board.changeTurn()
+        if (nullScore >= beta) {
+            return nullScore
+        }
+    }
 
     for (let i = 0, len = moves.length; i < len; i++) {
         let move = moves[i]
@@ -765,8 +767,14 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
 
         // Futility Pruning
         if (!incheck && legal >= 1) {
-            if (staticeval + AI.PIECE_VALUES[OPENING][Math.abs(move.capturedPiece)] + VPAWN < alpha) {
-                continue
+            if (move.capture) {
+                if (staticeval + AI.PIECE_VALUES[OPENING][Math.abs(move.capturedPiece)] < alpha) {
+                    continue
+                }
+            } else {
+                if (staticeval + VPAWNx2 < alpha) {
+                    continue
+                }
             }
         }
 
