@@ -85,6 +85,7 @@ module.exports = orobas = {
     enPassantSquares: [null],
 
     hashkey: 0,
+    pawnhashkey: 0,
 
     zobristKeys: {
         positions: new Map(),
@@ -155,6 +156,10 @@ module.exports = orobas = {
             if (piece === 0) continue
 
             this.updateHashkey(this.zobristKeys.positions[piece][i])
+
+            if (piece === P || piece === p) {
+                this.updatePawnHashkey(this.zobristKeys.positions[piece][i])
+            }
         }
         
         // Actualiza hashkey con turno
@@ -163,6 +168,10 @@ module.exports = orobas = {
 
     updateHashkey(value) {
         this.hashkey = ((this.hashkey ^ value) >>> 0)
+    },
+
+    updatePawnHashkey(value) {
+        this.pawnhashkey = ((this.pawnhashkey ^ value) >>> 0)
     },
 
     changeTurn(turn) {
@@ -660,11 +669,23 @@ module.exports = orobas = {
         // Mueve la pieza de from a to
         this.updateHashkey(this.zobristKeys.positions[move.piece][move.from]) //Quita pieza del hashkey de su casilla original
         
+        if (move.piece === P || move.piece === p) {
+            this.updatePawnHashkey(this.zobristKeys.positions[move.piece][move.from]) //Quita pieza del hashkey de su casilla original
+        }
+        
         if (move.capturedPiece) {
             this.updateHashkey(this.zobristKeys.positions[move.capturedPiece][move.to]) // Remueve pieza capturada del hashkey
+
+            if (move.capturedPiece === P || move.capturedPiece === p) {
+                this.updatePawnHashkey(this.zobristKeys.positions[move.capturedPiece][move.to]) // Remueve pieza capturada del hashkey
+            }
         }
         
         this.updateHashkey(this.zobristKeys.positions[move.piece][move.to]) //Agrega pieza al hashkey en casilla de destino
+
+        if (move.piece === P || move.piece === p) {
+            this.updatePawnHashkey(this.zobristKeys.positions[move.piece][move.to]) //Agrega pieza al hashkey en casilla de destino
+        }
 
         if (move.promotingPiece) {
             this.board[move.to] = move.promotingPiece
@@ -751,13 +772,25 @@ module.exports = orobas = {
     unmakeMove(move) {
         this.updateHashkey(this.zobristKeys.positions[move.piece][move.to]) //Quita pieza al hashkey en casilla de destino
         
+        if (move.piece === P || move.piece === p) {
+            this.updatePawnHashkey(this.zobristKeys.positions[move.piece][move.to]) //Quita pieza al hashkey en casilla de destino
+        }
+        
         if (move.capturedPiece) {
             this.updateHashkey(this.zobristKeys.positions[move.capturedPiece][move.to]) // Agrega pieza capturada al hashkey
+            
+            if (move.capturedPiece === P || move.capturedPiece === p) {
+                this.updatePawnHashkey(this.zobristKeys.positions[move.capturedPiece][move.to]) // Agrega pieza capturada al hashkey
+            }
         }
         
         this.updateHashkey(this.zobristKeys.positions[move.piece][move.from]) //Agrega pieza del hashkey de su casilla original
+        
+        if (move.piece === P || move.piece === p) {
+            this.updatePawnHashkey(this.zobristKeys.positions[move.piece][move.from]) //Agrega pieza del hashkey de su casilla original
+        }
 
-        this.board[move.to] = move.capturedPiece
+        this.board[move.to] = move.capturedPiece 
         this.board[move.from] = move.piece
 
 
@@ -884,7 +917,7 @@ let epnodes = 0
 
 orobas.init()
 orobas.draw()
-console.log(orobas.hashkey)
+console.log(orobas.hashkey, orobas.pawnhashkey)
 
 // console.log('PERFT 1', orobas.perft(1), 20, 48)
 // console.log('PERFT 2', orobas.perft(2), 400, 2039)
@@ -895,4 +928,4 @@ console.log('PERFT 3', orobas.perft(3), 8902, 97862)
 // console.log(moves.map(e=>{return orobas.coords[e.from] + '-' + orobas.coords[e.to]}))
 
 orobas.draw()
-console.log(orobas.hashkey)
+console.log(orobas.hashkey, orobas.pawnhashkey)

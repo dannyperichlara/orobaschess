@@ -223,23 +223,31 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
         let psqt = turn*AI.PSQT[turn*piece][turn === 1? i : (112^i)]
         
         score += material + psqt
+
+
         
-        // Escudo de peones
-        // if (piece === K && i !== 116) {
-        //     safety += (!(i - 17 & 0x88)) && board.board[i-17] === P? 20 : 0
-        //     safety += (!(i - 16 & 0x88)) && board.board[i-16] === 0?-60 : 0
-        //     safety += (!(i - 16 & 0x88)) && board.board[i-16] === P? 20 : 0
-        //     safety += (!(i - 16 & 0x88)) && board.board[i-16] === B? 20 : 0
-        //     safety += (!(i - 15 & 0x88)) && board.board[i-15] === P? 20 : 0
-        // }
-        
-        // if (piece === k && i !== 4) {
-        //     safety += (!(i + 17 & 0x88)) && board.board[i+17] === p? -20 : 0
-        //     safety += (!(i + 16 & 0x88)) && board.board[i+16] === 0?  60 : 0
-        //     safety += (!(i + 16 & 0x88)) && board.board[i+16] === p? -20 : 0
-        //     safety += (!(i + 16 & 0x88)) && board.board[i+16] === b? -20 : 0
-        //     safety += (!(i + 15 & 0x88)) && board.board[i+15] === p? -20 : 0
-        // }
+        if (AI.phase <= MIDGAME) {
+            // Escudo de peones
+            if (piece === K) {
+                if (i !== 116) {
+                    safety += (!(i - 17 & 0x88)) && board.board[i-17] === P? 20 : 0
+                    safety += (!(i - 16 & 0x88)) && board.board[i-16] === 0?-60 : 0
+                    safety += (!(i - 16 & 0x88)) && board.board[i-16] === P? 20 : 0
+                    safety += (!(i - 16 & 0x88)) && board.board[i-16] === B? 20 : 0
+                    safety += (!(i - 15 & 0x88)) && board.board[i-15] === P? 20 : 0
+                }
+            }
+            
+            if (piece === k) {
+                if (i !== 4) {
+                    safety += (!(i + 17 & 0x88)) && board.board[i+17] === p? -20 : 0
+                    safety += (!(i + 16 & 0x88)) && board.board[i+16] === 0?  60 : 0
+                    safety += (!(i + 16 & 0x88)) && board.board[i+16] === p? -20 : 0
+                    safety += (!(i + 16 & 0x88)) && board.board[i+16] === b? -20 : 0
+                    safety += (!(i + 15 & 0x88)) && board.board[i+15] === p? -20 : 0
+                }
+            }
+        }
     }
     
     score += safety
@@ -388,8 +396,6 @@ AI.pawnAdvanceMask = function (fromBB, white) {
 // que esta función es esencial para mantener un buen rendimiento.
 AI.getStructure = function (Pw, Pb) {
     let hashkey = ((Pw.low ^ Pw.high ^ Pb.low ^ Pb.high) >>> 0)
-
-    // console.log(hashkey)
 
     let hashentry = AI.pawntable[hashkey % AI.pawntlength]
 
@@ -796,11 +802,11 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
         // Bad moves reductions
         if (!move.capture && AI.phase <= EARLY_ENDGAME) {
             // console.log('no')
-            if (board.turn === WHITE && board.board[move.to-17] === p || board.board[move.to-15] === p) {
+            if (board.turn === WHITE && (board.board[move.to-17] === p || board.board[move.to-15] === p)) {
                 R+=4
             }
             
-            if (board.turn === BLACK && board.board[move.to+17] === P || board.board[move.to+15] === P) {
+            if (board.turn === BLACK && (board.board[move.to+17] === P || board.board[move.to+15] === P)) {
                 R+=4
             }
         }
