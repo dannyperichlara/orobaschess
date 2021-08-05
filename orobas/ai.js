@@ -115,6 +115,8 @@ for (let depth = 1; depth < AI.totaldepth + 1; ++depth) {
 
 }
 
+AI.DEFENDED_VALUES = [0, 10, 20, 30, 40, 40, 40, 40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40]
+
 // MVV-LVA
 // Valor para determinar orden de capturas,
 // prefiriendo la víctima más valiosa con el atacante más débil
@@ -207,6 +209,10 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
     let mobility = 0
     let doubled = 0
 
+    let pawns = new Array(128)
+    let pawnindexW = []
+    let pawnindexB = []
+
     for (let i = 0; i < 128; i++) {
         if (i & 0x88) {
             i+=7
@@ -215,7 +221,11 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
 
         let piece = board.board[i]
 
+        
         if (piece === 0) continue
+
+        if (piece === P) pawnindexW.push(i)
+        if (piece === p) pawnindexB.push(i)
 
         let turn = Math.sign(piece)
 
@@ -224,8 +234,6 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
         
         score += material + psqt
 
-
-        
         if (AI.phase <= MIDGAME) {
             // Escudo de peones
             if (piece === K) {
@@ -249,9 +257,12 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
             }
         }
     }
-    
-    score += safety
 
+    let structure = AI.getStructure(board, pawnindexW, pawnindexB)
+
+    score += structure
+    score += safety
+    
     mobility = 0 //pvNode? AI.getMobility(board, moves) : 0
 
     score += mobility
@@ -276,126 +287,15 @@ AI.getMobility = (board, moves)=>{
 
 let max = 0
 
-AI.getDoubled = function (Pw, Pb) {
-    let pawnsWhite = Pw.dup()
-    let pawnsBlack = Pb.dup()
-    let doubledWhite = 0
-    let doubledBlack = 0
 
-    let scoreWhite = 0
-    let scoreBlack = 0
-
-    let pawnsWhiteDup = pawnsWhite.dup()
-
-    while (!pawnsWhiteDup.isEmpty()) {
-        let index = pawnsWhiteDup.extractLowestBitPosition()
-        let pawn = (new Chess.Bitboard(0, 0)).setBit(index)
-        let advancemask = AI.pawnAdvanceMask(pawn, true)
-        let adcnt = advancemask.popcnt()
-        let encounters = 0
-
-        if (adcnt > 0) {
-            encounters = advancemask.and(pawnsWhite).popcnt()
-
-            if (encounters > 0) {
-                doubledWhite++
-                scoreWhite += AI.DOUBLED_VALUES[doubledWhite]
-            }
-        }
-    }
-
-    let pawnsBlackDup = pawnsBlack.dup()
-
-    while (!pawnsBlackDup.isEmpty()) {
-        let index = pawnsBlackDup.extractLowestBitPosition()
-        let pawn = (new Chess.Bitboard(0, 0)).setBit(index)
-        let advancemask = AI.pawnAdvanceMask(pawn, true)
-        let adcnt = advancemask.popcnt()
-        let encounters = 0
-
-        if (adcnt > 0) {
-            encounters = advancemask.and(pawnsBlack).popcnt()
-
-            if (encounters > 0) {
-                doubledBlack++
-                scoreBlack += AI.DOUBLED_VALUES[doubledBlack]
-            }
-        }
-    }
-
-    return scoreWhite - scoreBlack
-}
-
-AI.getPassers = function (Pw, Pb) {
-    let pawnsWhite = Pw.dup()
-    let pawnsBlack = Pb.dup()
-
-    let passersWhite = 0
-    let passersBlack = 0
-    let whiteMask = pawnsWhite.or(Chess.Position.makePawnAttackMask(WHITE, pawnsWhite))
-    let blackMask = pawnsBlack.or(Chess.Position.makePawnAttackMask(BLACK, pawnsBlack))
-
-    let scoreWhite = 0
-    let scoreBlack = 0
-
-    let pawnsWhiteDup = pawnsWhite.dup()
-
-    while (!pawnsWhiteDup.isEmpty()) {
-        let index = pawnsWhiteDup.extractLowestBitPosition()
-        let pawn = (new Chess.Bitboard(0, 0)).setBit(index)
-        let advancemask = AI.pawnAdvanceMask(pawn, true)
-        let adcnt = advancemask.popcnt()
-        let encounters = 0
-
-        if (adcnt > 0) {
-            encounters = advancemask.and(blackMask).popcnt()
-
-            if (encounters === 0) {
-                passersWhite++
-                scoreWhite += AI.PASSER_VALUES[56 ^ index]
-            }
-        }
-    }
-
-    let pawnsBlackDup = pawnsBlack.dup()
-
-    while (!pawnsBlackDup.isEmpty()) {
-        let index = pawnsBlackDup.extractLowestBitPosition()
-        let pawn = (new Chess.Bitboard(0, 0)).setBit(index)
-        let advancemask = AI.pawnAdvanceMask(pawn, false)
-        let adcnt = advancemask.popcnt()
-        let encounters = 0
-
-        if (adcnt > 0) {
-            encounters = advancemask.and(whiteMask).popcnt()
-
-            if (encounters === 0) {
-                passersBlack++
-                scoreBlack += AI.PASSER_VALUES[index]
-            }
-        }
-    }
-
-    return scoreWhite - scoreBlack
-}
-
-AI.pawnAdvanceMask = function (fromBB, white) {
-    if (white) {
-        return Chess.Position.makeSlidingAttackMask(fromBB.dup(), 
-        AI.EMPTY, 1, 0)
-    } else {
-        return Chess.Position.makeSlidingAttackMask(fromBB.dup(), 
-        AI.EMPTY, -1, 0)
-    }
-}
 
 // IMPORTANTE: Esta función devuelve el valor de la estructura de peones.
 // Dado que la estructura tiende a ser relativamente fija, el valor se guarda
 // en una tabla hash y es devuelto en caso que se requiera evaluar la misma
 // estructura. La tasa de acierto de las entradas hash es mayor al 95%, por lo
 // que esta función es esencial para mantener un buen rendimiento.
-AI.getStructure = function (Pw, Pb) {
-    let hashkey = ((Pw.low ^ Pw.high ^ Pb.low ^ Pb.high) >>> 0)
+AI.getStructure = (board, pawnindexW, pawnindexB)=> {
+    let hashkey = board.pawnhashkey
 
     let hashentry = AI.pawntable[hashkey % AI.pawntlength]
 
@@ -406,15 +306,66 @@ AI.getStructure = function (Pw, Pb) {
         return hashentry
     }
 
-    let doubled = AI.getDoubled(Pw, Pb)
-    let defended = AI.getDefended(Pw, Pb)
-    let passers = AI.getPassers(Pw, Pb)
+    let doubled = 0//AI.getDoubled(Pw, Pb)
+    let defended = AI.getDefended(board, pawnindexW, pawnindexB)
+    let passers = 0//AI.getPassers(Pw, Pb)
 
     let score = doubled + defended + passers
 
     AI.pawntable[hashkey % AI.pawntlength] = score
 
     return score
+}
+
+AI.getDefended = (board, pawnindexW, pawnindexB)=>{
+    let defendedW = 0
+    let defendedB = 0
+
+    for (let i = 0, len=pawnindexW.length; i < len; i++) {
+        if (board.board[pawnindexW[i] + 15] === P) {
+            defendedW++
+            continue
+        }
+
+        if (board.board[pawnindexW[i] + 17] === P) {
+            defendedW++
+            continue
+        }
+
+        if (board.board[pawnindexW[i] + 1] === P) {
+            defendedW += 0.5
+            continue
+        }
+
+        if (board.board[pawnindexW[i] - 1] === P) {
+            defendedW += 0.5
+            continue
+        }
+    }
+
+    for (let i = 0, len=pawnindexB.length; i < len; i++) {
+        if (board.board[pawnindexB[i] - 15] === p) {
+            defendedB++
+            continue
+        }
+
+        if (board.board[pawnindexB[i] - 17] === p) {
+            defendedB++
+            continue
+        }
+
+        if (board.board[pawnindexB[i] + 1] === p) {
+            defendedB += 0.5
+            continue
+        }
+
+        if (board.board[pawnindexB[i] - 1] === p) {
+            defendedB += 0.5
+            continue
+        }
+    }
+
+    return AI.DEFENDED_VALUES[defendedW | 0] - AI.DEFENDED_VALUES[defendedB | 0]
 }
 
 // ORDENA LOS MOVIMIENTOS
