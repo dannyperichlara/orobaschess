@@ -53,6 +53,21 @@ const WHITEINDEX = [1,3,4,5,9,20]
 const BLACKINDEX = [-1,-3,-4,-5,-9,-20]
 const ALLINDEX = [-1,-3,-4,-5,-9,-20,1,3,4,5,9,20]
 
+const ABS = new Map()
+
+ABS[-20] = 20
+ABS[ -9] =  9
+ABS[ -5] =  5
+ABS[ -4] =  4
+ABS[ -3] =  3
+ABS[ -1] =  1
+ABS[  1] =  1
+ABS[  3] =  3
+ABS[  4] =  4
+ABS[  5] =  5
+ABS[  9] =  9
+ABS[ 20] = 20
+
 const OPENING = 0
 const MIDGAME = 1
 const EARLY_ENDGAME = 2
@@ -522,7 +537,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
 
     if (!incheck) {
         moves = moves.filter(e=>{
-            return e.capturedPiece// !== 0 && Math.abs(e.capturedPiece) >= Math.abs(e.piece)
+            return e.capturedPiece// !== 0 && ABS[e.capturedPiece] >= ABS[e.piece]
         })
     }
 
@@ -537,7 +552,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
         let move = moves[i]
         // delta pruning para cada movimiento
         if (!incheck) {
-            if (standpat + AI.PIECE_VALUES[OPENING][Math.abs(move.capturedPiece)] + VPAWN < alpha) {
+            if (standpat + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]] + VPAWN < alpha) {
                 continue
             }
         }
@@ -725,7 +740,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
         // Futility Pruning
         if (!incheck && legal >= 1) {
             if (move.capture) {
-                if (staticeval + AI.PIECE_VALUES[OPENING][Math.abs(move.capturedPiece)] < alpha) {
+                if (staticeval + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]] < alpha) {
                     continue
                 }
             } else {
