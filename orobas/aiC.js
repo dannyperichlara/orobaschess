@@ -791,8 +791,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
     let incheck = board.isKingInCheck()
 
     //IID (si no hay entrada en ttEntry, busca una para mejorar el orden de movimientos)
-    if (!ttEntry && depth > 1) {
-        AI.PVS(board, alpha, beta, depth - 1, ply, materialOnly) //depth - 2 tested ok + 31 ELO
+    if (!ttEntry && depth > 2) {
+        AI.PVS(board, alpha, beta, depth - 2, ply, materialOnly) //depth - 2 tested ok + 31 ELO
         ttEntry = AI.ttGet(hashkey)
     }
 
@@ -815,7 +815,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
     // // Null move pruning
     if (!incheck && depth > 1) {
         board.changeTurn()
-        let nullR = 4 - AI.phase
+        let nullR = 5 - AI.phase
         let nullScore = -AI.PVS(board, -beta, -beta+1, depth - nullR - 1, ply + 1, materialOnly)
         board.changeTurn()
         if (nullScore >= beta) {
