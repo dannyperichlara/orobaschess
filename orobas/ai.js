@@ -594,19 +594,19 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
 
     AI.qsnodes++
 
-    let mateScore = MATE - ply
+    // let mateScore = MATE - ply
 
-    if (mateScore < beta) {
-        beta = mateScore
-        if (alpha >= mateScore) return mateScore
-    }
+    // if (mateScore < beta) {
+    //     beta = mateScore
+    //     if (alpha >= mateScore) return mateScore
+    // }
     
-    mateScore = -MATE + ply
+    // mateScore = -MATE + ply
     
-    if (mateScore > alpha) {
-        alpha = mateScore
-        if (beta <= mateScore) return mateScore
-    }
+    // if (mateScore > alpha) {
+    //     alpha = mateScore
+    //     if (beta <= mateScore) return mateScore
+    // }
 
     let turn = board.turn
     let legal = 0
@@ -627,11 +627,9 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
 
     let score = -INFINITY
 
-    if (!incheck) {
-        moves = moves.filter(e=>{
-            return e.capturedPiece// !== 0 && ABS[e.capturedPiece] >= ABS[e.piece]
-        })
-    }
+    moves = moves.filter(e=>{
+        return e.capturedPiece// !== 0 && ABS[e.capturedPiece] >= ABS[e.piece]
+    })
 
     moves = AI.sortMoves(moves, turn, ply, board, ttEntry, true)
 
@@ -667,17 +665,17 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
         }
     }
 
-    if (legal === 0) {
+    // if (legal === 0) {
         
-        // Ahogado
-        if (!board.isKingInCheck()) {
-            return DRAW
-        }
+    //     // Ahogado
+    //     if (!board.isKingInCheck()) {
+    //         return DRAW
+    //     }
         
-        // Mate
-        return -MATE + ply
+    //     // Mate
+    //     return -MATE + ply
 
-    }
+    // }
     
     if (alpha > oAlpha) {
         // Mejor movimiento
@@ -843,7 +841,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
         }
 
         // Extensiones
-        let E = incheck? 1 : 0
+        let E = incheck && depth <= 2? 1 : 0
 
         //Reducciones
         let R = 0
