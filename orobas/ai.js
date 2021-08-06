@@ -55,18 +55,18 @@ const ALLINDEX = [-1,-3,-4,-5,-9,-20,1,3,4,5,9,20]
 
 const ABS = new Map()
 
-ABS[-20] = 20
-ABS[ -9] =  9
-ABS[ -5] =  5
-ABS[ -4] =  4
-ABS[ -3] =  3
-ABS[ -1] =  1
-ABS[  1] =  1
-ABS[  3] =  3
-ABS[  4] =  4
-ABS[  5] =  5
-ABS[  9] =  9
-ABS[ 20] = 20
+ABS[k] = K
+ABS[q] = Q
+ABS[r] = R
+ABS[b] = B
+ABS[n] = N
+ABS[p] = P
+ABS[P] = P
+ABS[N] = N
+ABS[B] = B
+ABS[R] = R
+ABS[Q] = Q
+ABS[K] = K
 
 const OPENING = 0
 const MIDGAME = 1
@@ -245,7 +245,7 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
         let turn = Math.sign(piece)
 
         let material = AI.PIECE_VALUES[OPENING][piece] //Material
-        let psqt = turn*AI.PSQT[turn*piece][turn === 1? i : (112^i)]
+        let psqt = turn*AI.PSQT[ABS[piece]][turn === 1? i : (112^i)]
         
         score += material + psqt
 
@@ -323,13 +323,104 @@ AI.getStructure = (board, pawnindexW, pawnindexB)=> {
 
     let doubled = 0//AI.getDoubled(Pw, Pb)
     let defended = AI.getDefended(board, pawnindexW, pawnindexB)
-    let passers = 0//AI.getPassers(Pw, Pb)
+    let passers = 0//AI.getPassers(board, pawnindexW, pawnindexB)
 
     let score = doubled + defended + passers
 
     AI.pawntable[hashkey % AI.pawntlength] = score
 
     return score
+}
+
+AI.getPassers = (board, pawnindexW, pawnindexB)=>{
+    let passersW = 0
+    let passersB = 0
+
+    for (let i = 0, len=pawnindexW.length; i < len; i++) {
+        let leftFile = pawnindexW[i] - 17
+        let centerFile = pawnindexW[i] - 16
+        let rightFile = pawnindexW[i] - 15
+
+        let encountersL = 0
+        let encountersC = 0
+        let encountersR = 0
+
+        while (true) {
+            if (board.board[leftFile] === p) encountersL++
+
+            leftFile -= 16
+
+            if ((leftFile & 0x88)) break
+
+            if (encountersL > 0) continue
+        }
+
+        while (true) {
+            if (board.board[centerFile] === p) encountersC++
+
+            centerFile -= 16
+
+            if ((centerFile & 0x88)) break
+
+            if (encountersC > 0) continue
+        }
+
+        while (true) {
+            if (board.board[rightFile] === p) encountersR++
+
+            rightFile -= 16
+
+            if ((rightFile & 0x88)) break
+
+            if (encountersR > 0) continue
+        }
+
+        if (encountersL === 0 && encountersC === 0 && encountersR === 0) passersW++
+    }
+
+    for (let i = 0, len=pawnindexB.length; i < len; i++) {
+        let leftFile = pawnindexB[i] + 17
+        let centerFile = pawnindexB[i] + 16
+        let rightFile = pawnindexB[i] + 15
+
+        let encountersL = 0
+        let encountersC = 0
+        let encountersR = 0
+
+        while (true) {
+            if (board.board[leftFile] === P) encountersL++
+
+            leftFile += 16
+
+            if ((leftFile & 0x88)) break
+
+            if (encountersL > 0) continue
+        }
+
+        while (true) {
+            if (board.board[centerFile] === P) encountersC++
+
+            centerFile += 16
+
+            if ((centerFile & 0x88)) break
+
+            if (encountersC > 0) continue
+        }
+
+        while (true) {
+            if (board.board[rightFile] === P) encountersR++
+
+            rightFile += 16
+
+            if ((rightFile & 0x88)) break
+
+            if (encountersR > 0) continue
+        }
+
+        if (encountersL === 0 && encountersC === 0 && encountersR === 0) passersB++
+    }
+
+    return 120 * (passersW - passersB)
 }
 
 AI.getDefended = (board, pawnindexW, pawnindexB)=>{
@@ -471,9 +562,10 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry, isQS) {
             // CRITERIO 7
             // Las jugadas restantes se orden de acuerdo a donde se estima sería
             // su mejor posición absoluta en el tablero
-            move.psqtvalue = AI.PSQT[turn*move.piece][turn === 1 ? move.to : 112^move.to] -
-                             AI.PSQT[turn*move.piece][turn === 1 ? move.from : 112^move.from]
+            move.psqtvalue = AI.PSQT[ABS[move.piece]][turn === 1 ? move.to : 112^move.to] -
+                             AI.PSQT[ABS[move.piece]][turn === 1 ? move.from : 112^move.from]
             move.score += move.psqtvalue
+
             continue
         }
     }
