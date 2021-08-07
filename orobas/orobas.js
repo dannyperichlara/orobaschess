@@ -2,21 +2,21 @@ var seedrandom = require('seedrandom')
 
 seedrandom('orobas19ffec57', {global: true})
 
-const p =  -1
-const n =  -3
-const b =  -4
-const r =  -5
-const q =  -9
-const k = -20
 const P =   1
-const N =   3
-const B =   4
-const R =   5
-const Q =   9
-const K =  20
+const N =   2
+const B =   3
+const R =   4
+const Q =   5
+const K =   6
+const p =   7
+const n =   8
+const b =   9
+const r =  10
+const q =  11
+const k =  12
 
 const WHITE =  1
-const BLACK = -1
+const BLACK =  2
 
 
 module.exports = orobas = {
@@ -125,8 +125,8 @@ module.exports = orobas = {
         }
 
         // Inicializa keys de Turno
-        this.zobristKeys.turn[-1] = (Math.random()*0xFFFFFFFF) >>> 0
-        this.zobristKeys.turn[ 1] = (Math.random()*0xFFFFFFFF) >>> 0
+        this.zobristKeys.turn[WHITE] = (Math.random()*0xFFFFFFFF) >>> 0
+        this.zobristKeys.turn[BLACK] = (Math.random()*0xFFFFFFFF) >>> 0
 
         // Inicializa keys de Derechos de Enroque
         this.zobristKeys.castlingRights[8] = (Math.random()*0xFFFFFFFF) >>> 0
@@ -177,32 +177,32 @@ module.exports = orobas = {
     changeTurn(turn) {
         if (turn) {
             this.turn = turn
-            this.updateHashkey(this.zobristKeys.turn[turn]) //this.turn, ya cambió el turn
+            this.updateHashkey(this.zobristKeys.turn[turn])
         } else {
-            this.turn = this.turn === 1? -1 : 1 // Esto es 35% más rápido que ~turn o -turn
+            this.turn = this.turn === WHITE? BLACK : WHITE // Esto es 35% más rápido que ~turn o -turn o cualquier otra cosa
             // this.updateHashkey(this.zobristKeys.turn[this.turn]) //this.turn, ya cambió el turn
-            this.updateHashkey(this.zobristKeys.turn[WHITE]) //this.turn, ya cambió el turn
+            this.updateHashkey(this.zobristKeys.turn[WHITE])
         }
     },
 
     createPieces() {
-        this.pieces[0] = {symbol: '.', offsets: []}
+        this.pieces[0] = {symbol: '.', color: 0, offsets: []}
 
         //Blancas
-        this.pieces[P] = {symbol: 'P', offsets: [-16, -17, -15]}
-        this.pieces[N] = {symbol: 'N', offsets: [-18, -33, -31, -14, 18, 33, 31, 14]}
-        this.pieces[B] = {symbol: 'B', offsets: [-17, -15, 17, 15]}
-        this.pieces[R] = {symbol: 'R', offsets: [-16, 1, 16, -1]}
-        this.pieces[Q] = {symbol: 'Q', offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
-        this.pieces[K] = {symbol: 'K', offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
+        this.pieces[P] = {symbol: 'P', color: WHITE, offsets: [-16, -17, -15]}
+        this.pieces[N] = {symbol: 'N', color: WHITE, offsets: [-18, -33, -31, -14, 18, 33, 31, 14]}
+        this.pieces[B] = {symbol: 'B', color: WHITE, offsets: [-17, -15, 17, 15]}
+        this.pieces[R] = {symbol: 'R', color: WHITE, offsets: [-16, 1, 16, -1]}
+        this.pieces[Q] = {symbol: 'Q', color: WHITE, offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
+        this.pieces[K] = {symbol: 'K', color: WHITE, offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
         
         //Negras
-        this.pieces[p] = {symbol: 'p', offsets: [16, 17, 15]}
-        this.pieces[n] = {symbol: 'n', offsets: [-18, -33, -31, -14, 18, 33, 31, 14]}
-        this.pieces[b] = {symbol: 'b', offsets: [-17, -15, 17, 15]}
-        this.pieces[r] = {symbol: 'r', offsets: [-16, 1, 16, -1]}
-        this.pieces[q] = {symbol: 'q', offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
-        this.pieces[k] = {symbol: 'k', offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
+        this.pieces[p] = {symbol: 'p', color: BLACK, offsets: [16, 17, 15]}
+        this.pieces[n] = {symbol: 'n', color: BLACK, offsets: [-18, -33, -31, -14, 18, 33, 31, 14]}
+        this.pieces[b] = {symbol: 'b', color: BLACK, offsets: [-17, -15, 17, 15]}
+        this.pieces[r] = {symbol: 'r', color: BLACK, offsets: [-16, 1, 16, -1]}
+        this.pieces[q] = {symbol: 'q', color: BLACK, offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
+        this.pieces[k] = {symbol: 'k', color: BLACK, offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
     },
 
     createPieceList() {
@@ -236,7 +236,6 @@ module.exports = orobas = {
             }
         }
 
-        console.log(this.pieceList)
     },
 
     isSlidingPiece(piece) {
@@ -257,28 +256,55 @@ module.exports = orobas = {
         }
     },
 
-    isSquareAttacked(square, side, count) {
-        side = -side
+    isSquareAttacked(square, attackerSide, count) {
+        if (attackerSide === BLACK) {
+            pFrom = P
+            nFrom = N
+            bFrom = B
+            rFrom = R
+            qFrom = Q
+            kFrom = K
+            pTo   = p
+            nTo   = n
+            bTo   = b
+            rTo   = r
+            qTo   = q
+            kTo   = k
+        } else {
+            pFrom = p
+            nFrom = n
+            bFrom = b
+            rFrom = r
+            qFrom = q
+            kFrom = k
+            pTo   = P
+            nTo   = N
+            bTo   = B
+            rTo   = R
+            qTo   = Q
+            kTo   = K
+        }
 
         let attacks = 0
+        
         //Peones
         for (let i = 1; i <= 2; i++) {
-            let to = square + this.pieces[side*P].offsets[i]
+            let to = square + this.pieces[pFrom].offsets[i]
 
             if (to & 0x88) continue
 
-            if (this.board[to] === side*p) {
+            if (this.board[to] === pTo) {
                 if (count) {attacks++} else {return true}
             }
         }
 
         // Caballos
         for (let i = 0; i < 8; i++) {
-            let to = square + this.pieces[N].offsets[i]
+            let to = square + this.pieces[nFrom].offsets[i]
 
             if (to & 0x88) continue
 
-            if (this.board[to] === side*n) {
+            if (this.board[to] === nTo) {
                 if (count) {attacks++} else {return true}
             }
         }
@@ -290,13 +316,13 @@ module.exports = orobas = {
             let outofbounds = false
 
             while (!blocked && !outofbounds) {
-                to = to + this.pieces[side*B].offsets[i]
+                to = to + this.pieces[bFrom].offsets[i]
 
                 if (to & 0x88) {
                     outofbounds = true
                 } else {
                     if (this.board[to]) {
-                        if (this.board[to] === side*b) {
+                        if (this.board[to] === bTo) {
                             if (count) {attacks++} else {return true}
                         } else {
                             blocked = true
@@ -313,13 +339,13 @@ module.exports = orobas = {
             let outofbounds = false
 
             while (!blocked && !outofbounds) {
-                to = to + this.pieces[side*R].offsets[i]
+                to = to + this.pieces[rFrom].offsets[i]
 
                 if (to & 0x88) {
                     outofbounds = true
                 } else {
                     if (this.board[to]) {
-                        if (this.board[to] === side*r) {
+                        if (this.board[to] === rTo) {
                             if (count) {attacks++} else {return true}
                         } else {
                             blocked = true
@@ -336,13 +362,13 @@ module.exports = orobas = {
             let outofbounds = false
 
             while (!blocked && !outofbounds) {
-                to = to + this.pieces[side*Q].offsets[i]
+                to = to + this.pieces[qFrom].offsets[i]
 
                 if (to & 0x88) {
                     outofbounds = true
                 } else {
                     if (this.board[to]) {
-                        if (this.board[to] === side*q) {
+                        if (this.board[to] === qTo) {
                             if (count) {attacks++} else {return true}
                         } else {
                             blocked = true
@@ -354,11 +380,11 @@ module.exports = orobas = {
 
         //Rey
         for (let i = 0; i <= 7; i++) {
-            let to = square + this.pieces[K].offsets[i]
+            let to = square + this.pieces[kFrom].offsets[i]
 
             if (to & 0x88) continue
 
-            if (this.board[to] === side*k) {
+            if (this.board[to] === kTo) {
                 if (count) {attacks++} else {return true}
             }
         }
@@ -412,7 +438,7 @@ module.exports = orobas = {
 
             let from = i
 
-            if (this.sign(piece) !== this.turn) continue
+            if (this.color(piece) !== this.turn) continue
 
             if (piece === K && i === 116) {
                 moves.push(this.createMove({piece: K, from:116, to:118, isCapture:false, capturedPiece:0, castleSide:8, enPassantSquares:null}))
@@ -431,14 +457,14 @@ module.exports = orobas = {
 
                     if (to & 0x88) continue
 
-                    //El tercer y cuarto offset corresponden a capturas
+                    //Offsets 1 & 2 corresponden a capturas
                     if (j >= 1) {
                         let isCapture = false
     
                         let capturedPiece = this.board[to]
     
                         if (capturedPiece) {
-                            if (this.sign(capturedPiece) === this.turn) {
+                            if (this.color(capturedPiece) === this.turn) {
                                 continue
                             } else {
                                 isCapture = true
@@ -517,7 +543,7 @@ module.exports = orobas = {
                     let capturedPiece = this.board[to]
 
                     if (capturedPiece) {
-                        if (this.sign(capturedPiece) === this.turn) {
+                        if (this.color(capturedPiece) === this.turn) {
                             continue
                         }
                         
@@ -545,7 +571,7 @@ module.exports = orobas = {
                         let capturedPiece = this.board[to]
 
                         if (capturedPiece) {
-                            if (this.sign(capturedPiece) === this.turn) {
+                            if (this.color(capturedPiece) === this.turn) {
                                 break
                             } else {
                                 isCapture = true
@@ -559,6 +585,8 @@ module.exports = orobas = {
                 }
             }
         }
+
+        // console.log(moves)
 
         return moves
     },
@@ -574,10 +602,10 @@ module.exports = orobas = {
             let piece = this.board[i]
             if (!piece) continue
             material += 100*piece
-            psqt += this.board[i+8] * this.sign(piece)
+            psqt += this.board[i+8] * this.color(piece)
         }
 
-        let score = orobas.sign(orobas.turn) * (material + psqt)
+        let score = orobas.color(orobas.turn) * (material + psqt)
 
         return  score
     },
@@ -842,8 +870,8 @@ module.exports = orobas = {
 
     },
 
-    sign(n) {
-        return n >= 0? 1 : -1
+    color(n) {
+        return n > 6? BLACK : WHITE
     },
 
     perftData: {
@@ -858,7 +886,7 @@ module.exports = orobas = {
     isKingInCheck() {
         let kingIndex = this.turn === WHITE? this.board.indexOf(K) : this.board.indexOf(k)
 
-        return this.isSquareAttacked(kingIndex, -this.turn, false)
+        return this.isSquareAttacked(kingIndex, this.turn === WHITE? BLACK : WHITE, false)
     },
 
     perft(depth) {

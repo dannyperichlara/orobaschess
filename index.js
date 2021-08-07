@@ -46,7 +46,7 @@ app.get('/', function (req, res) {
       let fen = req.query.fen.split(' ')
 
       let board = fen[0]
-      let turn = fen[1] === 'w'? 1 : -1
+      let turn = fen[1] === 'w'? 1 : 2
       let castling = fen[2]
       let enpassantsquare = fen[3]
       let movenumber = fen[5]
@@ -103,18 +103,18 @@ let fen2board = function (fen) {
     board = board.map(e=>{
       let piece = 0
 
-      if (e === 'k') piece = -20
-      if (e === 'q') piece =  -9
-      if (e === 'r') piece =  -5
-      if (e === 'b') piece =  -4
-      if (e === 'n') piece =  -3
-      if (e === 'p') piece =  -1
-      if (e === 'K') piece =  20
-      if (e === 'Q') piece =   9
-      if (e === 'R') piece =   5
-      if (e === 'B') piece =   4
-      if (e === 'N') piece =   3
-      if (e === 'P') piece =   1
+      if (e === 'k') piece = 12
+      if (e === 'q') piece = 11
+      if (e === 'r') piece = 10
+      if (e === 'b') piece =  9
+      if (e === 'n') piece =  8
+      if (e === 'p') piece =  7
+      if (e === 'K') piece =  6
+      if (e === 'Q') piece =  5
+      if (e === 'R') piece =  4
+      if (e === 'B') piece =  3
+      if (e === 'N') piece =  2
+      if (e === 'P') piece =  1
 
       return piece 
     })

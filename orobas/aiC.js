@@ -28,30 +28,30 @@ let AI = {
 
 // ÍNDICES
 const PAWN = 1
-const KNIGHT = 3
-const BISHOP = 4
-const ROOK = 5
-const QUEEN = 9
-const KING = 20
+const KNIGHT = 2
+const BISHOP = 3
+const ROOK = 4
+const QUEEN = 5
+const KING = 6
 const K = KING
 const Q = QUEEN
 const R = ROOK
 const B = BISHOP
 const N = KNIGHT
 const P = PAWN
-const k = -KING
-const q = -QUEEN
-const r = -ROOK
-const b = -BISHOP
-const n = -KNIGHT
-const p = -PAWN
+const k = KING + 6
+const q = QUEEN + 6
+const r = ROOK + 6
+const b = BISHOP + 6
+const n = KNIGHT + 6
+const p = PAWN + 6
 
 const WHITE = 1
-const BLACK = -1
+const BLACK = 2
 
-const WHITEINDEX = [1,3,4,5,9,20]
-const BLACKINDEX = [-1,-3,-4,-5,-9,-20]
-const ALLINDEX = [-1,-3,-4,-5,-9,-20,1,3,4,5,9,20]
+const WHITEINDEX = [1,2,3,4,5,6]
+const BLACKINDEX = [7,8,9,10,11,12]
+const ALLINDEX = [1,2,3,4,5,6,7,8,9,10,11,12]
 
 const ABS = new Map()
 
@@ -218,7 +218,7 @@ AI.randomizePSQT = function () {
 // FUNCIÓN DE EVALUACIÓN DE LA POSICIÓN
 AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
     let turn = board.turn
-    let notturn = -turn
+    let sign = turn === WHITE? 1 : -1
     let score = 0
     let safety = 0
     let mobility = 0
@@ -242,10 +242,11 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
         if (piece === P) pawnindexW.push(i)
         if (piece === p) pawnindexB.push(i)
 
-        let turn = Math.sign(piece)
+        let turn = board.color(piece)
+        let sign = turn === WHITE? 1 : -1
 
         let material = AI.PIECE_VALUES[OPENING][piece] //Material
-        let psqt = turn*AI.PSQT[ABS[piece]][turn === 1? i : (112^i)]
+        let psqt = sign*AI.PSQT[ABS[piece]][turn === WHITE? i : (112^i)]
         
         score += material + psqt
 
@@ -282,7 +283,7 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
 
     score += mobility
 
-    return turn * score / 5 | 0
+    return sign * score / 5 | 0
 }
 
 AI.getMobility = (board, moves)=>{
