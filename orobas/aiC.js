@@ -273,21 +273,21 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
             // Escudo de peones
             if (piece === K) {
                 if (i !== 116) {
-                    safety += (!(i - 17 & 0x88)) && board.board[i-17] === P? 20 : 0
-                    safety += (!(i - 16 & 0x88)) && board.board[i-16] === 0?-60 : 0
+                    safety += (!(i - 17 & 0x88)) && board.board[i-17] === P? 10 : 0
+                    safety += (!(i - 16 & 0x88)) && board.board[i-16] === 0?-40 : 0
                     safety += (!(i - 16 & 0x88)) && board.board[i-16] === P? 20 : 0
-                    safety += (!(i - 16 & 0x88)) && board.board[i-16] === B? 20 : 0
-                    safety += (!(i - 15 & 0x88)) && board.board[i-15] === P? 20 : 0
+                    // safety += (!(i - 16 & 0x88)) && board.board[i-16] === B? 20 : 0
+                    safety += (!(i - 15 & 0x88)) && board.board[i-15] === P? 10 : 0
                 }
             }
             
             if (piece === k) {
                 if (i !== 4) {
-                    safety += (!(i + 17 & 0x88)) && board.board[i+17] === p? -20 : 0
-                    safety += (!(i + 16 & 0x88)) && board.board[i+16] === 0?  60 : 0
+                    safety += (!(i + 17 & 0x88)) && board.board[i+17] === p? -10 : 0
+                    safety += (!(i + 16 & 0x88)) && board.board[i+16] === 0?  40 : 0
                     safety += (!(i + 16 & 0x88)) && board.board[i+16] === p? -20 : 0
-                    safety += (!(i + 16 & 0x88)) && board.board[i+16] === b? -20 : 0
-                    safety += (!(i + 15 & 0x88)) && board.board[i+15] === p? -20 : 0
+                    // safety += (!(i + 16 & 0x88)) && board.board[i+16] === b? -20 : 0
+                    safety += (!(i + 15 & 0x88)) && board.board[i+15] === p? -10 : 0
                 }
             }
         }
@@ -298,7 +298,7 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
     score += structure
     score += safety
     
-    mobility = 0 //pvNode? AI.getMobility(board, moves) : 0
+    mobility = 0//AI.getMobility(board, moves)
 
     score += mobility
 
@@ -317,13 +317,19 @@ AI.getMobility = (board, moves)=>{
     let mobility = 0
     let opponentMoves = []
 
+    let myMoves = moves.filter(move=>{
+        return move.piece !== K && move.piece !== k && move.piece !== P && move.piece !== p
+    })
+
     board.changeTurn()
     
-    opponentMoves = board.getMoves()
+    opponentMoves = board.getMoves().filter(move=>{
+        return move.piece !== K && move.piece !== k && move.piece !== P && move.piece !== p
+    })
 
     board.changeTurn()
 
-    mobility = moves.length - opponentMoves.length
+    mobility = 40*(myMoves.length/opponentMoves.length) | 0
 
     return mobility
 }
@@ -349,7 +355,7 @@ AI.getStructure = (board, pawnindexW, pawnindexB)=> {
         return hashentry
     }
 
-    let doubled = 0//AI.getDoubled(Pw, Pb)
+    let doubled = AI.getDoubled(board, pawnindexW, pawnindexB)
     let defended = AI.getDefended(board, pawnindexW, pawnindexB)
     let passers = AI.getPassers(board, pawnindexW, pawnindexB)
 
@@ -361,7 +367,7 @@ AI.getStructure = (board, pawnindexW, pawnindexB)=> {
 }
 
 AI.getPassers = (board, pawnindexW, pawnindexB)=>{
-    //De haberlos, estos arreglos almacenan la fila en que se encuantran los peones pasados
+    //De haberlos, estos arreglos almacenan la fila en que se encuentran los peones pasados
     let passersW = [0,0,0,0,0,0,0,0]
     let passersB = [0,0,0,0,0,0,0,0]
 
@@ -453,10 +459,44 @@ AI.getPassers = (board, pawnindexW, pawnindexB)=>{
         }
     }
 
-    let score = 20*passersW[0] + 15*passersW[1] + 10*passersW[2] + 10*passersW[3]
-              + 10*passersW[4] + 10*passersW[5] + 15*passersW[6] + 20*passersW[7]
-              + 20*passersB[0] + 15*passersB[1] + 10*passersB[2] + 10*passersB[3]
-              + 10*passersB[4] + 10*passersB[5] + 15*passersB[6] + 20*passersB[7]
+    let score = 20*passersW[0] + 14*passersW[1] + 10*passersW[2] + 10*passersW[3]
+              + 10*passersW[4] + 10*passersW[5] + 14*passersW[6] + 20*passersW[7]
+              - 20*passersB[0] - 14*passersB[1] - 10*passersB[2] - 10*passersB[3]
+              - 10*passersB[4] - 10*passersB[5] - 14*passersB[6] - 20*passersB[7]
+
+    return score
+}
+
+AI.getDoubled = (board, pawnindexW, pawnindexB)=>{
+    //De haberlos, estos arreglos almacenan la fila en que se encuentran los peones pasados
+    let doubledW = 0
+    let doubledB = 0
+
+    for (let i = 0, len=pawnindexW.length; i < len; i++) {
+        let centerFile = pawnindexW[i] - 16
+
+        while (true) {
+            if (board.board[centerFile] === P) doubledW++
+
+            centerFile -= 16
+
+            if ((centerFile - 16) & 0x88) break // -16 es para llegar sólo hasta la penúltima fila
+        }
+    }
+
+    for (let i = 0, len=pawnindexB.length; i < len; i++) {
+        let centerFile = pawnindexB[i] + 16
+
+        while (true) {
+            if (board.board[centerFile] === p) doubledB++
+
+            centerFile += 16
+
+            if ((centerFile + 16) & 0x88) break // -16 es para llegar sólo hasta la penúltima fila
+        }
+    }
+
+    let score = -50*(doubledW - doubledB)
 
     return score
 }

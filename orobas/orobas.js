@@ -1,6 +1,6 @@
 var seedrandom = require('seedrandom')
 
-seedrandom('orobas19ffec57', {global: true})
+seedrandom('orobas19fZec50929ksdf29ksd3D', {global: true})
 
 const P =   1
 const N =   2
