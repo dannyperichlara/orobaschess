@@ -953,7 +953,7 @@ console.log(orobas.hashkey, orobas.pawnhashkey)
 // console.log('PERFT 3', orobas.perft(3), 8902, 97862) // OK
 // console.log('PERFT 4', orobas.perft(4), 197281, 422333) // OK
 // console.log('PERFT 5', orobas.perft(5), 4865609, '-') // OK
-console.log('PERFT 6', orobas.perft(6), 119060324, '-') // NO
+// console.log('PERFT 6', orobas.perft(6), 119060324, '-') // NO
 console.log(orobas.perftData)
 // orobas.drawAttackZone(orobas.getAttackZone(WHITE))
 // console.log(moves.map(e=>{return orobas.coords[e.from] + '-' + orobas.coords[e.to]}))

@@ -1416,7 +1416,7 @@ AI.search = function (board, options) {
 
         AI.color = color
 
-        let isWhite = color == 0
+        let isWhite = color === 1
 
         if (isWhite) {
             AI.TESTER = true
@@ -1481,7 +1481,7 @@ AI.search = function (board, options) {
                 alpha -= VPAWN
                 beta += VPAWN
 
-                score = color*5*AI.f//(isWhite ? 1 : -1) * AI.f
+                score = 5 * (isWhite ? 1 : -1) * AI.f
 
                 AI.PV = AI.getPV(board, depth)
 
