@@ -10,6 +10,8 @@ let AI = {
     nodes: 0,
     pnodes: 0,
     phnodes: 0,
+    evalhashnodes: 0,
+    evalnodes: 0,
     status: null,
     fhf: 0,
     fh: 0,
@@ -195,6 +197,9 @@ AI.createTables = function (tt, hh, pp) {
     if (tt) {
         delete AI.hashtable
         AI.hashtable = new Map()
+
+        delete AI.evalTable
+        AI.evalTable = (new Array(this.htlength)).fill(null)
     }
     if (pp) {
         delete AI.pawntable
@@ -217,31 +222,40 @@ AI.randomizePSQT = function () {
 
 // FUNCIÓN DE EVALUACIÓN DE LA POSICIÓN
 AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
+    let evalEntry = AI.evalTable[board.hashkey % this.htlength]
+    this.evalnodes++
+
+    if (false && evalEntry !== null) {
+        this.evalhashnodes++
+        return evalEntry
+    }
+    
+    
     let turn = board.turn
     let sign = turn === WHITE? 1 : -1
     let score = 0
     let safety = 0
     let mobility = 0
     let doubled = 0
-
+    
     let pawns = new Array(128)
     let pawnindexW = []
     let pawnindexB = []
-
+    
     for (let i = 0; i < 128; i++) {
         if (i & 0x88) {
             i+=7
             continue
         }
-
+        
         let piece = board.board[i]
-
+        
         
         if (piece === 0) continue
-
+        
         if (piece === P) pawnindexW.push(i)
         if (piece === p) pawnindexB.push(i)
-
+        
         let turn = board.color(piece)
         let sign = turn === WHITE? 1 : -1
 
@@ -283,7 +297,11 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
 
     score += mobility
 
-    return sign * score / 5 | 0
+    let nullWindowScore = sign * score / 5 | 0
+
+    AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+
+    return nullWindowScore
 }
 
 AI.getMobility = (board, moves)=>{
@@ -1397,7 +1415,7 @@ AI.search = function (board, options) {
 
         AI.color = color
 
-        let isWhite = color == 0
+        let isWhite = color === 1
 
         if (isWhite) {
             AI.TESTER = true
@@ -1409,6 +1427,8 @@ AI.search = function (board, options) {
         AI.qsnodes = 0
         AI.enodes = 0
         AI.ttnodes = 0
+        AI.evalhashnodes = 0
+        AI.evalnodes = 0
         AI.iteration = 0
         AI.timer = (new Date()).getTime()
         AI.stop = false
@@ -1460,7 +1480,7 @@ AI.search = function (board, options) {
                 alpha -= VPAWN
                 beta += VPAWN
 
-                score = color*5*AI.f//(isWhite ? 1 : -1) * AI.f
+                score = 5 * (isWhite ? 1 : -1) * AI.f
 
                 AI.PV = AI.getPV(board, depth)
 
@@ -1475,7 +1495,8 @@ AI.search = function (board, options) {
                 if (!AI.stop) AI.lastscore = score
 
                 if (AI.PV && !AI.stop) console.log(depth, AI.PV.map(e => { return e? [e.from,e.to] : '-'}).join(' '), '|Fhf ' + fhfperc + '%',
-                        'Pawn hit ' + (AI.phnodes / AI.pnodes * 100 | 0), score, AI.nodes.toString(), AI.qsnodes.toString(), AI.ttnodes.toString())
+                        'Pawn hit ' + (AI.phnodes / AI.pnodes * 100 | 0), score | 0, 'cp', AI.nodes.toString(),
+                        AI.qsnodes.toString(), AI.ttnodes.toString(), ((100*this.evalhashnodes/(this.evalnodes)) | 0))
             
                 depth++
             }

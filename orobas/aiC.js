@@ -12,6 +12,7 @@ let AI = {
     phnodes: 0,
     evalhashnodes: 0,
     evalnodes: 0,
+    evalTime: 0,
     status: null,
     fhf: 0,
     fh: 0,
@@ -222,15 +223,18 @@ AI.randomizePSQT = function () {
 
 // FUNCIÓN DE EVALUACIÓN DE LA POSICIÓN
 AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
+    let t0 = (new Date).getTime()
+    
     let evalEntry = AI.evalTable[board.hashkey % this.htlength]
-
+    this.evalnodes++
+    
     if (evalEntry !== null) {
         this.evalhashnodes++
-        this.evalnodes++
+        let t1 = (new Date).getTime()
+        AI.evalTime += t1 - t0
         return evalEntry
     }
     
-    this.evalnodes++
     
     let turn = board.turn
     let sign = turn === WHITE? 1 : -1
@@ -302,6 +306,10 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
 
     AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
 
+    let t1 = (new Date).getTime()
+
+    AI.evalTime += t1 - t0
+
     return nullWindowScore
 }
 
@@ -343,7 +351,7 @@ AI.getStructure = (board, pawnindexW, pawnindexB)=> {
 
     let doubled = 0//AI.getDoubled(Pw, Pb)
     let defended = AI.getDefended(board, pawnindexW, pawnindexB)
-    let passers = 0//AI.getPassers(board, pawnindexW, pawnindexB)
+    let passers = AI.getPassers(board, pawnindexW, pawnindexB)
 
     let score = doubled + defended + passers
 
@@ -353,8 +361,9 @@ AI.getStructure = (board, pawnindexW, pawnindexB)=> {
 }
 
 AI.getPassers = (board, pawnindexW, pawnindexB)=>{
-    let passersW = 0
-    let passersB = 0
+    //De haberlos, estos arreglos almacenan la fila en que se encuantran los peones pasados
+    let passersW = [0,0,0,0,0,0,0,0]
+    let passersB = [0,0,0,0,0,0,0,0]
 
     for (let i = 0, len=pawnindexW.length; i < len; i++) {
         let leftFile = pawnindexW[i] - 17
@@ -387,15 +396,17 @@ AI.getPassers = (board, pawnindexW, pawnindexB)=>{
 
         while (true) {
             if (board.board[rightFile] === p) encountersR++
-
+            
             rightFile -= 16
-
+            
             if ((rightFile & 0x88)) break
-
+            
             if (encountersR > 0) continue
         }
-
-        if (encountersL === 0 && encountersC === 0 && encountersR === 0) passersW++
+        
+        if (encountersL === 0 && encountersC === 0 && encountersR === 0) {
+            passersW[board.columns[pawnindexW[i]]] = board.ranksW[pawnindexW[i]]
+        }
     }
 
     for (let i = 0, len=pawnindexB.length; i < len; i++) {
@@ -437,10 +448,17 @@ AI.getPassers = (board, pawnindexW, pawnindexB)=>{
             if (encountersR > 0) continue
         }
 
-        if (encountersL === 0 && encountersC === 0 && encountersR === 0) passersB++
+        if (encountersL === 0 && encountersC === 0 && encountersR === 0) {
+            passersB[board.columns[pawnindexB[i]]] = board.ranksB[pawnindexB[i]]
+        }
     }
 
-    return 120 * (passersW - passersB)
+    let score = 20*passersW[0] + 15*passersW[1] + 10*passersW[2] + 10*passersW[3]
+              + 10*passersW[4] + 10*passersW[5] + 15*passersW[6] + 20*passersW[7]
+              + 20*passersB[0] + 15*passersB[1] + 10*passersB[2] + 10*passersB[3]
+              + 10*passersB[4] + 10*passersB[5] + 15*passersB[6] + 20*passersB[7]
+
+    return score
 }
 
 AI.getDefended = (board, pawnindexW, pawnindexB)=>{
@@ -1430,6 +1448,7 @@ AI.search = function (board, options) {
         AI.ttnodes = 0
         AI.evalhashnodes = 0
         AI.evalnodes = 0
+        AI.evalTime = 0
         AI.iteration = 0
         AI.timer = (new Date()).getTime()
         AI.stop = false
@@ -1526,7 +1545,9 @@ AI.search = function (board, options) {
 
         AI.searchTime1 = (new Date()).getTime()
         AI.searchTime = AI.searchTime1 - AI.searchTime0
-        console.log('Sorting % time: ', (AI.sortingTime / AI.searchTime) * 100 | 0, '%')
+        console.log('Sorting % time: ', (AI.sortingTime / AI.searchTime) * 100 | 0,
+                    'Evaluation % time: ', (AI.evalTime / AI.searchTime) * 100 | 0
+        )
 
         console.log(AI.PV.map(e=>{
             if (e) {
