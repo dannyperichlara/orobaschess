@@ -428,6 +428,7 @@ module.exports = orobas = {
 
     getMoves() {
         let moves = []
+        let moveindex = 0
 
         for (let i = 0; i < 128; i++) {
             if (i & 0x88) {
@@ -441,13 +442,13 @@ module.exports = orobas = {
             if (this.color(piece) !== this.turn) continue
 
             if (piece === K && i === 116) {
-                moves.push(this.createMove({piece: K, from:116, to:118, isCapture:false, capturedPiece:0, castleSide:8, enPassantSquares:null}))
-                moves.push(this.createMove({piece: K, from:116, to:114, isCapture:false, capturedPiece:0, castleSide:4, enPassantSquares:null}))
+                moves[moveindex++]=(this.createMove({piece: K, from:116, to:118, isCapture:false, capturedPiece:0, castleSide:8, enPassantSquares:null}))
+                moves[moveindex++]=(this.createMove({piece: K, from:116, to:114, isCapture:false, capturedPiece:0, castleSide:4, enPassantSquares:null}))
             }
 
             if (piece === k && i === 4) {
-                moves.push(this.createMove({piece: k, from:4, to:6, isCapture:false, capturedPiece:0, castleSide:2, enPassantSquares:null}))
-                moves.push(this.createMove({piece: k, from:4, to:2, isCapture:false, capturedPiece:0, castleSide:1, enPassantSquares:null}))
+                moves[moveindex++]=(this.createMove({piece: k, from:4, to:6, isCapture:false, capturedPiece:0, castleSide:2, enPassantSquares:null}))
+                moves[moveindex++]=(this.createMove({piece: k, from:4, to:2, isCapture:false, capturedPiece:0, castleSide:1, enPassantSquares:null}))
             }
 
             //Peones
@@ -477,12 +478,12 @@ module.exports = orobas = {
                                     promotingPiece = q
                                 }
 
-                                moves.push(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
+                                moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
                             }
                         } else {
                             if (to === this.enPassantSquares) {
                                 //En passant
-                                moves.push(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
+                                moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
                                 epnodes++
                             }
                         }
@@ -507,7 +508,7 @@ module.exports = orobas = {
                             promotingPiece = q
                         }
 
-                        moves.push(this.createMove({piece, from, to, isCapture:false, capturedPiece:0, castleSide:0, enPassantSquares:null, promotingPiece}))
+                        moves[moveindex++]=(this.createMove({piece, from, to, isCapture:false, capturedPiece:0, castleSide:0, enPassantSquares:null, promotingPiece}))
 
                         let whitePawns = this.turn === WHITE && from >= 96 && from <= 103
                         let blackPawns = this.turn === BLACK && from >= 16 && from <= 23
@@ -523,7 +524,7 @@ module.exports = orobas = {
 
                             //Doble push
                             let doublePushMove = this.createMove({piece, from, to, isCapture:false, capturedPiece:0, castleSide:0, enPassantSquares})
-                            moves.push(doublePushMove)
+                            moves[moveindex++]=(doublePushMove)
                         }
                     }
                 }
@@ -550,7 +551,7 @@ module.exports = orobas = {
                         isCapture = true
                     }
 
-                    moves.push(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
+                    moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
                 }
 
                 continue
@@ -578,7 +579,7 @@ module.exports = orobas = {
                             }
                         }
 
-                        moves.push(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
+                        moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
 
                         if (isCapture) break
                     }
