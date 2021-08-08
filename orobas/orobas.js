@@ -481,7 +481,7 @@ module.exports = orobas = {
                                 moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
                             }
                         } else {
-                            if (to === this.enPassantSquares) {
+                            if (to === this.enPassantSquares[this.enPassantSquares.length - 1]) {
                                 //En passant
                                 moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
                                 epnodes++
@@ -896,6 +896,10 @@ module.exports = orobas = {
             this.perftData.nodes++
             return 1
         }
+
+        let incheck = this.isKingInCheck()
+
+        if (incheck) this.perftData.checks++
         
         let nodes = 0
         let moves = this.getMoves()
@@ -908,10 +912,6 @@ module.exports = orobas = {
             
             if (orobas.makeMove(moves[j])) {
                 legal++
-                
-                let incheck = this.isKingInCheck()
-
-                if (incheck) this.perftData.checks++
 
                 if (moves[j].isCapture) this.perftData.captures++
                 if (moves[j].castleSide) this.perftData.castles++
@@ -948,11 +948,13 @@ orobas.init()
 orobas.draw()
 console.log(orobas.hashkey, orobas.pawnhashkey)
 
-// console.log('PERFT 1', orobas.perft(1), 20, 48)
-// console.log('PERFT 2', orobas.perft(2), 400, 2039)
-console.log('PERFT 3', orobas.perft(3), 8902, 97862)
-// console.log('PERFT 4', orobas.perft(4), 197281, 422333)
-// console.log(orobas.perftData)
+// console.log('PERFT 1', orobas.perft(1), 20, 48) // OK
+// console.log('PERFT 2', orobas.perft(2), 400, 2039) // OK
+// console.log('PERFT 3', orobas.perft(3), 8902, 97862) // OK
+// console.log('PERFT 4', orobas.perft(4), 197281, 422333) // OK
+// console.log('PERFT 5', orobas.perft(5), 4865609, '-') // OK
+console.log('PERFT 6', orobas.perft(6), 119060324, '-') // NO
+console.log(orobas.perftData)
 // orobas.drawAttackZone(orobas.getAttackZone(WHITE))
 // console.log(moves.map(e=>{return orobas.coords[e.from] + '-' + orobas.coords[e.to]}))
 
