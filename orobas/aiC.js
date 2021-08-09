@@ -109,7 +109,7 @@ AI.PIECE_VALUES[0][R] = 480
 AI.PIECE_VALUES[0][Q] = 960
 AI.PIECE_VALUES[0][K] = 0
 
-AI.BISHOP_PAIR = VPAWN
+AI.BISHOP_PAIR = VPAWN2
 
 // CONSTANTES
 const MATE = 20000
@@ -268,25 +268,6 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
 
         if (piece === B) bishopsW++
         if (piece === b) bishopsB++
-
-        // Outposts
-        if (piece === N) {
-            if (board.board[i + 17] === P || board.board[i + 15] === P) score += 10
-        } 
-
-        if (piece === n) {
-            if (board.board[i - 17] === p || board.board[i - 15] === p) score -= 10
-        } 
-
-
-        // Semiopen files
-        if (piece === R && i >= 64) {
-            if (board.board[i - 16] !== P && board.board[i - 32] !== P) score += 20
-        }
-
-        if (piece === r && i < 64) {
-            if (board.board[i + 16] !== p && board.board[i + 32] !== p) score -= 20
-        }
         
         let turn = board.color(piece)
         let sign = turn === WHITE? 1 : -1
@@ -301,32 +282,44 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
             // Escudo de peones
             if (piece === K) {
                 if (i !== 116) {
-                    safety += (!(i - 17 & 0x88)) && board.board[i-17] === P? 40 : 0
-                    safety += (!(i - 16 & 0x88)) && board.board[i-16] === 0?-60 : 0
-                    safety += (!(i - 16 & 0x88)) && board.board[i-16] === P? 40 : 0
-                    safety += (!(i - 16 & 0x88)) && board.board[i-16] === B? 10 : 0
-                    safety += (!(i - 15 & 0x88)) && board.board[i-15] === P? 40 : 0
+                    safety += (!(i - 17 & 0x88)) && board.board[i-17] === P? 20 : 0
+                    safety += (!(i - 16 & 0x88)) && board.board[i-16] === 0?-40 : 0
+                    safety += (!(i - 16 & 0x88)) && board.board[i-16] === P? 20 : 0
+                    // safety += (!(i - 16 & 0x88)) && board.board[i-16] === B? 10 : 0
+                    safety += (!(i - 15 & 0x88)) && board.board[i-15] === P? 20 : 0
                 }
 
-                score -= 5*board.isSquareAttacked(i-15, BLACK, true)
-                score -= 5*board.isSquareAttacked(i-16, BLACK, true)
-                score -= 5*board.isSquareAttacked(i-17, BLACK, true)
+                score -= 5*board.isSquareAttacked(i-15, BLACK, false)
+                score -= 5*board.isSquareAttacked(i-16, BLACK, false)
+                score -= 5*board.isSquareAttacked(i-17, BLACK, false)
             }
             
             if (piece === k) {
                 if (i !== 4) {
-                    safety += (!(i + 17 & 0x88)) && board.board[i+17] === p? -40 : 0
-                    safety += (!(i + 16 & 0x88)) && board.board[i+16] === 0?  60 : 0
-                    safety += (!(i + 16 & 0x88)) && board.board[i+16] === p? -40 : 0
-                    safety += (!(i + 16 & 0x88)) && board.board[i+16] === b? -10 : 0
-                    safety += (!(i + 15 & 0x88)) && board.board[i+15] === p? -40 : 0
+                    safety += (!(i + 17 & 0x88)) && board.board[i+17] === p? -20 : 0
+                    safety += (!(i + 16 & 0x88)) && board.board[i+16] === 0?  40 : 0
+                    safety += (!(i + 16 & 0x88)) && board.board[i+16] === p? -20 : 0
+                    // safety += (!(i + 16 & 0x88)) && board.board[i+16] === b? -10 : 0
+                    safety += (!(i + 15 & 0x88)) && board.board[i+15] === p? -20 : 0
                 }
 
-                score += 5*board.isSquareAttacked(i+15, WHITE, true)
-                score += 5*board.isSquareAttacked(i+16, WHITE, true)
-                score += 5*board.isSquareAttacked(i+17, WHITE, true)
+                score += 5*board.isSquareAttacked(i+15, WHITE, false)
+                score += 5*board.isSquareAttacked(i+16, WHITE, false)
+                score += 5*board.isSquareAttacked(i+17, WHITE, false)
             }
         }
+    }
+
+    // Center control
+    if (AI.phase <= MIDGAME) {
+        score += 5*board.isSquareAttacked(50, WHITE, true) - board.isSquareAttacked(50, BLACK, true)
+        score += 5*board.isSquareAttacked(51, WHITE, true) - board.isSquareAttacked(51, BLACK, true)
+        score += 5*board.isSquareAttacked(52, WHITE, true) - board.isSquareAttacked(52, BLACK, true)
+        score += 5*board.isSquareAttacked(53, WHITE, true) - board.isSquareAttacked(53, BLACK, true)
+        score += 5*board.isSquareAttacked(66, WHITE, true) - board.isSquareAttacked(66, BLACK, true)
+        score += 5*board.isSquareAttacked(67, WHITE, true) - board.isSquareAttacked(67, BLACK, true)
+        score += 5*board.isSquareAttacked(68, WHITE, true) - board.isSquareAttacked(68, BLACK, true)
+        score += 5*board.isSquareAttacked(69, WHITE, true) - board.isSquareAttacked(69, BLACK, true)
     }
 
     if (bishopsW >= 2) {
@@ -341,7 +334,7 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
     score += structure
     score += safety
     
-    mobility = AI.getMobility(board, moves)
+    mobility = AI.getMobility(board)
 
     score += mobility
 
@@ -356,23 +349,20 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
     return nullWindowScore
 }
 
-AI.getMobility = (board, moves)=>{
+AI.getMobility = (board)=>{
     let mobility = 0
     let opponentMoves = []
 
-    let myMoves = moves.filter(move=>{
-        return move.piece !== K && move.piece !== k && move.piece !== P && move.piece !== p
-    })
+    let myMoves = board.getMoves(true)
 
     board.changeTurn()
     
-    opponentMoves = board.getMoves().filter(move=>{
-        return move.piece !== K && move.piece !== k && move.piece !== P && move.piece !== p
-    })
+    opponentMoves = board.getMoves(true)
 
     board.changeTurn()
 
-    mobility = 5*Math.log((myMoves.length+1)/(opponentMoves.length+1)) | 0
+    mobility = 20*Math.log((myMoves.length+1)/(opponentMoves.length+1)) | 0
+    // console.log(mobility)
 
     return mobility
 }
@@ -924,7 +914,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
         }
     }
 
-    let moves = board.getMoves(true, false)
+    let moves = board.getMoves()
     let staticeval = AI.evaluate(board, ply, beta, pvNode, materialOnly, moves)
     let incheck = board.isKingInCheck()
 
@@ -1641,7 +1631,7 @@ AI.search = function (board, options) {
 
         //zugzwang prevention
         if (!AI.bestmove) {
-            let moves = board.getMoves(false, false)
+            let moves = board.getMoves()
 
             AI.bestmove = moves[moves.length * Math.random() | 0]
         }

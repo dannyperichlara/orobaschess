@@ -805,7 +805,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
         }
     }
 
-    let moves = board.getMoves(true, false)
+    let moves = board.getMoves()
     let staticeval = AI.evaluate(board, ply, beta, pvNode, materialOnly, moves)
     let incheck = board.isKingInCheck()
 
@@ -1518,7 +1518,7 @@ AI.search = function (board, options) {
 
         //zugzwang prevention
         if (!AI.bestmove) {
-            let moves = board.getMoves(false, false)
+            let moves = board.getMoves()
 
             AI.bestmove = moves[moves.length * Math.random() | 0]
         }

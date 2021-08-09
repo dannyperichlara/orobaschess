@@ -461,7 +461,8 @@ module.exports = orobas = {
         return this.castlingRights[this.castlingRights.length - 1]
     },
 
-    getMoves() {
+    getMoves(forMobility) {
+        forMobility = !!forMobility
         let moves = []
         let moveindex = 0
 
@@ -476,95 +477,100 @@ module.exports = orobas = {
 
             if (this.color(piece) !== this.turn) continue
 
-            if (piece === K && i === 116) {
-                moves[moveindex++]=(this.createMove({piece: K, from:116, to:118, isCapture:false, capturedPiece:0, castleSide:8, enPassantSquares:null}))
-                moves[moveindex++]=(this.createMove({piece: K, from:116, to:114, isCapture:false, capturedPiece:0, castleSide:4, enPassantSquares:null}))
+            if (!forMobility) {
+                if (piece === K && i === 116) {
+                    moves[moveindex++]=(this.createMove({piece: K, from:116, to:118, isCapture:false, capturedPiece:0, castleSide:8, enPassantSquares:null}))
+                    moves[moveindex++]=(this.createMove({piece: K, from:116, to:114, isCapture:false, capturedPiece:0, castleSide:4, enPassantSquares:null}))
+                }
+    
+                if (piece === k && i === 4) {
+                    moves[moveindex++]=(this.createMove({piece: k, from:4, to:6, isCapture:false, capturedPiece:0, castleSide:2, enPassantSquares:null}))
+                    moves[moveindex++]=(this.createMove({piece: k, from:4, to:2, isCapture:false, capturedPiece:0, castleSide:1, enPassantSquares:null}))
+                }
             }
 
-            if (piece === k && i === 4) {
-                moves[moveindex++]=(this.createMove({piece: k, from:4, to:6, isCapture:false, capturedPiece:0, castleSide:2, enPassantSquares:null}))
-                moves[moveindex++]=(this.createMove({piece: k, from:4, to:2, isCapture:false, capturedPiece:0, castleSide:1, enPassantSquares:null}))
-            }
 
             //Peones
-            if (piece === P || piece === p) {
-                for (j = 0, len=this.pieces[piece].offsets.length; j < len; j++) {
-                    let to = from + this.pieces[piece].offsets[j]
-
-                    if (to & 0x88) continue
-
-                    //Offsets 1 & 2 corresponden a capturas
-                    if (j >= 1) {
-                        let isCapture = false
+            if (!forMobility) {
+                if (piece === P || piece === p) {
+                    for (j = 0, len=this.pieces[piece].offsets.length; j < len; j++) {
+                        let to = from + this.pieces[piece].offsets[j]
     
-                        let capturedPiece = this.board[to]
+                        if (to & 0x88) continue
     
-                        if (capturedPiece) {
-                            if (this.color(capturedPiece) === this.turn) {
-                                continue
+                        //Offsets 1 & 2 corresponden a capturas
+                        if (j >= 1) {
+                            let isCapture = false
+        
+                            let capturedPiece = this.board[to]
+        
+                            if (capturedPiece) {
+                                if (this.color(capturedPiece) === this.turn) {
+                                    continue
+                                } else {
+                                    isCapture = true
+    
+                                    if (to>=0 && to <= 7) {
+                                        promotingPiece = Q
+                                    }
+                                    
+                                    if (to>=112 && to <= 119) {
+                                        promotingPiece = q
+                                    }
+    
+                                    moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
+                                }
                             } else {
-                                isCapture = true
-
-                                if (to>=0 && to <= 7) {
-                                    promotingPiece = Q
+                                if (to === this.enPassantSquares[this.enPassantSquares.length - 1]) {
+                                    //En passant
+                                    moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
+                                    epnodes++
                                 }
-                                
-                                if (to>=112 && to <= 119) {
-                                    promotingPiece = q
-                                }
-
-                                moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
                             }
-                        } else {
-                            if (to === this.enPassantSquares[this.enPassantSquares.length - 1]) {
-                                //En passant
-                                moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
-                                epnodes++
-                            }
-                        }
-                        
-                    } else {
-                        // let to = from + this.pieces[piece].offsets[0]
-
-                        // if (to & 0x88) continue
-
-                        let blockingPiece = this.board[to]
-                        let promotingPiece = null
-
-                        if (blockingPiece) {
-                            continue
-                        }
-
-                        if (to>=0 && to <= 7) {
-                            promotingPiece = Q
-                        }
-
-                        if (to>=112 && to <= 119) {
-                            promotingPiece = q
-                        }
-
-                        moves[moveindex++]=(this.createMove({piece, from, to, isCapture:false, capturedPiece:0, castleSide:0, enPassantSquares:null, promotingPiece}))
-
-                        let whitePawns = this.turn === WHITE && from >= 96 && from <= 103
-                        let blackPawns = this.turn === BLACK && from >= 16 && from <= 23
-
-                        if (whitePawns || blackPawns) {
-                            let enPassantSquares = to
                             
-                            to = to + this.pieces[piece].offsets[0]
-
-                            if (to & 0x88) continue
-
-                            if (this.board[to]) continue
-
-                            //Doble push
-                            let doublePushMove = this.createMove({piece, from, to, isCapture:false, capturedPiece:0, castleSide:0, enPassantSquares})
-                            moves[moveindex++]=(doublePushMove)
+                        } else {
+                            // let to = from + this.pieces[piece].offsets[0]
+    
+                            // if (to & 0x88) continue
+    
+                            let blockingPiece = this.board[to]
+                            let promotingPiece = null
+    
+                            if (blockingPiece) {
+                                continue
+                            }
+    
+                            if (to>=0 && to <= 7) {
+                                promotingPiece = Q
+                            }
+    
+                            if (to>=112 && to <= 119) {
+                                promotingPiece = q
+                            }
+    
+                            moves[moveindex++]=(this.createMove({piece, from, to, isCapture:false, capturedPiece:0, castleSide:0, enPassantSquares:null, promotingPiece}))
+    
+                            let whitePawns = this.turn === WHITE && from >= 96 && from <= 103
+                            let blackPawns = this.turn === BLACK && from >= 16 && from <= 23
+    
+                            if (whitePawns || blackPawns) {
+                                let enPassantSquares = to
+                                
+                                to = to + this.pieces[piece].offsets[0]
+    
+                                if (to & 0x88) continue
+    
+                                if (this.board[to]) continue
+    
+                                //Doble push
+                                let doublePushMove = this.createMove({piece, from, to, isCapture:false, capturedPiece:0, castleSide:0, enPassantSquares})
+                                moves[moveindex++]=(doublePushMove)
+                            }
                         }
                     }
+    
+                    continue
                 }
-
-                continue
             }
             
             //Caballos y rey
@@ -621,8 +627,6 @@ module.exports = orobas = {
                 }
             }
         }
-
-        // console.log(moves)
 
         return moves
     },
