@@ -290,6 +290,8 @@ module.exports = orobas = {
     },
 
     isSquareAttacked(square, attackerSide, count) {
+        if (square & 0x88) return count? 0 : false
+
         if (attackerSide === BLACK) {
             pFrom = P
             nFrom = N

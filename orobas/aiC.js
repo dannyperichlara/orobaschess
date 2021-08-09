@@ -268,6 +268,25 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
 
         if (piece === B) bishopsW++
         if (piece === b) bishopsB++
+
+        // Outposts
+        if (piece === N) {
+            if (board.board[i + 17] === P || board.board[i + 15] === P) score += 10
+        } 
+
+        if (piece === n) {
+            if (board.board[i - 17] === p || board.board[i - 15] === p) score -= 10
+        } 
+
+
+        // Semiopen files
+        if (piece === R && i >= 64) {
+            if (board.board[i - 16] !== P && board.board[i - 32] !== P) score += 20
+        }
+
+        if (piece === r && i < 64) {
+            if (board.board[i + 16] !== p && board.board[i + 32] !== p) score -= 20
+        }
         
         let turn = board.color(piece)
         let sign = turn === WHITE? 1 : -1
@@ -278,26 +297,34 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
         
         score += material + psqt
 
-        if (AI.phase <= MIDGAME) {
+        if (AI.phase <= EARLY_ENDGAME) {
             // Escudo de peones
             if (piece === K) {
                 if (i !== 116) {
-                    safety += (!(i - 17 & 0x88)) && board.board[i-17] === P? 10 : 0
-                    safety += (!(i - 16 & 0x88)) && board.board[i-16] === 0?-40 : 0
-                    safety += (!(i - 16 & 0x88)) && board.board[i-16] === P? 20 : 0
+                    safety += (!(i - 17 & 0x88)) && board.board[i-17] === P? 40 : 0
+                    safety += (!(i - 16 & 0x88)) && board.board[i-16] === 0?-60 : 0
+                    safety += (!(i - 16 & 0x88)) && board.board[i-16] === P? 40 : 0
                     safety += (!(i - 16 & 0x88)) && board.board[i-16] === B? 10 : 0
-                    safety += (!(i - 15 & 0x88)) && board.board[i-15] === P? 10 : 0
+                    safety += (!(i - 15 & 0x88)) && board.board[i-15] === P? 40 : 0
                 }
+
+                score -= 5*board.isSquareAttacked(i-15, BLACK, true)
+                score -= 5*board.isSquareAttacked(i-16, BLACK, true)
+                score -= 5*board.isSquareAttacked(i-17, BLACK, true)
             }
             
             if (piece === k) {
                 if (i !== 4) {
-                    safety += (!(i + 17 & 0x88)) && board.board[i+17] === p? -10 : 0
-                    safety += (!(i + 16 & 0x88)) && board.board[i+16] === 0?  40 : 0
-                    safety += (!(i + 16 & 0x88)) && board.board[i+16] === p? -20 : 0
+                    safety += (!(i + 17 & 0x88)) && board.board[i+17] === p? -40 : 0
+                    safety += (!(i + 16 & 0x88)) && board.board[i+16] === 0?  60 : 0
+                    safety += (!(i + 16 & 0x88)) && board.board[i+16] === p? -40 : 0
                     safety += (!(i + 16 & 0x88)) && board.board[i+16] === b? -10 : 0
-                    safety += (!(i + 15 & 0x88)) && board.board[i+15] === p? -10 : 0
+                    safety += (!(i + 15 & 0x88)) && board.board[i+15] === p? -40 : 0
                 }
+
+                score += 5*board.isSquareAttacked(i+15, WHITE, true)
+                score += 5*board.isSquareAttacked(i+16, WHITE, true)
+                score += 5*board.isSquareAttacked(i+17, WHITE, true)
             }
         }
     }
@@ -334,18 +361,18 @@ AI.getMobility = (board, moves)=>{
     let opponentMoves = []
 
     let myMoves = moves.filter(move=>{
-        return move.piece !== K && move.piece !== k && move.piece !== P && move.piece !== p && !move.isCapture
+        return move.piece !== K && move.piece !== k && move.piece !== P && move.piece !== p
     })
 
     board.changeTurn()
     
     opponentMoves = board.getMoves().filter(move=>{
-        return move.piece !== K && move.piece !== k && move.piece !== P && move.piece !== p && !move.isCapture
+        return move.piece !== K && move.piece !== k && move.piece !== P && move.piece !== p
     })
 
     board.changeTurn()
 
-    mobility = 8*Math.log(myMoves.length/opponentMoves.length) | 0
+    mobility = 5*Math.log((myMoves.length+1)/(opponentMoves.length+1)) | 0
 
     return mobility
 }
@@ -374,12 +401,29 @@ AI.getStructure = (board, pawnindexW, pawnindexB)=> {
     let doubled = AI.getDoubled(board, pawnindexW, pawnindexB)
     let defended = AI.getDefended(board, pawnindexW, pawnindexB)
     let passers = AI.getPassers(board, pawnindexW, pawnindexB)
+    let space = AI.getSpace(board, pawnindexW, pawnindexB)
 
-    let score = doubled + defended + passers
+    let score = doubled + defended + passers + space
 
     AI.pawntable[hashkey % AI.pawntlength] = score
-
     return score
+}
+
+AI.getSpace = (board, pawnindexW, pawnindexB)=>{
+    let spaceW = 0
+    let spaceB = 0
+
+    for (let i = 0, len=pawnindexW.length; i < len; i++) {
+        spaceW += board.ranksW[pawnindexW[i]] - 1
+    }
+
+    for (let i = 0, len=pawnindexB.length; i < len; i++) {
+        spaceB += board.ranksB[pawnindexB[i]] - 1
+    }
+
+    let space = 5*(spaceW - spaceB)
+
+    return space
 }
 
 AI.getPassers = (board, pawnindexW, pawnindexB)=>{
@@ -512,7 +556,7 @@ AI.getDoubled = (board, pawnindexW, pawnindexB)=>{
         }
     }
 
-    let score = -50*(doubledW - doubledB)
+    let score = -20*(doubledW - doubledB)
 
     return score
 }
@@ -1476,7 +1520,8 @@ AI.search = function (board, options) {
         AI.lastscore = 0
         AI.f = 0
     } else {
-        AI.createTables(true, true, false)
+        AI.createTables(true, true, true)
+        // AI.createTables(true, true, false)
         AI.f = AI.lastscore
     }
 
