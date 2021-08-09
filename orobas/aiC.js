@@ -224,7 +224,7 @@ AI.randomizePSQT = function () {
 }
 
 // FUNCIÓN DE EVALUACIÓN DE LA POSICIÓN
-AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
+AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, moves) {
     let t0 = (new Date).getTime()
     
     let evalEntry = AI.evalTable[board.hashkey % this.htlength]
@@ -282,11 +282,11 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
             // Escudo de peones
             if (piece === K) {
                 if (i !== 116) {
-                    safety += (!(i - 17 & 0x88)) && board.board[i-17] === P? 20 : 0
-                    safety += (!(i - 16 & 0x88)) && board.board[i-16] === 0?-40 : 0
-                    safety += (!(i - 16 & 0x88)) && board.board[i-16] === P? 20 : 0
-                    // safety += (!(i - 16 & 0x88)) && board.board[i-16] === B? 10 : 0
-                    safety += (!(i - 15 & 0x88)) && board.board[i-15] === P? 20 : 0
+                    score += board.board[i-17] === P? 20 : 0
+                    score += board.board[i-16] === 0?-40 : 0
+                    score += board.board[i-16] === P? 20 : 0
+                    // score += board.board[i-16] === B? 10 : 0
+                    score += board.board[i-15] === P? 20 : 0
                 }
 
                 score -= 5*board.isSquareAttacked(i-15, BLACK, false)
@@ -296,11 +296,11 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
             
             if (piece === k) {
                 if (i !== 4) {
-                    safety += (!(i + 17 & 0x88)) && board.board[i+17] === p? -20 : 0
-                    safety += (!(i + 16 & 0x88)) && board.board[i+16] === 0?  40 : 0
-                    safety += (!(i + 16 & 0x88)) && board.board[i+16] === p? -20 : 0
-                    // safety += (!(i + 16 & 0x88)) && board.board[i+16] === b? -10 : 0
-                    safety += (!(i + 15 & 0x88)) && board.board[i+15] === p? -20 : 0
+                    score += board.board[i+17] === p? -20 : 0
+                    score += board.board[i+16] === 0?  40 : 0
+                    score += board.board[i+16] === p? -20 : 0
+                    // score += board.board[i+16] === b? -10 : 0
+                    score += board.board[i+15] === p? -20 : 0
                 }
 
                 score += 5*board.isSquareAttacked(i+15, WHITE, false)
@@ -308,6 +308,35 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
                 score += 5*board.isSquareAttacked(i+17, WHITE, false)
             }
         }
+    }
+
+    if (bishopsW >= 2) {
+        score += AI.BISHOP_PAIR 
+    }
+    if (bishopsB >= 2) {
+        score -= AI.BISHOP_PAIR 
+    }
+
+    // Lazy eval
+    if (score > beta + AI.PIECE_VALUES[0][KNIGHT]) {
+        let nullWindowScore = sign * score / 5 | 0
+        let t1 = (new Date).getTime()
+        AI.evalTime += t1 - t0
+        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+        return nullWindowScore
+    }
+
+    let structure = AI.getStructure(board, pawnindexW, pawnindexB)
+
+    score += structure
+
+    // Lazy eval
+    if (score > beta + VPAWN) {
+        let nullWindowScore = sign * score / 5 | 0
+        let t1 = (new Date).getTime()
+        AI.evalTime += t1 - t0
+        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+        return nullWindowScore
     }
 
     // Center control
@@ -322,17 +351,14 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
         score += 5*board.isSquareAttacked(69, WHITE, true) - board.isSquareAttacked(69, BLACK, true)
     }
 
-    if (bishopsW >= 2) {
-        score += AI.BISHOP_PAIR 
+    // Lazy eval
+    if (score > beta + VPAWN) {
+        let nullWindowScore = sign * score / 5 | 0
+        let t1 = (new Date).getTime()
+        AI.evalTime += t1 - t0
+        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+        return nullWindowScore
     }
-    if (bishopsB >= 2) {
-        score -= AI.BISHOP_PAIR 
-    }
-
-    let structure = AI.getStructure(board, pawnindexW, pawnindexB)
-
-    score += structure
-    score += safety
     
     mobility = AI.getMobility(board)
 
@@ -741,7 +767,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
 
     let moves = board.getMoves() //+0 ELO
 
-    let standpat = AI.evaluate(board, ply, beta, pvNode, materialOnly, moves)
+    let standpat = AI.evaluate(board, ply, alpha, beta, pvNode, materialOnly, moves)
     let hashkey = board.hashkey
     let incheck = board.isKingInCheck()
 
@@ -915,7 +941,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
     }
 
     let moves = board.getMoves()
-    let staticeval = AI.evaluate(board, ply, beta, pvNode, materialOnly, moves)
+    let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode, materialOnly, moves)
     let incheck = board.isKingInCheck()
 
     //IID (si no hay entrada en ttEntry, busca una para mejorar el orden de movimientos)
