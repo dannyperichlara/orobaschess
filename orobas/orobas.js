@@ -289,7 +289,7 @@ module.exports = orobas = {
         }
     },
 
-    isSquareAttacked(square, attackerSide, count) {
+    isSquareAttacked(square, attackerSide, count, xrays) {
         if (square & 0x88) return count? 0 : false
 
         if (attackerSide === BLACK) {
@@ -336,9 +336,14 @@ module.exports = orobas = {
                 } else {
                     if (this.board[to]) {
                         if (this.board[to] === qTo) {
-                            if (count) {attacks++} else {return true}
+                            if (count) {
+                                attacks++
+                                blocked = true
+                            } else {
+                                return true
+                            }
                         } else {
-                            blocked = true
+                            if (!xrays) blocked = true
                         }
                     }
                 }
@@ -359,9 +364,14 @@ module.exports = orobas = {
                 } else {
                     if (this.board[to]) {
                         if (this.board[to] === rTo) {
-                            if (count) {attacks++} else {return true}
+                            if (count) {
+                                attacks++
+                                blocked = true
+                            } else {
+                                return true
+                            }
                         } else {
-                            blocked = true
+                            if (!xrays) blocked = true
                         }
                     }
                 }
@@ -382,9 +392,14 @@ module.exports = orobas = {
                 } else {
                     if (this.board[to]) {
                         if (this.board[to] === bTo) {
-                            if (count) {attacks++} else {return true}
+                            if (count) {
+                                attacks++
+                                blocked = true
+                            } else {
+                                return true
+                            }
                         } else {
-                            blocked = true
+                            if (!xrays) blocked = true
                         }
                     }
                 }
@@ -523,8 +538,10 @@ module.exports = orobas = {
                             } else {
                                 if (to === this.enPassantSquares[this.enPassantSquares.length - 1]) {
                                     //En passant
-                                    moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
-                                    epnodes++
+                                    // moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
+                                    // epnodes++
+
+                                    //DESACTIVADO TEMPORALMENTE
                                 }
                             }
                             
