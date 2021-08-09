@@ -109,6 +109,8 @@ AI.PIECE_VALUES[0][R] = 480
 AI.PIECE_VALUES[0][Q] = 960
 AI.PIECE_VALUES[0][K] = 0
 
+AI.BISHOP_PAIR = VPAWN
+
 // CONSTANTES
 const MATE = 20000
 const DRAW = 0 //-2*VPAWN
@@ -246,6 +248,9 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
     let pawns = new Array(128)
     let pawnindexW = []
     let pawnindexB = []
+
+    let bishopsW = 0
+    let bishopsB = 0
     
     for (let i = 0; i < 128; i++) {
         if (i & 0x88) {
@@ -260,11 +265,15 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
         
         if (piece === P) pawnindexW.push(i)
         if (piece === p) pawnindexB.push(i)
+
+        if (piece === B) bishopsW++
+        if (piece === b) bishopsB++
         
         let turn = board.color(piece)
         let sign = turn === WHITE? 1 : -1
 
         let material = AI.PIECE_VALUES[OPENING][piece] //Material
+
         let psqt = sign*AI.PSQT[ABS[piece]][turn === WHITE? i : (112^i)]
         
         score += material + psqt
@@ -276,7 +285,7 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
                     safety += (!(i - 17 & 0x88)) && board.board[i-17] === P? 10 : 0
                     safety += (!(i - 16 & 0x88)) && board.board[i-16] === 0?-40 : 0
                     safety += (!(i - 16 & 0x88)) && board.board[i-16] === P? 20 : 0
-                    // safety += (!(i - 16 & 0x88)) && board.board[i-16] === B? 20 : 0
+                    safety += (!(i - 16 & 0x88)) && board.board[i-16] === B? 10 : 0
                     safety += (!(i - 15 & 0x88)) && board.board[i-15] === P? 10 : 0
                 }
             }
@@ -286,11 +295,18 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
                     safety += (!(i + 17 & 0x88)) && board.board[i+17] === p? -10 : 0
                     safety += (!(i + 16 & 0x88)) && board.board[i+16] === 0?  40 : 0
                     safety += (!(i + 16 & 0x88)) && board.board[i+16] === p? -20 : 0
-                    // safety += (!(i + 16 & 0x88)) && board.board[i+16] === b? -20 : 0
+                    safety += (!(i + 16 & 0x88)) && board.board[i+16] === b? -10 : 0
                     safety += (!(i + 15 & 0x88)) && board.board[i+15] === p? -10 : 0
                 }
             }
         }
+    }
+
+    if (bishopsW >= 2) {
+        score += AI.BISHOP_PAIR 
+    }
+    if (bishopsB >= 2) {
+        score -= AI.BISHOP_PAIR 
     }
 
     let structure = AI.getStructure(board, pawnindexW, pawnindexB)
@@ -298,7 +314,7 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
     score += structure
     score += safety
     
-    mobility = 0//AI.getMobility(board, moves)
+    mobility = AI.getMobility(board, moves)
 
     score += mobility
 
@@ -318,18 +334,18 @@ AI.getMobility = (board, moves)=>{
     let opponentMoves = []
 
     let myMoves = moves.filter(move=>{
-        return move.piece !== K && move.piece !== k && move.piece !== P && move.piece !== p
+        return move.piece !== K && move.piece !== k && move.piece !== P && move.piece !== p && !move.isCapture
     })
 
     board.changeTurn()
     
     opponentMoves = board.getMoves().filter(move=>{
-        return move.piece !== K && move.piece !== k && move.piece !== P && move.piece !== p
+        return move.piece !== K && move.piece !== k && move.piece !== P && move.piece !== p && !move.isCapture
     })
 
     board.changeTurn()
 
-    mobility = 40*(myMoves.length/opponentMoves.length) | 0
+    mobility = 8*Math.log(myMoves.length/opponentMoves.length) | 0
 
     return mobility
 }
@@ -1347,12 +1363,14 @@ AI.setPhase = function (board) {
     }
 
     //EARLY ENDGAME (the king enters)
-    if (AI.nofpieces <= 20 && queens === 0 || Math.abs(AI.lastscore) > AI.PIECE_VALUES[OPENING][ROOK]) {
-        AI.phase = 2
+    if (queens === 0 && AI.nofpieces > 12) {
+        if (AI.nofpieces <= 24 || Math.abs(AI.lastscore) > AI.PIECE_VALUES[OPENING][ROOK]) {
+            AI.phase = 2
+        }
     }
 
     //LATE ENDGAME
-    if (AI.nofpieces <= 12 || Math.abs(AI.lastscore) >= AI.PIECE_VALUES[OPENING][QUEEN]) {
+    if (AI.nofpieces <= 12 || (queens === 0 && Math.abs(AI.lastscore) >= AI.PIECE_VALUES[OPENING][QUEEN])) {
         AI.phase = 3
     }
 
