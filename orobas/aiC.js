@@ -52,6 +52,10 @@ const p = PAWN + 6
 const WHITE = 1
 const BLACK = 2
 
+const CENTER = [51,52,67,68]
+
+const WIDECENTER = [50,51,52,53,66,67,68,69]
+
 const WHITEINDEX = [1,2,3,4,5,6]
 const BLACKINDEX = [7,8,9,10,11,12]
 const ALLINDEX = [1,2,3,4,5,6,7,8,9,10,11,12]
@@ -278,34 +282,42 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, moves) {
         
         score += material + psqt
 
-        if (AI.phase <= EARLY_ENDGAME) {
+        if (true) {
             // Escudo de peones
             if (piece === K) {
-                if (i !== 116) {
-                    score += board.board[i-17] === P? 20 : 0
-                    score += board.board[i-16] === 0?-40 : 0
-                    score += board.board[i-16] === P? 20 : 0
-                    // score += board.board[i-16] === B? 10 : 0
-                    score += board.board[i-15] === P? 20 : 0
+                if (AI.phase <= EARLY_ENDGAME) {
+                    if (AI.phase <= MIDGAME && board.columns[i] === 3 || board.columns[i] === 4) score -= 10
+                    
+                    if (i !== 116) {
+                        score += board.board[i-17] === P? 10 : 0
+                        score += board.board[i-16] === 0?-20 : 0
+                        score += board.board[i-16] === P? 20 : 0
+                        score += board.board[i-16] === B? 10 : 0
+                        score += board.board[i-15] === P? 10 : 0
+                    }
                 }
-
-                score -= 5*board.isSquareAttacked(i-15, BLACK, false)
-                score -= 5*board.isSquareAttacked(i-16, BLACK, false)
-                score -= 5*board.isSquareAttacked(i-17, BLACK, false)
+                
+                score -= 10*board.isSquareAttacked(i-15, BLACK, false)
+                score -= 20*board.isSquareAttacked(i-16, BLACK, false)
+                score -= 10*board.isSquareAttacked(i-17, BLACK, false)
             }
             
             if (piece === k) {
-                if (i !== 4) {
-                    score += board.board[i+17] === p? -20 : 0
-                    score += board.board[i+16] === 0?  40 : 0
-                    score += board.board[i+16] === p? -20 : 0
-                    // score += board.board[i+16] === b? -10 : 0
-                    score += board.board[i+15] === p? -20 : 0
+                if (AI.phase <= EARLY_ENDGAME) {
+                    if (AI.phase <= MIDGAME && board.columns[i] === 3 || board.columns[i] === 4) score += 10
+    
+                    if (i !== 4) {
+                        score += board.board[i+17] === p? -10 : 0
+                        score += board.board[i+16] === 0?  20 : 0
+                        score += board.board[i+16] === p? -20 : 0
+                        score += board.board[i+16] === b? -10 : 0
+                        score += board.board[i+15] === p? -10 : 0
+                    }
                 }
 
-                score += 5*board.isSquareAttacked(i+15, WHITE, false)
-                score += 5*board.isSquareAttacked(i+16, WHITE, false)
-                score += 5*board.isSquareAttacked(i+17, WHITE, false)
+                score += 10*board.isSquareAttacked(i+15, WHITE, false)
+                score += 20*board.isSquareAttacked(i+16, WHITE, false)
+                score += 10*board.isSquareAttacked(i+17, WHITE, false)
             }
         }
     }
@@ -330,8 +342,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, moves) {
 
     score += structure
 
+    
     // Lazy eval
-    if (score > beta + VPAWN) {
+    if (!pvNode || ply >= 6 || score > beta + VPAWN) {
         let nullWindowScore = sign * score / 5 | 0
         let t1 = (new Date).getTime()
         AI.evalTime += t1 - t0
@@ -341,14 +354,11 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, moves) {
 
     // Center control
     if (AI.phase <= MIDGAME) {
-        score += 5*board.isSquareAttacked(50, WHITE, true) - board.isSquareAttacked(50, BLACK, true)
-        score += 5*board.isSquareAttacked(51, WHITE, true) - board.isSquareAttacked(51, BLACK, true)
-        score += 5*board.isSquareAttacked(52, WHITE, true) - board.isSquareAttacked(52, BLACK, true)
-        score += 5*board.isSquareAttacked(53, WHITE, true) - board.isSquareAttacked(53, BLACK, true)
-        score += 5*board.isSquareAttacked(66, WHITE, true) - board.isSquareAttacked(66, BLACK, true)
-        score += 5*board.isSquareAttacked(67, WHITE, true) - board.isSquareAttacked(67, BLACK, true)
-        score += 5*board.isSquareAttacked(68, WHITE, true) - board.isSquareAttacked(68, BLACK, true)
-        score += 5*board.isSquareAttacked(69, WHITE, true) - board.isSquareAttacked(69, BLACK, true)
+        for (let i = 0, len=WIDECENTER.length; i < len; i++) {
+            let occupiedBy = board.pieces[board.board[WIDECENTER[i]]].color
+            score += 5*(occupiedBy == WHITE? 1 : (occupiedBy == BLACK? -1 : 0))
+            score += 5*board.isSquareAttacked(i, WHITE, true) - board.isSquareAttacked(i, BLACK, true)
+        }
     }
 
     // Lazy eval
@@ -437,7 +447,7 @@ AI.getSpace = (board, pawnindexW, pawnindexB)=>{
         spaceB += board.ranksB[pawnindexB[i]] - 1
     }
 
-    let space = 5*(spaceW - spaceB)
+    let space = 4*(spaceW - spaceB)
 
     return space
 }

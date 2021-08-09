@@ -12,6 +12,7 @@ let AI = {
     phnodes: 0,
     evalhashnodes: 0,
     evalnodes: 0,
+    evalTime: 0,
     status: null,
     fhf: 0,
     fh: 0,
@@ -107,6 +108,8 @@ AI.PIECE_VALUES[0][B] = 325
 AI.PIECE_VALUES[0][R] = 480
 AI.PIECE_VALUES[0][Q] = 960
 AI.PIECE_VALUES[0][K] = 0
+
+AI.BISHOP_PAIR = VPAWN2
 
 // CONSTANTES
 const MATE = 20000
@@ -221,12 +224,16 @@ AI.randomizePSQT = function () {
 }
 
 // FUNCIÓN DE EVALUACIÓN DE LA POSICIÓN
-AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
+AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, moves) {
+    let t0 = (new Date).getTime()
+    
     let evalEntry = AI.evalTable[board.hashkey % this.htlength]
     this.evalnodes++
-
-    if (false && evalEntry !== null) {
+    
+    if (evalEntry !== null) {
         this.evalhashnodes++
+        let t1 = (new Date).getTime()
+        AI.evalTime += t1 - t0
         return evalEntry
     }
     
@@ -241,6 +248,9 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
     let pawns = new Array(128)
     let pawnindexW = []
     let pawnindexB = []
+
+    let bishopsW = 0
+    let bishopsB = 0
     
     for (let i = 0; i < 128; i++) {
         if (i & 0x88) {
@@ -255,45 +265,102 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
         
         if (piece === P) pawnindexW.push(i)
         if (piece === p) pawnindexB.push(i)
+
+        if (piece === B) bishopsW++
+        if (piece === b) bishopsB++
         
         let turn = board.color(piece)
         let sign = turn === WHITE? 1 : -1
 
         let material = AI.PIECE_VALUES[OPENING][piece] //Material
+
         let psqt = sign*AI.PSQT[ABS[piece]][turn === WHITE? i : (112^i)]
         
         score += material + psqt
 
-        if (AI.phase <= MIDGAME) {
+        if (AI.phase <= EARLY_ENDGAME) {
             // Escudo de peones
             if (piece === K) {
                 if (i !== 116) {
-                    safety += (!(i - 17 & 0x88)) && board.board[i-17] === P? 20 : 0
-                    safety += (!(i - 16 & 0x88)) && board.board[i-16] === 0?-60 : 0
-                    safety += (!(i - 16 & 0x88)) && board.board[i-16] === P? 20 : 0
-                    safety += (!(i - 16 & 0x88)) && board.board[i-16] === B? 20 : 0
-                    safety += (!(i - 15 & 0x88)) && board.board[i-15] === P? 20 : 0
+                    score += board.board[i-17] === P? 20 : 0
+                    score += board.board[i-16] === 0?-40 : 0
+                    score += board.board[i-16] === P? 20 : 0
+                    // score += board.board[i-16] === B? 10 : 0
+                    score += board.board[i-15] === P? 20 : 0
                 }
+
+                score -= 5*board.isSquareAttacked(i-15, BLACK, false)
+                score -= 5*board.isSquareAttacked(i-16, BLACK, false)
+                score -= 5*board.isSquareAttacked(i-17, BLACK, false)
             }
             
             if (piece === k) {
                 if (i !== 4) {
-                    safety += (!(i + 17 & 0x88)) && board.board[i+17] === p? -20 : 0
-                    safety += (!(i + 16 & 0x88)) && board.board[i+16] === 0?  60 : 0
-                    safety += (!(i + 16 & 0x88)) && board.board[i+16] === p? -20 : 0
-                    safety += (!(i + 16 & 0x88)) && board.board[i+16] === b? -20 : 0
-                    safety += (!(i + 15 & 0x88)) && board.board[i+15] === p? -20 : 0
+                    score += board.board[i+17] === p? -20 : 0
+                    score += board.board[i+16] === 0?  40 : 0
+                    score += board.board[i+16] === p? -20 : 0
+                    // score += board.board[i+16] === b? -10 : 0
+                    score += board.board[i+15] === p? -20 : 0
                 }
+
+                score += 5*board.isSquareAttacked(i+15, WHITE, false)
+                score += 5*board.isSquareAttacked(i+16, WHITE, false)
+                score += 5*board.isSquareAttacked(i+17, WHITE, false)
             }
         }
+    }
+
+    if (bishopsW >= 2) {
+        score += AI.BISHOP_PAIR 
+    }
+    if (bishopsB >= 2) {
+        score -= AI.BISHOP_PAIR 
+    }
+
+    // Lazy eval
+    if (score > beta + AI.PIECE_VALUES[0][KNIGHT]) {
+        let nullWindowScore = sign * score / 5 | 0
+        let t1 = (new Date).getTime()
+        AI.evalTime += t1 - t0
+        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+        return nullWindowScore
     }
 
     let structure = AI.getStructure(board, pawnindexW, pawnindexB)
 
     score += structure
-    score += safety
+
+    // Lazy eval
+    if (score > beta + VPAWN) {
+        let nullWindowScore = sign * score / 5 | 0
+        let t1 = (new Date).getTime()
+        AI.evalTime += t1 - t0
+        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+        return nullWindowScore
+    }
+
+    // Center control
+    if (AI.phase <= MIDGAME) {
+        score += 5*board.isSquareAttacked(50, WHITE, true) - board.isSquareAttacked(50, BLACK, true)
+        score += 5*board.isSquareAttacked(51, WHITE, true) - board.isSquareAttacked(51, BLACK, true)
+        score += 5*board.isSquareAttacked(52, WHITE, true) - board.isSquareAttacked(52, BLACK, true)
+        score += 5*board.isSquareAttacked(53, WHITE, true) - board.isSquareAttacked(53, BLACK, true)
+        score += 5*board.isSquareAttacked(66, WHITE, true) - board.isSquareAttacked(66, BLACK, true)
+        score += 5*board.isSquareAttacked(67, WHITE, true) - board.isSquareAttacked(67, BLACK, true)
+        score += 5*board.isSquareAttacked(68, WHITE, true) - board.isSquareAttacked(68, BLACK, true)
+        score += 5*board.isSquareAttacked(69, WHITE, true) - board.isSquareAttacked(69, BLACK, true)
+    }
+
+    // Lazy eval
+    if (score > beta + VPAWN) {
+        let nullWindowScore = sign * score / 5 | 0
+        let t1 = (new Date).getTime()
+        AI.evalTime += t1 - t0
+        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+        return nullWindowScore
+    }
     
-    mobility = 0 //pvNode? AI.getMobility(board, moves) : 0
+    mobility = AI.getMobility(board)
 
     score += mobility
 
@@ -301,20 +368,27 @@ AI.evaluate = function (board, ply, beta, pvNode, materialOnly, moves) {
 
     AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
 
+    let t1 = (new Date).getTime()
+
+    AI.evalTime += t1 - t0
+
     return nullWindowScore
 }
 
-AI.getMobility = (board, moves)=>{
+AI.getMobility = (board)=>{
     let mobility = 0
     let opponentMoves = []
 
+    let myMoves = board.getMoves(true)
+
     board.changeTurn()
     
-    opponentMoves = board.getMoves()
+    opponentMoves = board.getMoves(true)
 
     board.changeTurn()
 
-    mobility = moves.length - opponentMoves.length
+    mobility = 20*Math.log((myMoves.length+1)/(opponentMoves.length+1)) | 0
+    // console.log(mobility)
 
     return mobility
 }
@@ -340,20 +414,38 @@ AI.getStructure = (board, pawnindexW, pawnindexB)=> {
         return hashentry
     }
 
-    let doubled = 0//AI.getDoubled(Pw, Pb)
+    let doubled = AI.getDoubled(board, pawnindexW, pawnindexB)
     let defended = AI.getDefended(board, pawnindexW, pawnindexB)
-    let passers = 0//AI.getPassers(board, pawnindexW, pawnindexB)
+    let passers = AI.getPassers(board, pawnindexW, pawnindexB)
+    let space = AI.getSpace(board, pawnindexW, pawnindexB)
 
-    let score = doubled + defended + passers
+    let score = doubled + defended + passers + space
 
     AI.pawntable[hashkey % AI.pawntlength] = score
-
     return score
 }
 
+AI.getSpace = (board, pawnindexW, pawnindexB)=>{
+    let spaceW = 0
+    let spaceB = 0
+
+    for (let i = 0, len=pawnindexW.length; i < len; i++) {
+        spaceW += board.ranksW[pawnindexW[i]] - 1
+    }
+
+    for (let i = 0, len=pawnindexB.length; i < len; i++) {
+        spaceB += board.ranksB[pawnindexB[i]] - 1
+    }
+
+    let space = 5*(spaceW - spaceB)
+
+    return space
+}
+
 AI.getPassers = (board, pawnindexW, pawnindexB)=>{
-    let passersW = 0
-    let passersB = 0
+    //De haberlos, estos arreglos almacenan la fila en que se encuentran los peones pasados
+    let passersW = [0,0,0,0,0,0,0,0]
+    let passersB = [0,0,0,0,0,0,0,0]
 
     for (let i = 0, len=pawnindexW.length; i < len; i++) {
         let leftFile = pawnindexW[i] - 17
@@ -386,15 +478,17 @@ AI.getPassers = (board, pawnindexW, pawnindexB)=>{
 
         while (true) {
             if (board.board[rightFile] === p) encountersR++
-
+            
             rightFile -= 16
-
+            
             if ((rightFile & 0x88)) break
-
+            
             if (encountersR > 0) continue
         }
-
-        if (encountersL === 0 && encountersC === 0 && encountersR === 0) passersW++
+        
+        if (encountersL === 0 && encountersC === 0 && encountersR === 0) {
+            passersW[board.columns[pawnindexW[i]]] = board.ranksW[pawnindexW[i]]
+        }
     }
 
     for (let i = 0, len=pawnindexB.length; i < len; i++) {
@@ -436,10 +530,51 @@ AI.getPassers = (board, pawnindexW, pawnindexB)=>{
             if (encountersR > 0) continue
         }
 
-        if (encountersL === 0 && encountersC === 0 && encountersR === 0) passersB++
+        if (encountersL === 0 && encountersC === 0 && encountersR === 0) {
+            passersB[board.columns[pawnindexB[i]]] = board.ranksB[pawnindexB[i]]
+        }
     }
 
-    return 120 * (passersW - passersB)
+    let score = 20*passersW[0] + 14*passersW[1] + 10*passersW[2] + 10*passersW[3]
+              + 10*passersW[4] + 10*passersW[5] + 14*passersW[6] + 20*passersW[7]
+              - 20*passersB[0] - 14*passersB[1] - 10*passersB[2] - 10*passersB[3]
+              - 10*passersB[4] - 10*passersB[5] - 14*passersB[6] - 20*passersB[7]
+
+    return score
+}
+
+AI.getDoubled = (board, pawnindexW, pawnindexB)=>{
+    //De haberlos, estos arreglos almacenan la fila en que se encuentran los peones pasados
+    let doubledW = 0
+    let doubledB = 0
+
+    for (let i = 0, len=pawnindexW.length; i < len; i++) {
+        let centerFile = pawnindexW[i] - 16
+
+        while (true) {
+            if (board.board[centerFile] === P) doubledW++
+
+            centerFile -= 16
+
+            if ((centerFile - 16) & 0x88) break // -16 es para llegar sólo hasta la penúltima fila
+        }
+    }
+
+    for (let i = 0, len=pawnindexB.length; i < len; i++) {
+        let centerFile = pawnindexB[i] + 16
+
+        while (true) {
+            if (board.board[centerFile] === p) doubledB++
+
+            centerFile += 16
+
+            if ((centerFile + 16) & 0x88) break // -16 es para llegar sólo hasta la penúltima fila
+        }
+    }
+
+    let score = -20*(doubledW - doubledB)
+
+    return score
 }
 
 AI.getDefended = (board, pawnindexW, pawnindexB)=>{
@@ -632,7 +767,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
 
     let moves = board.getMoves() //+0 ELO
 
-    let standpat = AI.evaluate(board, ply, beta, pvNode, materialOnly, moves)
+    let standpat = AI.evaluate(board, ply, alpha, beta, pvNode, materialOnly, moves)
     let hashkey = board.hashkey
     let incheck = board.isKingInCheck()
 
@@ -806,7 +941,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
     }
 
     let moves = board.getMoves()
-    let staticeval = AI.evaluate(board, ply, beta, pvNode, materialOnly, moves)
+    let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode, materialOnly, moves)
     let incheck = board.isKingInCheck()
 
     //IID (si no hay entrada en ttEntry, busca una para mejorar el orden de movimientos)
@@ -1288,12 +1423,14 @@ AI.setPhase = function (board) {
     }
 
     //EARLY ENDGAME (the king enters)
-    if (AI.nofpieces <= 20 && queens === 0 || Math.abs(AI.lastscore) > AI.PIECE_VALUES[OPENING][ROOK]) {
-        AI.phase = 2
+    if (queens === 0 && AI.nofpieces > 12) {
+        if (AI.nofpieces <= 24 || Math.abs(AI.lastscore) > AI.PIECE_VALUES[OPENING][ROOK]) {
+            AI.phase = 2
+        }
     }
 
     //LATE ENDGAME
-    if (AI.nofpieces <= 12 || Math.abs(AI.lastscore) >= AI.PIECE_VALUES[OPENING][QUEEN]) {
+    if (AI.nofpieces <= 12 || (queens === 0 && Math.abs(AI.lastscore) >= AI.PIECE_VALUES[OPENING][QUEEN])) {
         AI.phase = 3
     }
 
@@ -1399,7 +1536,8 @@ AI.search = function (board, options) {
         AI.lastscore = 0
         AI.f = 0
     } else {
-        AI.createTables(true, true, false)
+        AI.createTables(true, true, true)
+        // AI.createTables(true, true, false)
         AI.f = AI.lastscore
     }
 
@@ -1429,6 +1567,7 @@ AI.search = function (board, options) {
         AI.ttnodes = 0
         AI.evalhashnodes = 0
         AI.evalnodes = 0
+        AI.evalTime = 0
         AI.iteration = 0
         AI.timer = (new Date()).getTime()
         AI.stop = false
@@ -1525,7 +1664,9 @@ AI.search = function (board, options) {
 
         AI.searchTime1 = (new Date()).getTime()
         AI.searchTime = AI.searchTime1 - AI.searchTime0
-        console.log('Sorting % time: ', (AI.sortingTime / AI.searchTime) * 100 | 0, '%')
+        console.log('Sorting % time: ', (AI.sortingTime / AI.searchTime) * 100 | 0,
+                    'Evaluation % time: ', (AI.evalTime / AI.searchTime) * 100 | 0
+        )
 
         console.log(AI.PV.map(e=>{
             if (e) {

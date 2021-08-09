@@ -321,43 +321,21 @@ module.exports = orobas = {
         }
 
         let attacks = 0
-        
-        //Peones
-        for (let i = 1; i <= 2; i++) {
-            let to = square + this.pieces[pFrom].offsets[i]
 
-            if (to & 0x88) continue
-
-            if (this.board[to] === pTo) {
-                if (count) {attacks++} else {return true}
-            }
-        }
-
-        // Caballos
+        //Dama
         for (let i = 0; i < 8; i++) {
-            let to = square + this.pieces[nFrom].offsets[i]
-
-            if (to & 0x88) continue
-
-            if (this.board[to] === nTo) {
-                if (count) {attacks++} else {return true}
-            }
-        }
-
-        // Alfiles
-        for (let i = 0; i <= 3; i++) {
             let to = square
             let blocked = false
             let outofbounds = false
 
             while (!blocked && !outofbounds) {
-                to = to + this.pieces[bFrom].offsets[i]
+                to = to + this.pieces[qFrom].offsets[i]
 
                 if (to & 0x88) {
                     outofbounds = true
                 } else {
                     if (this.board[to]) {
-                        if (this.board[to] === bTo) {
+                        if (this.board[to] === qTo) {
                             if (count) {attacks++} else {return true}
                         } else {
                             blocked = true
@@ -368,7 +346,7 @@ module.exports = orobas = {
         }
 
         //Torres
-        for (let i = 0; i <= 3; i++) {
+        for (let i = 0; i < 4; i++) {
             let to = square
             let blocked = false
             let outofbounds = false
@@ -390,26 +368,48 @@ module.exports = orobas = {
             }
         }
 
-        //Dama
-        for (let i = 0; i <= 7; i++) {
+        // Alfiles
+        for (let i = 0; i < 4; i++) {
             let to = square
             let blocked = false
             let outofbounds = false
 
             while (!blocked && !outofbounds) {
-                to = to + this.pieces[qFrom].offsets[i]
+                to = to + this.pieces[bFrom].offsets[i]
 
                 if (to & 0x88) {
                     outofbounds = true
                 } else {
                     if (this.board[to]) {
-                        if (this.board[to] === qTo) {
+                        if (this.board[to] === bTo) {
                             if (count) {attacks++} else {return true}
                         } else {
                             blocked = true
                         }
                     }
                 }
+            }
+        }
+
+        // Caballos
+        for (let i = 0; i < 8; i++) {
+            let to = square + this.pieces[nFrom].offsets[i]
+
+            if (to & 0x88) continue
+
+            if (this.board[to] === nTo) {
+                if (count) {attacks++} else {return true}
+            }
+        }
+        
+        //Peones
+        for (let i = 1; i <= 2; i++) {
+            let to = square + this.pieces[pFrom].offsets[i]
+
+            if (to & 0x88) continue
+
+            if (this.board[to] === pTo) {
+                if (count) {attacks++} else {return true}
             }
         }
 
