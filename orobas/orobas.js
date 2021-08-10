@@ -537,11 +537,10 @@ module.exports = orobas = {
                                 }
                             } else {
                                 if (to === this.enPassantSquares[this.enPassantSquares.length - 1]) {
+                                    isCapture = true
                                     //En passant
                                     // moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
-                                    // epnodes++
-
-                                    //DESACTIVADO TEMPORALMENTE
+                                    epnodes++
                                 }
                             }
                             
@@ -914,14 +913,14 @@ module.exports = orobas = {
         }
 
         this.castlingRights.pop()
+        this.enPassantSquares.pop()
 
         if (move.enPassantSquares) {
-            let lastEnPassantSquare = this.enPassantSquares[this.enPassantSquares.length - 2] // El penúltimo
-            this.updateHashkey(this.zobristKeys.enPassantSquares[lastEnPassantSquare]) // Quita última casilla e.p.
-            this.updateHashkey(this.zobristKeys.enPassantSquares[move.enPassantSquares]) // Agrega nuevo e.p.
+            let lastEnPassantSquare = this.enPassantSquares[this.enPassantSquares.length - 1] // El penúltimo
+            this.updateHashkey(this.zobristKeys.enPassantSquares[move.enPassantSquares]) // Quita e.p.
+            this.updateHashkey(this.zobristKeys.enPassantSquares[lastEnPassantSquare]) // Agrega e.p. anterior
         }
         
-        this.enPassantSquares.pop()
 
         this.changeTurn()
 
@@ -1007,7 +1006,7 @@ console.log(orobas.hashkey, orobas.pawnhashkey)
 // console.log('PERFT 1', orobas.perft(1), 20, 48) // OK
 // console.log('PERFT 2', orobas.perft(2), 400, 2039) // OK
 // console.log('PERFT 3', orobas.perft(3), 8902, 97862) // OK
-// console.log('PERFT 4', orobas.perft(4), 197281, 422333) // OK
+console.log('PERFT 4', orobas.perft(4), 197281, 422333) // OK
 // console.log('PERFT 5', orobas.perft(5), 4865609, '-') // OK
 // console.log('PERFT 6', orobas.perft(6), 119060324, '-') // NO
 console.log(orobas.perftData)

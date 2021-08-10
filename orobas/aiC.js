@@ -20,7 +20,7 @@ let AI = {
     phase: 1,
     htlength: 1 << 24,
     pawntlength: 1e6,
-    mindepth: [3, 3, 3, 3],
+    mindepth: [3,3,3,3],
     secondspermove: 3,
     lastmove: null,
     f: 0,
@@ -356,8 +356,8 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, moves) {
     if (AI.phase <= MIDGAME) {
         for (let i = 0, len=WIDECENTER.length; i < len; i++) {
             let occupiedBy = board.pieces[board.board[WIDECENTER[i]]].color
-            score += 5*(occupiedBy == WHITE? 1 : (occupiedBy == BLACK? -1 : 0))
-            score += 5*board.isSquareAttacked(i, WHITE, true) - board.isSquareAttacked(i, BLACK, true)
+            score += 20*(occupiedBy == WHITE? 1 : (occupiedBy == BLACK? -1 : 0))
+            score += 10*board.isSquareAttacked(i, WHITE, true) - board.isSquareAttacked(i, BLACK, true)
         }
     }
 
