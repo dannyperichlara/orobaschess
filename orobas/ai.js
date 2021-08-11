@@ -289,9 +289,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, moves) {
                     score += board.board[i-15] === P? 20 : 0
                 }
 
-                score -= 5*board.isSquareAttacked(i-15, BLACK, false)
-                score -= 5*board.isSquareAttacked(i-16, BLACK, false)
-                score -= 5*board.isSquareAttacked(i-17, BLACK, false)
+                // score -= 5*board.isSquareAttacked(i-15, BLACK, false)
+                // score -= 5*board.isSquareAttacked(i-16, BLACK, false)
+                // score -= 5*board.isSquareAttacked(i-17, BLACK, false)
             }
             
             if (piece === k) {
@@ -303,12 +303,14 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, moves) {
                     score += board.board[i+15] === p? -20 : 0
                 }
 
-                score += 5*board.isSquareAttacked(i+15, WHITE, false)
-                score += 5*board.isSquareAttacked(i+16, WHITE, false)
-                score += 5*board.isSquareAttacked(i+17, WHITE, false)
+                // score += 5*board.isSquareAttacked(i+15, WHITE, false)
+                // score += 5*board.isSquareAttacked(i+16, WHITE, false)
+                // score += 5*board.isSquareAttacked(i+17, WHITE, false)
             }
         }
     }
+
+    return sign*score/5
 
     if (bishopsW >= 2) {
         score += AI.BISHOP_PAIR 

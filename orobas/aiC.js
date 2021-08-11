@@ -26,7 +26,8 @@ let AI = {
     f: 0,
     previousls: 0,
     lastscore: 0,
-    onlyMaterialTime: 0.4
+    onlyMaterialTime: 0.4,
+    nullWindowFactor: 10
 }
 
 // ÍNDICES
@@ -230,6 +231,9 @@ AI.randomizePSQT = function () {
 // FUNCIÓN DE EVALUACIÓN DE LA POSICIÓN
 AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, moves) {
     let t0 = (new Date).getTime()
+
+    alpha = alpha*this.nullWindowFactor
+    beta = beta*this.nullWindowFactor
     
     let evalEntry = AI.evalTable[board.hashkey % this.htlength]
     this.evalnodes++
@@ -255,7 +259,10 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, moves) {
 
     let bishopsW = 0
     let bishopsB = 0
-    
+
+    let kingIndexW = null
+    let kingIndexB = null
+
     for (let i = 0; i < 128; i++) {
         if (i & 0x88) {
             i+=7
@@ -282,43 +289,12 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, moves) {
         
         score += material + psqt
 
-        if (true) {
-            // Escudo de peones
-            if (piece === K) {
-                if (AI.phase <= EARLY_ENDGAME) {
-                    if (AI.phase <= MIDGAME && board.columns[i] === 3 || board.columns[i] === 4) score -= 10
-                    
-                    if (i !== 116) {
-                        score += board.board[i-17] === P? 10 : 0
-                        score += board.board[i-16] === 0?-20 : 0
-                        score += board.board[i-16] === P? 20 : 0
-                        score += board.board[i-16] === B? 10 : 0
-                        score += board.board[i-15] === P? 10 : 0
-                    }
-                }
-                
-                score -= 10*board.isSquareAttacked(i-15, BLACK, false)
-                score -= 20*board.isSquareAttacked(i-16, BLACK, false)
-                score -= 10*board.isSquareAttacked(i-17, BLACK, false)
-            }
-            
-            if (piece === k) {
-                if (AI.phase <= EARLY_ENDGAME) {
-                    if (AI.phase <= MIDGAME && board.columns[i] === 3 || board.columns[i] === 4) score += 10
-    
-                    if (i !== 4) {
-                        score += board.board[i+17] === p? -10 : 0
-                        score += board.board[i+16] === 0?  20 : 0
-                        score += board.board[i+16] === p? -20 : 0
-                        score += board.board[i+16] === b? -10 : 0
-                        score += board.board[i+15] === p? -10 : 0
-                    }
-                }
-
-                score += 10*board.isSquareAttacked(i+15, WHITE, false)
-                score += 20*board.isSquareAttacked(i+16, WHITE, false)
-                score += 10*board.isSquareAttacked(i+17, WHITE, false)
-            }
+        if (piece === K) {
+            kingIndexW = i
+        }
+        
+        if (piece === k) {
+            kingIndexB = i
         }
     }
 
@@ -329,23 +305,88 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, moves) {
         score -= AI.BISHOP_PAIR 
     }
 
-    // Lazy eval
-    if (score > beta + AI.PIECE_VALUES[0][KNIGHT]) {
-        let nullWindowScore = sign * score / 5 | 0
+    // King safety
+    if (AI.phase <= EARLY_ENDGAME) {
+        if (AI.phase <= MIDGAME && board.columns[kingIndexW] === 3 || board.columns[kingIndexW] === 4) score -= 10
+        
+        if (kingIndexW !== 116) {
+            score += board.board[kingIndexW-17] === P? 10 : 0
+            score += board.board[kingIndexW-16] === 0?-20 : 0
+            score += board.board[kingIndexW-16] === P? 20 : 0
+            score += board.board[kingIndexW-16] === B? 10 : 0
+            score += board.board[kingIndexW-15] === P? 10 : 0
+        }
+    }
+    
+    if (AI.phase <= EARLY_ENDGAME) {
+        if (AI.phase <= MIDGAME && board.columns[kingIndexB] === 3 || board.columns[kingIndexB] === 4) score += 10
+
+        if (kingIndexB !== 4) {
+            score += board.board[kingIndexB+17] === p? -10 : 0
+            score += board.board[kingIndexB+16] === 0?  20 : 0
+            score += board.board[kingIndexB+16] === p? -20 : 0
+            score += board.board[kingIndexB+16] === b? -10 : 0
+            score += board.board[kingIndexB+15] === p? -10 : 0
+        }
+    }
+
+    if (score <= alpha - AI.PIECE_VALUES[0][KNIGHT]) {
+        let nullWindowScore = sign * score / AI.nullWindowFactor | 0
         let t1 = (new Date).getTime()
         AI.evalTime += t1 - t0
         AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
         return nullWindowScore
     }
 
+    if (score > beta + AI.PIECE_VALUES[0][KNIGHT]) {
+        let nullWindowScore = sign * score / AI.nullWindowFactor | 0
+        let t1 = (new Date).getTime()
+        AI.evalTime += t1 - t0
+        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+        return nullWindowScore
+    }
+
+    // Is king under attack
+
+    score -= 10*board.isSquareAttacked(kingIndexW-15, BLACK, false)
+    score -= 20*board.isSquareAttacked(kingIndexW-16, BLACK, false)
+    score -= 10*board.isSquareAttacked(kingIndexW-17, BLACK, false)
+
+    score += 10*board.isSquareAttacked(kingIndexB+15, WHITE, false)
+    score += 20*board.isSquareAttacked(kingIndexB+16, WHITE, false)
+    score += 10*board.isSquareAttacked(kingIndexB+17, WHITE, false)
+    
+    if (score <= alpha - AI.PIECE_VALUES[0][KNIGHT]) {
+        let nullWindowScore = sign * score / AI.nullWindowFactor | 0
+        let t1 = (new Date).getTime()
+        AI.evalTime += t1 - t0
+        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+        return nullWindowScore
+    }
+
+    if (score > beta + AI.PIECE_VALUES[0][KNIGHT]) {
+        let nullWindowScore = sign * score / AI.nullWindowFactor | 0
+        let t1 = (new Date).getTime()
+        AI.evalTime += t1 - t0
+        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+        return nullWindowScore
+    }
+    
     let structure = AI.getStructure(board, pawnindexW, pawnindexB)
-
+    
     score += structure
-
     
     // Lazy eval
-    if (!pvNode || ply >= 6 || score > beta + VPAWN) {
-        let nullWindowScore = sign * score / 5 | 0
+    if (!pvNode || ply >= 6 || score <= alpha - AI.PIECE_VALUES[0][KNIGHT]) {
+        let nullWindowScore = sign * score / AI.nullWindowFactor | 0
+        let t1 = (new Date).getTime()
+        AI.evalTime += t1 - t0
+        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+        return nullWindowScore
+    }
+
+    if (score > beta + AI.PIECE_VALUES[0][KNIGHT]) {
+        let nullWindowScore = sign * score / AI.nullWindowFactor | 0
         let t1 = (new Date).getTime()
         AI.evalTime += t1 - t0
         AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
@@ -362,8 +403,16 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, moves) {
     }
 
     // Lazy eval
-    if (score > beta + VPAWN) {
-        let nullWindowScore = sign * score / 5 | 0
+    if (!pvNode || ply >= 6 || score <= alpha - AI.PIECE_VALUES[0][KNIGHT]) {
+        let nullWindowScore = sign * score / AI.nullWindowFactor | 0
+        let t1 = (new Date).getTime()
+        AI.evalTime += t1 - t0
+        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+        return nullWindowScore
+    }
+
+    if (score > beta + AI.PIECE_VALUES[0][KNIGHT]) {
+        let nullWindowScore = sign * score / AI.nullWindowFactor | 0
         let t1 = (new Date).getTime()
         AI.evalTime += t1 - t0
         AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
@@ -374,7 +423,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, moves) {
 
     score += mobility
 
-    let nullWindowScore = sign * score / 5 | 0
+    let nullWindowScore = sign * score / AI.nullWindowFactor | 0
 
     AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
 
@@ -1629,7 +1678,7 @@ AI.search = function (board, options) {
                 alpha -= VPAWN
                 beta += VPAWN
 
-                score = 5 * (isWhite ? 1 : -1) * AI.f
+                score = AI.nullWindowFactor * (isWhite ? 1 : -1) * AI.f
 
                 AI.PV = AI.getPV(board, depth)
 

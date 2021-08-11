@@ -1,6 +1,6 @@
 var seedrandom = require('seedrandom')
 
-seedrandom('orobas', {global: true})
+seedrandom('648818339', {global: true})
 
 const P =   1
 const N =   2
@@ -350,34 +350,6 @@ module.exports = orobas = {
             }
         }
 
-        //Torres
-        for (let i = 0; i < 4; i++) {
-            let to = square
-            let blocked = false
-            let outofbounds = false
-
-            while (!blocked && !outofbounds) {
-                to = to + this.pieces[rFrom].offsets[i]
-
-                if (to & 0x88) {
-                    outofbounds = true
-                } else {
-                    if (this.board[to]) {
-                        if (this.board[to] === rTo) {
-                            if (count) {
-                                attacks++
-                                blocked = true
-                            } else {
-                                return true
-                            }
-                        } else {
-                            if (!xrays) blocked = true
-                        }
-                    }
-                }
-            }
-        }
-
         // Alfiles
         for (let i = 0; i < 4; i++) {
             let to = square
@@ -392,6 +364,34 @@ module.exports = orobas = {
                 } else {
                     if (this.board[to]) {
                         if (this.board[to] === bTo) {
+                            if (count) {
+                                attacks++
+                                blocked = true
+                            } else {
+                                return true
+                            }
+                        } else {
+                            if (!xrays) blocked = true
+                        }
+                    }
+                }
+            }
+        }
+
+        //Torres
+        for (let i = 0; i < 4; i++) {
+            let to = square
+            let blocked = false
+            let outofbounds = false
+
+            while (!blocked && !outofbounds) {
+                to = to + this.pieces[rFrom].offsets[i]
+
+                if (to & 0x88) {
+                    outofbounds = true
+                } else {
+                    if (this.board[to]) {
+                        if (this.board[to] === rTo) {
                             if (count) {
                                 attacks++
                                 blocked = true
