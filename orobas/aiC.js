@@ -8,8 +8,9 @@ let AI = {
     iteration: 0,
     qsnodes: 0,
     nodes: 0,
-    pnodes: 0,
-    phnodes: 0,
+    pnodes: 0, //Pawn structure nodes
+    phnodes: 0, //Pawn hash nodes
+    panodes: 0, //Pawn attack hash nodes
     evalhashnodes: 0,
     evalnodes: 0,
     evalTime: 0,
@@ -19,7 +20,7 @@ let AI = {
     random: 20,
     phase: 1,
     htlength: 1 << 24,
-    pawntlength: 1e6,
+    pawntlength: 5e5,
     mindepth: [3,3,3,3],
     secondspermove: 3,
     lastmove: null,
@@ -203,17 +204,22 @@ AI.createTables = function (tt, hh, pp) {
     }
 
     if (tt) {
-        delete AI.hashtable
-        AI.hashtable = new Map()
+        delete AI.hashTable
+        AI.hashTable = new Map()
 
         delete AI.evalTable
         AI.evalTable = (new Array(this.htlength)).fill(null)
     }
     if (pp) {
-        delete AI.pawntable
-        AI.pawntable = (new Array(this.pawntlength)).fill(null)
-    }
+        delete AI.pawnTable
+        AI.pawnTable = (new Array(this.pawntlength)).fill(null)
 
+        delete AI.pawnAttackTable
+        AI.pawnAttackTable = {
+            [WHITE]: (new Array(this.pawntlength)).fill(null),
+            [BLACK]: (new Array(this.pawntlength)).fill(null),
+        }
+    }
 }
 
 //ESTABLECE VALORES ALEATORIAS EN LA APERTURA (PARA TESTEOS)
@@ -305,6 +311,10 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, moves) {
         score -= AI.BISHOP_PAIR 
     }
 
+    if (AI.isLazyFutile(board, sign, score, alpha, beta, AI.PIECE_VALUES[0][KNIGHT])) {
+        return sign*score/AI.nullWindowFactor | 0
+    }
+
     // King safety
     if (AI.phase <= EARLY_ENDGAME) {
         if (AI.phase <= MIDGAME && board.columns[kingIndexW] === 3 || board.columns[kingIndexW] === 4) score -= 10
@@ -330,24 +340,11 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, moves) {
         }
     }
 
-    if (score <= alpha - AI.PIECE_VALUES[0][KNIGHT]) {
-        let nullWindowScore = sign * score / AI.nullWindowFactor | 0
-        let t1 = (new Date).getTime()
-        AI.evalTime += t1 - t0
-        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
-        return nullWindowScore
-    }
-
-    if (score > beta + AI.PIECE_VALUES[0][KNIGHT]) {
-        let nullWindowScore = sign * score / AI.nullWindowFactor | 0
-        let t1 = (new Date).getTime()
-        AI.evalTime += t1 - t0
-        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
-        return nullWindowScore
+    if (AI.isLazyFutile(board, sign, score, alpha, beta, AI.PIECE_VALUES[0][KNIGHT])) {
+        return sign*score/AI.nullWindowFactor | 0
     }
 
     // Is king under attack
-
     score -= 10*board.isSquareAttacked(kingIndexW-15, BLACK, false)
     score -= 20*board.isSquareAttacked(kingIndexW-16, BLACK, false)
     score -= 10*board.isSquareAttacked(kingIndexW-17, BLACK, false)
@@ -356,45 +353,18 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, moves) {
     score += 20*board.isSquareAttacked(kingIndexB+16, WHITE, false)
     score += 10*board.isSquareAttacked(kingIndexB+17, WHITE, false)
     
-    if (score <= alpha - AI.PIECE_VALUES[0][KNIGHT]) {
-        let nullWindowScore = sign * score / AI.nullWindowFactor | 0
-        let t1 = (new Date).getTime()
-        AI.evalTime += t1 - t0
-        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
-        return nullWindowScore
-    }
-
-    if (score > beta + AI.PIECE_VALUES[0][KNIGHT]) {
-        let nullWindowScore = sign * score / AI.nullWindowFactor | 0
-        let t1 = (new Date).getTime()
-        AI.evalTime += t1 - t0
-        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
-        return nullWindowScore
+    if (AI.isLazyFutile(board, sign, score, alpha, beta, AI.PIECE_VALUES[0][KNIGHT])) {
+        return sign*score/AI.nullWindowFactor | 0
     }
     
-    let structure = AI.getStructure(board, pawnindexW, pawnindexB)
+    score += AI.getStructure(board, pawnindexW, pawnindexB)
     
-    score += structure
-    
-    // Lazy eval
-    if (!pvNode || ply >= 6 || score <= alpha - AI.PIECE_VALUES[0][KNIGHT]) {
-        let nullWindowScore = sign * score / AI.nullWindowFactor | 0
-        let t1 = (new Date).getTime()
-        AI.evalTime += t1 - t0
-        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
-        return nullWindowScore
-    }
-
-    if (score > beta + AI.PIECE_VALUES[0][KNIGHT]) {
-        let nullWindowScore = sign * score / AI.nullWindowFactor | 0
-        let t1 = (new Date).getTime()
-        AI.evalTime += t1 - t0
-        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
-        return nullWindowScore
+    if (AI.isLazyFutile(board, sign, score, alpha, beta, VPAWN)) {
+        return sign*score/AI.nullWindowFactor | 0
     }
 
     // Center control
-    if (AI.phase <= MIDGAME) {
+    if (AI.phase <= EARLY_ENDGAME) {
         for (let i = 0, len=WIDECENTER.length; i < len; i++) {
             let occupiedBy = board.pieces[board.board[WIDECENTER[i]]].color
             score += 20*(occupiedBy == WHITE? 1 : (occupiedBy == BLACK? -1 : 0))
@@ -402,26 +372,10 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, moves) {
         }
     }
 
-    // Lazy eval
-    if (!pvNode || ply >= 6 || score <= alpha - AI.PIECE_VALUES[0][KNIGHT]) {
-        let nullWindowScore = sign * score / AI.nullWindowFactor | 0
-        let t1 = (new Date).getTime()
-        AI.evalTime += t1 - t0
-        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
-        return nullWindowScore
-    }
-
-    if (score > beta + AI.PIECE_VALUES[0][KNIGHT]) {
-        let nullWindowScore = sign * score / AI.nullWindowFactor | 0
-        let t1 = (new Date).getTime()
-        AI.evalTime += t1 - t0
-        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
-        return nullWindowScore
+    if (AI.isLazyFutile(board, sign, score, alpha, beta, VPAWN2)) {
+        return sign*score/AI.nullWindowFactor | 0
     }
     
-    mobility = AI.getMobility(board)
-
-    score += mobility
 
     let nullWindowScore = sign * score / AI.nullWindowFactor | 0
 
@@ -434,20 +388,41 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, moves) {
     return nullWindowScore
 }
 
+AI.isLazyFutile = (board, sign, score, alpha, beta, margin)=> {
+    if (score <= alpha - margin) {
+        if (margin <= VPAWN) AI.evalTable[board.hashkey % this.htlength] = sign * score / AI.nullWindowFactor | 0
+
+        return true
+    }
+
+    if (score > beta + margin) {
+        if (margin <= VPAWN) AI.evalTable[board.hashkey % this.htlength] = sign * score / AI.nullWindowFactor | 0
+
+        return true
+    }
+
+}
+
 AI.getMobility = (board)=>{
     let mobility = 0
     let opponentMoves = []
+    // let pawnAttackMask = AI.getPawnAttackMask(board, board.turn)
 
-    let myMoves = board.getMoves(true)
+    let myMoves = board.getMoves(true)/*.filter(e=>{
+        return !pawnAttackMask[e.to]
+    })*/
+
 
     board.changeTurn()
+    // pawnAttackMask = AI.getPawnAttackMask(board, board.turn)
     
-    opponentMoves = board.getMoves(true)
+    opponentMoves = board.getMoves(true)/*.filter(e=>{
+        return !pawnAttackMask[e.to]
+    })*/
 
     board.changeTurn()
 
-    mobility = 20*Math.log((myMoves.length+1)/(opponentMoves.length+1)) | 0
-    // console.log(mobility)
+    mobility = 20*Math.log((myMoves.length+1)/(opponentMoves.length+1)) - 10 | 0
 
     return mobility
 }
@@ -464,7 +439,7 @@ let max = 0
 AI.getStructure = (board, pawnindexW, pawnindexB)=> {
     let hashkey = board.pawnhashkey
 
-    let hashentry = AI.pawntable[hashkey % AI.pawntlength]
+    let hashentry = AI.pawnTable[hashkey % AI.pawntlength]
 
     AI.pnodes++
 
@@ -480,8 +455,43 @@ AI.getStructure = (board, pawnindexW, pawnindexB)=> {
 
     let score = doubled + defended + passers + space
 
-    AI.pawntable[hashkey % AI.pawntlength] = score
+    AI.pawnTable[hashkey % AI.pawntlength] = score
     return score
+}
+
+AI.getPawnAttackMask = (board, color)=>{
+    let entry = AI.pawnAttackTable[color][board.pawnhashkey & this.pawntlength]
+
+    if (entry !== null) {
+        AI.panodes++
+        return entry
+    }
+
+    console.log('si')
+
+    let attackMask = new Array(128).fill(0)
+
+    for (let i = 0; i < 128; i++) {
+        if (i & 0x88) {
+            i+=7; continue
+        }
+        
+        let piece = board.board[i]
+    
+        if (color === WHITE && piece === P) {
+            attackMask[i-17] = 1
+            attackMask[i-15] = 1
+        }
+
+        if (color === BLACK && piece === p) {
+            attackMask[i+17] = 1
+            attackMask[i+15] = 1
+        }
+    }
+
+    AI.pawnAttackTable[color][board.pawnhashkey & this.pawntlength] = attackMask
+
+    return attackMask
 }
 
 AI.getSpace = (board, pawnindexW, pawnindexB)=>{
@@ -905,7 +915,7 @@ AI.ttSave = function (hashkey, score, flag, depth, move) {
         return
     }
 
-    AI.hashtable[hashkey % AI.htlength] = {
+    AI.hashTable[hashkey % AI.htlength] = {
         hashkey,
         score,
         flag,
@@ -916,7 +926,7 @@ AI.ttSave = function (hashkey, score, flag, depth, move) {
 
 AI.ttGet = function (hashkey) {
     AI.ttnodes++
-    return AI.hashtable[hashkey % AI.htlength]
+    return AI.hashTable[hashkey % AI.htlength]
 }
 
 AI.saveHistory = function (turn, move, value) {
@@ -1694,7 +1704,10 @@ AI.search = function (board, options) {
 
                 if (AI.PV && !AI.stop) console.log(depth, AI.PV.map(e => { return e? [e.from,e.to] : '-'}).join(' '), '|Fhf ' + fhfperc + '%',
                         'Pawn hit ' + (AI.phnodes / AI.pnodes * 100 | 0), score | 0, 'cp', AI.nodes.toString(),
-                        AI.qsnodes.toString(), AI.ttnodes.toString(), ((100*this.evalhashnodes/(this.evalnodes)) | 0))
+                        AI.qsnodes.toString(), AI.ttnodes.toString(),
+                        ((100*this.evalhashnodes/(this.evalnodes)) | 0),
+                        100*AI.panodes/AI.pnodes | 0
+                )
             
                 depth++
             }
@@ -1735,6 +1748,7 @@ AI.search = function (board, options) {
             }
         }), AI.bestmove.from, AI.bestmove.to)
 
+        AI.getPawnAttackMask(board, WHITE)
         resolve({
             n: board.movenumber, phase: AI.phase, depth: AI.iteration - 1, from: board.board64[AI.bestmove.from],
             to: board.board64[AI.bestmove.to], fromto0x88: [AI.bestmove.from, AI.bestmove.to],
@@ -1745,5 +1759,6 @@ AI.search = function (board, options) {
 }
 
 AI.createTables(true, true, true)
+
 
 module.exports = AI
