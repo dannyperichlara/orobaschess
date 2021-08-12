@@ -229,7 +229,7 @@ AI.randomizePSQT = function () {
 }
 
 // FUNCIÓN DE EVALUACIÓN DE LA POSICIÓN
-AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, moves) {
+AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, isStatic) {
     let t0 = (new Date).getTime()
 
     alpha = alpha*this.nullWindowFactor
@@ -301,9 +301,12 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, moves) {
     if (bishopsW >= 2) {
         score += AI.BISHOP_PAIR 
     }
+    
     if (bishopsB >= 2) {
-        score -= AI.BISHOP_PAIR 
+        score -= AI.BISHOP_PAIR
     }
+
+    if (isStatic) return sign*score/this.nullWindowFactor
 
     if (!pvNode && AI.isLazyFutile(board, sign, score, alpha, beta, AI.PIECE_VALUES[0][KNIGHT])) {
         return sign*score/AI.nullWindowFactor | 0
@@ -983,7 +986,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
         }
     }
 
-    let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode, materialOnly, [])
+    let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode, materialOnly, true)
 
     //Reverse Futility pruning (Static Null Move Pruning)
     // let reverseval = staticeval - AI.PIECE_VALUES[0][KNIGHT]
