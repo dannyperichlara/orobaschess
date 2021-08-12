@@ -795,9 +795,11 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
 
     let standpat = AI.evaluate(board, ply, alpha, beta, pvNode, materialOnly, moves)
     let hashkey = board.hashkey
-    let incheck = board.isKingInCheck()
+    // let incheck = board.isKingInCheck()
 
-    if (!incheck && standpat >= beta) {
+    // if (incheck) console.log('si')
+
+    if (standpat >= beta) {
         return standpat
     }
 
@@ -824,10 +826,8 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
 
         let move = moves[i]
         // delta pruning para cada movimiento
-        if (!incheck) {
-            if (standpat + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]] + VPAWN < alpha) {
-                continue
-            }
+        if (standpat + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]] + VPAWN < alpha) {
+            continue
         }
 
         if (board.makeMove(move)) {
@@ -944,8 +944,10 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
         }
     }
 
+    let incheck = board.isKingInCheck()
+
     //Búsqueda QS
-    if (depth <= 0) {
+    if (!incheck && depth <= 0) {
         return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode, materialOnly)
     }
 
@@ -972,8 +974,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
     }
 
     // console.log(pvNode)
-
-    let incheck = board.isKingInCheck()
 
     // // Null move pruning
     if (!incheck && depth > 1) {
