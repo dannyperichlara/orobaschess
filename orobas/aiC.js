@@ -86,7 +86,7 @@ const LOWERBOUND = -1
 const EXACT = 0
 const UPPERBOUND = 1
 
-const VPAWN = 82
+const VPAWN = 100
 const VPAWN2 = VPAWN / 2 | 0
 const VPAWN3 = VPAWN / 3 | 0
 const VPAWN4 = VPAWN / 4 | 0
@@ -101,26 +101,26 @@ AI.PIECE_VALUES = [
     [],
 ]
 
-AI.PIECE_VALUES[0][p] = -100
-AI.PIECE_VALUES[0][n] = -288
-AI.PIECE_VALUES[0][b] = -325
-AI.PIECE_VALUES[0][r] = -480
-AI.PIECE_VALUES[0][q] = -960
+AI.PIECE_VALUES[0][p] = -VPAWN
+AI.PIECE_VALUES[0][n] = -VPAWN*2.88
+AI.PIECE_VALUES[0][b] = -VPAWN*3.00
+AI.PIECE_VALUES[0][r] = -VPAWN*5.20
+AI.PIECE_VALUES[0][q] = -VPAWN*9.60
 AI.PIECE_VALUES[0][k] = -0
 
-AI.PIECE_VALUES[0][P] = 100
-AI.PIECE_VALUES[0][N] = 288
-AI.PIECE_VALUES[0][B] = 325
-AI.PIECE_VALUES[0][R] = 480
-AI.PIECE_VALUES[0][Q] = 960
+AI.PIECE_VALUES[0][P] = VPAWN
+AI.PIECE_VALUES[0][N] = VPAWN*2.88
+AI.PIECE_VALUES[0][B] = VPAWN*3.00
+AI.PIECE_VALUES[0][R] = VPAWN*5.20
+AI.PIECE_VALUES[0][Q] = VPAWN*9.60
 AI.PIECE_VALUES[0][K] = 0
 
 AI.BISHOP_PAIR = VPAWN2
 
 // CONSTANTES
-const MATE = 20000
+const MATE = 10000 / AI.nullWindowFactor | 0
 const DRAW = 0 //-2*VPAWN
-const INFINITY = 21000
+const INFINITY = 11000 / AI.nullWindowFactor | 0
 
 //CREA TABLA PARA REDUCCIONES
 AI.LMR_TABLE = new Array(AI.totaldepth + 1)
@@ -213,12 +213,6 @@ AI.createTables = function (tt, hh, pp) {
     if (pp) {
         delete AI.pawnTable
         AI.pawnTable = (new Array(this.pawntlength)).fill(null)
-
-        delete AI.pawnAttackTable
-        AI.pawnAttackTable = {
-            [WHITE]: (new Array(this.pawntlength)).fill(null),
-            [BLACK]: (new Array(this.pawntlength)).fill(null),
-        }
     }
 }
 
@@ -311,7 +305,14 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, moves) {
         score -= AI.BISHOP_PAIR 
     }
 
-    if (AI.isLazyFutile(board, sign, score, alpha, beta, AI.PIECE_VALUES[0][KNIGHT])) {
+    if (!pvNode && AI.isLazyFutile(board, sign, score, alpha, beta, AI.PIECE_VALUES[0][KNIGHT])) {
+        return sign*score/AI.nullWindowFactor | 0
+    }
+
+    // Pawn structure
+    score += AI.getStructure(board, pawnindexW, pawnindexB)
+
+    if (!pvNode && AI.isLazyFutile(board, sign, score, alpha, beta, VPAWNx2)) {
         return sign*score/AI.nullWindowFactor | 0
     }
 
@@ -326,11 +327,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, moves) {
             score += board.board[kingIndexW-16] === B? 10 : 0
             score += board.board[kingIndexW-15] === P? 10 : 0
         }
-    }
-    
-    if (AI.phase <= EARLY_ENDGAME) {
+        
         if (AI.phase <= MIDGAME && board.columns[kingIndexB] === 3 || board.columns[kingIndexB] === 4) score += 10
-
+    
         if (kingIndexB !== 4) {
             score += board.board[kingIndexB+17] === p? -10 : 0
             score += board.board[kingIndexB+16] === 0?  20 : 0
@@ -340,31 +339,25 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, moves) {
         }
     }
 
-    if (AI.isLazyFutile(board, sign, score, alpha, beta, AI.PIECE_VALUES[0][KNIGHT])) {
+    if (!pvNode && AI.isLazyFutile(board, sign, score, alpha, beta, VPAWN)) {
         return sign*score/AI.nullWindowFactor | 0
     }
 
     // Is king under attack
     score -= 10*board.isSquareAttacked(kingIndexW-15, BLACK, false)
-    score -= 20*board.isSquareAttacked(kingIndexW-16, BLACK, false)
+    score -= 10*board.isSquareAttacked(kingIndexW-16, BLACK, false)
     score -= 10*board.isSquareAttacked(kingIndexW-17, BLACK, false)
 
     score += 10*board.isSquareAttacked(kingIndexB+15, WHITE, false)
-    score += 20*board.isSquareAttacked(kingIndexB+16, WHITE, false)
+    score += 10*board.isSquareAttacked(kingIndexB+16, WHITE, false)
     score += 10*board.isSquareAttacked(kingIndexB+17, WHITE, false)
-    
-    if (AI.isLazyFutile(board, sign, score, alpha, beta, AI.PIECE_VALUES[0][KNIGHT])) {
-        return sign*score/AI.nullWindowFactor | 0
-    }
-    
-    score += AI.getStructure(board, pawnindexW, pawnindexB)
-    
-    if (AI.isLazyFutile(board, sign, score, alpha, beta, VPAWN)) {
+        
+    if (!pvNode && AI.isLazyFutile(board, sign, score, alpha, beta, VPAWN)) {
         return sign*score/AI.nullWindowFactor | 0
     }
 
     // Center control
-    if (AI.phase <= EARLY_ENDGAME) {
+    if (AI.phase <= MIDGAME) {
         for (let i = 0, len=WIDECENTER.length; i < len; i++) {
             let occupiedBy = board.pieces[board.board[WIDECENTER[i]]].color
             score += 20*(occupiedBy == WHITE? 1 : (occupiedBy == BLACK? -1 : 0))
@@ -372,10 +365,13 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, moves) {
         }
     }
 
-    if (AI.isLazyFutile(board, sign, score, alpha, beta, VPAWN2)) {
+    if (!pvNode && AI.isLazyFutile(board, sign, score, alpha, beta, VPAWN2)) {
         return sign*score/AI.nullWindowFactor | 0
     }
-    
+
+    if (pvNode && AI.phase >= MIDGAME && ply <= 4) {
+        score += AI.getMobility(board)
+    }
 
     let nullWindowScore = sign * score / AI.nullWindowFactor | 0
 
@@ -406,23 +402,16 @@ AI.isLazyFutile = (board, sign, score, alpha, beta, margin)=> {
 AI.getMobility = (board)=>{
     let mobility = 0
     let opponentMoves = []
-    // let pawnAttackMask = AI.getPawnAttackMask(board, board.turn)
 
-    let myMoves = board.getMoves(true)/*.filter(e=>{
-        return !pawnAttackMask[e.to]
-    })*/
-
+    let myMoves = board.getMoves(true)
 
     board.changeTurn()
-    // pawnAttackMask = AI.getPawnAttackMask(board, board.turn)
     
-    opponentMoves = board.getMoves(true)/*.filter(e=>{
-        return !pawnAttackMask[e.to]
-    })*/
+    opponentMoves = board.getMoves(true)
 
     board.changeTurn()
 
-    mobility = 20*Math.log((myMoves.length+1)/(opponentMoves.length+1)) - 10 | 0
+    mobility = 10*Math.log((myMoves.length+1)/(opponentMoves.length+1)) - 10 | 0
 
     return mobility
 }
@@ -457,41 +446,6 @@ AI.getStructure = (board, pawnindexW, pawnindexB)=> {
 
     AI.pawnTable[hashkey % AI.pawntlength] = score
     return score
-}
-
-AI.getPawnAttackMask = (board, color)=>{
-    let entry = AI.pawnAttackTable[color][board.pawnhashkey & this.pawntlength]
-
-    if (entry !== null) {
-        AI.panodes++
-        return entry
-    }
-
-    console.log('si')
-
-    let attackMask = new Array(128).fill(0)
-
-    for (let i = 0; i < 128; i++) {
-        if (i & 0x88) {
-            i+=7; continue
-        }
-        
-        let piece = board.board[i]
-    
-        if (color === WHITE && piece === P) {
-            attackMask[i-17] = 1
-            attackMask[i-15] = 1
-        }
-
-        if (color === BLACK && piece === p) {
-            attackMask[i+17] = 1
-            attackMask[i+15] = 1
-        }
-    }
-
-    AI.pawnAttackTable[color][board.pawnhashkey & this.pawntlength] = attackMask
-
-    return attackMask
 }
 
 AI.getSpace = (board, pawnindexW, pawnindexB)=>{
@@ -849,16 +803,19 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
     let ttEntry = AI.ttGet(hashkey)
 
     let score = -INFINITY
-
+    
     moves = moves.filter(e=>{
         return e.capturedPiece// !== 0 && ABS[e.capturedPiece] >= ABS[e.piece]
     })
-
+    
     moves = AI.sortMoves(moves, turn, ply, board, ttEntry, true)
 
+    
     if (moves.length === 0) {
         return alpha
     }
+
+    let bestmove = moves[0]
 
     for (let i = 0, len = moves.length; i < len; i++) {
 
@@ -884,6 +841,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
             
             if (score > alpha) {
                 alpha = score
+                bestmove = move
             }
         }
     }
@@ -902,6 +860,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
     
     if (alpha > oAlpha) {
         // Mejor movimiento
+        AI.ttSave(hashkey, score, EXACT, 0, bestmove)
         return alpha
     } else {
         //Upperbound
@@ -1009,9 +968,29 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
         }
     }
 
-    let moves = board.getMoves()
-    let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode, materialOnly, moves)
+    // console.log(pvNode)
+
     let incheck = board.isKingInCheck()
+
+    // // Null move pruning
+    if (!incheck && depth > 1) {
+        board.changeTurn()
+        let nullR = 5 - AI.phase
+        let nullScore = -AI.PVS(board, -beta, -beta + 1, depth - nullR - 1, ply + 1, materialOnly)
+        board.changeTurn()
+        if (nullScore >= beta) {
+            return nullScore
+        }
+    }
+
+    let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode, materialOnly, [])
+
+    //Reverse Futility pruning (Static Null Move Pruning)
+    // let reverseval = staticeval - AI.PIECE_VALUES[0][KNIGHT]
+
+    // if (!incheck && depth > 1 && reverseval >= beta) {
+    //     return reverseval
+    // }
 
     //IID (si no hay entrada en ttEntry, busca una para mejorar el orden de movimientos)
     if (!ttEntry && depth > 2) {
@@ -1019,32 +998,14 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
         ttEntry = AI.ttGet(hashkey)
     }
 
+    let moves = board.getMoves()
+
     moves = AI.sortMoves(moves, turn, ply, board, ttEntry, false)
 
     let bestmove = moves[0]
     let legal = 0
     let bestscore = -INFINITY
     let score
-
-    //Reverse Futility pruning (Static Null Move Pruning)
-    // let reverseval = staticeval - VPAWN
-
-    // if (!incheck && reverseval >= beta) {
-    //     return reverseval
-    // }
-
-    // console.log(pvNode)
-
-    // // Null move pruning
-    if (!incheck && depth > 1) {
-        board.changeTurn()
-        let nullR = 5 - AI.phase
-        let nullScore = -AI.PVS(board, -beta, -beta+1, depth - nullR - 1, ply + 1, materialOnly)
-        board.changeTurn()
-        if (nullScore >= beta) {
-            return nullScore
-        }
-    }
 
     for (let i = 0, len = moves.length; i < len; i++) {
         let move = moves[i]
@@ -1748,7 +1709,6 @@ AI.search = function (board, options) {
             }
         }), AI.bestmove.from, AI.bestmove.to)
 
-        AI.getPawnAttackMask(board, WHITE)
         resolve({
             n: board.movenumber, phase: AI.phase, depth: AI.iteration - 1, from: board.board64[AI.bestmove.from],
             to: board.board64[AI.bestmove.to], fromto0x88: [AI.bestmove.from, AI.bestmove.to],
