@@ -46,16 +46,7 @@ module.exports = orobas = {
         "a2","b2","c2","d2","e2","f2","g2","h2",    0,0,0,0,0,0,0,0,
         "a1","b1","c1","d1","e1","f1","g1","h1",    0,0,0,0,0,0,0,0,
     ],
-    board: [
-        r,  n,  b,  q,  k,  b,  n,  r,  	null,	null,	null,	null,	null,	null,	null,	null,
-        p,  p,  p,  p,  p,  p,  p,  p,  	null,	null,	null,	null,	null,	null,	null,	null,
-        0,  0,  0,  0,  0,  0,  0,  0,  	null,	null,	null,	null,	null,	null,	null,	null,
-        0,  0,  0,  0,  0,  0,  0,  0,  	null,	null,	null,	null,	null,	null,	null,	null,
-        0,  0,  0,  0,  0,  0,  0,  0,  	null,	null,	null,	null,	null,	null,	null,	null,
-        0,  0,  0,  0,  0,  0,  0,  0,  	null,	null,	null,	null,	null,	null,	null,	null,
-        P,  P,  P,  P,  P,  P,  P,  P,  	null,	null,	null,	null,	null,	null,	null,	null,
-        R,  N,  B,  Q,  K,  B,  N,  R,  	null,	null,	null,	null,	null,	null,	null,	null,
-    ],
+    board: new Uint8Array(128),
 
     board64: [
         56,	57,	58,	59,	60,	61,	62,	63,	null,	null,	null,	null,	null,	null,	null,	null,
@@ -213,7 +204,6 @@ module.exports = orobas = {
             this.updateHashkey(this.zobristKeys.turn[turn])
         } else {
             this.turn = this.turn === WHITE? BLACK : WHITE // Esto es 35% más rápido que ~turn o -turn o cualquier otra cosa
-            // this.updateHashkey(this.zobristKeys.turn[this.turn]) //this.turn, ya cambió el turn
             this.updateHashkey(this.zobristKeys.turn[WHITE])
         }
     },
@@ -292,6 +282,8 @@ module.exports = orobas = {
     isSquareAttacked(square, attackerSide, count, xrays) {
         if (square & 0x88) return count? 0 : false
 
+        let t0 = new Date().getTime()
+
         if (attackerSide === BLACK) {
             pFrom = P
             nFrom = N
@@ -323,32 +315,32 @@ module.exports = orobas = {
         let attacks = 0
 
         //Dama
-        for (let i = 0; i < 8; i++) {
-            let to = square
-            let blocked = false
-            let outofbounds = false
+        // for (let i = 0; i < 8; i++) {
+        //     let to = square
+        //     let blocked = false
+        //     let outofbounds = false
 
-            while (!blocked && !outofbounds) {
-                to = to + this.pieces[qFrom].offsets[i]
+        //     while (!blocked && !outofbounds) {
+        //         to = to + this.pieces[qFrom].offsets[i]
 
-                if (to & 0x88) {
-                    outofbounds = true
-                } else {
-                    if (this.board[to]) {
-                        if (this.board[to] === qTo) {
-                            if (count) {
-                                attacks++
-                                blocked = true
-                            } else {
-                                return true
-                            }
-                        } else {
-                            if (!xrays) blocked = true
-                        }
-                    }
-                }
-            }
-        }
+        //         if (to & 0x88) {
+        //             outofbounds = true
+        //         } else {
+        //             if (this.board[to]) {
+        //                 if (this.board[to] === qTo) {
+        //                     if (count) {
+        //                         attacks++
+        //                         blocked = true
+        //                     } else {
+        //                         return true
+        //                     }
+        //                 } else {
+        //                     if (!xrays) blocked = true
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
         // Alfiles
         for (let i = 0; i < 4; i++) {
@@ -363,7 +355,7 @@ module.exports = orobas = {
                     outofbounds = true
                 } else {
                     if (this.board[to]) {
-                        if (this.board[to] === bTo) {
+                        if (this.board[to] === qTo || this.board[to] === bTo) {
                             if (count) {
                                 attacks++
                                 blocked = true
@@ -391,7 +383,7 @@ module.exports = orobas = {
                     outofbounds = true
                 } else {
                     if (this.board[to]) {
-                        if (this.board[to] === rTo) {
+                        if (this.board[to] === qTo || this.board[to] === rTo) {
                             if (count) {
                                 attacks++
                                 blocked = true
@@ -988,10 +980,14 @@ module.exports = orobas = {
     },
 
     init() {
+
         console.log('Creating new game!!!!!')
         this.createBoard()
         this.createPieces()
         this.createPieceList()
+
+        console.log(this.pieceList)
+
         this.initZobrist()
         this.draw()
     }
