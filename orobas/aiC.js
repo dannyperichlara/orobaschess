@@ -1716,7 +1716,7 @@ AI.search = function (board, options) {
             n: board.movenumber, phase: AI.phase, depth: AI.iteration - 1, from: board.board64[AI.bestmove.from],
             to: board.board64[AI.bestmove.to], fromto0x88: [AI.bestmove.from, AI.bestmove.to],
             score: AI.lastscore | 0, sigmoid: (sigmoid * 100 | 0) / 100, nodes: AI.nodes, qsnodes: AI.qsnodes,
-            FHF: fhfperc + '%'
+            FHF: fhfperc + '%', version: '2.1.0'
         })
     })
 }
