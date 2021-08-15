@@ -3,6 +3,7 @@
 const Chess = require('chess.js')
 
 let AI = {
+    version: "2.1.1",
     totaldepth: 48,
     ttNodes: 0,
     iteration: 0,
@@ -305,8 +306,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
     if (bishopsB >= 2) {
         score -= AI.BISHOP_PAIR
     }
-
-    if (isStatic) return sign*score/this.nullWindowFactor
 
     if (!pvNode && AI.isLazyFutile(board, sign, score, alpha, beta, AI.PIECE_VALUES[0][KNIGHT])) {
         return sign*score/AI.nullWindowFactor | 0
@@ -987,6 +986,16 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
     }
 
     let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode)
+
+    // Razoring
+    if (cutNode) {
+        if (depth <= 3) {
+            if (staticeval + VPAWN < beta) { // likely a fail-low node ?
+                let score = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode, materialOnly)
+                if (score < beta) return score
+            }
+        }
+    }
 
     //Reverse Futility pruning (Static Null Move Pruning)
     // let reverseval = staticeval - AI.PIECE_VALUES[0][KNIGHT]
@@ -1716,7 +1725,7 @@ AI.search = function (board, options) {
             n: board.movenumber, phase: AI.phase, depth: AI.iteration - 1, from: board.board64[AI.bestmove.from],
             to: board.board64[AI.bestmove.to], fromto0x88: [AI.bestmove.from, AI.bestmove.to],
             score: AI.lastscore | 0, sigmoid: (sigmoid * 100 | 0) / 100, nodes: AI.nodes, qsnodes: AI.qsnodes,
-            FHF: fhfperc + '%', version: '2.1.0'
+            FHF: fhfperc + '%', version: AI.version
         })
     })
 }
