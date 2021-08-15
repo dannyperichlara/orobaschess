@@ -229,7 +229,7 @@ AI.randomizePSQT = function () {
 }
 
 // FUNCIÓN DE EVALUACIÓN DE LA POSICIÓN
-AI.evaluate = function (board, ply, alpha, beta, pvNode, materialOnly, isStatic) {
+AI.evaluate = function (board, ply, alpha, beta, pvNode) {
     let t0 = (new Date).getTime()
 
     alpha = alpha*this.nullWindowFactor
@@ -793,7 +793,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
 
     let moves = board.getMoves() //+0 ELO
 
-    let standpat = AI.evaluate(board, ply, alpha, beta, pvNode, materialOnly, moves)
+    let standpat = AI.evaluate(board, ply, alpha, beta, pvNode)
     let hashkey = board.hashkey
     // let incheck = board.isKingInCheck()
 
@@ -986,7 +986,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
         }
     }
 
-    let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode, materialOnly, true)
+    let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode)
 
     //Reverse Futility pruning (Static Null Move Pruning)
     // let reverseval = staticeval - AI.PIECE_VALUES[0][KNIGHT]
