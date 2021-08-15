@@ -28,7 +28,6 @@ let AI = {
     f: 0,
     previousls: 0,
     lastscore: 0,
-    onlyMaterialTime: 0.4,
     nullWindowFactor: 10
 }
 
@@ -768,7 +767,7 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry, isQS) {
 // que se encuentra una posición "en calma" (donde ningún rey está en jaque ni
 // donde la última jugada haya sido una captura). Cuando se logra esta posición
 // "en calma", se evalúa la posición.
-AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, materialOnly) {
+AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
     let oAlpha = alpha
 
     AI.qsnodes++
@@ -832,7 +831,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, material
         if (board.makeMove(move)) {
             legal++
 
-            score = -AI.quiescenceSearch(board, -beta, -alpha, depth - 1, ply + 1, pvNode, materialOnly)
+            score = -AI.quiescenceSearch(board, -beta, -alpha, depth - 1, ply + 1, pvNode)
 
             board.unmakeMove(move)
 
@@ -909,11 +908,11 @@ AI.givescheck = function (board, move) {
 
 // PRINCIPAL VARIATION SEARCH
 // El método PVS es Negamax + Ventana-Nula
-AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
+AI.PVS = function (board, alpha, beta, depth, ply) {
     let pvNode = beta - alpha > 1 // PV-Node
     
     let cutNode = beta - alpha === 1 // Cut-Node
-
+    
     AI.nodes++
 
     if ((new Date()).getTime() > AI.timer + 1000*AI.secondspermove) {
@@ -947,7 +946,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
 
     //Búsqueda QS
     if (!incheck && depth <= 0) {
-        return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode, materialOnly)
+        return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
     }
 
     let oAlpha = alpha
@@ -973,16 +972,23 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
     }
 
     // console.log(pvNode)
+    let mateE = 0 // Mate threat extension
 
     // // Null move pruning
     if (!incheck && depth > 1) {
         board.changeTurn()
         let nullR = 5 - AI.phase
-        let nullScore = -AI.PVS(board, -beta, -beta + 1, depth - nullR - 1, ply + 1, materialOnly)
+        let nullScore = -AI.PVS(board, -beta, -beta + 1, depth - nullR - 1, ply + 1)
         board.changeTurn()
         if (nullScore >= beta) {
+            
             return nullScore
         }
+
+        if (nullScore < -MATE + AI.totaldepth) {
+            mateE = 1
+        }
+
     }
 
     let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode)
@@ -991,7 +997,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
     if (cutNode) {
         if (depth <= 3) {
             if (staticeval + VPAWN < beta) { // likely a fail-low node ?
-                let score = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode, materialOnly)
+                let score = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
                 if (score < beta) return score
             }
         }
@@ -1006,7 +1012,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
 
     //IID (si no hay entrada en ttEntry, busca una para mejorar el orden de movimientos)
     if (!ttEntry && depth > 2) {
-        AI.PVS(board, alpha, beta, depth - 2, ply, materialOnly) //depth - 2 tested ok + 31 ELO
+        AI.PVS(board, alpha, beta, depth - 2, ply) //depth - 2 tested ok + 31 ELO
         ttEntry = AI.ttGet(hashkey)
     }
 
@@ -1039,6 +1045,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
         // Extensiones
         let E = incheck && depth <= 2? 1 : 0
 
+        E += mateE
+
         //Reducciones
         let R = 0
 
@@ -1069,14 +1077,14 @@ AI.PVS = function (board, alpha, beta, depth, ply, materialOnly) {
             if (legal === 1) {
                 // El primer movimiento se busca con ventana total y sin reducciones
                 if (AI.stop) return oAlpha
-                score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1, materialOnly)
+                score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1)
             } else {
                 if (AI.stop) return oAlpha
-                score = -AI.PVS(board, -alpha-1, -alpha, depth + E - R - 1, ply + 1, materialOnly)
-                // score = -AI.PVS(board, -beta, -alpha, depth + E - R - 1, ply + 1, materialOnly)
+                score = -AI.PVS(board, -alpha-1, -alpha, depth + E - R - 1, ply + 1)
+                // score = -AI.PVS(board, -beta, -alpha, depth + E - R - 1, ply + 1)
 
                 if (!AI.stop && score > alpha) {
-                    score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1, materialOnly)
+                    score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1)
                 }
             }
 
@@ -1518,32 +1526,21 @@ AI.getPV = function (board, length) {
     return PV
 }
 
-AI.MTDF = function (board, f, d, materialOnly, lowerBound, upperBound) {
-    let g = f
-    
+AI.MTDF = function (board, f, d, lowerBound, upperBound) {    
     //Esta línea permite que el algoritmo funcione como PVS normal
-    return AI.PVS(board, lowerBound, upperBound, d, 1, materialOnly)
+    return AI.PVS(board, lowerBound, upperBound, d, 1)
     
-    let i = 0
-    let beta
-
-    while (lowerBound < upperBound && !AI.stop) {
-        beta = Math.max(g, lowerBound + 1)
-
-        g = AI.PVS(board, beta - 1, beta, d, 1, materialOnly)
-
-        if (g < beta) {
-            upperBound = g
-        } else {
-            lowerBound = g
-        }
-
-        // AI.PV = AI.getPV(board, d)
-        // AI.bestmove = [...AI.PV][1]
-    }
-
-    return g
+    let bound = [lowerBound, upperBound] // lower, upper
+    
+    do {
+       let beta = f + (f == bound[0]);
+       f = AI.PVS(board, beta - 1, beta, d, 1)
+       bound[(f < beta) | 0] = f
+    } while (bound[0] < bound[1]);
+    
+    return f
 }
+ 
 
 AI.search = function (board, options) {
     AI.sortingTime = 0
@@ -1628,8 +1625,6 @@ AI.search = function (board, options) {
         
         AI.previousls = AI.lastscore
 
-        // AI.MTDF(board, 0, 1, false, -INFINITY, INFINITY)
-
         let depth = 1
         let alpha = -INFINITY
         let beta = INFINITY
@@ -1644,8 +1639,7 @@ AI.search = function (board, options) {
                 AI.bestmove = [...AI.PV][1]
                 AI.iteration++
 
-                // AI.f = AI.MTDF(board, AI.f, depth, false, -INFINITY, INFINITY)
-                AI.f = AI.MTDF(board, AI.f, depth, false, alpha, beta)
+                AI.f = AI.MTDF(board, AI.f, depth, alpha, beta)
 
                 //Aspiration window
                 if (AI.f < alpha) {
