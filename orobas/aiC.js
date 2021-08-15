@@ -141,7 +141,7 @@ for (let depth = 1; depth < AI.totaldepth + 1; ++depth) {
 
 }
 
-AI.DEFENDED_VALUES = [0, 10, 20, 30, 40, 40, 40, 40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40]
+AI.DEFENDED_VALUES = [0, 5, 10, 15, 20, 25, 30, 10,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40]
 
 // MVV-LVA
 // Valor para determinar orden de capturas,
@@ -656,12 +656,12 @@ AI.getDefended = (board, pawnindexW, pawnindexB)=>{
 // Esta función es fundamental para que la poda Alfa-Beta funcione de manera óptima
 // El orden establecido permite que la primera jugada
 // sea FAIL-HIGH en más de un 90% de los casos.
-AI.sortMoves = function (moves, turn, ply, board, ttEntry, isQS) {
+AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
 
     let t0 = (new Date).getTime()
     let killer1, killer2
 
-    if (!isQS && AI.killers) {
+    if (AI.killers) {
         killer1 = AI.killers[turn][ply][0]
         killer2 = AI.killers[turn][ply][1]
     }
@@ -807,11 +807,11 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
 
     let score = -INFINITY
     
-    moves = moves.filter(e=>{
-        return e.capturedPiece// !== 0 && ABS[e.capturedPiece] >= ABS[e.piece]
-    })
+    // moves = moves.filter(e=>{
+    //     return e.capturedPiece// !== 0 && ABS[e.capturedPiece] >= ABS[e.piece]
+    // })
     
-    moves = AI.sortMoves(moves, turn, ply, board, ttEntry, true)
+    moves = AI.sortMoves(moves, turn, ply, board, ttEntry)
 
     
     if (moves.length === 0) {
@@ -821,6 +821,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
     let bestmove = moves[0]
 
     for (let i = 0, len = moves.length; i < len; i++) {
+        if (!moves[i].capturedPiece) continue
 
         let move = moves[i]
         // delta pruning para cada movimiento
@@ -847,17 +848,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
         }
     }
 
-    // if (legal === 0) {
-        
-    //     // Ahogado
-    //     if (!board.isKingInCheck()) {
-    //         return DRAW
-    //     }
-        
-    //     // Mate
-    //     return -MATE + ply
-
-    // }
+    if (legal === 0) return alpha
     
     if (alpha > oAlpha) {
         // Mejor movimiento
@@ -981,7 +972,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         let nullScore = -AI.PVS(board, -beta, -beta + 1, depth - nullR - 1, ply + 1)
         board.changeTurn()
         if (nullScore >= beta) {
-            
             return nullScore
         }
 
@@ -1018,7 +1008,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
     let moves = board.getMoves()
 
-    moves = AI.sortMoves(moves, turn, ply, board, ttEntry, false)
+    moves = AI.sortMoves(moves, turn, ply, board, ttEntry)
 
     let bestmove = moves[0]
     let legal = 0
