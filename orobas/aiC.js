@@ -11,7 +11,7 @@ let AI = {
     nodes: 0,
     pnodes: 0, //Pawn structure nodes
     phnodes: 0, //Pawn hash nodes
-    panodes: 0, //Pawn attack hash nodes
+    pvnodes: 0, //Pawn attack hash nodes
     evalhashnodes: 0,
     evalnodes: 0,
     evalTime: 0,
@@ -306,73 +306,60 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         score -= AI.BISHOP_PAIR
     }
 
-    if (!pvNode && AI.isLazyFutile(board, sign, score, alpha, beta, AI.PIECE_VALUES[0][KNIGHT])) {
-        return sign*score/AI.nullWindowFactor | 0
-    }
+    if (pvNode) {
+        // Pawn structure
+        score += AI.getStructure(board, pawnindexW, pawnindexB)
 
-    // Pawn structure
-    score += AI.getStructure(board, pawnindexW, pawnindexB)
-
-    if (!pvNode && AI.isLazyFutile(board, sign, score, alpha, beta, VPAWNx2)) {
-        return sign*score/AI.nullWindowFactor | 0
-    }
-
-    // King safety
-    if (AI.phase <= EARLY_ENDGAME) {
-        if (AI.phase <= MIDGAME && board.columns[kingIndexW] === 3 || board.columns[kingIndexW] === 4) score -= 10
+        // King safety
+        if (AI.phase <= EARLY_ENDGAME) {
+            if (AI.phase <= MIDGAME && board.columns[kingIndexW] === 3 || board.columns[kingIndexW] === 4) score -= 10
+            
+            if (kingIndexW !== 116) {
+                score += board.board[kingIndexW-17] === P? 10 : 0
+                score += board.board[kingIndexW-16] === 0?-20 : 0
+                score += board.board[kingIndexW-16] === P? 20 : 0
+                score += board.board[kingIndexW-16] === B? 20 : 0
+                score += board.board[kingIndexW-15] === P? 10 : 0
+            }
+            
+            if (AI.phase <= MIDGAME && board.columns[kingIndexB] === 3 || board.columns[kingIndexB] === 4) score += 10
         
-        if (kingIndexW !== 116) {
-            score += board.board[kingIndexW-17] === P? 10 : 0
-            score += board.board[kingIndexW-16] === 0?-20 : 0
-            score += board.board[kingIndexW-16] === P? 20 : 0
-            score += board.board[kingIndexW-16] === B? 10 : 0
-            score += board.board[kingIndexW-15] === P? 10 : 0
+            if (kingIndexB !== 4) {
+                score += board.board[kingIndexB+17] === p? -10 : 0
+                score += board.board[kingIndexB+16] === 0?  20 : 0
+                score += board.board[kingIndexB+16] === p? -20 : 0
+                score += board.board[kingIndexB+16] === b? -20 : 0
+                score += board.board[kingIndexB+15] === p? -10 : 0
+            }
         }
-        
-        if (AI.phase <= MIDGAME && board.columns[kingIndexB] === 3 || board.columns[kingIndexB] === 4) score += 10
+
+        // Is king under attack
+        score -= 10*board.isSquareAttacked(kingIndexW-15, BLACK, false)
+        score -= 10*board.isSquareAttacked(kingIndexW-16, BLACK, false)
+        score -= 10*board.isSquareAttacked(kingIndexW-17, BLACK, false)
     
-        if (kingIndexB !== 4) {
-            score += board.board[kingIndexB+17] === p? -10 : 0
-            score += board.board[kingIndexB+16] === 0?  20 : 0
-            score += board.board[kingIndexB+16] === p? -20 : 0
-            score += board.board[kingIndexB+16] === b? -10 : 0
-            score += board.board[kingIndexB+15] === p? -10 : 0
+        score += 10*board.isSquareAttacked(kingIndexB+15, WHITE, false)
+        score += 10*board.isSquareAttacked(kingIndexB+16, WHITE, false)
+        score += 10*board.isSquareAttacked(kingIndexB+17, WHITE, false)
+
+        // Center control
+        if (AI.phase <= MIDGAME) {
+            for (let i = 0, len=WIDECENTER.length; i < len; i++) {
+                let occupiedBy = board.pieces[board.board[WIDECENTER[i]]].color
+                score += 20*(occupiedBy == WHITE? 1 : (occupiedBy == BLACK? -1 : 0))
+                score += 10*board.isSquareAttacked(i, WHITE, false) - board.isSquareAttacked(i, BLACK, false)
+            }
+        }
+
+        // Mobility
+        if (AI.phase >= MIDGAME) {
+            score += AI.getMobility(board)
         }
     }
 
-    if (!pvNode && AI.isLazyFutile(board, sign, score, alpha, beta, VPAWN)) {
-        return sign*score/AI.nullWindowFactor | 0
-    }
 
-    // Is king under attack
-    score -= 10*board.isSquareAttacked(kingIndexW-15, BLACK, false)
-    score -= 10*board.isSquareAttacked(kingIndexW-16, BLACK, false)
-    score -= 10*board.isSquareAttacked(kingIndexW-17, BLACK, false)
 
-    score += 10*board.isSquareAttacked(kingIndexB+15, WHITE, false)
-    score += 10*board.isSquareAttacked(kingIndexB+16, WHITE, false)
-    score += 10*board.isSquareAttacked(kingIndexB+17, WHITE, false)
-        
-    if (!pvNode && AI.isLazyFutile(board, sign, score, alpha, beta, VPAWN)) {
-        return sign*score/AI.nullWindowFactor | 0
-    }
 
-    // Center control
-    if (AI.phase <= MIDGAME) {
-        for (let i = 0, len=WIDECENTER.length; i < len; i++) {
-            let occupiedBy = board.pieces[board.board[WIDECENTER[i]]].color
-            score += 20*(occupiedBy == WHITE? 1 : (occupiedBy == BLACK? -1 : 0))
-            score += 10*board.isSquareAttacked(i, WHITE, true) - board.isSquareAttacked(i, BLACK, true)
-        }
-    }
-
-    if (!pvNode && AI.isLazyFutile(board, sign, score, alpha, beta, VPAWN2)) {
-        return sign*score/AI.nullWindowFactor | 0
-    }
-
-    if (pvNode && AI.phase >= MIDGAME && ply <= 4) {
-        score += AI.getMobility(board)
-    }
 
     let nullWindowScore = sign * score / AI.nullWindowFactor | 0
 
@@ -900,6 +887,8 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     let pvNode = beta - alpha > 1 // PV-Node
     
     let cutNode = beta - alpha === 1 // Cut-Node
+
+    if (pvNode) AI.pvnodes++
     
     AI.nodes++
 
@@ -975,7 +964,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         if (nullScore < -MATE + AI.totaldepth) {
             mateE = 1
         }
-
     }
 
     let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode)
@@ -983,7 +971,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     // Razoring
     if (cutNode) {
         if (depth <= 3) {
-            if (staticeval + VPAWN < beta) { // likely a fail-low node ?
+            if (staticeval + VPAWN2 < beta) { // likely a fail-low node ?
                 let score = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
                 if (score < beta) return score
             }
@@ -1590,6 +1578,7 @@ AI.search = function (board, options) {
         AI.nodes = 0
         AI.qsnodes = 0
         AI.enodes = 0
+        AI.pvnodes = 0
         AI.ttnodes = 0
         AI.evalhashnodes = 0
         AI.evalnodes = 0
@@ -1656,11 +1645,11 @@ AI.search = function (board, options) {
 
                 if (!AI.stop) AI.lastscore = score
 
-                if (AI.PV && !AI.stop) console.log(depth, AI.PV.map(e => { return e? [e.from,e.to] : '-'}).join(' '), '|Fhf ' + fhfperc + '%',
-                        'Pawn hit ' + (AI.phnodes / AI.pnodes * 100 | 0), score | 0, 'cp', AI.nodes.toString(),
+                if (AI.PV && !AI.stop) console.log(depth, AI.PV.map(e => { return e? [e.from,e.to] : '-'}).join(' '), '| Fhf ' + fhfperc + '%',
+                        'Pawn hit ' + (AI.phnodes / AI.pnodes * 100 | 0), score | 0, AI.nodes.toString(),
                         AI.qsnodes.toString(), AI.ttnodes.toString(),
                         ((100*this.evalhashnodes/(this.evalnodes)) | 0),
-                        100*AI.panodes/AI.pnodes | 0
+                        'PV Nodes: ' + (AI.pvnodes| 0)
                 )
             
                 depth++
