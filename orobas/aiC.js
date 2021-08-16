@@ -788,9 +788,6 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
 
     let turn = board.turn
     let legal = 0
-
-    let moves = board.getMoves() //+0 ELO
-
     let standpat = AI.evaluate(board, ply, alpha, beta, pvNode)
     let hashkey = board.hashkey
     // let incheck = board.isKingInCheck()
@@ -802,26 +799,22 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
     }
 
     if (standpat > alpha) alpha = standpat
-    
-    let ttEntry = AI.ttGet(hashkey)
 
-    let score = -INFINITY
-    
-    // moves = moves.filter(e=>{
-    //     return e.capturedPiece// !== 0 && ABS[e.capturedPiece] >= ABS[e.piece]
-    // })
-    
-    moves = AI.sortMoves(moves, turn, ply, board, ttEntry)
+    let moves = board.getMoves() //+0 ELO
 
-    
     if (moves.length === 0) {
         return alpha
     }
+    
+    let ttEntry = AI.ttGet(hashkey)
+    let score = -INFINITY
+    
+    moves = AI.sortMoves(moves, turn, ply, board, ttEntry)
 
     let bestmove = moves[0]
 
     for (let i = 0, len = moves.length; i < len; i++) {
-        if (!moves[i].capturedPiece) continue
+        if (!moves[i].capturedPiece && !moves[i].promotingPiece) continue
 
         let move = moves[i]
         // delta pruning para cada movimiento
