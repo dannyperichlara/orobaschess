@@ -802,6 +802,10 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
 
     let moves = board.getMoves() //+0 ELO
 
+    moves = moves.filter(m=>{
+        return m.capturedPiece || m.promotingPiece
+    })
+
     if (moves.length === 0) {
         return alpha
     }
