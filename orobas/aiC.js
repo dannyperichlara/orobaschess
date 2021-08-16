@@ -263,6 +263,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
     let kingIndexW = null
     let kingIndexB = null
 
+    let material = 0
+    let psqt = 0
+
     for (let i = 0; i < 128; i++) {
         if (i & 0x88) {
             i+=7
@@ -270,7 +273,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         }
         
         let piece = board.board[i]
-        
         
         if (piece === 0) continue
         
@@ -283,12 +285,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         let turn = board.color(piece)
         let sign = turn === WHITE? 1 : -1
 
-        let material = AI.PIECE_VALUES[OPENING][piece] //Material
-
-        let psqt = sign*AI.PSQT[ABS[piece]][turn === WHITE? i : (112^i)]
+        material += AI.PIECE_VALUES[OPENING][piece] //Material
+        psqt += sign*AI.PSQT[ABS[piece]][turn === WHITE? i : (112^i)]
         
-        score += material + psqt
-
         if (piece === K) {
             kingIndexW = i
         }
@@ -296,6 +295,14 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         if (piece === k) {
             kingIndexB = i
         }
+    }
+
+    score += material + psqt
+
+    if (AI.isLazyFutile(board, sign, score, alpha, beta, AI.PIECE_VALUES[0][KNIGHT])) {
+        let t1 = (new Date).getTime()
+        AI.evalTime += t1 - t0
+        return sign*score/this.nullWindowFactor | 0
     }
 
     if (bishopsW >= 2) {
@@ -357,34 +364,30 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         }
     }
 
-
-
-
-
     let nullWindowScore = sign * score / AI.nullWindowFactor | 0
 
     AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
 
     let t1 = (new Date).getTime()
-
     AI.evalTime += t1 - t0
 
     return nullWindowScore
 }
 
 AI.isLazyFutile = (board, sign, score, alpha, beta, margin)=> {
-    if (score <= alpha - margin) {
-        if (margin <= VPAWN) AI.evalTable[board.hashkey % this.htlength] = sign * score / AI.nullWindowFactor | 0
+    let signedScore = sign * score
+
+    if (signedScore <= alpha - margin) {
+        if (margin <= VPAWN) AI.evalTable[board.hashkey % this.htlength] = signedScore / AI.nullWindowFactor | 0
 
         return true
     }
 
     if (score > beta + margin) {
-        if (margin <= VPAWN) AI.evalTable[board.hashkey % this.htlength] = sign * score / AI.nullWindowFactor | 0
+        if (margin <= VPAWN) AI.evalTable[board.hashkey % this.htlength] = signedScore / AI.nullWindowFactor | 0
 
         return true
     }
-
 }
 
 AI.getMobility = (board)=>{
