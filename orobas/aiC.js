@@ -299,11 +299,11 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
 
     score += material + psqt
 
-    if (AI.isLazyFutile(board, sign, score, alpha, beta, AI.PIECE_VALUES[0][KNIGHT])) {
-        let t1 = (new Date).getTime()
-        AI.evalTime += t1 - t0
-        return sign*score/this.nullWindowFactor | 0
-    }
+    // if (AI.isLazyFutile(board, sign, score, alpha, beta, AI.PIECE_VALUES[0][KNIGHT])) {
+    //     let t1 = (new Date).getTime()
+    //     AI.evalTime += t1 - t0
+    //     return sign*score/this.nullWindowFactor | 0
+    // }
 
     if (bishopsW >= 2) {
         score += AI.BISHOP_PAIR 
@@ -383,7 +383,7 @@ AI.isLazyFutile = (board, sign, score, alpha, beta, margin)=> {
         return true
     }
 
-    if (score > beta + margin) {
+    if (signedScore > beta + margin) {
         if (margin <= VPAWN) AI.evalTable[board.hashkey % this.htlength] = signedScore / AI.nullWindowFactor | 0
 
         return true
