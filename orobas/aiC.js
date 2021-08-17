@@ -359,7 +359,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         }
 
         // Mobility
-        if (AI.phase >= MIDGAME) {
+        if (true || AI.phase >= MIDGAME) {
             score += AI.getMobility(board)
         }
     }
@@ -392,19 +392,18 @@ AI.isLazyFutile = (board, sign, score, alpha, beta, margin)=> {
 
 AI.getMobility = (board)=>{
     let mobility = 0
-    let opponentMoves = []
-
+    let sign = board.turn === WHITE? 1 : -1
     let myMoves = board.getMoves(true)
-
+    
     board.changeTurn()
     
-    opponentMoves = board.getMoves(true)
+    let opponentMoves = board.getMoves(true)
 
     board.changeTurn()
 
-    mobility = 10*Math.log((myMoves.length+1)/(opponentMoves.length+1)) - 10 | 0
+    mobility = 20*myMoves.length - (20 - 5*AI.phase)*opponentMoves.length | 0
 
-    return mobility
+    return sign * mobility
 }
 
 let max = 0

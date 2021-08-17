@@ -582,7 +582,7 @@ module.exports = orobas = {
             }
             
             //Caballos y rey
-            if (piece === N || piece === n || piece === K || piece === k) {
+            if (piece === N || piece === n || (!forMobility && (piece === K || piece === k))) {
                 for (j=0, len=this.pieces[piece].offsets.length; j < len; j++) {
                     let to = from + this.pieces[piece].offsets[j]
 
