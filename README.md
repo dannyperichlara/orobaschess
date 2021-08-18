@@ -25,6 +25,7 @@ Puedes probar Orobas en http://45.58.62.235:3665
 * Passers evaluation.
 * Space evaluation (not fully tested)
 * Basic pawn structure analysis (defended, doubled & passed pawns)
+* Zobrist hashing
 * Transposition table
 * Pawn hash table
 * Static evaluation hash table
