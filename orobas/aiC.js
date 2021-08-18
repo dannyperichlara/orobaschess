@@ -299,18 +299,23 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
 
     score += material + psqt
 
-    // if (AI.isLazyFutile(board, sign, score, alpha, beta, AI.PIECE_VALUES[0][KNIGHT])) {
-    //     let t1 = (new Date).getTime()
-    //     AI.evalTime += t1 - t0
-    //     return sign*score/this.nullWindowFactor | 0
-    // }
-
+    
     if (bishopsW >= 2) {
         score += AI.BISHOP_PAIR 
     }
     
     if (bishopsB >= 2) {
         score -= AI.BISHOP_PAIR
+    }
+
+    if (AI.isLazyFutile(board, sign, score, alpha, beta, VPAWNx2)) {
+        let t1 = (new Date).getTime()
+        AI.evalTime += t1 - t0
+
+        let nullWindowScore = sign * score / AI.nullWindowFactor | 0
+
+        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+        return sign*score/this.nullWindowFactor | 0
     }
 
     if (pvNode) {
@@ -325,7 +330,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
                 score += board.board[kingIndexW-17] === P? 10 : 0
                 score += board.board[kingIndexW-16] === 0?-20 : 0
                 score += board.board[kingIndexW-16] === P? 20 : 0
-                score += board.board[kingIndexW-16] === B? 20 : 0
+                score += AI.phase <= MIDGAME && board.board[kingIndexW-16] === B? 20 : 0
                 score += board.board[kingIndexW-15] === P? 10 : 0
             }
             
@@ -335,7 +340,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
                 score += board.board[kingIndexB+17] === p? -10 : 0
                 score += board.board[kingIndexB+16] === 0?  20 : 0
                 score += board.board[kingIndexB+16] === p? -20 : 0
-                score += board.board[kingIndexB+16] === b? -20 : 0
+                score += AI.phase <= MIDGAME && board.board[kingIndexB+16] === b? -20 : 0
                 score += board.board[kingIndexB+15] === p? -10 : 0
             }
         }
@@ -359,9 +364,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         }
 
         // Mobility
-        if (true || AI.phase >= MIDGAME) {
-            score += AI.getMobility(board)
-        }
+        score += AI.getMobility(board)
     }
 
     let nullWindowScore = sign * score / AI.nullWindowFactor | 0
@@ -392,7 +395,7 @@ AI.isLazyFutile = (board, sign, score, alpha, beta, margin)=> {
 
 AI.getMobility = (board)=>{
     let mobility = 0
-    let sign = board.turn === WHITE? 1 : -1
+
     let myMoves = board.getMoves(true)
     
     board.changeTurn()
@@ -401,9 +404,29 @@ AI.getMobility = (board)=>{
 
     board.changeTurn()
 
-    mobility = 20*myMoves.length - (20 - 5*AI.phase)*opponentMoves.length | 0
+    if (board.turn === WHITE) {
+        myMoves = myMoves.filter((e,i)=>{
+            return board.board[e.to - 17] !== p && board.board[e.to - 15] !== p
+        })
 
-    return sign * mobility
+        opponentMoves = opponentMoves.filter((e,i)=>{
+            return board.board[e.to + 17] !== P && board.board[e.to + 15] !== P
+        })
+
+        mobility = 20*myMoves.length - (20 - 5*AI.phase)*opponentMoves.length | 0
+    } else {
+        myMoves = myMoves.filter((e,i)=>{
+            return board.board[e.to + 17] !== P && board.board[e.to + 15] !== P
+        })
+
+        opponentMoves = opponentMoves.filter((e,i)=>{
+            return board.board[e.to - 17] !== p && board.board[e.to - 15] !== p
+        })
+
+        mobility = 20*opponentMoves.length - (20 - 5*AI.phase)*myMoves.length | 0
+    }
+
+    return mobility
 }
 
 let max = 0
