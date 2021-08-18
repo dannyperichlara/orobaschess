@@ -405,23 +405,23 @@ AI.getMobility = (board)=>{
     board.changeTurn()
 
     if (board.turn === WHITE) {
-        myMoves = myMoves.filter((e,i)=>{
-            return board.board[e.to - 17] !== p && board.board[e.to - 15] !== p
-        })
+        // myMoves = myMoves.filter((e,i)=>{
+        //     return board.board[e.to - 17] !== p && board.board[e.to - 15] !== p
+        // })
 
-        opponentMoves = opponentMoves.filter((e,i)=>{
-            return board.board[e.to + 17] !== P && board.board[e.to + 15] !== P
-        })
+        // opponentMoves = opponentMoves.filter((e,i)=>{
+        //     return board.board[e.to + 17] !== P && board.board[e.to + 15] !== P
+        // })
 
         mobility = 20*myMoves.length - (20 - 5*AI.phase)*opponentMoves.length | 0
     } else {
-        myMoves = myMoves.filter((e,i)=>{
-            return board.board[e.to + 17] !== P && board.board[e.to + 15] !== P
-        })
+        // myMoves = myMoves.filter((e,i)=>{
+        //     return board.board[e.to + 17] !== P && board.board[e.to + 15] !== P
+        // })
 
-        opponentMoves = opponentMoves.filter((e,i)=>{
-            return board.board[e.to - 17] !== p && board.board[e.to - 15] !== p
-        })
+        // opponentMoves = opponentMoves.filter((e,i)=>{
+        //     return board.board[e.to - 17] !== p && board.board[e.to - 15] !== p
+        // })
 
         mobility = 20*opponentMoves.length - (20 - 5*AI.phase)*myMoves.length | 0
     }
