@@ -267,16 +267,9 @@ module.exports = orobas = {
 
     //Parameters: piece, from, to, isCapture, capturedPiece, castleSide, enPassantSquares, promotingPiece
     createMove(m) {
-        return {
-            piece: m.piece,
-            from: m.from,
-            to: m.to,
-            isCapture: m.isCapture,
-            capturedPiece: m.capturedPiece,
-            castleSide: m.castleSide,
-            enPassantSquares: m.enPassantSquares,
-            promotingPiece: m.promotingPiece
-        }
+        m.key = m.piece + 100*m.from + 100000*m.to
+
+        return m
     },
 
     isSquareAttacked(square, attackerSide, count, xrays) {

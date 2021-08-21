@@ -692,7 +692,7 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         move.capture = false
         
         // CRITERIO 0: La jugada está en la Tabla de Trasposición
-        if (ttEntry && ttEntry.flag < UPPERBOUND && move.from === ttEntry.move.from && move.to === ttEntry.move.to) {
+        if (ttEntry && ttEntry.flag < UPPERBOUND && move.key === ttEntry.move.key) {
             move.tt = true
             move.score += 1e9
             continue
@@ -727,13 +727,13 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
 
         // CRITERIO 4: La jugada es un movimiento Killer
         // (Los killers son movimientos que anteriormente han generado Fail-Highs en el mismo ply)
-        if (killer1 && killer1.from === move.from && killer1.to === move.to) {
+        if (killer1 && killer1.key === move.key) {
             move.killer1 = true
             move.score += 2e6
             continue
         }
         
-        if (killer2 && killer2.from === move.from && killer2.to === move.to) {
+        if (killer2 && killer2.key === move.key) {
             move.killer2 = true
             move.score += 1e6
             continue
@@ -1106,8 +1106,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                 if (!move.capture) {
                     if (
                         AI.killers[turn | 0][ply][0] &&
-                        AI.killers[turn | 0][ply][0].from != move.from &&
-                        AI.killers[turn | 0][ply][0].to != move.to
+                        AI.killers[turn | 0][ply][0].key != move.key
                     ) {
                         AI.killers[turn | 0][ply][1] = AI.killers[turn | 0][ply][0]
                     }
@@ -1502,7 +1501,7 @@ AI.getPV = function (board, length) {
         
         if (ttEntry) {
             let moves = board.getMoves().filter(move => {
-                return move.from === ttEntry.move.from && move.to === ttEntry.move.to
+                return move.key === ttEntry.move.key
             })
             
             if (moves.length > 0) {
@@ -1708,13 +1707,7 @@ AI.search = function (board, options) {
                     'Evaluation % time: ', (AI.evalTime / AI.searchTime) * 100 | 0
         )
 
-        console.log(AI.PV.map(e=>{
-            if (e) {
-                return [e.from,e.to]
-            } else {
-                return e
-            }
-        }), AI.bestmove.from, AI.bestmove.to)
+        console.log(AI.PV[1])
 
         resolve({
             n: board.movenumber, phase: AI.phase, depth: AI.iteration - 1, from: board.board64[AI.bestmove.from],
