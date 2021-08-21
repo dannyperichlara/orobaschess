@@ -1,6 +1,6 @@
 "use strict"
 
-const Chess = require('chess.js')
+const sort = require('fast-sort').sort
 
 let AI = {
     version: "2.1.1",
@@ -95,10 +95,10 @@ const VPAWN10= VPAWN /10 | 0
 const VPAWNx2 = 2*VPAWN
 
 AI.PIECE_VALUES = [
-    [],
-    [],
-    [],
-    [],
+    new Map(),
+    new Map(),
+    new Map(),
+    new Map(),
 ]
 
 AI.PIECE_VALUES[0][p] = -VPAWN
@@ -185,7 +185,7 @@ AI.createTables = function (tt, hh, pp) {
     console.log('Creating tables', tt, hh, pp)
 
     if (hh) {
-        delete AI.history
+        // delete AI.history
         AI.history = new Map()
 
         AI.history[K] = Array(128).fill(0)
@@ -204,14 +204,14 @@ AI.createTables = function (tt, hh, pp) {
     }
 
     if (tt) {
-        delete AI.hashTable
+        // delete AI.hashTable
         AI.hashTable = new Map()
 
-        delete AI.evalTable
+        // delete AI.evalTable
         AI.evalTable = (new Array(this.htlength)).fill(null)
     }
     if (pp) {
-        delete AI.pawnTable
+        // delete AI.pawnTable
         AI.pawnTable = (new Array(this.pawntlength)).fill(null)
     }
 }
@@ -763,9 +763,13 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
     // ORDENA LOS MOVIMIENTOS
     // El tiempo de esta función toma hasta un 10% del total de cada búsqueda.
     // Sería conveniente utilizar un mejor método de ordenamiento.
-    moves.sort((a, b) => {
-        return b.score - a.score
-    })
+    // moves.sort((a, b) => {
+    //     return b.score - a.score
+    // })
+
+    moves = sort(moves).by([
+        { desc: u => u.score }
+      ]);
 
     let t1 = (new Date()).getTime()
 
@@ -1574,8 +1578,8 @@ AI.search = function (board, options) {
         AI.lastscore = 0
         AI.f = 0
     } else {
-        AI.createTables(true, true, true)
-        // AI.createTables(true, true, false)
+        // AI.createTables(true, true, true)
+        AI.createTables(true, true, false)
         AI.f = AI.lastscore
     }
 

@@ -682,27 +682,25 @@ module.exports = orobas = {
             let from
             let square1
             let to
+
             if (move.castleSide === 8)  {
                 if (this.board[117] || this.board[118]) return false
 
                 if (!this.board[119]) return false
 
                 from = 116; square1 = 117; to = 118
-            }
-            if (move.castleSide === 4)  {
+            } else if (move.castleSide === 4)  {
                 if (this.board[115] || this.board[114] || this.board[113]) return false
 
                 if (!this.board[112]) return false
                 
                 from = 116; square1 = 115; to = 114
-            }
-            if (move.castleSide === 2)  {
+            } else if (move.castleSide === 2)  {
                 if (this.board[5] || this.board[6]) return false
                 if (!this.board[7]) return false
                 
                 from = 4; square1 = 5; to = 6
-            }
-            if (move.castleSide === 1)  {
+            } else {
                 if (this.board[3] || this.board[2] || this.board[1]) return false
                 if (!this.board[0]) return false
 
