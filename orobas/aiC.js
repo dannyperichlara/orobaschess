@@ -279,8 +279,14 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         if (piece === P) pawnindexW.push(i)
         if (piece === p) pawnindexB.push(i)
 
-        if (piece === B) bishopsW++
-        if (piece === b) bishopsB++
+        if (piece === B) {
+            bishopsW++
+            if (AI.phase === OPENING && board.board[i+16] === P) score-=20
+        }
+        if (piece === b) {
+            bishopsB++
+            if (AI.phase === OPENING && board.board[i-16] === p) score-=20
+        }
         
         let turn = board.color(piece)
         let sign = turn === WHITE? 1 : -1
@@ -453,9 +459,9 @@ AI.getStructure = (board, pawnindexW, pawnindexB)=> {
     let doubled = AI.getDoubled(board, pawnindexW, pawnindexB)
     let defended = AI.getDefended(board, pawnindexW, pawnindexB)
     let passers = AI.getPassers(board, pawnindexW, pawnindexB)
-    let space = AI.getSpace(board, pawnindexW, pawnindexB)
+    // let space = AI.getSpace(board, pawnindexW, pawnindexB)
 
-    let score = doubled + defended + passers + space
+    let score = doubled + defended + passers// + space
 
     AI.pawnTable[hashkey % AI.pawntlength] = score
     return score
