@@ -578,6 +578,11 @@
     "utils-merge" "1.0.1"
     "vary" "~1.1.2"
 
+"fast-filter@^1.0.4":
+  "integrity" "sha1-20YsPo5tPGYwV1LNuIMagciydds="
+  "resolved" "https://registry.npmjs.org/fast-filter/-/fast-filter-1.0.4.tgz"
+  "version" "1.0.4"
+
 "fast-sort@^3.0.2":
   "integrity" "sha512-DIKDkHBt+IubEEU44/kEulX3SbIuufEHIhRfw0MCh7f/HLGWmR/Dk7xg2tapT28pVFqnEV1ZDtl6SeViAyVe4Q=="
   "resolved" "https://registry.npmjs.org/fast-sort/-/fast-sort-3.0.2.tgz"

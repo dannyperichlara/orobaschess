@@ -1,6 +1,6 @@
 var seedrandom = require('seedrandom')
 
-let rnd = new seedrandom('orobas', {global: true, entropy: true})
+let rnd = new seedrandom('orobas1234', {global: true})
 
 const P =   1
 const N =   2
@@ -668,7 +668,7 @@ module.exports = orobas = {
         console.log(board)
     },
 
-    makeMove(move) {
+    makeMove(move, illegal) {
         let me = this.turn
         let enemy = this.turn === WHITE? BLACK : WHITE
 
@@ -721,13 +721,15 @@ module.exports = orobas = {
         this.makeEffectiveMove(move)
 
         //Chequea legalidad
-        this.changeTurn()
-        if (this.isKingInCheck()) {
-            this.unmakeMove(move)
+        if (!illegal) {
             this.changeTurn()
-            return false
+            if (this.isKingInCheck()) {
+                this.unmakeMove(move)
+                this.changeTurn()
+                return false
+            }
+            this.changeTurn()
         }
-        this.changeTurn()
 
         return true
     },
@@ -970,17 +972,14 @@ module.exports = orobas = {
         return nodes
     },
 
-    init() {
+    init(silent) {
 
-        console.log('Creating new game!!!!!')
+        if (!silent) console.log('Creating new game!!!!!')
         this.createBoard()
         this.createPieces()
         this.createPieceList()
-
-        console.log(this.pieceList)
-
         this.initZobrist()
-        this.draw()
+        if (!silent) this.draw()
     }
 }
 

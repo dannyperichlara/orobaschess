@@ -1068,6 +1068,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             
             if (board.turn === BLACK && (board.board[move.to+17] === P || board.board[move.to+15] === P)) {
                 R+=4
+                
             }
         }
 

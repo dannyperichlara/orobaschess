@@ -1,6 +1,7 @@
 "use strict"
 
 const sort = require('fast-sort').sort
+require('fast-filter').install('filter')
 
 let AI = {
     version: "2.1.1",
@@ -104,14 +105,14 @@ AI.PIECE_VALUES = [
 AI.PIECE_VALUES[0][p] = -VPAWN
 AI.PIECE_VALUES[0][n] = -VPAWN*2.88 | 0
 AI.PIECE_VALUES[0][b] = -VPAWN*3.00 | 0
-AI.PIECE_VALUES[0][r] = -VPAWN*5.20 | 0
+AI.PIECE_VALUES[0][r] = -VPAWN*4.80 | 0
 AI.PIECE_VALUES[0][q] = -VPAWN*9.60 | 0
 AI.PIECE_VALUES[0][k] = 0
 
 AI.PIECE_VALUES[0][P] = VPAWN
 AI.PIECE_VALUES[0][N] = VPAWN*2.88 | 0
 AI.PIECE_VALUES[0][B] = VPAWN*3.00 | 0
-AI.PIECE_VALUES[0][R] = VPAWN*5.20 | 0
+AI.PIECE_VALUES[0][R] = VPAWN*4.80 | 0
 AI.PIECE_VALUES[0][Q] = VPAWN*9.60 | 0
 AI.PIECE_VALUES[0][K] = 0
 
@@ -185,7 +186,7 @@ AI.createTables = function (tt, hh, pp) {
     console.log('Creating tables', tt, hh, pp)
 
     if (hh) {
-        // delete AI.history
+        delete AI.history
         AI.history = new Map()
 
         AI.history[K] = Array(128).fill(0)
@@ -204,14 +205,14 @@ AI.createTables = function (tt, hh, pp) {
     }
 
     if (tt) {
-        // delete AI.hashTable
+        delete AI.hashTable
         AI.hashTable = new Map()
 
-        // delete AI.evalTable
+        delete AI.evalTable
         AI.evalTable = (new Array(this.htlength)).fill(null)
     }
     if (pp) {
-        // delete AI.pawnTable
+        delete AI.pawnTable
         AI.pawnTable = (new Array(this.pawntlength)).fill(null)
     }
 }
@@ -281,11 +282,11 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
 
         if (piece === B) {
             bishopsW++
-            if (AI.phase <= MIDGAME && board.board[i+16] === P) score-=20
+            if (AI.phase === OPENING && board.board[i+16] === P) score-=10
         }
         if (piece === b) {
             bishopsB++
-            if (AI.phase <= MIDGAME && board.board[i-16] === p) score-=20
+            if (AI.phase === OPENING && board.board[i-16] === p) score-=10
         }
         
         let turn = board.color(piece)
@@ -309,7 +310,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
     if (bishopsW >= 2) {
         score += AI.BISHOP_PAIR 
     }
-    
+
     if (bishopsB >= 2) {
         score -= AI.BISHOP_PAIR
     }
@@ -317,39 +318,18 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
     if (AI.isLazyFutile(board, sign, score, alpha, beta, VPAWNx2)) {
         let t1 = (new Date).getTime()
         AI.evalTime += t1 - t0
-
+        
         let nullWindowScore = sign * score / AI.nullWindowFactor | 0
-
+        
         AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
         return sign*score/this.nullWindowFactor | 0
     }
-
+    
     if (pvNode) {
         // Pawn structure
         score += AI.getStructure(board, pawnindexW, pawnindexB)
+        score += AI.getKingSafety(board, AI.phase, kingIndexW, kingIndexB)
 
-        // King safety
-        if (AI.phase <= EARLY_ENDGAME) {
-            if (AI.phase <= MIDGAME && board.columns[kingIndexW] === 3 || board.columns[kingIndexW] === 4) score -= 10
-            
-            if (kingIndexW !== 116) {
-                score += board.board[kingIndexW-17] === P? 10 : 0
-                score += board.board[kingIndexW-16] === 0?-20 : 0
-                score += board.board[kingIndexW-16] === P? 20 : 0
-                score += AI.phase <= MIDGAME && board.board[kingIndexW-16] === B? 20 : 0
-                score += board.board[kingIndexW-15] === P? 10 : 0
-            }
-            
-            if (AI.phase <= MIDGAME && board.columns[kingIndexB] === 3 || board.columns[kingIndexB] === 4) score += 10
-        
-            if (kingIndexB !== 4) {
-                score += board.board[kingIndexB+17] === p? -10 : 0
-                score += board.board[kingIndexB+16] === 0?  20 : 0
-                score += board.board[kingIndexB+16] === p? -20 : 0
-                score += AI.phase <= MIDGAME && board.board[kingIndexB+16] === b? -20 : 0
-                score += board.board[kingIndexB+15] === p? -10 : 0
-            }
-        }
 
         // Is king under attack
         score -= 10*board.isSquareAttacked(kingIndexW-15, BLACK, false)
@@ -361,7 +341,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         score += 10*board.isSquareAttacked(kingIndexB+17, WHITE, false)
 
         // Center control
-        if (true || AI.phase <= MIDGAME) {
+        if (AI.phase <= MIDGAME) {
             for (let i = 0, len=CENTER.length; i < len; i++) {
                 let occupiedBy = board.pieces[board.board[CENTER[i]]].color
                 score += 20*(occupiedBy == WHITE? 1 : (occupiedBy == BLACK? -1 : 0))
@@ -382,6 +362,34 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
 
     return nullWindowScore
 }
+
+AI.getKingSafety = (board, phase, kingIndexW, kingIndexB)=>{
+    let score = 0
+    // King safety
+    if (phase <= EARLY_ENDGAME) {
+        if (phase <= MIDGAME && board.columns[kingIndexW] === 3 || board.columns[kingIndexW] === 4) score -= 10
+        
+        if (kingIndexW !== 116) {
+            score += board.board[kingIndexW-17] === P? 10 : 0
+            score += board.board[kingIndexW-16] === 0?-20 : 0
+            score += board.board[kingIndexW-16] === P? 20 : 0
+            // score += phase <= MIDGAME && board.board[kingIndexW-16] === B? 20 : 0
+            score += board.board[kingIndexW-15] === P? 10 : 0
+        }
+        
+        if (phase <= MIDGAME && board.columns[kingIndexB] === 3 || board.columns[kingIndexB] === 4) score += 10
+    
+        if (kingIndexB !== 4) {
+            score += board.board[kingIndexB+17] === p? -10 : 0
+            score += board.board[kingIndexB+16] === 0?  20 : 0
+            score += board.board[kingIndexB+16] === p? -20 : 0
+            // score += phase <= MIDGAME && board.board[kingIndexB+16] === b? -20 : 0
+            score += board.board[kingIndexB+15] === p? -10 : 0
+        }
+    }
+
+    return score
+} 
 
 AI.isLazyFutile = (board, sign, score, alpha, beta, margin)=> {
     let signedScore = sign * score
@@ -459,9 +467,9 @@ AI.getStructure = (board, pawnindexW, pawnindexB)=> {
     let doubled = AI.getDoubled(board, pawnindexW, pawnindexB)
     let defended = AI.getDefended(board, pawnindexW, pawnindexB)
     let passers = AI.getPassers(board, pawnindexW, pawnindexB)
-    // let space = AI.getSpace(board, pawnindexW, pawnindexB)
+    let space = AI.getSpace(board, pawnindexW, pawnindexB)
 
-    let score = doubled + defended + passers// + space
+    let score = doubled + defended + passers + space
 
     AI.pawnTable[hashkey % AI.pawntlength] = score
     return score
@@ -996,7 +1004,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             return nullScore
         }
 
-        if (nullScore < -MATE + AI.totaldepth) {
+        if (depth <= 2 && nullScore < -MATE + AI.totaldepth) {
             mateE = 1
         }
     }
@@ -1053,33 +1061,33 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         }
 
         // Extensiones
-        let E = incheck && depth <= 2? 1 : 0
-
-        E += mateE
+        let E = (incheck || mateE) && depth <= 2? 1 : 0
 
         //Reducciones
         let R = 0
 
-        if (!incheck) {
+        if (!mateE && !incheck) {
             R += AI.LMR_TABLE[depth][legal]
+
+    
+            // Move count reductions
+            if (depth >=3 && !move.capture && legal >= (3 + depth**2) / 2) {
+                R++
+            }
+    
+            // Bad moves reductions
+            if (!move.capture && AI.phase <= EARLY_ENDGAME) {
+                // console.log('no')
+                if (board.turn === WHITE && (board.board[move.to-17] === p || board.board[move.to-15] === p)) {
+                    R+=4
+                }
+                
+                if (board.turn === BLACK && (board.board[move.to+17] === P || board.board[move.to+15] === P)) {
+                    R+=4
+                }
+            }
         }
 
-        // Move count reductions
-        if (depth >=3 && !move.capture && legal >= (3 + depth**2) / 2) {
-            R++
-        }
-
-        // Bad moves reductions
-        if (!move.capture && AI.phase <= EARLY_ENDGAME) {
-            // console.log('no')
-            if (board.turn === WHITE && (board.board[move.to-17] === p || board.board[move.to-15] === p)) {
-                R+=4
-            }
-            
-            if (board.turn === BLACK && (board.board[move.to+17] === P || board.board[move.to+15] === P)) {
-                R+=4
-            }
-        }
 
         if (board.makeMove(move)) {
             legal++
