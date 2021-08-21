@@ -102,17 +102,17 @@ AI.PIECE_VALUES = [
 ]
 
 AI.PIECE_VALUES[0][p] = -VPAWN
-AI.PIECE_VALUES[0][n] = -VPAWN*2.88
-AI.PIECE_VALUES[0][b] = -VPAWN*3.00
-AI.PIECE_VALUES[0][r] = -VPAWN*5.20
-AI.PIECE_VALUES[0][q] = -VPAWN*9.60
-AI.PIECE_VALUES[0][k] = -0
+AI.PIECE_VALUES[0][n] = -VPAWN*2.88 | 0
+AI.PIECE_VALUES[0][b] = -VPAWN*3.00 | 0
+AI.PIECE_VALUES[0][r] = -VPAWN*5.20 | 0
+AI.PIECE_VALUES[0][q] = -VPAWN*9.60 | 0
+AI.PIECE_VALUES[0][k] = 0
 
 AI.PIECE_VALUES[0][P] = VPAWN
-AI.PIECE_VALUES[0][N] = VPAWN*2.88
-AI.PIECE_VALUES[0][B] = VPAWN*3.00
-AI.PIECE_VALUES[0][R] = VPAWN*5.20
-AI.PIECE_VALUES[0][Q] = VPAWN*9.60
+AI.PIECE_VALUES[0][N] = VPAWN*2.88 | 0
+AI.PIECE_VALUES[0][B] = VPAWN*3.00 | 0
+AI.PIECE_VALUES[0][R] = VPAWN*5.20 | 0
+AI.PIECE_VALUES[0][Q] = VPAWN*9.60 | 0
 AI.PIECE_VALUES[0][K] = 0
 
 AI.BISHOP_PAIR = VPAWN2
@@ -281,11 +281,11 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
 
         if (piece === B) {
             bishopsW++
-            if (AI.phase === OPENING && board.board[i+16] === P) score-=20
+            if (AI.phase <= MIDGAME && board.board[i+16] === P) score-=20
         }
         if (piece === b) {
             bishopsB++
-            if (AI.phase === OPENING && board.board[i-16] === p) score-=20
+            if (AI.phase <= MIDGAME && board.board[i-16] === p) score-=20
         }
         
         let turn = board.color(piece)
