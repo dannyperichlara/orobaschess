@@ -306,16 +306,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
 
     score += material + psqt
 
-    
-    if (bishopsW >= 2) {
-        score += AI.BISHOP_PAIR 
-    }
-
-    if (bishopsB >= 2) {
-        score -= AI.BISHOP_PAIR
-    }
-
-    if (AI.isLazyFutile(board, sign, score, alpha, beta, VPAWNx2)) {
+    if (true || AI.isLazyFutile(board, sign, score, alpha, beta, VPAWNx2)) {
         let t1 = (new Date).getTime()
         AI.evalTime += t1 - t0
         
