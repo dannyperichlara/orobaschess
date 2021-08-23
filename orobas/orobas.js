@@ -118,7 +118,80 @@ module.exports = orobas = {
         enPassantSquares: new Map()
     },
 
+    loadFen(fen) {
+        fen = fen.split(' ')
+        let board = fen[0]
+        let turn = fen[1] === 'w'? 1 : 2
+        let castling = fen[2]
+        let enpassantsquare = fen[3]
+        let movenumber = fen[5]
+
+        this.movenumber = movenumber
+    
+        let castlingRights = 0
+
+        if (castling.indexOf('K') > -1) castlingRights ^= 8
+        if (castling.indexOf('Q') > -1) castlingRights ^= 4
+        if (castling.indexOf('k') > -1) castlingRights ^= 2
+        if (castling.indexOf('q') > -1) castlingRights ^= 1
+        
+        this.castlingRights = [castlingRights]
+
+        this.board = this.fen2board(board)
+
+        this.changeTurn(turn)
+        
+        if (enpassantsquare !== '-') {
+            this.enPassantSquares = [this.coords.indexOf(enpassantsquare)]
+            console.log('En Passant Square', this.enPassantSquares)
+        }
+    },
+
+    fen2board (fen) {
+        let board = fen.replace(/1/g, '0')
+                    .replace(/2/g, '00')
+                    .replace(/3/g, '000')
+                    .replace(/4/g, '0000')
+                    .replace(/5/g, '00000')
+                    .replace(/6/g, '000000')
+                    .replace(/7/g, '0000000')
+                    .replace(/8/g, '00000000')
+    
+        board = board.replace(/\//g, '').split('')
+    
+        board = board.map(e=>{
+          let piece = 0
+    
+          if (e === 'k') piece = 12
+          if (e === 'q') piece = 11
+          if (e === 'r') piece = 10
+          if (e === 'b') piece =  9
+          if (e === 'n') piece =  8
+          if (e === 'p') piece =  7
+          if (e === 'K') piece =  6
+          if (e === 'Q') piece =  5
+          if (e === 'R') piece =  4
+          if (e === 'B') piece =  3
+          if (e === 'N') piece =  2
+          if (e === 'P') piece =  1
+    
+          return piece 
+        })
+    
+        let board0x88 = []
+    
+        for (let i in board) {
+          if (i % 8 === 0 && i>0) board0x88 = [...board0x88, null, null, null, null, null, null, null, null]
+          board0x88.push(board[i])
+        }
+    
+        board0x88 = [...board0x88, null, null, null, null, null, null, null, null]
+    
+      return board0x88
+    },
+
     createBoard() {
+        //r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 
         this.board = [
             r,  n,  b,  q,  k,  b,  n,  r,     -8, -4, -4, -2, -2, -4, -4, -8,
             p,  p,  p,  p,  p,  p,  p,  p,     -1,  0,  1, -1, -1,  1,  0, -1,
@@ -129,6 +202,17 @@ module.exports = orobas = {
             P,  P,  P,  P,  P,  P,  P,  P,     -1,  0,  1, -1, -1,  1,  0, -1,
             R,  N,  B,  Q,  K,  B,  N,  R,     -8, -4, -4, -2, -2, -4, -4, -8,
         ]
+
+        // this.board = [
+        //     r,  n,  b,  q,  k,  b,  n,  r,     -8, -4, -4, -2, -2, -4, -4, -8,
+        //     p,  p,  p,  p,  p,  p,  p,  p,     -1,  0,  1, -1, -1,  1,  0, -1,
+        //     0,  0,  0,  0,  0,  0,  0,  0,      0,  1,  2,  3,  3,  2,  1,  0,
+        //     0,  0,  0,  0,  0,  0,  0,  0,      1,  2,  3,  4,  4,  3,  2,  1,
+        //     0,  0,  0,  0,  0,  0,  0,  0,      1,  2,  3,  4,  4,  3,  2,  1,
+        //     0,  0,  0,  0,  0,  0,  0,  0,      0,  1,  2,  3,  3,  2,  1,  0,
+        //     P,  P,  P,  P,  P,  P,  P,  P,     -1,  0,  1, -1, -1,  1,  0, -1,
+        //     R,  N,  B,  Q,  K,  B,  N,  R,     -8, -4, -4, -2, -2, -4, -4, -8,
+        // ]
 
         this.turn = WHITE
     },
@@ -275,8 +359,6 @@ module.exports = orobas = {
     isSquareAttacked(square, attackerSide, count, xrays) {
         if (square & 0x88) return count? 0 : false
 
-        let t0 = new Date().getTime()
-
         if (attackerSide === BLACK) {
             pFrom = P
             nFrom = N
@@ -306,6 +388,17 @@ module.exports = orobas = {
         }
 
         let attacks = 0
+
+        //Peones
+        for (let i = 1; i <= 2; i++) {
+            let to = square + this.pieces[pFrom].offsets[i]
+
+            if (to & 0x88) continue
+
+            if (this.board[to] === pTo) {
+                if (count) {attacks++} else {return true}
+            }
+        }
 
         // Alfiles
         for (let i = 0; i < 4; i++) {
@@ -370,17 +463,6 @@ module.exports = orobas = {
             if (to & 0x88) continue
 
             if (this.board[to] === nTo) {
-                if (count) {attacks++} else {return true}
-            }
-        }
-
-        //Peones
-        for (let i = 1; i <= 2; i++) {
-            let to = square + this.pieces[pFrom].offsets[i]
-
-            if (to & 0x88) continue
-
-            if (this.board[to] === pTo) {
                 if (count) {attacks++} else {return true}
             }
         }
@@ -961,15 +1043,20 @@ orobas.init()
 orobas.draw()
 console.log(orobas.hashkey, orobas.pawnhashkey)
 
+orobas.loadFen('r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ')
+
+console.time()
 // console.log('PERFT 1', orobas.perft(1), 20, 48) // OK
 // console.log('PERFT 2', orobas.perft(2), 400, 2039) // OK
 // console.log('PERFT 3', orobas.perft(3), 8902, 97862) // OK
-console.log('PERFT 4', orobas.perft(4), 197281, 422333) // OK
+// console.log('PERFT 4', orobas.perft(4), 197281, 422333) // OK
 // console.log('PERFT 5', orobas.perft(5), 4865609, '-') // OK
 // console.log('PERFT 6', orobas.perft(6), 119060324, '-') // NO
 console.log(orobas.perftData)
 // orobas.drawAttackZone(orobas.getAttackZone(WHITE))
 // console.log(moves.map(e=>{return orobas.coords[e.from] + '-' + orobas.coords[e.to]}))
+console.timeEnd()
+
 
 orobas.draw()
 console.log(orobas.hashkey, orobas.pawnhashkey)

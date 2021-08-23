@@ -233,7 +233,7 @@ AI.randomizePSQT = function () {
 
 // FUNCIÓN DE EVALUACIÓN DE LA POSICIÓN
 AI.evaluate = function (board, ply, alpha, beta, pvNode) {
-    let t0 = (new Date).getTime()
+    // let t0 = (new Date).getTime()
 
     alpha = alpha*this.nullWindowFactor
     beta = beta*this.nullWindowFactor
@@ -243,8 +243,8 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
     
     if (evalEntry !== null) {
         this.evalhashnodes++
-        let t1 = (new Date).getTime()
-        AI.evalTime += t1 - t0
+        // let t1 = (new Date).getTime()
+        // AI.evalTime += t1 - t0
         return evalEntry
     }
     
@@ -309,8 +309,8 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
     score += material + psqt
 
     if (true || AI.isLazyFutile(board, sign, score, alpha, beta, VPAWNx2)) {
-        let t1 = (new Date).getTime()
-        AI.evalTime += t1 - t0
+        // let t1 = (new Date).getTime()
+        // AI.evalTime += t1 - t0
         
         let nullWindowScore = sign * score / AI.nullWindowFactor | 0
         
@@ -350,8 +350,8 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
 
     AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
 
-    let t1 = (new Date).getTime()
-    AI.evalTime += t1 - t0
+    // let t1 = (new Date).getTime()
+    // AI.evalTime += t1 - t0
 
     return nullWindowScore
 }
@@ -677,7 +677,7 @@ AI.getDefended = (board, pawnindexW, pawnindexB)=>{
 // sea FAIL-HIGH en más de un 90% de los casos.
 AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
 
-    let t0 = (new Date).getTime()
+    // let t0 = (new Date).getTime()
     let killer1, killer2
 
     if (AI.killers) {
@@ -778,9 +778,9 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         { desc: u => u.score }
       ]);
 
-    let t1 = (new Date()).getTime()
+    // let t1 = (new Date()).getTime()
 
-    AI.sortingTime += (t1 - t0)
+    // AI.sortingTime += (t1 - t0)
 
     return moves
 }
@@ -849,9 +849,9 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
             continue
         }
 
-        let m0 = (new Date()).getTime()
+        // let m0 = (new Date()).getTime()
         if (board.makeMove(move)) {
-            AI.moveTime += (new Date()).getTime() - m0
+            // AI.moveTime += (new Date()).getTime() - m0
             legal++
 
             score = -AI.quiescenceSearch(board, -beta, -alpha, depth - 1, ply + 1, pvNode)
@@ -930,7 +930,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     
     AI.nodes++
 
-    if ((new Date()).getTime() > AI.timer + 1000*AI.secondspermove) {
+    if (Date.now() > AI.timer + 1000*AI.secondspermove) {
         if (AI.iteration > AI.mindepth[AI.phase]) {
             AI.stop = true
         }
@@ -1083,9 +1083,9 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             }
         }
 
-        let m0 = (new Date()).getTime()
+        // let m0 = (new Date()).getTime()
         if (board.makeMove(move)) {
-            AI.moveTime += (new Date()).getTime() - m0
+            // AI.moveTime += (new Date()).getTime() - m0
             legal++
 
             if (legal === 1) {
@@ -1557,7 +1557,7 @@ AI.MTDF = function (board, f, d, lowerBound, upperBound) {
 
 AI.search = function (board, options) {
     AI.sortingTime = 0
-    AI.searchTime0 = (new Date()).getTime()
+    AI.searchTime0 = Date.now()
 
     if (board.movenumber && board.movenumber <= 1) {
         AI.lastscore = 0
@@ -1623,7 +1623,7 @@ AI.search = function (board, options) {
         AI.evalTime = 0
         AI.moveTime = 0
         AI.iteration = 0
-        AI.timer = (new Date()).getTime()
+        AI.timer = Date.now()
         AI.stop = false
         AI.PV = AI.getPV(board, 1)
         AI.changeinPV = true
@@ -1716,7 +1716,7 @@ AI.search = function (board, options) {
             AI.bestmove = moves[moves.length * Math.random() | 0]
         }
 
-        AI.searchTime1 = (new Date()).getTime()
+        AI.searchTime1 = Date.now()
         AI.searchTime = AI.searchTime1 - AI.searchTime0
         console.log('Sorting % time: ', (AI.sortingTime / AI.searchTime) * 100 | 0,
                     'Evaluation % time: ', (AI.evalTime / AI.searchTime) * 100 | 0

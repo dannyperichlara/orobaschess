@@ -42,35 +42,9 @@ Chess.AI = require('./orobas/aiC.js')
 
 app.get('/', function (req, res) {
   if (req.query.fen) {
+     let fen = req.query.fen
 
-      let fen = req.query.fen.split(' ')
-
-      let board = fen[0]
-      let turn = fen[1] === 'w'? 1 : 2
-      let castling = fen[2]
-      let enpassantsquare = fen[3]
-      let movenumber = fen[5]
-
-      Chess.movenumber = movenumber
-  
-      let castlingRights = 0
-
-
-      if (castling.indexOf('K') > -1) castlingRights ^= 8
-      if (castling.indexOf('Q') > -1) castlingRights ^= 4
-      if (castling.indexOf('k') > -1) castlingRights ^= 2
-      if (castling.indexOf('q') > -1) castlingRights ^= 1
-      
-      Chess.castlingRights = [castlingRights]
-
-      Chess.board = fen2board(board)
-
-      Chess.changeTurn(turn)
-      
-      if (enpassantsquare !== '-') {
-        Chess.enPassantSquares = [fromto.indexOf(enpassantsquare)]
-        console.log('En Passant Square', Chess.enPassantSquares)
-      }
+      Chess.loadFen(fen)
 
       Chess.draw()
   }
@@ -87,46 +61,3 @@ app.get('/', function (req, res) {
 app.listen(3666, function () {
   console.log('Example app listening on port 3666!');
 });
-
-let fen2board = function (fen) {
-	let board = fen.replace(/1/g, '0')
-				.replace(/2/g, '00')
-				.replace(/3/g, '000')
-				.replace(/4/g, '0000')
-				.replace(/5/g, '00000')
-				.replace(/6/g, '000000')
-				.replace(/7/g, '0000000')
-				.replace(/8/g, '00000000')
-
-    board = board.replace(/\//g, '').split('')
-
-    board = board.map(e=>{
-      let piece = 0
-
-      if (e === 'k') piece = 12
-      if (e === 'q') piece = 11
-      if (e === 'r') piece = 10
-      if (e === 'b') piece =  9
-      if (e === 'n') piece =  8
-      if (e === 'p') piece =  7
-      if (e === 'K') piece =  6
-      if (e === 'Q') piece =  5
-      if (e === 'R') piece =  4
-      if (e === 'B') piece =  3
-      if (e === 'N') piece =  2
-      if (e === 'P') piece =  1
-
-      return piece 
-    })
-
-    let board0x88 = []
-
-    for (let i in board) {
-      if (i % 8 === 0 && i>0) board0x88 = [...board0x88, null, null, null, null, null, null, null, null]
-      board0x88.push(board[i])
-    }
-
-    board0x88 = [...board0x88, null, null, null, null, null, null, null, null]
-
-  return board0x88
-}
