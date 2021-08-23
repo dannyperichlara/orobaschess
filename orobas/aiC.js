@@ -16,6 +16,7 @@ let AI = {
     evalhashnodes: 0,
     evalnodes: 0,
     evalTime: 0,
+    genMovesTime: 0,
     moveTime: 0,
     status: null,
     fhf: 0,
@@ -30,7 +31,7 @@ let AI = {
     f: 0,
     previousls: 0,
     lastscore: 0,
-    nullWindowFactor: 10
+    nullWindowFactor: 20
 }
 
 // ÍNDICES

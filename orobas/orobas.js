@@ -213,19 +213,19 @@ module.exports = orobas = {
 
         //Blancas
         this.pieces[P] = {symbol: 'P', color: WHITE, offsets: [-16, -17, -15]}
-        this.pieces[N] = {symbol: 'N', color: WHITE, offsets: [-18, -33, -31, -14, 18, 33, 31, 14]}
+        this.pieces[N] = {symbol: 'N', color: WHITE, offsets: [-33, -31, -18, -14, 18, 14, 33, 31]}
         this.pieces[B] = {symbol: 'B', color: WHITE, offsets: [-17, -15, 17, 15]}
-        this.pieces[R] = {symbol: 'R', color: WHITE, offsets: [-16, 1, 16, -1]}
-        this.pieces[Q] = {symbol: 'Q', color: WHITE, offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
-        this.pieces[K] = {symbol: 'K', color: WHITE, offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
+        this.pieces[R] = {symbol: 'R', color: WHITE, offsets: [-16, -1, 1, 16]}
+        this.pieces[Q] = {symbol: 'Q', color: WHITE, offsets: [-17, -15, -16, -1, 1, 17, 15, 16]}
+        this.pieces[K] = {symbol: 'K', color: WHITE, offsets: [-17, -15, -16, -1, 1, 17, 15, 16]}
         
         //Negras
         this.pieces[p] = {symbol: 'p', color: BLACK, offsets: [16, 17, 15]}
-        this.pieces[n] = {symbol: 'n', color: BLACK, offsets: [-18, -33, -31, -14, 18, 33, 31, 14]}
-        this.pieces[b] = {symbol: 'b', color: BLACK, offsets: [-17, -15, 17, 15]}
-        this.pieces[r] = {symbol: 'r', color: BLACK, offsets: [-16, 1, 16, -1]}
-        this.pieces[q] = {symbol: 'q', color: BLACK, offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
-        this.pieces[k] = {symbol: 'k', color: BLACK, offsets: [-17, -16, -15, 1, 17, 16, 15, -1]}
+        this.pieces[n] = {symbol: 'n', color: BLACK, offsets: [33, 31, 18, 14, -18, -14, -33, -31]}
+        this.pieces[b] = {symbol: 'b', color: BLACK, offsets: [17, 15, -17, -15]}
+        this.pieces[r] = {symbol: 'r', color: BLACK, offsets: [16, 1, -1, -16]}
+        this.pieces[q] = {symbol: 'q', color: BLACK, offsets: [17, 15, 16, 1, -1, -17, -15, -16]}
+        this.pieces[k] = {symbol: 'k', color: BLACK, offsets: [17, 15, 16, 1, -1, -17, -15, -16]}
     },
 
     createPieceList() {
@@ -307,34 +307,6 @@ module.exports = orobas = {
 
         let attacks = 0
 
-        //Dama
-        // for (let i = 0; i < 8; i++) {
-        //     let to = square
-        //     let blocked = false
-        //     let outofbounds = false
-
-        //     while (!blocked && !outofbounds) {
-        //         to = to + this.pieces[qFrom].offsets[i]
-
-        //         if (to & 0x88) {
-        //             outofbounds = true
-        //         } else {
-        //             if (this.board[to]) {
-        //                 if (this.board[to] === qTo) {
-        //                     if (count) {
-        //                         attacks++
-        //                         blocked = true
-        //                     } else {
-        //                         return true
-        //                     }
-        //                 } else {
-        //                     if (!xrays) blocked = true
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
-
         // Alfiles
         for (let i = 0; i < 4; i++) {
             let to = square
@@ -348,7 +320,7 @@ module.exports = orobas = {
                     outofbounds = true
                 } else {
                     if (this.board[to]) {
-                        if (this.board[to] === qTo || this.board[to] === bTo) {
+                        if (this.board[to] === bTo || this.board[to] === qTo) {
                             if (count) {
                                 attacks++
                                 blocked = true
@@ -376,7 +348,7 @@ module.exports = orobas = {
                     outofbounds = true
                 } else {
                     if (this.board[to]) {
-                        if (this.board[to] === qTo || this.board[to] === rTo) {
+                        if (this.board[to] === rTo || this.board[to] === qTo) {
                             if (count) {
                                 attacks++
                                 blocked = true
@@ -401,7 +373,7 @@ module.exports = orobas = {
                 if (count) {attacks++} else {return true}
             }
         }
-        
+
         //Peones
         for (let i = 1; i <= 2; i++) {
             let to = square + this.pieces[pFrom].offsets[i]
