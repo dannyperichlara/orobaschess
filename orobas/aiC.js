@@ -16,6 +16,7 @@ let AI = {
     evalhashnodes: 0,
     evalnodes: 0,
     evalTime: 0,
+    moveTime: 0,
     status: null,
     fhf: 0,
     fh: 0,
@@ -847,7 +848,9 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
             continue
         }
 
+        let m0 = (new Date()).getTime()
         if (board.makeMove(move)) {
+            AI.moveTime += (new Date()).getTime() - m0
             legal++
 
             score = -AI.quiescenceSearch(board, -beta, -alpha, depth - 1, ply + 1, pvNode)
@@ -1079,8 +1082,9 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             }
         }
 
-
+        let m0 = (new Date()).getTime()
         if (board.makeMove(move)) {
+            AI.moveTime += (new Date()).getTime() - m0
             legal++
 
             if (legal === 1) {
@@ -1616,6 +1620,7 @@ AI.search = function (board, options) {
         AI.evalhashnodes = 0
         AI.evalnodes = 0
         AI.evalTime = 0
+        AI.moveTime = 0
         AI.iteration = 0
         AI.timer = (new Date()).getTime()
         AI.stop = false
@@ -1716,7 +1721,7 @@ AI.search = function (board, options) {
                     'Evaluation % time: ', (AI.evalTime / AI.searchTime) * 100 | 0
         )
 
-        console.log(AI.PV[1])
+        console.log(AI.PV[1], (AI.moveTime / AI.searchTime) * 100 | 0)
 
         resolve({
             n: board.movenumber, phase: AI.phase, depth: AI.iteration - 1, from: board.board64[AI.bestmove.from],
