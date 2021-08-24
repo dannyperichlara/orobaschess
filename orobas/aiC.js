@@ -305,6 +305,17 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
 
         material += AI.PIECE_VALUES[OPENING][piece] //Material
         psqt += sign*AI.PSQT[ABS[piece]][turn === WHITE? i : (112^i)]
+        
+        if (piece === K) {
+            kingIndexW = i
+
+            if (kingIndexW === 118 && board.board[119] === R) score -= VPAWN
+        }
+        
+        if (piece === k) {
+            kingIndexB = i
+            if (kingIndexB === 6 && board.board[7] === r) score += VPAWN
+        }
     }
 
     score += material + psqt
