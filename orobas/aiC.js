@@ -284,12 +284,21 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
 
         if (piece === B) {
             bishopsW++
-            if (AI.phase === OPENING && board.board[i+16] === P) score-=10
+            if (AI.phase === OPENING && board.board[i+16] === P) score-=20
+            if (AI.phase === OPENING && board.board[i-16] === P) score+=10
         }
         if (piece === b) {
             bishopsB++
-            if (AI.phase === OPENING && board.board[i-16] === p) score-=10
+            if (AI.phase === OPENING && board.board[i-16] === p) score+=20
+            if (AI.phase === OPENING && board.board[i+16] === p) score-=20
         }
+
+        // if (piece === N) {
+        //     if (AI.phase === OPENING && board.board[i-16] === P) score+=10
+        // }
+        // if (piece === n) {
+        //     if (AI.phase === OPENING && board.board[i+16] === p) score-=20
+        // }
         
         let turn = board.color(piece)
         let sign = turn === WHITE? 1 : -1
@@ -930,8 +939,8 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     
     AI.nodes++
 
-    if (Date.now() > AI.timer + 1000*AI.secondspermove) {
-        if (AI.iteration > AI.mindepth[AI.phase]) {
+    if (AI.iteration > AI.mindepth[AI.phase]) {
+        if (Date.now() > AI.timer + AI.milspermove) {
             AI.stop = true
         }
     }
@@ -1582,6 +1591,8 @@ AI.search = function (board, options) {
     }
 
     if (options && options.seconds) AI.secondspermove = options.seconds
+
+    AI.milspermove = 1000 * AI.secondspermove
 
     AI.nofpieces = 0
 
