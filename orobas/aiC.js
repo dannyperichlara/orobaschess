@@ -991,16 +991,18 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
     // // Null move pruning
     if (!incheck && depth > 1) {
-        board.changeTurn()
-        let nullR = 5 - AI.phase
-        let nullScore = -AI.PVS(board, -beta, -beta + 1, depth - nullR - 1, ply + 1)
-        board.changeTurn()
-        if (nullScore >= beta) {
-            return nullScore
-        }
-
-        if (depth <= 2 && nullScore < -MATE + AI.totaldepth) {
-            mateE = 1
+        if (!board.enPassantSquares[board.enPassantSquares.length - 1]) {
+            board.changeTurn()
+            let nullR = 5 - AI.phase
+            let nullScore = -AI.PVS(board, -beta, -beta + 1, depth - nullR - 1, ply + 1)
+            board.changeTurn()
+            if (nullScore >= beta) {
+                return nullScore
+            }
+    
+            if (depth <= 2 && nullScore < -MATE + AI.totaldepth) {
+                mateE = 1
+            }
         }
     }
 
