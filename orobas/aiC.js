@@ -293,26 +293,18 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
             if (AI.phase === OPENING && board.board[i+16] === p) score-=20
         }
 
-        // if (piece === N) {
-        //     if (AI.phase === OPENING && board.board[i-16] === P) score+=10
-        // }
-        // if (piece === n) {
-        //     if (AI.phase === OPENING && board.board[i+16] === p) score-=20
-        // }
+        if (piece === N) {
+            if (AI.phase === OPENING && board.board[i-16] === P) score+=10
+        }
+        if (piece === n) {
+            if (AI.phase === OPENING && board.board[i+16] === p) score-=20
+        }
         
         let turn = board.color(piece)
         let sign = turn === WHITE? 1 : -1
 
         material += AI.PIECE_VALUES[OPENING][piece] //Material
         psqt += sign*AI.PSQT[ABS[piece]][turn === WHITE? i : (112^i)]
-        
-        if (piece === K) {
-            kingIndexW = i
-        }
-        
-        if (piece === k) {
-            kingIndexB = i
-        }
     }
 
     score += material + psqt
