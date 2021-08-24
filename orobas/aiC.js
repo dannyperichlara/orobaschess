@@ -1029,6 +1029,8 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         ttEntry = AI.ttGet(hashkey)
     }
 
+    if (pvNode && depth >= 6 && !ttEntry) depth -= 2
+
     let moves = board.getMoves()
 
     moves = AI.sortMoves(moves, turn, ply, board, ttEntry)
