@@ -299,6 +299,18 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         if (piece === n) {
             if (AI.phase === OPENING && board.board[i+16] === p) score-=10
         }
+
+        if (i >= 64 && piece === R) {
+            if (board.board[i-16] !== P && board.board[i-32] !== P && board.board[i-48] !== P) {
+                score += 20
+            }
+        }
+
+        if (i <= 55 && piece === r) {
+            if (board.board[i+16] !== p && board.board[i+32] !== p && board.board[i+48] !== p) {
+                score -= 20
+            }
+        }
         
         let turn = board.color(piece)
         let sign = turn === WHITE? 1 : -1
@@ -334,7 +346,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         // Pawn structure
         score += AI.getStructure(board, pawnindexW, pawnindexB)
         score += AI.getKingSafety(board, AI.phase, kingIndexW, kingIndexB)
-
 
         // Is king under attack
         score -= 20*board.isSquareAttacked(kingIndexW-15, BLACK, true)
