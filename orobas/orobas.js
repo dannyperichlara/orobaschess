@@ -1,4 +1,5 @@
 var seedrandom = require('seedrandom')
+const { totaldepth } = require('./aiC')
 
 let rnd = new seedrandom('orobas1234', {global: true})
 
@@ -1043,12 +1044,13 @@ orobas.init()
 orobas.draw()
 console.log(orobas.hashkey, orobas.pawnhashkey)
 
+// Kiwi-Pete
 orobas.loadFen('r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ')
 
 console.time()
 // console.log('PERFT 1', orobas.perft(1), 20, 48) // OK
 // console.log('PERFT 2', orobas.perft(2), 400, 2039) // OK
-// console.log('PERFT 3', orobas.perft(3), 8902, 97862) // OK
+console.log('PERFT 3', orobas.perft(3), 8902, 97862) // OK
 // console.log('PERFT 4', orobas.perft(4), 197281, 422333) // OK
 // console.log('PERFT 5', orobas.perft(5), 4865609, '-') // OK
 // console.log('PERFT 6', orobas.perft(6), 119060324, '-') // NO

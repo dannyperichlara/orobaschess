@@ -308,7 +308,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
 
     score += material + psqt
 
-    if (true || AI.isLazyFutile(board, sign, score, alpha, beta, VPAWNx2)) {
+    if (AI.isLazyFutile(board, sign, score, alpha, beta, VPAWNx2)) {
         // let t1 = (new Date).getTime()
         // AI.evalTime += t1 - t0
         
@@ -325,20 +325,20 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
 
 
         // Is king under attack
-        score -= 10*board.isSquareAttacked(kingIndexW-15, BLACK, false)
-        score -= 10*board.isSquareAttacked(kingIndexW-16, BLACK, false)
-        score -= 10*board.isSquareAttacked(kingIndexW-17, BLACK, false)
+        score -= 20*board.isSquareAttacked(kingIndexW-15, BLACK, true)
+        score -= 20*board.isSquareAttacked(kingIndexW-16, BLACK, true)
+        score -= 20*board.isSquareAttacked(kingIndexW-17, BLACK, true)
     
-        score += 10*board.isSquareAttacked(kingIndexB+15, WHITE, false)
-        score += 10*board.isSquareAttacked(kingIndexB+16, WHITE, false)
-        score += 10*board.isSquareAttacked(kingIndexB+17, WHITE, false)
+        score += 20*board.isSquareAttacked(kingIndexB+15, WHITE, true)
+        score += 20*board.isSquareAttacked(kingIndexB+16, WHITE, true)
+        score += 20*board.isSquareAttacked(kingIndexB+17, WHITE, true)
 
         // Center control
         if (AI.phase <= MIDGAME) {
             for (let i = 0, len=CENTER.length; i < len; i++) {
                 let occupiedBy = board.pieces[board.board[CENTER[i]]].color
-                score += 20*(occupiedBy == WHITE? 1 : (occupiedBy == BLACK? -1 : 0))
-                score += 5*board.isSquareAttacked(i, WHITE, true) - board.isSquareAttacked(i, BLACK, true)
+                score += 40*(occupiedBy == WHITE? 1 : (occupiedBy == BLACK? -1 : 0))
+                score += 20*board.isSquareAttacked(i, WHITE, true) - board.isSquareAttacked(i, BLACK, true)
             }
         }
 
@@ -412,25 +412,25 @@ AI.getMobility = (board)=>{
     board.changeTurn()
 
     if (board.turn === WHITE) {
-        // myMoves = myMoves.filter((e,i)=>{
-        //     return board.board[e.to - 17] !== p && board.board[e.to - 15] !== p
-        // })
+        myMoves = myMoves.filter((e,i)=>{
+            return board.board[e.to - 17] !== p && board.board[e.to - 15] !== p
+        })
 
-        // opponentMoves = opponentMoves.filter((e,i)=>{
-        //     return board.board[e.to + 17] !== P && board.board[e.to + 15] !== P
-        // })
+        opponentMoves = opponentMoves.filter((e,i)=>{
+            return board.board[e.to + 17] !== P && board.board[e.to + 15] !== P
+        })
 
-        mobility = 20*myMoves.length - (20 - 5*AI.phase)*opponentMoves.length | 0
+        mobility = 5*(myMoves.length - opponentMoves.length) | 0
     } else {
-        // myMoves = myMoves.filter((e,i)=>{
-        //     return board.board[e.to + 17] !== P && board.board[e.to + 15] !== P
-        // })
+        myMoves = myMoves.filter((e,i)=>{
+            return board.board[e.to + 17] !== P && board.board[e.to + 15] !== P
+        })
 
-        // opponentMoves = opponentMoves.filter((e,i)=>{
-        //     return board.board[e.to - 17] !== p && board.board[e.to - 15] !== p
-        // })
+        opponentMoves = opponentMoves.filter((e,i)=>{
+            return board.board[e.to - 17] !== p && board.board[e.to - 15] !== p
+        })
 
-        mobility = 20*opponentMoves.length - (20 - 5*AI.phase)*myMoves.length | 0
+        mobility = 5*(opponentMoves.length - myMoves.length) | 0
     }
 
     return mobility
@@ -956,6 +956,17 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             return mateScore
         }
     }
+    
+    let repetitions = 0
+
+    // for (let i = board.repetitionHistory.length - 4; i >= 0; i -= 4) {
+    
+    //     if (board.hashkey === AI.repetitionHistory[i]) {
+    //         repetions++
+    //     }
+
+    //     if (repetitions === 2) return DRAW
+    // }
 
     let incheck = board.isKingInCheck()
 
