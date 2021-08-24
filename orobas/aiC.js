@@ -290,14 +290,14 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         if (piece === b) {
             bishopsB++
             if (AI.phase === OPENING && board.board[i-16] === p) score+=20
-            if (AI.phase === OPENING && board.board[i+16] === p) score-=20
+            if (AI.phase === OPENING && board.board[i+16] === p) score-=10
         }
 
         if (piece === N) {
             if (AI.phase === OPENING && board.board[i-16] === P) score+=10
         }
         if (piece === n) {
-            if (AI.phase === OPENING && board.board[i+16] === p) score-=20
+            if (AI.phase === OPENING && board.board[i+16] === p) score-=10
         }
         
         let turn = board.color(piece)
