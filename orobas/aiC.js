@@ -1123,7 +1123,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
     
             // Move count reductions
-            if (depth >=3 && !move.capture && legal >= (3 + depth**2) / 2) {
+            if (depth >=3 && !move.capture && legal >= (3 + depth*depth) / 2) {
                 R++
             }
     
@@ -1184,7 +1184,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
                     AI.killers[turn | 0][ply][0] = move
 
-                    AI.saveHistory(turn, move, 2 ** depth)
+                    AI.saveHistory(turn, move, depth*depth)
                 }
 
                 return score
@@ -1647,7 +1647,6 @@ AI.search = function (board, options) {
         AI.lastscore = 0
         AI.f = 0
     } else {
-        // AI.createTables(true, true, true)
         AI.createTables(true, true, false)
         AI.f = AI.lastscore
     }
