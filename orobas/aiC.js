@@ -1045,7 +1045,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         if (!board.enPassantSquares[board.enPassantSquares.length - 1]) {
             board.changeTurn()
             let nullR = 5 - AI.phase
-            let nullScore = -AI.PVS(board, -beta, -beta + 1, depth - nullR - 1, ply + 1)
+            let nullScore = -AI.PVS(board, -beta, -beta + 1, depth - nullR - 1, ply)
             board.changeTurn()
             if (nullScore >= beta) {
                 return nullScore
@@ -1779,7 +1779,7 @@ AI.search = function (board, options) {
                     'Evaluation % time: ', (AI.evalTime / AI.searchTime) * 100 | 0
         )
 
-        console.log(AI.PV[1], (AI.moveTime / AI.searchTime) * 100 | 0)
+        // console.log(AI.PV[1], (AI.moveTime / AI.searchTime) * 100 | 0)
 
         resolve({
             n: board.movenumber, phase: AI.phase, depth: AI.iteration - 1, from: board.board64[AI.bestmove.from],
