@@ -394,7 +394,7 @@ AI.getKingSafety = (board, phase, kingIndexW, kingIndexB)=>{
         if (kingIndexW !== 116) {
             score += board.board[kingIndexW-17] === P? 20 : 0
             score += board.board[kingIndexW-16] === 0?-40 : 0
-            score += board.board[kingIndexW-16] === P? 40 : 0
+            score += board.board[kingIndexW-16] === P? 20 : 0
             // score += phase <= MIDGAME && board.board[kingIndexW-16] === B? 20 : 0
             score += board.board[kingIndexW-15] === P? 20 : 0
         }
@@ -403,7 +403,7 @@ AI.getKingSafety = (board, phase, kingIndexW, kingIndexB)=>{
     
         if (kingIndexB !== 4) {
             score += board.board[kingIndexB+17] === p? -20 : 0
-            score += board.board[kingIndexB+16] === 0?  40 : 0
+            score += board.board[kingIndexB+16] === 0?  20 : 0
             score += board.board[kingIndexB+16] === p? -40 : 0
             // score += phase <= MIDGAME && board.board[kingIndexB+16] === b? -20 : 0
             score += board.board[kingIndexB+15] === p? -20 : 0
