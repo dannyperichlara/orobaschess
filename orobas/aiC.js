@@ -1010,8 +1010,15 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
     let incheck = board.isKingInCheck()
 
+    let ttEntry = AI.ttGet(hashkey)
+
     //Búsqueda QS
     if (!incheck && depth <= 0) {
+        if (ttEntry && ttEntry.depth > 0) {
+            if (ttEntry.score > alpha) alpha = ttEntry.score
+            if (ttEntry.score < beta) beta = ttEntry.score
+        }
+
         return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
     }
 
@@ -1021,7 +1028,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
     // Busca la posición en la Tabla de Trasposición (lookup)
 
-    let ttEntry = AI.ttGet(hashkey)
 
     if (ttEntry && ttEntry.depth >= depth) {
         if (ttEntry.flag === EXACT) {
@@ -1040,7 +1046,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     // console.log(pvNode)
     let mateE = 0 // Mate threat extension
 
-    // // Null move pruning
+    // Extended Null Move Reductions
     if (!incheck && depth > 1) {
         if (!board.enPassantSquares[board.enPassantSquares.length - 1]) {
             board.changeTurn()
@@ -1113,7 +1119,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         }
 
         // Extensiones
-        let E = (incheck || mateE) && depth <= 2? 1 : 0
+        let E = (incheck || mateE) && ply <= 2? 1 : 0
 
         //Reducciones
         let R = 0
