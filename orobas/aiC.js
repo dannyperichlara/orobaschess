@@ -300,24 +300,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
             if (AI.phase === OPENING && board.board[i+16] === p) score-=10
         }
 
-        if (i >= 64 && piece === R) {
-            if (board.board[i-16] !== P && board.board[i-32] !== P && board.board[i-48] !== P) {
-                score += 20
-            }
-        }
-
-        if (i <= 55 && piece === r) {
-            if (board.board[i+16] !== p && board.board[i+32] !== p && board.board[i+48] !== p) {
-                score -= 20
-            }
-        }
-        
-        let turn = board.color(piece)
-        let sign = turn === WHITE? 1 : -1
-
-        material += AI.PIECE_VALUES[OPENING][piece] //Material
-        psqt += sign*AI.PSQT[ABS[piece]][turn === WHITE? i : (112^i)]
-        
         if (piece === K) {
             kingIndexW = i
 
@@ -328,6 +310,30 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
             kingIndexB = i
             if (kingIndexB === 6 && board.board[7] === r) score += VPAWN
         }
+
+        if (i >= 64 && piece === R) {
+            if (board.board[i-16] !== P && board.board[i-32] !== P && board.board[i-48] !== P) {
+                score += 20
+            }
+
+            if (board.columns[i] === board.columns[kingIndexB]) score += 20
+            if (board.ranksW[i] === board.ranksW[kingIndexB]) score += 40
+        }
+
+        if (i <= 55 && piece === r) {
+            if (board.board[i+16] !== p && board.board[i+32] !== p && board.board[i+48] !== p) {
+                score -= 20
+            }
+
+            if (board.columns[i] === board.columns[kingIndexW]) score -= 20
+            if (board.ranksB[i] === board.ranksB[kingIndexW]) score -= 40
+        }
+        
+        let turn = board.color(piece)
+        let sign = turn === WHITE? 1 : -1
+
+        material += AI.PIECE_VALUES[OPENING][piece] //Material
+        psqt += sign*AI.PSQT[ABS[piece]][turn === WHITE? i : (112^i)]
     }
 
     score += material + psqt
@@ -727,6 +733,17 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
             move.score += 1e9
             continue
         }
+
+        // if (AI.PV[ply] && move.key === AI.PV[ply].key) {
+        //     move.pv = true
+
+        //     if (move.isCapture || move.promotingPiece) {
+        //         move.score += 1e9
+        //     } else {
+        //         move.score += 3e6
+        //     }
+        //     continue
+        // }
 
         // CRITERIO 1: Enroque
         // if (AI.phase <= MIDGAME && move.castleSide) {
@@ -1560,7 +1577,7 @@ AI.getPV = function (board, length) {
                 if (board.makeMove(ttEntry.move)) {
                     legal++
                     
-                    PV.push(ttEntry.move)
+                    PV.push(JSON.parse(JSON.stringify(ttEntry.move)))
                     
                     ttFound = true
                 }
