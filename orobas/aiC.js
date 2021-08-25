@@ -441,25 +441,25 @@ AI.getMobility = (board)=>{
     board.changeTurn()
 
     if (board.turn === WHITE) {
-        myMoves = myMoves.filter((e,i)=>{
+        let whiteMoves = myMoves.filter((e,i)=>{
             return board.board[e.to - 17] !== p && board.board[e.to - 15] !== p
         })
 
-        opponentMoves = opponentMoves.filter((e,i)=>{
+        let blackMoves = opponentMoves.filter((e,i)=>{
             return board.board[e.to + 17] !== P && board.board[e.to + 15] !== P
         })
 
-        mobility = 5*(myMoves.length - opponentMoves.length) | 0
+        mobility = 5*(whiteMoves.length - blackMoves.length) | 0
     } else {
-        myMoves = myMoves.filter((e,i)=>{
+        let blackMoves = myMoves.filter((e,i)=>{
             return board.board[e.to + 17] !== P && board.board[e.to + 15] !== P
         })
 
-        opponentMoves = opponentMoves.filter((e,i)=>{
+        let whiteMoves = opponentMoves.filter((e,i)=>{
             return board.board[e.to - 17] !== p && board.board[e.to - 15] !== p
         })
 
-        mobility = 5*(opponentMoves.length - myMoves.length) | 0
+        mobility = 5*(whiteMoves.length - blackMoves.length) | 0
     }
 
     return mobility
