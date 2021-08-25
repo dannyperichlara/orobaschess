@@ -1044,11 +1044,13 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     if (!incheck && depth > 1) {
         if (!board.enPassantSquares[board.enPassantSquares.length - 1]) {
             board.changeTurn()
-            let nullR = 5 - AI.phase
+            let nullR = depth > 6? 4 : 3
             let nullScore = -AI.PVS(board, -beta, -beta + 1, depth - nullR - 1, ply)
             board.changeTurn()
             if (nullScore >= beta) {
-                return nullScore
+                depth -= 4
+
+                if (depth <= 0) return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
             }
     
             if (depth <= 2 && nullScore < -MATE + AI.totaldepth) {
