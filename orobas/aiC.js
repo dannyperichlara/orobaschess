@@ -1044,6 +1044,11 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     // console.log(pvNode)
     let mateE = 0 // Mate threat extension
 
+    let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode)
+
+    //Futility
+    if (!pvNode &&  depth < 9 &&  staticeval - VPAWN*depth >= beta) return staticeval
+
     // Extended Null Move Reductions
     if (!incheck && depth > 1) {
         if (!board.enPassantSquares[board.enPassantSquares.length - 1]) {
@@ -1062,8 +1067,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             }
         }
     }
-
-    let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode)
 
     // Razoring
     if (cutNode) {
@@ -1105,12 +1108,8 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
         // Futility Pruning
         if (!incheck && legal >= 1) {
-            if (move.capture) {
-                if (staticeval + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]] < alpha) {
-                    continue
-                }
-            } else {
-                if (staticeval + VPAWNx2 < alpha) {
+            if (!move.capture) {
+                if (staticeval + VPAWN2*depth < alpha) {
                     continue
                 }
             }
@@ -1125,7 +1124,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         if (!mateE && !incheck) {
             R += AI.LMR_TABLE[depth][legal]
 
-    
             // Move count reductions
             if (depth >=3 && !move.capture && legal >= (3 + depth*depth) / 2) {
                 R++
@@ -1651,7 +1649,7 @@ AI.search = function (board, options) {
         AI.lastscore = 0
         AI.f = 0
     } else {
-        AI.createTables(true, true, false)
+        AI.createTables(true, true, true)
         AI.f = AI.lastscore
     }
 
