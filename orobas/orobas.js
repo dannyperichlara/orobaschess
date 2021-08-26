@@ -518,7 +518,7 @@ module.exports = orobas = {
         return this.castlingRights[this.castlingRights.length - 1]
     },
 
-    getMoves(forMobility) {
+    getMoves(forMobility, onlyCaptures) {
         forMobility = !!forMobility
         let moves = []
         let moveindex = 0
@@ -589,23 +589,25 @@ module.exports = orobas = {
                             
                         } else {
                             // let to = from + this.pieces[piece].offsets[0]
-    
+                            
                             // if (to & 0x88) continue
-    
+                            
                             let blockingPiece = this.board[to]
                             let promotingPiece = null
-    
+                            
                             if (blockingPiece) {
                                 continue
                             }
-    
+                            
                             if (to>=0 && to <= 7) {
                                 promotingPiece = Q
                             }
-    
+                            
                             if (to>=112 && to <= 119) {
                                 promotingPiece = q
                             }
+
+                            if (onlyCaptures && !promotingPiece) continue
     
                             moves[moveindex++]=(this.createMove({piece, from, to, isCapture:false, capturedPiece:0, castleSide:0, enPassantSquares:null, promotingPiece}))
     
@@ -648,6 +650,8 @@ module.exports = orobas = {
                         }
                         
                         isCapture = true
+                    } else {
+                        if (onlyCaptures) continue
                     }
 
                     moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
@@ -676,6 +680,8 @@ module.exports = orobas = {
                             } else {
                                 isCapture = true
                             }
+                        } else {
+                            if (onlyCaptures) continue
                         }
 
                         moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
