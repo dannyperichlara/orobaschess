@@ -345,7 +345,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         let nullWindowScore = sign * score / AI.nullWindowFactor | 0
         
         AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
-        return sign*score/this.nullWindowFactor | 0
+        return nullWindowScore
     }
     
     if (pvNode) {
@@ -416,15 +416,13 @@ AI.getKingSafety = (board, phase, kingIndexW, kingIndexB)=>{
 AI.isLazyFutile = (board, sign, score, alpha, beta, margin)=> {
     let signedScore = sign * score
 
-    if (signedScore <= alpha - margin) {
-        if (margin <= VPAWN) AI.evalTable[board.hashkey % this.htlength] = signedScore / AI.nullWindowFactor | 0
+    // if (signedScore <= alpha - margin) {
+    //     if (margin <= VPAWN) AI.evalTable[board.hashkey % this.htlength] = signedScore / AI.nullWindowFactor | 0
 
-        return true
-    }
+    //     return true
+    // }
 
     if (signedScore > beta + margin) {
-        if (margin <= VPAWN) AI.evalTable[board.hashkey % this.htlength] = signedScore / AI.nullWindowFactor | 0
-
         return true
     }
 }
