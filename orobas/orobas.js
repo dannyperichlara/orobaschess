@@ -576,10 +576,11 @@ module.exports = orobas = {
                                     moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
                                 }
                             } else {
-                                if (to === this.enPassantSquares[this.enPassantSquares.length - 1]) {
-                                    isCapture = true
-                                    //En passant
-                                    // moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
+                                let lastEP = this.enPassantSquares[this.enPassantSquares.length - 1]
+                                if (to === lastEP) {
+                                    isCapture = false
+                                    //En passant move
+                                    moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece:0, castleSide:0, enPassantSquares:null, enPassant: true}))
                                     epnodes++
                                 }
                             }
@@ -617,7 +618,6 @@ module.exports = orobas = {
                                 if (to & 0x88) continue
     
                                 if (this.board[to]) continue
-    
                                 //Doble push
                                 let doublePushMove = this.createMove({piece, from, to, isCapture:false, capturedPiece:0, castleSide:0, enPassantSquares})
                                 moves[moveindex++]=(doublePushMove)
@@ -797,7 +797,7 @@ module.exports = orobas = {
             this.updatePawnHashkey(this.zobristKeys.positions[move.piece][move.from]) //Quita pieza del hashkey de su casilla original
         }
         
-        if (move.capturedPiece) {
+        if (move.isCapture) {
             this.updateHashkey(this.zobristKeys.positions[move.capturedPiece][move.to]) // Remueve pieza capturada del hashkey
 
             if (move.capturedPiece === P || move.capturedPiece === p) {
@@ -817,6 +817,17 @@ module.exports = orobas = {
             this.board[move.to] = this.board[move.from]
         }
         this.board[move.from] = 0
+
+        if (move.enPassant) {
+            if (this.turn === WHITE) {
+                console.log(move.piece)
+                this.board[move.to+16] = 0
+                this.updateHashkey(this.zobristKeys.positions[p][move.to+16])
+            } else {
+                this.board[move.to-16] = 0
+                this.updateHashkey(this.zobristKeys.positions[P][move.to-16])
+            }
+        }
         
         if (move.enPassantSquares) {
             let lastEnPassantSquare = this.enPassantSquares[this.enPassantSquares.length - 1]
@@ -917,6 +928,16 @@ module.exports = orobas = {
         this.board[move.to] = move.capturedPiece 
         this.board[move.from] = move.piece
 
+        if (move.enPassant) {
+            if (this.turn === BLACK) {
+                this.board[move.to+16] = p
+                this.updateHashkey(this.zobristKeys.positions[p][move.to+16])
+
+            } else {
+                this.board[move.to-16] = P
+                this.updateHashkey(this.zobristKeys.positions[P][move.to-16])
+            }
+        }
 
         if (move.castleSide) {
             if (move.castleSide === 8) {
@@ -1050,7 +1071,7 @@ orobas.loadFen('r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -
 console.time()
 // console.log('PERFT 1', orobas.perft(1), 20, 48) // OK
 // console.log('PERFT 2', orobas.perft(2), 400, 2039) // OK
-console.log('PERFT 3', orobas.perft(3), 8902, 97862) // OK
+// console.log('PERFT 3', orobas.perft(3), 8902, 97862) // OK
 // console.log('PERFT 4', orobas.perft(4), 197281, 422333) // OK
 // console.log('PERFT 5', orobas.perft(5), 4865609, '-') // OK
 // console.log('PERFT 6', orobas.perft(6), 119060324, '-') // NO
