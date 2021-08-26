@@ -1101,6 +1101,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     let legal = 0
     let bestscore = -INFINITY
     let score
+    let likelyAllNodes = pvNode && ttEntry && ttEntry.flag === UPPERBOUND && ttEntry.depth > depth
 
     for (let i = 0, len = moves.length; i < len; i++) {
         let move = moves[i]
@@ -1125,6 +1126,8 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             R += AI.LMR_TABLE[depth][legal]
 
             if (pvNode) R--
+
+            if (cutNode && !move.killer1) R+= 2
 
             // Move count reductions
             if (depth >=3 && !move.capture && legal >= (3 + depth*depth) / 2) {
