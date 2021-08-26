@@ -1129,6 +1129,10 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
             if (cutNode && !move.killer1) R+= 2
 
+            if (AI.PV[ply] && AI.PV[ply].key === move.key && !likelyAllNodes) {
+                R-=2
+            }
+
             // Move count reductions
             if (depth >=3 && !move.capture && legal >= (3 + depth*depth) / 2) {
                 R++
