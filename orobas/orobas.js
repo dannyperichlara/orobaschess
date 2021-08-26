@@ -104,6 +104,8 @@ module.exports = orobas = {
         0,	1,	2,	3,	4,	5,	6,	7,	null,	null,	null,	null,	null,	null,	null,	null,
     ],
 
+    ply: 0,
+
     turn: WHITE,
     castlingRights: [15], //8: wks, 4:wqs, 2:bks, 1: bqs
     lastMove: {},
@@ -790,6 +792,8 @@ module.exports = orobas = {
     },
 
     makeEffectiveMove(move) {
+        this.ply++
+
         // Mueve la pieza de from a to
         this.updateHashkey(this.zobristKeys.positions[move.piece][move.from]) //Quita pieza del hashkey de su casilla original
         
@@ -820,7 +824,6 @@ module.exports = orobas = {
 
         if (move.enPassant) {
             if (this.turn === WHITE) {
-                console.log(move.piece)
                 this.board[move.to+16] = 0
                 this.updateHashkey(this.zobristKeys.positions[p][move.to+16])
             } else {
@@ -905,6 +908,8 @@ module.exports = orobas = {
     },
 
     unmakeMove(move) {
+        this.ply--
+
         this.updateHashkey(this.zobristKeys.positions[move.piece][move.to]) //Quita pieza al hashkey en casilla de destino
         
         if (move.piece === P || move.piece === p) {
@@ -1007,33 +1012,29 @@ module.exports = orobas = {
     },
 
     perft(depth) {
-        
+    
         if (depth === 0) {
             this.perftData.nodes++
             return 1
         }
-
-        let incheck = this.isKingInCheck()
-
-        if (incheck) this.perftData.checks++
         
         let nodes = 0
         let moves = this.getMoves()
         
         let legal = 0
 
-        let lastEnPassantSquare = this.enPassantSquares[this.enPassantSquares.length - 1]
-        
         for (let j = 0; j < moves.length; j++) {
             
             if (orobas.makeMove(moves[j])) {
                 legal++
 
-                if (moves[j].isCapture) this.perftData.captures++
+                let incheck = this.isKingInCheck()
+
+                if (incheck) this.perftData.checks++
+
+                if (moves[j].isCapture || moves[j].enPassant) this.perftData.captures++
                 if (moves[j].castleSide) this.perftData.castles++
-                if (lastEnPassantSquare && (moves[j].piece === P || moves[j].piece === p) && lastEnPassantSquare === moves[j].to) {
-                    this.perftData.enpassant++
-                }
+                if (moves[j].enPassant) this.perftData.enpassant++
 
                 nodes += this.perft(depth - 1)
 
@@ -1068,10 +1069,11 @@ console.log(orobas.hashkey, orobas.pawnhashkey)
 // Kiwi-Pete
 orobas.loadFen('r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ')
 
+console.log('PLY', orobas.ply)
 console.time()
 // console.log('PERFT 1', orobas.perft(1), 20, 48) // OK
 // console.log('PERFT 2', orobas.perft(2), 400, 2039) // OK
-// console.log('PERFT 3', orobas.perft(3), 8902, 97862) // OK
+console.log('PERFT 3', orobas.perft(3), 8902, 97862) // OK
 // console.log('PERFT 4', orobas.perft(4), 197281, 422333) // OK
 // console.log('PERFT 5', orobas.perft(5), 4865609, '-') // OK
 // console.log('PERFT 6', orobas.perft(6), 119060324, '-') // NO
@@ -1079,6 +1081,7 @@ console.log(orobas.perftData)
 // orobas.drawAttackZone(orobas.getAttackZone(WHITE))
 // console.log(moves.map(e=>{return orobas.coords[e.from] + '-' + orobas.coords[e.to]}))
 console.timeEnd()
+console.log('PLY', orobas.ply)
 
 
 orobas.draw()
