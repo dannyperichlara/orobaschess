@@ -1121,8 +1121,10 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         //Reducciones
         let R = 0
 
-        if (!mateE && !incheck) {
+        if (depth >= 3 && !mateE && !incheck) {
             R += AI.LMR_TABLE[depth][legal]
+
+            if (pvNode) R--
 
             // Move count reductions
             if (depth >=3 && !move.capture && legal >= (3 + depth*depth) / 2) {
