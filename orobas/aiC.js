@@ -753,7 +753,7 @@ AI.getDefended = (board, pawnindexW, pawnindexB)=>{
 // sea FAIL-HIGH en más de un 90% de los casos.
 AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
 
-    // let t0 = (new Date).getTime()
+    let t0 = (new Date).getTime()
     let killer1, killer2
 
     if (AI.killers) {
@@ -839,7 +839,7 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
             move.score += 1000 + hvalue
             continue
         } else {
-            // move.score = 0; continue
+            move.score = 0; continue
             // CRITERIO 7
             // Las jugadas restantes se orden de acuerdo a donde se estima sería
             // su mejor posición absoluta en el tablero
@@ -862,9 +862,9 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         { desc: u => u.score }
       ]);
 
-    // let t1 = (new Date()).getTime()
+    let t1 = (new Date()).getTime()
 
-    // AI.sortingTime += (t1 - t0)
+    AI.sortingTime += (t1 - t0)
 
     return moves
 }
