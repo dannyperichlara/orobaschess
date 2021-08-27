@@ -109,14 +109,14 @@ AI.PIECE_VALUES[0][n] = -VPAWN*2.88 | 0
 AI.PIECE_VALUES[0][b] = -VPAWN*3.00 | 0
 AI.PIECE_VALUES[0][r] = -VPAWN*4.80 | 0
 AI.PIECE_VALUES[0][q] = -VPAWN*9.60 | 0
-AI.PIECE_VALUES[0][k] = 0
+AI.PIECE_VALUES[0][k] = -VPAWN
 
 AI.PIECE_VALUES[0][P] = VPAWN
 AI.PIECE_VALUES[0][N] = VPAWN*2.88 | 0
 AI.PIECE_VALUES[0][B] = VPAWN*3.00 | 0
 AI.PIECE_VALUES[0][R] = VPAWN*4.80 | 0
 AI.PIECE_VALUES[0][Q] = VPAWN*9.60 | 0
-AI.PIECE_VALUES[0][K] = 0
+AI.PIECE_VALUES[0][K] = VPAWN
 
 AI.BISHOP_PAIR = VPAWN2
 
@@ -124,40 +124,6 @@ AI.BISHOP_PAIR = VPAWN2
 const MATE = 10000 / AI.nullWindowFactor | 0
 const DRAW = 0 //-2*VPAWN
 const INFINITY = 11000 / AI.nullWindowFactor | 0
-
-//CREA TABLA PARA REDUCCIONES
-AI.LMR_TABLE = new Array(AI.totaldepth + 1)
-
-for (let depth = 1; depth < AI.totaldepth + 1; ++depth) {
-
-    AI.LMR_TABLE[depth] = new Array(218)
-
-    for (let moves = 1; moves < 218; ++moves) {
-        AI.LMR_TABLE[depth][moves] = Math.log(depth)*Math.log(moves)/1.95 | 0
-
-        // if (depth >= 3) {
-        //     AI.LMR_TABLE[depth][moves] = depth/5 + moves/5 + 1 | 0
-        // } else {
-        //     AI.LMR_TABLE[depth][moves] = Math.log(depth)*Math.log(moves)/2 | 0
-        // }
-    }
-
-}
-
-AI.DEFENDED_VALUES = [0, 5, 10, 15, 20, 25, 30, 10,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40]
-
-// MVV-LVA
-// Valor para determinar orden de capturas,
-// prefiriendo la víctima más valiosa con el atacante más débil
-//https://open-chess.org/viewtopic.php?t=3058
-AI.MVVLVASCORES = [
-  /*P*/[6002, 20225, 20250, 20400, 20800, 26900],
-  /*N*/[4775,  6004, 20025, 20175, 20575, 26675],
-  /*B*/[4750,  4975,  6006, 20150, 20550, 26650],
-  /*R*/[4600,  4825,  4850,  6008, 20400, 26500],
-  /*Q*/[4200,  4425,  4450,  4600,  6010, 26100],
-  /*K*/[3100,  3325,  3350,  3500,  3900, 26000],
-]
 
 AI.ZEROINDEX = new Map()
 
@@ -173,6 +139,43 @@ AI.ZEROINDEX[b] = 2
 AI.ZEROINDEX[r] = 3
 AI.ZEROINDEX[q] = 4
 AI.ZEROINDEX[k] = 5
+
+//CREA TABLA PARA REDUCCIONES
+AI.LMR_TABLE = new Array(AI.totaldepth + 1)
+
+for (let depth = 1; depth < AI.totaldepth + 1; ++depth) {
+
+    AI.LMR_TABLE[depth] = new Array(218)
+
+    for (let moves = 1; moves < 218; ++moves) {
+        AI.LMR_TABLE[depth][moves] = Math.log(depth)*Math.log(moves)/1.95 | 0
+    }
+
+}
+
+AI.DEFENDED_VALUES = [0, 5, 10, 15, 20, 25, 30, 10,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40]
+
+// MVV-LVA
+// Valor para determinar orden de capturas,
+// prefiriendo la víctima más valiosa con el atacante más débil
+//https://open-chess.org/viewtopic.php?t=3058
+let mvvlvaScores = [
+  /*P*/[6002, 20225, 20250, 20400, 20800, 26900],
+  /*N*/[4775,  6004, 20025, 20175, 20575, 26675],
+  /*B*/[4750,  4975,  6006, 20150, 20550, 26650],
+  /*R*/[4600,  4825,  4850,  6008, 20400, 26500],
+  /*Q*/[4200,  4425,  4450,  4600,  6010, 26100],
+  /*K*/[3100,  3325,  3350,  3500,  3900, 26000],
+]
+AI.MVVLVASCORES = []
+for (let e of ALLINDEX) {
+    AI.MVVLVASCORES[e] = []
+    for (let f of ALLINDEX) {
+        let score = mvvlvaScores[AI.ZEROINDEX[e]][AI.ZEROINDEX[f]]
+
+        AI.MVVLVASCORES[e][f] = score
+    }
+}
 
 AI.PSQT = [
     Array(64).fill(0),
@@ -401,9 +404,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
                 }
 
                 if (i < 64) {
-                    score += 10 * board.isSquareAttacked(i, WHITE, true)
+                    score += 5 * board.isSquareAttacked(i, WHITE, true)
                 } else {
-                    score -= 10 * board.isSquareAttacked(i, BLACK, true)
+                    score -= 5 * board.isSquareAttacked(i, BLACK, true)
                 }
 
             }
@@ -766,13 +769,11 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
 
         move.mvvlva = 0
         move.hvalue = 0
-        move.psqtvalue = 0
-        move.promotion = 0
+        // move.psqtvalue = 0
+        // move.promotion = 0
         move.killer1 = 0
         move.killer2 = 0
         move.score = 0
-
-        move.capture = false
 
         if (AI.PV[ply] && move.key === AI.PV[ply].key) {
             move.pv = true
@@ -801,9 +802,8 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
             continue
         }
 
-        if (move.capturedPiece) {
-            move.mvvlva = AI.MVVLVASCORES[AI.ZEROINDEX[move.piece]][AI.ZEROINDEX[move.capturedPiece]]
-            move.capture = true
+        if (move.isCapture) {
+            move.mvvlva = AI.MVVLVASCORES[move.piece][move.capturedPiece]
             
             if (move.mvvlva >= 6000) {
                 // CRITERIO 3: La jugada es una captura posiblemente ganadora
@@ -1151,7 +1151,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
         // Futility Pruning
         if (!incheck && legal >= 1) {
-            if (!move.capture) {
+            if (!move.isCapture) {
                 if (staticeval + VPAWN2*depth < alpha) {
                     continue
                 }
@@ -1178,12 +1178,12 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             }
 
             // Move count reductions
-            if (depth >=3 && !move.capture && legal >= (3 + depth*depth) / 2) {
+            if (depth >=3 && !move.isCapture && legal >= (3 + depth*depth) / 2) {
                 R++
             }
     
             // Bad moves reductions
-            if (!move.capture && AI.phase <= EARLY_ENDGAME) {
+            if (!move.isCapture && AI.phase <= EARLY_ENDGAME) {
                 // console.log('no')
                 if (board.turn === WHITE && piece != P && (board.board[move.to-17] === p || board.board[move.to-15] === p)) {
                     R+=4
@@ -1231,7 +1231,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                 //LOWERBOUND
                 AI.ttSave(hashkey, score, LOWERBOUND, depth, move)
 
-                if (!move.capture) {
+                if (!move.isCapture) {
                     if (
                         AI.killers[turn | 0][ply][0] &&
                         AI.killers[turn | 0][ply][0].key != move.key
@@ -1252,7 +1252,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                 bestmove = move
                 alpha = score
 
-                if (!move.capture) { AI.saveHistory(turn, move, 1) }
+                if (!move.isCapture) { AI.saveHistory(turn, move, 1) }
             }
         }
     }
