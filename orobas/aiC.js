@@ -386,19 +386,26 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         score += 20*board.isSquareAttacked(kingIndexB+17, WHITE, true)
 
         // Center control
-        if (AI.phase <= MIDGAME) {
-            for (let i = 0, len=CENTER.length; i < len; i++) {
-                let piece = board.board[CENTER[i]]
+        if (AI.phase <= EARLY_ENDGAME) {
+            for (let i = 0, len=WIDECENTER.length; i < len; i++) {
+                let piece = board.board[WIDECENTER[i]]
 
                 if (!piece) continue
 
                 let occupiedBy = board.pieces[piece].color
+
                 if (occupiedBy === WHITE) {
-                    score += 40
+                    score += i < 64? 20 : 10
                 } else {
-                    score -= 40
+                    score -= i > 64? -20 : -10
                 }
-                score += 20*board.isSquareAttacked(i, WHITE, true) - board.isSquareAttacked(i, BLACK, true)
+
+                if (i < 64) {
+                    score += 10 * board.isSquareAttacked(i, WHITE, true)
+                } else {
+                    score -= 10 * board.isSquareAttacked(i, BLACK, true)
+                }
+
             }
         }
 
