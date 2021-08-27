@@ -540,30 +540,30 @@ AI.getStructure = (board, pawnindexW, pawnindexB)=> {
     let doubled = AI.getDoubled(board, pawnindexW, pawnindexB)
     let defended = AI.getDefended(board, pawnindexW, pawnindexB)
     let passers = AI.getPassers(board, pawnindexW, pawnindexB)
-    // let space = AI.getSpace(board, pawnindexW, pawnindexB)
+    let space = AI.getSpace(board, pawnindexW, pawnindexB)
 
-    let score = doubled + defended + passers// + space
+    let score = doubled + defended + passers + space
 
     AI.pawnTable[hashkey % AI.pawntlength] = score
     return score
 }
 
-// AI.getSpace = (board, pawnindexW, pawnindexB)=>{
-//     let spaceW = 0
-//     let spaceB = 0
+AI.getSpace = (board, pawnindexW, pawnindexB)=>{
+    let spaceW = 0
+    let spaceB = 0
 
-//     for (let i = 0, len=pawnindexW.length; i < len; i++) {
-//         spaceW += board.ranksW[pawnindexW[i]] - 1
-//     }
+    for (let i = 0, len=pawnindexW.length; i < len; i++) {
+        spaceW += board.ranksW[pawnindexW[i]] - 1
+    }
 
-//     for (let i = 0, len=pawnindexB.length; i < len; i++) {
-//         spaceB += board.ranksB[pawnindexB[i]] - 1
-//     }
+    for (let i = 0, len=pawnindexB.length; i < len; i++) {
+        spaceB += board.ranksB[pawnindexB[i]] - 1
+    }
 
-//     let space = 4*(spaceW - spaceB)
+    let space = 10*(spaceW - spaceB)
 
-//     return space
-// }
+    return space
+}
 
 AI.getPassers = (board, pawnindexW, pawnindexB)=>{
     //De haberlos, estos arreglos almacenan la fila en que se encuentran los peones pasados
