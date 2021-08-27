@@ -1147,6 +1147,8 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                     R+=4
                 }
             }
+
+            if (depth - R > this.totaldepth) R = 0
         }
 
         // let m0 = (new Date()).getTime()

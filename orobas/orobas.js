@@ -523,12 +523,38 @@ module.exports = orobas = {
         let moves = []
         let moveindex = 0
 
-        for (let i = 0; i < 128; i++) {
+        let occupied = []//(new Array(32)).fill(0)
+        let occupiedIndex = 0
+        let isWhite = this.turn === WHITE
+
+        for (let i = 0; i < 120; i++) {
             if (i & 0x88) {
                 i+=7; continue
             }
 
             let piece = this.board[i]
+
+            if (!piece) continue
+
+            if (isWhite) {
+                if (piece < 7) {
+                    occupied[occupiedIndex] = i
+                    occupiedIndex++
+                }
+            } else {
+                if (piece >= 7) {
+                    occupied[occupiedIndex] = i
+                    occupiedIndex++
+                }
+            }
+        }
+
+        for (let oindex = 0; oindex < 16; oindex++) {
+            let i = occupied[oindex]
+
+            let piece = this.board[i]
+
+            if (!piece) break
 
             let from = i
 
@@ -1080,9 +1106,9 @@ console.time()
 // console.log('PERFT 1', orobas.perft(1), 20, 48) // OK
 // console.log('PERFT 2', orobas.perft(2), 400, 2039) // OK
 console.log('PERFT 3', orobas.perft(3), 8902, 97862) // OK
-// console.log('PERFT 4', orobas.perft(4), 197281, 422333) // OK
-// console.log('PERFT 5', orobas.perft(5), 4865609, '-') // OK
-// console.log('PERFT 6', orobas.perft(6), 119060324, '-') // NO
+// console.log('PERFT 4', orobas.perft(4), 197281, 4085603) // OK
+// console.log('PERFT 5', orobas.perft(5), 4865609, 193690690) // OK
+// console.log('PERFT 6', orobas.perft(6), 119060324, 8031647685) // NO
 console.log(orobas.perftData)
 // orobas.drawAttackZone(orobas.getAttackZone(WHITE))
 // console.log(moves.map(e=>{return orobas.coords[e.from] + '-' + orobas.coords[e.to]}))
