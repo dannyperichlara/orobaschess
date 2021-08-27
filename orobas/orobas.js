@@ -48,6 +48,17 @@ module.exports = orobas = {
         "a1","b1","c1","d1","e1","f1","g1","h1",    0,0,0,0,0,0,0,0,
     ],
     board: new Uint8Array(128),
+    
+    boardbits: [
+        31,	30,	29,	28,	27,	26,	25,	24,	null,	null,	null,	null,	null,	null,	null,	null,
+        23,	22,	21,	20,	19,	18,	17,	16,	null,	null,	null,	null,	null,	null,	null,	null,
+        15,	14,	13,	12,	11,	10,	9,	8,	null,	null,	null,	null,	null,	null,	null,	null,
+        7,	6,	5,	4,	3,	2,	1,	0,	null,	null,	null,	null,	null,	null,	null,	null,
+        31,	30,	29,	28,	27,	26,	25,	24,	null,	null,	null,	null,	null,	null,	null,	null,
+        23,	22,	21,	20,	19,	18,	17,	16,	null,	null,	null,	null,	null,	null,	null,	null,
+        15,	14,	13,	12,	11,	10,	9,	8,	null,	null,	null,	null,	null,	null,	null,	null,
+        7,	6,	5,	4,	3,	2,	1,	0,	null,	null,	null,	null,	null,	null,	null,	null,
+    ],
 
     board64: [
         56,	57,	58,	59,	60,	61,	62,	63,	null,	null,	null,	null,	null,	null,	null,	null,
@@ -103,6 +114,9 @@ module.exports = orobas = {
         0,	1,	2,	3,	4,	5,	6,	7,	null,	null,	null,	null,	null,	null,	null,	null,
         0,	1,	2,	3,	4,	5,	6,	7,	null,	null,	null,	null,	null,	null,	null,	null,
     ],
+
+    occupiedTop: 0,
+    occupiedBottom: 0,
 
     ply: 0,
 
@@ -195,7 +209,7 @@ module.exports = orobas = {
 
     createBoard() {
         //r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 
-        this.board = [
+        let board = [
             r,  n,  b,  q,  k,  b,  n,  r,     -8, -4, -4, -2, -2, -4, -4, -8,
             p,  p,  p,  p,  p,  p,  p,  p,     -1,  0,  1, -1, -1,  1,  0, -1,
             0,  0,  0,  0,  0,  0,  0,  0,      0,  1,  2,  3,  3,  2,  1,  0,
@@ -205,6 +219,10 @@ module.exports = orobas = {
             P,  P,  P,  P,  P,  P,  P,  P,     -1,  0,  1, -1, -1,  1,  0, -1,
             R,  N,  B,  Q,  K,  B,  N,  R,     -8, -4, -4, -2, -2, -4, -4, -8,
         ]
+
+        for (let i = 0; i < 128; i++) {
+            this.board[i] = board[i]
+        }
 
         // this.board = [
         //     r,  n,  b,  q,  k,  b,  n,  r,     -8, -4, -4, -2, -2, -4, -4, -8,
@@ -218,6 +236,43 @@ module.exports = orobas = {
         // ]
 
         this.turn = WHITE
+    },
+
+    boardToBits(draw) {
+        let top = ""
+        let bottom = ""
+        for (let i = 0; i < 120; i++) {
+            if (i & 0x88) {
+                i+=7; continue
+            }
+
+            if (this.board[i]) {
+                if (i<=55) {
+                    top+="1"
+                } else {
+                    bottom+="1"
+                }
+            } else {
+                if (i<=55) {
+                    top+="0"
+                } else {
+                    bottom+="0"
+                }
+            }
+        }
+
+        this.occupiedTop = parseInt(top, 2)
+        this.occupiedBottom = parseInt(bottom, 2)
+
+        if (draw) {
+            this.drawBitboard()
+        }
+    },
+
+    drawBitboard() {
+        console.log(this.occupiedTop.toString(2))
+        console.log(this.occupiedBottom.toString(2))
+        
     },
 
     initZobrist() {
@@ -1099,22 +1154,34 @@ orobas.draw()
 console.log(orobas.hashkey, orobas.pawnhashkey)
 
 // Kiwi-Pete
-orobas.loadFen('r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ')
+// orobas.loadFen('r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ')
 
-console.log('PLY', orobas.ply)
-console.time()
+// console.log('PLY', orobas.ply)
+// console.time()
 // console.log('PERFT 1', orobas.perft(1), 20, 48) // OK
 // console.log('PERFT 2', orobas.perft(2), 400, 2039) // OK
-console.log('PERFT 3', orobas.perft(3), 8902, 97862) // OK
+// console.log('PERFT 3', orobas.perft(3), 8902, 97862) // OK
 // console.log('PERFT 4', orobas.perft(4), 197281, 4085603) // OK
 // console.log('PERFT 5', orobas.perft(5), 4865609, 193690690) // OK
 // console.log('PERFT 6', orobas.perft(6), 119060324, 8031647685) // NO
-console.log(orobas.perftData)
+// console.log(orobas.perftData)
 // orobas.drawAttackZone(orobas.getAttackZone(WHITE))
 // console.log(moves.map(e=>{return orobas.coords[e.from] + '-' + orobas.coords[e.to]}))
-console.timeEnd()
-console.log('PLY', orobas.ply)
-
-
+// console.timeEnd()
+// console.log('PLY', orobas.ply)
 orobas.draw()
 console.log(orobas.hashkey, orobas.pawnhashkey)
+
+orobas.boardToBits(true)
+let move = {from: 118, to: 85, piece: N}
+orobas.makeMove(move)
+
+orobas.occupiedBottom = orobas.occupiedBottom ^ (1 << orobas.boardbits[move.from])
+orobas.occupiedBottom = orobas.occupiedBottom | (1 << orobas.boardbits[move.to])
+
+console.log(1 << orobas.boardbits[move.from])
+
+orobas.draw()
+orobas.drawBitboard()
+
+

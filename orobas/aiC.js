@@ -263,6 +263,12 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
     let bishopsW = 0
     let bishopsB = 0
 
+    let rooksW = 0
+    let rooksB = 0
+
+    let queensW = 0
+    let queensB = 0
+
     let kingIndexW = null
     let kingIndexB = null
 
@@ -291,6 +297,22 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
             bishopsB++
             if (AI.phase === OPENING && board.board[i-16] === p) score+=20
             if (AI.phase === OPENING && board.board[i+16] === p) score-=10
+        }
+
+        if (piece === R) {
+            rooksW++
+        }
+
+        if (piece === r) {
+            rooksB++
+        }
+
+        if (piece === Q) {
+            queensW++
+        }
+
+        if (piece === q) {
+            queensB++
         }
 
         if (piece === N) {
@@ -349,6 +371,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
     }
     
     if (pvNode) {
+
         // Pawn structure
         score += AI.getStructure(board, pawnindexW, pawnindexB)
         score += AI.getKingSafety(board, AI.phase, kingIndexW, kingIndexB)
@@ -365,14 +388,33 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         // Center control
         if (AI.phase <= MIDGAME) {
             for (let i = 0, len=CENTER.length; i < len; i++) {
-                let occupiedBy = board.pieces[board.board[CENTER[i]]].color
-                score += 40*(occupiedBy == WHITE? 1 : (occupiedBy == BLACK? -1 : 0))
+                let piece = board.board[CENTER[i]]
+
+                if (!piece) continue
+
+                let occupiedBy = board.pieces[piece].color
+                if (occupiedBy === WHITE) {
+                    score += 40
+                } else {
+                    score -= 40
+                }
                 score += 20*board.isSquareAttacked(i, WHITE, true) - board.isSquareAttacked(i, BLACK, true)
             }
         }
 
         // Mobility
         score += AI.getMobility(board)
+
+    }
+
+    if (score > VPAWNx2) {
+        if (queensW >= queensB) score += 20
+        if (rooksW >= rooksB) score += 20
+    }
+
+    if (score < -VPAWNx2) {
+        if (queensB >= queensW) score -= 20
+        if (rooksB >= rooksW) score -= 20
     }
 
     let nullWindowScore = sign * score / AI.nullWindowFactor | 0
@@ -440,21 +482,21 @@ AI.getMobility = (board)=>{
 
     if (board.turn === WHITE) {
         let whiteMoves = myMoves.filter((e,i)=>{
-            return board.board[e.to - 17] !== p && board.board[e.to - 15] !== p
+            return board.board[e.to - 17] !== p && board.board[e.to - 15] !== p && board.board[e.to] !== Q
         })
 
         let blackMoves = opponentMoves.filter((e,i)=>{
-            return board.board[e.to + 17] !== P && board.board[e.to + 15] !== P
+            return board.board[e.to + 17] !== P && board.board[e.to + 15] !== P && board.board[e.to] !== Q
         })
 
         mobility = 5*(whiteMoves.length - blackMoves.length) | 0
     } else {
         let blackMoves = myMoves.filter((e,i)=>{
-            return board.board[e.to + 17] !== P && board.board[e.to + 15] !== P
+            return board.board[e.to + 17] !== P && board.board[e.to + 15] !== P && board.board[e.to] !== q
         })
 
         let whiteMoves = opponentMoves.filter((e,i)=>{
-            return board.board[e.to - 17] !== p && board.board[e.to - 15] !== p
+            return board.board[e.to - 17] !== p && board.board[e.to - 15] !== p && board.board[e.to] !== q
         })
 
         mobility = 5*(whiteMoves.length - blackMoves.length) | 0
@@ -724,24 +766,21 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         move.score = 0
 
         move.capture = false
+
+        if (AI.PV[ply] && move.key === AI.PV[ply].key) {
+            move.pv = true
+
+            move.score += 1e9
+
+        }
         
         // CRITERIO 0: La jugada está en la Tabla de Trasposición
         if (ttEntry && ttEntry.flag < UPPERBOUND && move.key === ttEntry.move.key) {
             move.tt = true
             move.score += 1e9
-            continue
         }
 
-        // if (AI.PV[ply] && move.key === AI.PV[ply].key) {
-        //     move.pv = true
-
-        //     if (move.isCapture || move.promotingPiece) {
-        //         move.score += 1e9
-        //     } else {
-        //         move.score += 3e6
-        //     }
-        //     continue
-        // }
+        if (move.pv || move.tt) continue
 
         // CRITERIO 1: Enroque
         // if (AI.phase <= MIDGAME && move.castleSide) {
