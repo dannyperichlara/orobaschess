@@ -109,14 +109,14 @@ AI.PIECE_VALUES[0][n] = -VPAWN*2.88 | 0
 AI.PIECE_VALUES[0][b] = -VPAWN*3.00 | 0
 AI.PIECE_VALUES[0][r] = -VPAWN*4.80 | 0
 AI.PIECE_VALUES[0][q] = -VPAWN*9.60 | 0
-AI.PIECE_VALUES[0][k] = -VPAWN
+AI.PIECE_VALUES[0][k] = 0
 
 AI.PIECE_VALUES[0][P] = VPAWN
 AI.PIECE_VALUES[0][N] = VPAWN*2.88 | 0
 AI.PIECE_VALUES[0][B] = VPAWN*3.00 | 0
 AI.PIECE_VALUES[0][R] = VPAWN*4.80 | 0
 AI.PIECE_VALUES[0][Q] = VPAWN*9.60 | 0
-AI.PIECE_VALUES[0][K] = VPAWN
+AI.PIECE_VALUES[0][K] = 0
 
 AI.BISHOP_PAIR = VPAWN2
 
@@ -391,8 +391,8 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
 
         // Center control
         if (AI.phase <= EARLY_ENDGAME) {
-            for (let i = 0, len=WIDECENTER.length; i < len; i++) {
-                let piece = board.board[WIDECENTER[i]]
+            for (let i = 0, len=CENTER.length; i < len; i++) {
+                let piece = board.board[CENTER[i]]
 
                 if (!piece) continue
 
@@ -757,7 +757,7 @@ AI.getDefended = (board, pawnindexW, pawnindexB)=>{
 // sea FAIL-HIGH en más de un 90% de los casos.
 AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
 
-    let t0 = (new Date).getTime()
+    // let t0 = (new Date).getTime()
     let killer1, killer2
 
     if (AI.killers) {
@@ -776,20 +776,21 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         move.killer2 = 0
         move.score = 0
 
-        if (AI.PV[ply] && move.key === AI.PV[ply].key) {
-            move.pv = true
+        // if (AI.PV[ply] && move.key === AI.PV[ply].key) {
+        //     move.pv = true
 
-            move.score += 1e9
+        //     move.score += 1e9
 
-        }
+        // }
         
         // CRITERIO 0: La jugada está en la Tabla de Trasposición
         if (ttEntry && ttEntry.flag < UPPERBOUND && move.key === ttEntry.move.key) {
             move.tt = true
             move.score += 1e9
+            continue
         }
 
-        if (move.pv || move.tt) continue
+        // if (move.pv || move.tt) continue
 
         // CRITERIO 1: Enroque
         // if (AI.phase <= MIDGAME && move.castleSide) {
@@ -840,7 +841,7 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
             move.score += 1000 + hvalue
             continue
         } else {
-            move.score = 0; continue
+            // move.score = 0; continue
             // CRITERIO 7
             // Las jugadas restantes se orden de acuerdo a donde se estima sería
             // su mejor posición absoluta en el tablero
@@ -863,9 +864,9 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         { desc: u => u.score }
       ]);
 
-    let t1 = (new Date()).getTime()
+    // let t1 = (new Date()).getTime()
 
-    AI.sortingTime += (t1 - t0)
+    // AI.sortingTime += (t1 - t0)
 
     return moves
 }
@@ -1114,10 +1115,16 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     // Razoring
     if (cutNode) {
         if (depth <= 3) {
+            // if (staticeval < alpha) { // likely a fail-low node ?
+            //     let score = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
+            //     if (score < alpha) return staticeval
+            // }
+            
             if (staticeval + VPAWN2 < beta) { // likely a fail-low node ?
                 let score = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
                 if (score < beta) return score
             }
+
         }
     }
 
@@ -1162,7 +1169,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         // Extensiones
         let E = (incheck || mateE) && ply <= 2? 1 : 0
 
-        if (AI.phase === LATE_ENDGAME && (piece === P || piece === p)) E++
+        // if (AI.phase === LATE_ENDGAME && (piece === P || piece === p)) E++
 
         //Reducciones
         let R = 0
@@ -1195,7 +1202,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                 }
             }
 
-            if (depth - R > this.totaldepth) R = 0
+            if (R < 0) R = 0
         }
 
         // let m0 = (new Date()).getTime()

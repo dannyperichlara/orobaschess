@@ -663,7 +663,7 @@ module.exports = orobas = {
                                 if (to === lastEP) {
                                     isCapture = false
                                     //En passant move
-                                    moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece:0, castleSide:0, enPassantSquares:null, enPassant: true}))
+                                    // moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece:0, castleSide:0, enPassantSquares:null, enPassant: true}))
                                     epnodes++
                                 }
                             }
