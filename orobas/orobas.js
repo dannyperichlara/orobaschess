@@ -914,8 +914,8 @@ module.exports = orobas = {
         }
         this.board[move.from] = 0
 
-        if (move.piece === K) this.whiteKingIndex = move.to
-        if (move.piece === k) this.blackKingIndex = move.to
+        if (move.piece === K) this.setKingPosition(WHITE, move.to)
+        if (move.piece === k) this.setKingPosition(BLACK, move.to)
 
         if (move.enPassant) {
             if (this.turn === WHITE) {
@@ -1028,8 +1028,8 @@ module.exports = orobas = {
         this.board[move.to] = move.capturedPiece 
         this.board[move.from] = move.piece
 
-        if (move.piece === K) this.whiteKingIndex = move.from
-        if (move.piece === k) this.blackKingIndex = move.from
+        if (move.piece === K) this.setKingPosition(WHITE, move.from)
+        if (move.piece === k) this.setKingPosition(BLACK, move.from)
 
         if (move.enPassant) {
             if (this.turn === BLACK) {
@@ -1090,6 +1090,14 @@ module.exports = orobas = {
 
     },
 
+    setKingPosition(turn, square) {
+        if (turn === WHITE) {
+            this.whiteKingIndex = square
+        } else {
+            this.blackKingIndex = square
+        }
+    },
+ 
     color(n) {
         return n > 6? BLACK : WHITE
     },
