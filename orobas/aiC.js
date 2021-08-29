@@ -356,6 +356,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
     }
 
     score += material + psqt
+    score += AI.getStructure(board, pawnindexW, pawnindexB)
 
     if (AI.isLazyFutile(board, sign, score, alpha, beta, VPAWNx2)) {
         // let t1 = (new Date).getTime()
@@ -369,7 +370,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
     
     if (pvNode) {
         // Pawn structure
-        score += AI.getStructure(board, pawnindexW, pawnindexB)
         score += AI.getKingSafety(board, AI.phase)
         
         // Is king under attack
@@ -528,8 +528,8 @@ AI.getStructure = (board, pawnindexW, pawnindexB)=> {
         return hashentry
     }
 
-    let doubled = AI.getDoubled(board, pawnindexW, pawnindexB)
-    let defended = AI.getDefended(board, pawnindexW, pawnindexB)
+    let doubled = 0//AI.getDoubled(board, pawnindexW, pawnindexB)
+    let defended = 0//AI.getDefended(board, pawnindexW, pawnindexB)
     let passers = AI.getPassers(board, pawnindexW, pawnindexB)
     let space = AI.getSpace(board, pawnindexW, pawnindexB)
 
@@ -567,41 +567,35 @@ AI.getPassers = (board, pawnindexW, pawnindexB)=>{
         let centerFile = pawnindexW[i] - 16
         let rightFile = pawnindexW[i] - 15
 
-        let encountersL = 0
-        let encountersC = 0
-        let encountersR = 0
+        let encounters = 0
 
-        while (true) {
-            if (board.board[leftFile] === p) encountersL++
-
-            leftFile -= 16
-
-            if ((leftFile & 0x88)) break
-
-            if (encountersL > 0) continue
-        }
-
-        while (true) {
-            if (board.board[centerFile] === p) encountersC++
-
-            centerFile -= 16
-
+        while (!encounters) {
             if ((centerFile & 0x88)) break
-
-            if (encountersC > 0) continue
+            if (board.board[centerFile] === p) encounters++
+            if (encounters > 0) break
+            centerFile -= 16
         }
 
-        while (true) {
-            if (board.board[rightFile] === p) encountersR++
-            
-            rightFile -= 16
-            
-            if ((rightFile & 0x88)) break
-            
-            if (encountersR > 0) continue
+        if (!encounters) {
+            while (!encounters) {
+                if ((leftFile & 0x88)) break
+                if (board.board[leftFile] === p) encounters++
+                if (encounters > 0) break
+                leftFile -= 16
+            }
+
+            if (!encounters) {
+                while (!encounters) {
+                    if ((rightFile & 0x88)) break
+                    if (board.board[rightFile] === p) encounters++
+                    if (encounters > 0) break
+                    rightFile -= 16
+                }
+            }
+    
         }
-        
-        if (encountersL === 0 && encountersC === 0 && encountersR === 0) {
+
+        if (!encounters) {
             passersW[board.columns[pawnindexW[i]]] = board.ranksW[pawnindexW[i]]
         }
     }
@@ -611,41 +605,34 @@ AI.getPassers = (board, pawnindexW, pawnindexB)=>{
         let centerFile = pawnindexB[i] + 16
         let rightFile = pawnindexB[i] + 15
 
-        let encountersL = 0
-        let encountersC = 0
-        let encountersR = 0
+        let encounters = 0
 
-        while (true) {
-            if (board.board[leftFile] === P) encountersL++
-
-            leftFile += 16
-
-            if ((leftFile & 0x88)) break
-
-            if (encountersL > 0) continue
-        }
-
-        while (true) {
-            if (board.board[centerFile] === P) encountersC++
-
-            centerFile += 16
-
+        while (!encounters) {
             if ((centerFile & 0x88)) break
-
-            if (encountersC > 0) continue
+            if (board.board[centerFile] === P) encounters++
+            if (encounters > 0) break
+            centerFile += 16
         }
 
-        while (true) {
-            if (board.board[rightFile] === P) encountersR++
+        if (!encounters) {
+            while (!encounters) {
+                if ((leftFile & 0x88)) break
+                if (board.board[leftFile] === P) encounters++
+                if (encounters > 0) break
+                leftFile += 16
+            }
 
-            rightFile += 16
-
-            if ((rightFile & 0x88)) break
-
-            if (encountersR > 0) continue
+            if (!encounters) {
+                while (!encounters) {
+                    if ((rightFile & 0x88)) break
+                    if (board.board[rightFile] === P) encounters++
+                    if (encounters > 0) break
+                    rightFile += 16
+                }
+            }
         }
 
-        if (encountersL === 0 && encountersC === 0 && encountersR === 0) {
+        if (!encounters) {
             passersB[board.columns[pawnindexB[i]]] = board.ranksB[pawnindexB[i]]
         }
     }
@@ -659,7 +646,6 @@ AI.getPassers = (board, pawnindexW, pawnindexB)=>{
 }
 
 AI.getDoubled = (board, pawnindexW, pawnindexB)=>{
-    //De haberlos, estos arreglos almacenan la fila en que se encuentran los peones pasados
     let doubledW = 0
     let doubledB = 0
 
