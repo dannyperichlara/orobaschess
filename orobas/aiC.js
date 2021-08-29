@@ -1084,39 +1084,39 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     if (!pvNode &&  depth < 9 &&  staticeval - VPAWN*depth >= beta) return staticeval
 
     // Extended Null Move Reductions
-    // if (!incheck && depth > 1) {
-    //     if (!board.enPassantSquares[board.enPassantSquares.length - 1]) {
-    //         board.changeTurn()
-    //         let nullR = depth > 6? 4 : 3
-    //         let nullScore = -AI.PVS(board, -beta, -beta + 1, depth - nullR - 1, ply)
-    //         board.changeTurn()
-    //         if (nullScore >= beta) {
-    //             depth -= 4
+    if (!incheck && depth > 1) {
+        if (!board.enPassantSquares[board.enPassantSquares.length - 1]) {
+            board.changeTurn()
+            let nullR = depth > 6? 4 : 3
+            let nullScore = -AI.PVS(board, -beta, -beta + 1, depth - nullR - 1, ply)
+            board.changeTurn()
+            if (nullScore >= beta) {
+                depth -= 4
 
-    //             if (depth <= 0) return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
-    //         }
+                if (depth <= 0) return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
+            }
     
-    //         if (depth <= 2 && nullScore < -MATE + AI.totaldepth) {
-    //             mateE = 1
-    //         }
-    //     }
-    // }
+            if (depth <= 2 && nullScore < -MATE + AI.totaldepth) {
+                mateE = 1
+            }
+        }
+    }
 
     // // Razoring
-    // if (cutNode) {
-    //     if (depth <= 3) {
-    //         if (staticeval < alpha) { // likely a fail-low node ?
-    //             let score = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
-    //             if (score < alpha) return staticeval
-    //         }
+    if (cutNode) {
+        if (depth <= 3) {
+            // if (staticeval < alpha) { // likely a fail-low node ?
+            //     let score = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
+            //     if (score < alpha) return staticeval
+            // }
             
-    //         if (staticeval + VPAWN2 < beta) { // likely a fail-low node ?
-    //             let score = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
-    //             if (score < beta) return score
-    //         }
+            if (staticeval + VPAWN2 < beta) { // likely a fail-low node ?
+                let score = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
+                if (score < beta) return score
+            }
 
-    //     }
-    // }
+        }
+    }
 
     //Reverse Futility pruning (Static Null Move Pruning)
     // let reverseval = staticeval - AI.PIECE_VALUES[0][KNIGHT]
@@ -1167,30 +1167,30 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         if (depth >= 3 && !mateE && !incheck) {
             R += AI.LMR_TABLE[depth][legal]
 
-            // if (pvNode) R--
+            if (pvNode) R--
 
-            // if (cutNode && !move.killer1) R+= 2
+            if (cutNode && !move.killer1) R+= 2
 
             // if (AI.PV[ply] && AI.PV[ply].key === move.key && !likelyAllNodes) {
             //     R-=2
             // }
 
-            // // Move count reductions
-            // if (depth >=3 && !move.isCapture && legal >= (3 + depth*depth) / 2) {
-            //     R++
-            // }
+            // Move count reductions
+            if (depth >=3 && !move.isCapture && legal >= (3 + depth*depth) / 2) {
+                R++
+            }
     
-            // // Bad moves reductions
-            // if (!move.isCapture && AI.phase <= EARLY_ENDGAME) {
-            //     // console.log('no')
-            //     if (board.turn === WHITE && piece != P && (board.board[move.to-17] === p || board.board[move.to-15] === p)) {
-            //         R+=4
-            //     }
+            // Bad moves reductions
+            if (!move.isCapture && AI.phase <= EARLY_ENDGAME) {
+                // console.log('no')
+                if (board.turn === WHITE && piece != P && (board.board[move.to-17] === p || board.board[move.to-15] === p)) {
+                    R+=4
+                }
                 
-            //     if (board.turn === BLACK && piece != p && (board.board[move.to+17] === P || board.board[move.to+15] === P)) {
-            //         R+=4
-            //     }
-            // }
+                if (board.turn === BLACK && piece != p && (board.board[move.to+17] === P || board.board[move.to+15] === P)) {
+                    R+=4
+                }
+            }
 
             if (R < 0) R = 0
         }

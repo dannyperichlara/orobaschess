@@ -345,6 +345,19 @@ module.exports = orobas = {
         this.pawnhashkey = ((this.pawnhashkey ^ value) >>> 0)
     },
 
+    createAttackRays() {
+        let attackBoards = new Array(128)
+        for (i = 0; i < 128; i++) {
+            if (i & 0x88) { i+= 7; continue}
+
+            let board = new Array(128).fill(0)
+        }
+
+        console.log(attackBoards[2])
+        console.log(attackBoards[51])
+        console.log(attackBoards[81])
+    },
+
     changeTurn(turn) {
         if (turn) {
             this.turn = turn
