@@ -156,6 +156,9 @@ module.exports = orobas = {
 
         this.board = this.fen2board(board)
 
+        this.whiteKingIndex = this.board.indexOf(K)
+        this.blackKingIndex = this.board.indexOf(k)
+
         this.changeTurn(turn)
         
         if (enpassantsquare !== '-') {
@@ -234,6 +237,8 @@ module.exports = orobas = {
         //     P,  P,  P,  P,  P,  P,  P,  P,     -1,  0,  1, -1, -1,  1,  0, -1,
         //     R,  N,  B,  Q,  K,  B,  N,  R,     -8, -4, -4, -2, -2, -4, -4, -8,
         // ]
+        this.whiteKingIndex = this.board.indexOf(K)
+        this.blackKingIndex = this.board.indexOf(k)
 
         this.turn = WHITE
     },
@@ -909,6 +914,9 @@ module.exports = orobas = {
         }
         this.board[move.from] = 0
 
+        if (move.piece === K) this.whiteKingIndex = move.to
+        if (move.piece === k) this.blackKingIndex = move.to
+
         if (move.enPassant) {
             if (this.turn === WHITE) {
                 this.board[move.to+16] = 0
@@ -1019,6 +1027,9 @@ module.exports = orobas = {
 
         this.board[move.to] = move.capturedPiece 
         this.board[move.from] = move.piece
+
+        if (move.piece === K) this.whiteKingIndex = move.from
+        if (move.piece === k) this.blackKingIndex = move.from
 
         if (move.enPassant) {
             if (this.turn === BLACK) {
