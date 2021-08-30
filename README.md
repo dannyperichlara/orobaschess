@@ -1,9 +1,7 @@
 # ♘ Orobas Chess Engine
 v2.1.2
 
-Orobas es un motor de Ajedrez creado en 2020 para fines educacionales y de investigación.
-
-Puedes probar Orobas en http://45.58.62.235:3665
+Orobas is a Chess-Engine created in 2020, written entirely in Javascript. You can try Orobas in http://45.58.62.235:3665
 
 --------------
 ## Características (en inglés)
