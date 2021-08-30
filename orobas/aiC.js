@@ -356,8 +356,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
     }
 
     score += material + psqt
-    score += AI.getStructure(board, pawnindexW, pawnindexB)
-
+    
     if (AI.isLazyFutile(board, sign, score, alpha, beta, VPAWNx2)) {
         // let t1 = (new Date).getTime()
         // AI.evalTime += t1 - t0
@@ -368,9 +367,14 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         return nullWindowScore
     }
     
+    
     if (pvNode) {
         // Pawn structure
+        score += AI.getStructure(board, pawnindexW, pawnindexB)
+        
+        // Pawn shield
         score += AI.getKingSafety(board, AI.phase)
+
         
         // Is king under attack
         score -= 20*board.isSquareAttacked(board.whiteKingIndex-15, BLACK, true)
@@ -408,15 +412,15 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         // Mobility
         score += AI.getMobility(board)
         
-        // if (score > VPAWNx2) {
-        //         if (queensW >= queensB) score += 20
-        //         if (rooksW >= rooksB) score += 20
-        //     }
+        if (score > VPAWNx2) {
+                if (queensW >= queensB) score += 20
+                if (rooksW >= rooksB) score += 20
+            }
             
-        //     if (score < -VPAWNx2) {
-        //     if (queensB >= queensW) score -= 20
-        //     if (rooksB >= rooksW) score -= 20
-        // }
+            if (score < -VPAWNx2) {
+            if (queensB >= queensW) score -= 20
+            if (rooksB >= rooksW) score -= 20
+        }
     }
     
     let nullWindowScore = sign * score / AI.nullWindowFactor | 0
@@ -436,21 +440,21 @@ AI.getKingSafety = (board, phase)=>{
         if (phase <= MIDGAME && board.columns[board.whiteKingIndex] === 3 || board.columns[board.whiteKingIndex] === 4) score -= 10
         
         if (board.whiteKingIndex !== 116) {
-            score += board.board[board.whiteKingIndex-17] === P? 50 : 0
+            score += board.board[board.whiteKingIndex-17] === P? 20 : 0
             score += board.board[board.whiteKingIndex-16] === 0?-40 : 0
-            score += board.board[board.whiteKingIndex-16] === P? 60 : 0
-            score += board.board[board.whiteKingIndex-32] === P? 40 : 0
-            score += board.board[board.whiteKingIndex-15] === P? 50 : 0
+            score += board.board[board.whiteKingIndex-16] === P? 20 : 0
+            score += board.board[board.whiteKingIndex-32] === P? 20 : 0
+            score += board.board[board.whiteKingIndex-15] === P? 20 : 0
         }
         
         if (phase <= MIDGAME && board.columns[board.blackKingIndex] === 3 || board.columns[board.blackKingIndex] === 4) score += 10
     
         if (board.blackKingIndex !== 4) {
-            score += board.board[board.blackKingIndex+17] === p? -50 : 0
+            score += board.board[board.blackKingIndex+17] === p? -20 : 0
             score += board.board[board.blackKingIndex+16] === 0?  40 : 0
-            score += board.board[board.blackKingIndex+16] === p? -60 : 0
-            score += board.board[board.blackKingIndex+32] === p? -40 : 0
-            score += board.board[board.blackKingIndex+15] === p? -50 : 0
+            score += board.board[board.blackKingIndex+16] === p? -20 : 0
+            score += board.board[board.blackKingIndex+32] === p? -20 : 0
+            score += board.board[board.blackKingIndex+15] === p? -20 : 0
         }
     }
 
@@ -484,21 +488,21 @@ AI.getMobility = (board)=>{
 
     if (board.turn === WHITE) {
         let whiteMoves = myMoves.filter((e,i)=>{
-            return board.board[e.to - 17] !== p && board.board[e.to - 15] !== p// && board.board[e.to] !== Q
+            return board.board[e.to - 17] !== p && board.board[e.to - 15] !== p && board.board[e.to] !== Q
         })
 
         let blackMoves = opponentMoves.filter((e,i)=>{
-            return board.board[e.to + 17] !== P && board.board[e.to + 15] !== P// && board.board[e.to] !== Q
+            return board.board[e.to + 17] !== P && board.board[e.to + 15] !== P && board.board[e.to] !== Q
         })
 
         mobility = 5*(whiteMoves.length - blackMoves.length) | 0
     } else {
         let blackMoves = myMoves.filter((e,i)=>{
-            return board.board[e.to + 17] !== P && board.board[e.to + 15] !== P// && board.board[e.to] !== q
+            return board.board[e.to + 17] !== P && board.board[e.to + 15] !== P && board.board[e.to] !== q
         })
 
         let whiteMoves = opponentMoves.filter((e,i)=>{
-            return board.board[e.to - 17] !== p && board.board[e.to - 15] !== p// && board.board[e.to] !== q
+            return board.board[e.to - 17] !== p && board.board[e.to - 15] !== p && board.board[e.to] !== q
         })
 
         mobility = 5*(whiteMoves.length - blackMoves.length) | 0
@@ -529,7 +533,7 @@ AI.getStructure = (board, pawnindexW, pawnindexB)=> {
     }
 
     let doubled = 0//AI.getDoubled(board, pawnindexW, pawnindexB)
-    let defended = 0//AI.getDefended(board, pawnindexW, pawnindexB)
+    let defended = AI.getDefended(board, pawnindexW, pawnindexB)
     let passers = AI.getPassers(board, pawnindexW, pawnindexB)
     let space = AI.getSpace(board, pawnindexW, pawnindexB)
 
