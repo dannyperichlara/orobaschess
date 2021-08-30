@@ -1,37 +1,39 @@
 # ♘ Orobas Chess Engine
-v1.3.0
+v2.1.2
 
-Orobas es un motor de Ajedrez creado en 2020 para fines educacionales y de investigación.
-
-Puedes probar Orobas en http://45.58.62.235:3665
+Orobas is a Chess-Engine created in 2020, written entirely in Javascript. You can try Orobas in http://45.58.62.235:3665
 
 --------------
 ## Características (en inglés)
-* Mailbox 0x88 board.
+* Mailbox 0x88 board
 * Principal Variation Search = Negamax + Alpha-Beta Pruning + Null Window Search + Aspiration Window
-* Quiescense Search with stand-pat pruning and delta pruning.
+* Quiescense Search with stand-pat pruning and delta pruning
 * Piece-Square-Tables based on PeSTO
-* Late move reductions and other reductions.
-* Move count reductions.
-* Check extensions.
-* Futility pruning.
-* Razoring.
+* Late move reductions and other reductions
+* Move count reductions
+* Mate-threath extensions
+* Mate distance pruning
+* Check extensions
+* Futility pruning
+* Static Null Move pruning (not working properly)
+* Razoring
 * Lazy evaluation
-* Null-move heuristic.
-* Mobility evaluation.
-* Center control evaluation.
-* Pawn shield evaluation.
+* Extended Null-Move Reductions
+* Safe Mobility evaluation
+* Center-control evaluation
+* Pawn Shield evaluation
+* Evaluation of some common patterns (rook trapped by a king, developing a bishop in front of pawn, etc.)
 * Evaluation of king being attacked
-* Passers evaluation.
-* Space evaluation (not fully tested)
-* Basic pawn structure analysis (defended, doubled & passed pawns)
+* Passers evaluation
+* Space gain evaluation
+* Pawn structure analysis
 * Zobrist hashing
-* Transposition table
+* Transposition table with always-replace scheme
 * Pawn hash table
 * Static evaluation hash table
 * History heuristic
 * Killer heuristic
-* Move ordering (fail-high on the first move: 90%):
+* Move ordering (fail-high on the first move > 90%):
   * 1) Hash moves
   * 2) Promotions
   * 3) Good captures
@@ -39,8 +41,8 @@ Puedes probar Orobas en http://45.58.62.235:3665
   * 5) Bad captures
   * 6) History moves
   * 7) PSQT
-* Iterative Deepening.
-* Internal Iterative Deepening.
+* Iterative Deepening
+* Internal Iterative Deepening
 * Phase detector without tapered eval. Orobas considers 4 phases for better piece and positional evaluation:
   * Phase 1: Opening
   * Phase 2: Midgame
@@ -51,13 +53,12 @@ Puedes probar Orobas en http://45.58.62.235:3665
 ### To Do
 * Piece lists
 * Mate detection
-* Isolated/hanging pawns detection.
 * Attack tables
 * Fix En-Passant bugs
 * Move generation by stages (hash moves / tactical moves / killer moves? / quiet moves).
 * Automated tuning of parameters.
-* Better piece coordination.
-* Improve move ordering even more.
-* Some way to reduce the odd-even effect.
-* Some clever and cheap way to evaluate the loss of castling rights.
-* Implementation of Best Node Search (https://en.wikipedia.org/wiki/Best_node_search).
+* Improve piece coordination
+* Improve move ordering even more (maybe with SEE)
+* Some way to reduce the odd-even effect
+* Some clever and cheap way to evaluate the loss of castling rights
+* Implementation of Best Node Search (https://en.wikipedia.org/wiki/Best_node_search)
