@@ -290,12 +290,12 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
 
         if (piece === B) {
             bishopsW++
-            if (AI.phase === OPENING && board.board[i+16] === P) score-=20
+            if (AI.phase === OPENING && board.board[i+16] === P) score-=40
             if (AI.phase === OPENING && board.board[i-16] === P) score+=10
         }
         if (piece === b) {
             bishopsB++
-            if (AI.phase === OPENING && board.board[i-16] === p) score+=20
+            if (AI.phase === OPENING && board.board[i-16] === p) score+=40
             if (AI.phase === OPENING && board.board[i+16] === p) score-=10
         }
 
