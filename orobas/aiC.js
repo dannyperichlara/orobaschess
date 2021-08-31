@@ -388,6 +388,12 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         // Center control
         if (AI.phase <= MIDGAME) {
             for (let i = 0, len=CENTER.length; i < len; i++) {
+                if (i < 64) {
+                    score += 5 * board.isSquareAttacked(CENTER[i], WHITE, true)
+                } else {
+                    score -= 5 * board.isSquareAttacked(CENTER[i], BLACK, true)
+                }
+
                 let piece = board.board[CENTER[i]]
                 
                 if (!piece) continue
@@ -399,13 +405,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
                 } else {
                     score -= i > 64? -20 : -10
                 }
-                
-                if (i < 64) {
-                    score += 5 * board.isSquareAttacked(i, WHITE, true)
-                } else {
-                    score -= 5 * board.isSquareAttacked(i, BLACK, true)
-                }
-                
             }
         }
         
