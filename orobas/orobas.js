@@ -213,14 +213,14 @@ module.exports = orobas = {
     createBoard() {
         //r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 
         let board = [
-            r,  n,  b,  q,  k,  b,  n,  r,     -8, -4, -4, -2, -2, -4, -4, -8,
-            p,  p,  p,  p,  p,  p,  p,  p,     -1,  0,  1, -1, -1,  1,  0, -1,
-            0,  0,  0,  0,  0,  0,  0,  0,      0,  1,  2,  3,  3,  2,  1,  0,
-            0,  0,  0,  0,  0,  0,  0,  0,      1,  2,  3,  4,  4,  3,  2,  1,
-            0,  0,  0,  0,  0,  0,  0,  0,      1,  2,  3,  4,  4,  3,  2,  1,
-            0,  0,  0,  0,  0,  0,  0,  0,      0,  1,  2,  3,  3,  2,  1,  0,
-            P,  P,  P,  P,  P,  P,  P,  P,     -1,  0,  1, -1, -1,  1,  0, -1,
-            R,  N,  B,  Q,  K,  B,  N,  R,     -8, -4, -4, -2, -2, -4, -4, -8,
+            r,  n,  b,  q,  k,  b,  n,  r,     null, null, null, null, null, null, null, null,
+            p,  p,  p,  p,  p,  p,  p,  p,     null, null, null, null, null, null, null, null,
+            0,  0,  0,  0,  0,  0,  0,  0,     null, null, null, null, null, null, null, null,
+            0,  0,  0,  0,  0,  0,  0,  0,     null, null, null, null, null, null, null, null,
+            0,  0,  0,  0,  0,  0,  0,  0,     null, null, null, null, null, null, null, null,
+            0,  0,  0,  0,  0,  0,  0,  0,     null, null, null, null, null, null, null, null,
+            P,  P,  P,  P,  P,  P,  P,  P,     null, null, null, null, null, null, null, null,
+            R,  N,  B,  Q,  K,  B,  N,  R,     null, null, null, null, null, null, null, null,
         ]
 
         for (let i = 0; i < 128; i++) {
