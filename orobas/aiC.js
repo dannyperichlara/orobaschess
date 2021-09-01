@@ -398,7 +398,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
 
     score += material + psqt
     
-    if (AI.isLazyFutile(board, sign, score, alpha, beta, VPAWNx2)) {
+    if (AI.isLazyFutile(sign, score, alpha, beta, VPAWNx2)) {
         // let t1 = (new Date).getTime()
         // AI.evalTime += t1 - t0
         
@@ -429,11 +429,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         // Center control
         if (AI.phase <= MIDGAME) {
             for (let i = 0, len=CENTER.length; i < len; i++) {
-                if (i < 64) {
-                    score += 5 * board.isSquareAttacked(CENTER[i], WHITE, false)
-                } else {
-                    score -= 5 * board.isSquareAttacked(CENTER[i], BLACK, false)
-                }
+                
+                score += 5 * board.isSquareAttacked(CENTER[i], WHITE, false)
+                score -= 5 * board.isSquareAttacked(CENTER[i], BLACK, false)
 
                 let piece = board.board[CENTER[i]]
                 
@@ -453,11 +451,12 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         score += AI.getMobility(board)
         
         if (score > VPAWNx2) {
-                if (queensW >= queensB) score += 20
-                if (rooksW >= rooksB) score += 20
-            }
+            if (queensW >= queensB) score += 20
+            if (rooksW >= rooksB) score += 20
             
-            if (score < -VPAWNx2) {
+        }
+            
+        if (score < -VPAWNx2) {
             if (queensB >= queensW) score -= 20
             if (rooksB >= rooksW) score -= 20
         }
@@ -501,14 +500,8 @@ AI.getKingSafety = (board, phase)=>{
     return score
 } 
 
-AI.isLazyFutile = (board, sign, score, alpha, beta, margin)=> {
+AI.isLazyFutile = (sign, score, alpha, beta, margin)=> {
     let signedScore = sign * score
-
-    // if (signedScore <= alpha - margin) {
-    //     if (margin <= VPAWN) AI.evalTable[board.hashkey % this.htlength] = signedScore / AI.nullWindowFactor | 0
-
-    //     return true
-    // }
 
     if (signedScore > beta + margin) {
         return true
@@ -1187,6 +1180,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             if (!move.isCapture) {
                 if (staticeval + VPAWN2*depth < alpha) {
                     continue
+                    // break
                 }
             }
         }
