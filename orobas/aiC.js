@@ -283,70 +283,111 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         
         let piece = board.board[i]
         
-        if (piece === 0) continue
-        
-        if (piece === P) pawnindexW.push(i)
-        if (piece === p) pawnindexB.push(i)
+        if (!piece) continue
 
-        if (piece === B) {
-            bishopsW++
-            if (AI.phase === OPENING && board.board[i+16] === P) score-=40
-            if (AI.phase === OPENING && board.board[i-16] === P) score+=10
-        }
-        if (piece === b) {
-            bishopsB++
-            if (AI.phase === OPENING && board.board[i-16] === p) score+=40
-            if (AI.phase === OPENING && board.board[i+16] === p) score-=10
-        }
 
-        if (piece === R) {
-            rooksW++
-        }
-
-        if (piece === r) {
-            rooksB++
-        }
-
-        if (piece === Q) {
-            queensW++
-        }
-
-        if (piece === q) {
-            queensB++
-        }
-
-        if (piece === N) {
-            if (AI.phase === OPENING && board.board[i-16] === P) score+=10
-        }
-        if (piece === n) {
-            if (AI.phase === OPENING && board.board[i+16] === p) score-=10
-        }
-
-        if (piece === K) {
-            if (board.whiteKingIndex === 118 && board.board[119] === R) score -= VPAWN
-        }
-        
-        if (piece === k) {
-            if (board.blackKingIndex === 6 && board.board[7] === r) score += VPAWN
-        }
-
-        if (i >= 64 && piece === R) {
-            if (board.board[i-16] !== P && board.board[i-32] !== P && board.board[i-48] !== P) {
-                score += 20
+        if (true || pvNode) {
+            if (piece === P) pawnindexW.push(i)
+            if (piece === p) pawnindexB.push(i)
+    
+            if (piece === B) {
+                bishopsW++
+                if (AI.phase === OPENING && board.board[i+16] === P) score-=40
+                if (AI.phase === OPENING && board.board[i-16] === P) score+=10
+    
+                if (board.diagonals1[i] === board.diagonals1[board.blackKingIndex]) {
+                    score += 20
+                } else if (board.diagonals2[i] === board.diagonals2[board.blackKingIndex]) {
+                    score += 20
+                }
             }
-
-            if (board.columns[i] === board.columns[board.blackKingIndex]) score += 20
-            if (board.ranksW[i] === board.ranksW[board.blackKingIndex]) score += 40
-        }
-
-        if (i <= 55 && piece === r) {
-            if (board.board[i+16] !== p && board.board[i+32] !== p && board.board[i+48] !== p) {
-                score -= 20
+            if (piece === b) {
+                bishopsB++
+                if (AI.phase === OPENING && board.board[i-16] === p) score+=40
+                if (AI.phase === OPENING && board.board[i+16] === p) score-=10
+    
+                if (board.diagonals1[i] === board.diagonals1[board.whiteKingIndex]) {
+                    score -= 20
+                } else if (board.diagonals2[i] === board.diagonals2[board.whiteKingIndex]) {
+                    score -= 20
+                }
             }
+    
+            if (piece === Q) {
+                queensW++
+    
+                if (board.diagonals1[i] === board.diagonals1[board.blackKingIndex]) {
+                    score += 20
+                } else if (board.diagonals2[i] === board.diagonals2[board.blackKingIndex]) {
+                    score += 20
+                }
 
-            if (board.columns[i] === board.columns[board.whiteKingIndex]) score -= 20
-            if (board.ranksB[i] === board.ranksB[board.whiteKingIndex]) score -= 40
+                if (board.columns[i] === board.columns[board.blackKingIndex]) {
+                    score += 20
+                } else if (board.ranksW[i] === board.ranksW[board.blackKingIndex]) {
+                    score += 20
+                }
+            }
+    
+            if (piece === q) {
+                queensB++
+                if (board.diagonals1[i] === board.diagonals1[board.whiteKingIndex]) {
+                    score -= 20
+                } else if (board.diagonals2[i] === board.diagonals2[board.whiteKingIndex]) {
+                    score -= 20
+                }
+
+                if (board.columns[i] === board.columns[board.whiteKingIndex]) {
+                    score -= 20
+                } else if (board.ranksB[i] === board.ranksB[board.whiteKingIndex]) {
+                    score -= 20
+                }
+            }
+    
+            if (piece === N) {
+                if (AI.phase === OPENING && board.board[i-16] === P) score+=10
+            }
+            if (piece === n) {
+                if (AI.phase === OPENING && board.board[i+16] === p) score-=10
+            }
+    
+            if (piece === K) {
+                if (board.whiteKingIndex === 118 && board.board[119] === R) score -= VPAWN
+            }
+            
+            if (piece === k) {
+                if (board.blackKingIndex === 6 && board.board[7] === r) score += VPAWN
+            }
+    
+            if (piece === R) {
+                rooksW++
+    
+                if (i >= 64 && board.board[i-16] !== P && board.board[i-32] !== P && board.board[i-48] !== P) {
+                    score += 20
+                }
+    
+                if (board.columns[i] === board.columns[board.blackKingIndex]) {
+                    score += 20
+                } else if (board.ranksW[i] === board.ranksW[board.blackKingIndex]) {
+                    score += 40
+                }
+            }
+    
+            if (piece === r) {
+                rooksB++
+    
+                if (i <= 55 && board.board[i+16] !== p && board.board[i+32] !== p && board.board[i+48] !== p) {
+                    score -= 20
+                }
+    
+                if (board.columns[i] === board.columns[board.whiteKingIndex]) {
+                    score -= 20
+                } else if (board.ranksB[i] === board.ranksB[board.whiteKingIndex]) {
+                    score -= 40
+                }
+            }
         }
+        
         
         let turn = board.color(piece)
         let sign = turn === WHITE? 1 : -1
