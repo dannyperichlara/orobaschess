@@ -1004,8 +1004,13 @@ AI.ttGet = function (hashkey) {
     return AI.hashTable[hashkey % AI.htlength]
 }
 
+// let max = 0
+
 AI.saveHistory = function (turn, move, value) {
-    AI.history[move.piece][move.to] += value | 0
+    // AI.history[move.piece][move.to] += value | 0
+    AI.history[move.piece][move.to] += 32 * value - AI.history[move.piece][move.to]*Math.abs(value)/512 | 0
+
+    //HistoryTableEntry += 32 * bonus - HistoryTableEntry * abs(bonus) / 512;
 }
 
 AI.givescheck = function (board, move) {
@@ -1277,7 +1282,9 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                 bestmove = move
                 alpha = score
 
-                if (!move.isCapture) { AI.saveHistory(turn, move, 1) }
+                if (!move.isCapture) { AI.saveHistory(turn, move, depth) }
+            } else {
+                if (!move.isCapture) { AI.saveHistory(turn, move, -depth) }
             }
         }
     }
