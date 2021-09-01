@@ -1153,7 +1153,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         //Reducciones
         let R = 0
 
-        if (depth >= 3 && !mateE && !incheck) {
+        if (depth >= 3 && legal >=1 && !mateE && !incheck) {
             R += AI.LMR_TABLE[depth][legal]
 
             if (pvNode) R--
@@ -1189,7 +1189,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             // AI.moveTime += (new Date()).getTime() - m0
             legal++
 
-            if (legal === 1) {
+            if (legal === 1 && pvNode) {
                 // El primer movimiento se busca con ventana total y sin reducciones
                 if (AI.stop) return oAlpha
                 score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1)
