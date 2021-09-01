@@ -4,7 +4,7 @@ const sort = require('fast-sort').sort
 require('fast-filter').install('filter')
 
 let AI = {
-    version: "2.1.1",
+    version: "2.1.2",
     totaldepth: 48,
     ttNodes: 0,
     iteration: 0,
@@ -389,9 +389,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         if (AI.phase <= MIDGAME) {
             for (let i = 0, len=CENTER.length; i < len; i++) {
                 if (i < 64) {
-                    score += 5 * board.isSquareAttacked(CENTER[i], WHITE, true)
+                    score += 5 * board.isSquareAttacked(CENTER[i], WHITE, false)
                 } else {
-                    score -= 5 * board.isSquareAttacked(CENTER[i], BLACK, true)
+                    score -= 5 * board.isSquareAttacked(CENTER[i], BLACK, false)
                 }
 
                 let piece = board.board[CENTER[i]]
@@ -1160,24 +1160,22 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
             if (cutNode && !move.killer1) R+= 2
 
-            // if (AI.PV[ply] && AI.PV[ply].key === move.key && !likelyAllNodes) {
-            //     R-=2
-            // }
-
-            // Move count reductions
-            if (depth >=3 && !move.isCapture && legal >= (3 + depth*depth) / 2) {
-                R++
-            }
-    
-            // Bad moves reductions
-            if (!move.isCapture && AI.phase <= EARLY_ENDGAME) {
-                // console.log('no')
-                if (board.turn === WHITE && piece != P && (board.board[move.to-17] === p || board.board[move.to-15] === p)) {
-                    R+=4
+            if (!move.isCapture) {
+                // Move count reductions
+                if (legal >= (3 + depth*depth) / 2) {
+                    R++
                 }
-                
-                if (board.turn === BLACK && piece != p && (board.board[move.to+17] === P || board.board[move.to+15] === P)) {
-                    R+=4
+        
+                // Bad moves reductions
+                if (AI.phase <= EARLY_ENDGAME) {
+                    // console.log('no')
+                    if (board.turn === WHITE && piece !== P && (board.board[move.to-17] === p || board.board[move.to-15] === p)) {
+                        R+=4
+                    }
+                    
+                    if (board.turn === BLACK && piece !== p && (board.board[move.to+17] === P || board.board[move.to+15] === P)) {
+                        R+=4
+                    }
                 }
             }
 
@@ -1196,7 +1194,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             } else {
                 if (AI.stop) return oAlpha
                 score = -AI.PVS(board, -alpha-1, -alpha, depth + E - R - 1, ply + 1)
-                // score = -AI.PVS(board, -beta, -alpha, depth + E - R - 1, ply + 1)
 
                 if (!AI.stop && score > alpha) {
                     score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1)
@@ -1281,9 +1278,9 @@ AI.createPSQT = function (board) {
     AI.PSQT_OPENING = []
 
     AI.PSQT_OPENING[PAWN] = [
-        0,   0,   0,   0,   0,   0,  0,    0,    null,null,null,null,null,null,null,null,
-        98, 134,  61,  95,  68, 126, 34, -11,    null,null,null,null,null,null,null,null,
-        -6,   7,  26,  31,  65,  56, 25, -20,    null,null,null,null,null,null,null,null,
+          0,   0,   0,   0,   0,   0,  0,   0,    null,null,null,null,null,null,null,null,
+         98, 134,  61,  95,  68, 126, 34, -11,    null,null,null,null,null,null,null,null,
+         -6,   7,  26,  31,  65,  56, 25, -20,    null,null,null,null,null,null,null,null,
         -14,  13,   6,  21,  23,  12, 17, -23,    null,null,null,null,null,null,null,null,
         -27,  -2,  -5,  12,  17,   6, 10, -25,    null,null,null,null,null,null,null,null,
         -26,  -4,  -4, -10,   3,   3, 33, -12,    null,null,null,null,null,null,null,null,
@@ -1292,14 +1289,14 @@ AI.createPSQT = function (board) {
     ]
 
     AI.PSQT_OPENING[KNIGHT] = [
-        -167, -89, -34, -49,  61, -97, -15, -107,    null,null,null,null,null,null,null,null,
+       -167, -89, -34, -49,  61, -97, -15, -107,    null,null,null,null,null,null,null,null,
         -73, -41,  72,  36,  23,  62,   7,  -17,    null,null,null,null,null,null,null,null,
         -47,  60,  37,  65,  84, 129,  73,   44,    null,null,null,null,null,null,null,null,
-            -9,  17,  19,  53,  37,  69,  18,   22,    null,null,null,null,null,null,null,null,
+         -9,  17,  19,  53,  37,  69,  18,   22,    null,null,null,null,null,null,null,null,
         -13,   4,  16,  13,  28,  19,  21,   -8,    null,null,null,null,null,null,null,null,
         -23,  -9,  12,  10,  19,  17,  25,  -16,    null,null,null,null,null,null,null,null,
         -29, -53, -12,  -3,  -1,  18, -14,  -19,    null,null,null,null,null,null,null,null,
-        -105, -21, -58, -33, -17, -28, -19,  -23,    null,null,null,null,null,null,null,null,
+       -105, -21, -58, -33, -17, -28, -19,  -23,    null,null,null,null,null,null,null,null,
 
     ]
 
@@ -1307,17 +1304,17 @@ AI.createPSQT = function (board) {
         -29,   4, -82, -37, -25, -42,   7,  -8,    null,null,null,null,null,null,null,null,
         -26,  16, -18, -13,  30,  59,  18, -47,    null,null,null,null,null,null,null,null,
         -16,  37,  43,  40,  35,  50,  37,  -2,    null,null,null,null,null,null,null,null,
-            -4,   5,  19,  50,  37,  37,   7,  -2,    null,null,null,null,null,null,null,null,
-            -6,  13,  13,  26,  34,  12,  10,   4,    null,null,null,null,null,null,null,null,
-            0,  15,  15,  15,  14,  27,  18,  10,    null,null,null,null,null,null,null,null,
-            4,  15,  16,   0,   7,  21,  33,   1,    null,null,null,null,null,null,null,null,
+         -4,   5,  19,  50,  37,  37,   7,  -2,    null,null,null,null,null,null,null,null,
+         -6,  13,  13,  26,  34,  12,  10,   4,    null,null,null,null,null,null,null,null,
+          0,  15,  15,  15,  14,  27,  18,  10,    null,null,null,null,null,null,null,null,
+          4,  15,  16,   0,   7,  21,  33,   1,    null,null,null,null,null,null,null,null,
         -33,  -3, -14, -21, -13, -12, -39, -21,    null,null,null,null,null,null,null,null,
     ]
 
     AI.PSQT_OPENING[ROOK] = [
-        32,  42,  32,  51, 63,  9,  31,  43,    null,null,null,null,null,null,null,null,
-        27,  32,  58,  62, 80, 67,  26,  44,    null,null,null,null,null,null,null,null,
-        -5,  19,  26,  36, 17, 45,  61,  16,    null,null,null,null,null,null,null,null,
+         32,  42,  32,  51, 63,  9,  31,  43,    null,null,null,null,null,null,null,null,
+         27,  32,  58,  62, 80, 67,  26,  44,    null,null,null,null,null,null,null,null,
+         -5,  19,  26,  36, 17, 45,  61,  16,    null,null,null,null,null,null,null,null,
         -24, -11,   7,  26, 24, 35,  -8, -20,    null,null,null,null,null,null,null,null,
         -36, -26, -12,  -1,  9, -7,   6, -23,    null,null,null,null,null,null,null,null,
         -45, -25, -16, -17,  3,  0,  -5, -33,    null,null,null,null,null,null,null,null,
@@ -1330,20 +1327,20 @@ AI.createPSQT = function (board) {
         -24, -39,  -5,   1, -16,  57,  28,  54,    null,null,null,null,null,null,null,null,
         -13, -17,   7,   8,  29,  56,  47,  57,    null,null,null,null,null,null,null,null,
         -27, -27, -16, -16,  -1,  17,  -2,   1,    null,null,null,null,null,null,null,null,
-            -9, -26,  -9, -10,  -2,  -4,   3,  -3,    null,null,null,null,null,null,null,null,
+         -9, -26,  -9, -10,  -2,  -4,   3,  -3,    null,null,null,null,null,null,null,null,
         -14,   2, -11,  -2,  -5,   2,  14,   5,    null,null,null,null,null,null,null,null,
         -35,  -8,  11,   2,   8,  15,  -3,   1,    null,null,null,null,null,null,null,null,
-            -1, -18,  -9,  10, -15, -25, -31, -50,    null,null,null,null,null,null,null,null,
+         -1, -18,  -9,  10, -15, -25, -31, -50,    null,null,null,null,null,null,null,null,
     ]
 
     AI.PSQT_OPENING[KING] = [
         -65,  23,  16, -15, -56, -34,   2,  13,    null,null,null,null,null,null,null,null,
-        29,  -1, -20,  -7,  -8,  -4, -38, -29,    null,null,null,null,null,null,null,null,
-        -9,  24,   2, -16, -20,   6,  22, -22,    null,null,null,null,null,null,null,null,
+         29,  -1, -20,  -7,  -8,  -4, -38, -29,    null,null,null,null,null,null,null,null,
+         -9,  24,   2, -16, -20,   6,  22, -22,    null,null,null,null,null,null,null,null,
         -17, -20, -12, -27, -30, -25, -14, -36,    null,null,null,null,null,null,null,null,
         -49,  -1, -27, -39, -46, -44, -33, -51,    null,null,null,null,null,null,null,null,
         -14, -14, -22, -46, -44, -30, -15, -27,    null,null,null,null,null,null,null,null,
-            1,   7,  -8, -64, -43, -16,   9,   8,    null,null,null,null,null,null,null,null,
+          1,   7,  -8, -64, -43, -16,   9,   8,    null,null,null,null,null,null,null,null,
         -15,  36,  12, -54,   8, -28,  24,  14,    null,null,null,null,null,null,null,null,
     ]
 
@@ -1836,6 +1833,5 @@ AI.search = function (board, options) {
 }
 
 AI.createTables(true, true, true)
-
 
 module.exports = AI
