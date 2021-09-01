@@ -985,8 +985,8 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
 }
 
 AI.ttSave = function (hashkey, score, flag, depth, move) {
-    if (!move) {
-        console.log('no move')
+    if (!move || AI.stop) {
+        // console.log('no move')
         return
     }
 
