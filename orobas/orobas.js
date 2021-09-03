@@ -703,7 +703,7 @@ module.exports = orobas = {
                                 if (to === lastEP) {
                                     isCapture = false
                                     //En passant move
-                                    // moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece:0, castleSide:0, enPassantSquares:null, enPassant: true}))
+                                    moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece:0, castleSide:0, enPassantSquares:null, enPassant: true}))
                                     epnodes++
                                 }
                             }
@@ -1214,28 +1214,28 @@ console.log(orobas.hashkey, orobas.pawnhashkey)
 // console.time()
 // console.log('PERFT 1', orobas.perft(1), 20, 48) // OK
 // console.log('PERFT 2', orobas.perft(2), 400, 2039) // OK
-// console.log('PERFT 3', orobas.perft(3), 8902, 97862) // OK
+console.log('PERFT 3', orobas.perft(3), 8902, 97862) // OK
 // console.log('PERFT 4', orobas.perft(4), 197281, 4085603) // OK
 // console.log('PERFT 5', orobas.perft(5), 4865609, 193690690) // OK
-// console.log('PERFT 6', orobas.perft(6), 119060324, 8031647685) // NO
+// console.log('PERFT 6', orobas.perft(6), 119060324, 8031647685) // OK
 // console.log(orobas.perftData)
 // orobas.drawAttackZone(orobas.getAttackZone(WHITE))
 // console.log(moves.map(e=>{return orobas.coords[e.from] + '-' + orobas.coords[e.to]}))
 // console.timeEnd()
 // console.log('PLY', orobas.ply)
-orobas.draw()
-console.log(orobas.hashkey, orobas.pawnhashkey)
+// orobas.draw()
+// console.log(orobas.hashkey, orobas.pawnhashkey)
 
-orobas.boardToBits(true)
-let move = {from: 118, to: 85, piece: N}
-orobas.makeMove(move)
+// orobas.boardToBits(true)
+// let move = {from: 118, to: 85, piece: N}
+// orobas.makeMove(move)
 
-orobas.occupiedBottom = orobas.occupiedBottom ^ (1 << orobas.boardbits[move.from])
-orobas.occupiedBottom = orobas.occupiedBottom | (1 << orobas.boardbits[move.to])
+// orobas.occupiedBottom = orobas.occupiedBottom ^ (1 << orobas.boardbits[move.from])
+// orobas.occupiedBottom = orobas.occupiedBottom | (1 << orobas.boardbits[move.to])
 
-console.log(1 << orobas.boardbits[move.from])
+// console.log(1 << orobas.boardbits[move.from])
 
-orobas.draw()
-orobas.drawBitboard()
+// orobas.draw()
+// orobas.drawBitboard()
 
 
