@@ -1190,7 +1190,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
             if (pvNode) R--
 
-            if (cutNode && !move.killer1) R+= 2
+            if (cutNode && !move.killer1 && !move.killer2) R+= 2
 
             if (!move.isCapture) {
                 // Move count reductions
@@ -1673,13 +1673,13 @@ AI.getPV = function (board, length) {
 
 AI.MTDF = function (board, f, d, lowerBound, upperBound) {    
     //Esta línea permite que el algoritmo funcione como PVS normal
-    return AI.PVS(board, lowerBound, upperBound, d, 1)
+    // return AI.PVS(board, lowerBound, upperBound, d, 1)
     
     let bound = [lowerBound, upperBound] // lower, upper
     
     do {
        let beta = f + (f == bound[0]);
-       f = AI.PVS(board, beta - 1, beta, d, 1)
+       f = AI.PVS(board, beta - 2, beta, d, 1)
        bound[(f < beta) | 0] = f
     } while (bound[0] < bound[1]);
     
