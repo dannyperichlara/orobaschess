@@ -1030,7 +1030,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     
     AI.nodes++
 
-    if (AI.iteration > AI.mindepth[AI.phase]) {
+    if (!pvNode && AI.iteration > AI.mindepth[AI.phase]) {
         if (Date.now() > AI.timer + AI.milspermove) {
             AI.stop = true
         }
@@ -1072,23 +1072,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
     let ttEntry = AI.ttGet(hashkey)
 
-    //Búsqueda QS
-    if (!incheck && depth <= 0) {
-        // if (ttEntry && ttEntry.depth > 0) {
-        //     if (ttEntry.score > alpha) alpha = ttEntry.score
-        //     if (ttEntry.score < beta) beta = ttEntry.score
-        // }
-
-        return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
-    }
-
-    let oAlpha = alpha
-
-    if (AI.stop && AI.iteration > AI.mindepth[AI.phase]) return alpha
-
-    // Busca la posición en la Tabla de Trasposición (lookup)
-
-
     if (ttEntry && ttEntry.depth >= depth) {
         if (ttEntry.flag === EXACT) {
             return ttEntry.score
@@ -1102,6 +1085,15 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             return ttEntry.score
         }
     }
+
+    //Búsqueda QS
+    if (!incheck && depth <= 0) {
+        return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
+    }
+
+    let oAlpha = alpha
+
+    if (AI.stop && AI.iteration > AI.mindepth[AI.phase]) return alpha
 
     // console.log(pvNode)
     let mateE = 0 // Mate threat extension
@@ -1188,7 +1180,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         // Extensiones
         let E = (incheck || mateE) && ply <= 2? 1 : 0
 
-        // if (AI.phase === LATE_ENDGAME && (piece === P || piece === p)) E++
+        if (AI.phase === LATE_ENDGAME && (piece === P || piece === p)) E++
 
         //Reducciones
         let R = 0
