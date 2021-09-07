@@ -275,6 +275,11 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
     let material = 0
     let psqt = 0
 
+    let tempTotalMaterial = 0
+
+    let mgFactor = (AI.totalmaterial - 600) / 7360
+    let egFactor = (7960 - AI.totalmaterial) / 7360
+
     for (let i = 0; i < 128; i++) {
         if (i & 0x88) {
             i+=7
@@ -393,8 +398,19 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         let sign = turn === WHITE? 1 : -1
 
         material += AI.PIECE_VALUES[OPENING][piece] //Material
-        psqt += sign*AI.PSQT[ABS[piece]][turn === WHITE? i : (112^i)]
+
+        tempTotalMaterial += AI.PIECE_VALUES[OPENING][ABS[piece]] //Material
+        
+        let index = turn === WHITE? i : (112^i)
+        let piecetype = ABS[piece]
+        
+        let mgValue = AI.PSQT_OPENING[piecetype][index] * mgFactor
+        let egValue = AI.PSQT_LATE_ENDGAME[piecetype][index] * egFactor
+        
+        psqt += sign*(mgValue + egValue)
     }
+    
+    AI.totalmaterial = tempTotalMaterial
 
     score += material + psqt
     
@@ -1697,6 +1713,8 @@ AI.search = function (board, options) {
         AI.bestscore = 0
         AI.f = 0
     }
+
+    AI.totalmaterial = 7960
 
     if (options && options.seconds) AI.secondspermove = options.seconds
 

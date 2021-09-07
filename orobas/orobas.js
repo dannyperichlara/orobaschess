@@ -1211,7 +1211,7 @@ console.log(orobas.hashkey, orobas.pawnhashkey)
 // orobas.loadFen('r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ')
 
 // console.log('PLY', orobas.ply)
-// console.time()
+console.time()
 // console.log('PERFT 1', orobas.perft(1), 20, 48) // OK
 // console.log('PERFT 2', orobas.perft(2), 400, 2039) // OK
 console.log('PERFT 3', orobas.perft(3), 8902, 97862) // OK
@@ -1221,7 +1221,7 @@ console.log('PERFT 3', orobas.perft(3), 8902, 97862) // OK
 // console.log(orobas.perftData)
 // orobas.drawAttackZone(orobas.getAttackZone(WHITE))
 // console.log(moves.map(e=>{return orobas.coords[e.from] + '-' + orobas.coords[e.to]}))
-// console.timeEnd()
+console.timeEnd()
 // console.log('PLY', orobas.ply)
 // orobas.draw()
 // console.log(orobas.hashkey, orobas.pawnhashkey)
