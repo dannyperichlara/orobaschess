@@ -1212,16 +1212,13 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
         //Reducciones
         let R = 0
-        // console.log(AI.history[move.piece][move.to])
 
         if (depth >= 3 && legal >=1 && !mateE && !incheck) {
             R += AI.LMR_TABLE[depth][legal]
 
             if (pvNode) R--
 
-            if (cutNode && !move.killer1 && !move.killer2) {
-                R+= 2
-            }
+            if (cutNode && !move.killer1 && !move.killer2) R+= 2
 
             if (!move.isCapture) {
                 // Move count reductions
