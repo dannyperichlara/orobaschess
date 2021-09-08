@@ -89,7 +89,7 @@ const LOWERBOUND = -1
 const EXACT = 0
 const UPPERBOUND = 1
 
-const VPAWN = 100
+const VPAWN = 82
 const VPAWN2 = VPAWN / 2 | 0
 const VPAWN3 = VPAWN / 3 | 0
 const VPAWN4 = VPAWN / 4 | 0
@@ -104,19 +104,33 @@ AI.PIECE_VALUES = [
     new Map(),
 ]
 
-AI.PIECE_VALUES[0][p] = -VPAWN
-AI.PIECE_VALUES[0][n] = -VPAWN*2.88 | 0
-AI.PIECE_VALUES[0][b] = -VPAWN*3.00 | 0
-AI.PIECE_VALUES[0][r] = -VPAWN*4.80 | 0
-AI.PIECE_VALUES[0][q] = -VPAWN*9.60 | 0
-AI.PIECE_VALUES[0][k] = 0
+AI.PIECE_VALUES[OPENING][p] = -VPAWN
+AI.PIECE_VALUES[OPENING][n] = -VPAWN*4.11 | 0
+AI.PIECE_VALUES[OPENING][b] = -VPAWN*4.45 | 0
+AI.PIECE_VALUES[OPENING][r] = -VPAWN*5.82 | 0
+AI.PIECE_VALUES[OPENING][q] = -VPAWN*12.50 | 0
+AI.PIECE_VALUES[OPENING][k] = 0
 
-AI.PIECE_VALUES[0][P] = VPAWN
-AI.PIECE_VALUES[0][N] = VPAWN*2.88 | 0
-AI.PIECE_VALUES[0][B] = VPAWN*3.00 | 0
-AI.PIECE_VALUES[0][R] = VPAWN*4.80 | 0
-AI.PIECE_VALUES[0][Q] = VPAWN*9.60 | 0
-AI.PIECE_VALUES[0][K] = 0
+AI.PIECE_VALUES[OPENING][P] = VPAWN
+AI.PIECE_VALUES[OPENING][N] = VPAWN*4.11 | 0
+AI.PIECE_VALUES[OPENING][B] = VPAWN*4.45 | 0
+AI.PIECE_VALUES[OPENING][R] = VPAWN*5.82 | 0
+AI.PIECE_VALUES[OPENING][Q] = VPAWN*12.50 | 0
+AI.PIECE_VALUES[OPENING][K] = 0
+
+AI.PIECE_VALUES[LATE_ENDGAME][p] = -VPAWN*1.15
+AI.PIECE_VALUES[LATE_ENDGAME][n] = -VPAWN*3.43 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][b] = -VPAWN*3.62 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][r] = -VPAWN*6.24 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][q] = -VPAWN*11.41 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][k] = 0
+
+AI.PIECE_VALUES[LATE_ENDGAME][P] = VPAWN*1.15
+AI.PIECE_VALUES[LATE_ENDGAME][N] = VPAWN*3.43 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][B] = VPAWN*3.62 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][R] = VPAWN*6.24 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][Q] = VPAWN*11.41 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][K] = 0
 
 AI.BISHOP_PAIR = VPAWN2
 
@@ -397,17 +411,17 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         let turn = board.color(piece)
         let sign = turn === WHITE? 1 : -1
 
-        material += AI.PIECE_VALUES[OPENING][piece] //Material
+        material += mgFactor * AI.PIECE_VALUES[OPENING][piece] + egFactor * AI.PIECE_VALUES[LATE_ENDGAME][piece] //Material
 
         tempTotalMaterial += AI.PIECE_VALUES[OPENING][ABS[piece]] //Material
         
         let index = turn === WHITE? i : (112^i)
         let piecetype = ABS[piece]
         
-        let mgValue = AI.PSQT_OPENING[piecetype][index] * mgFactor
-        let egValue = AI.PSQT_LATE_ENDGAME[piecetype][index] * egFactor
+        let mgPSQT = AI.PSQT_OPENING[piecetype][index] * mgFactor
+        let egPSQT = AI.PSQT_LATE_ENDGAME[piecetype][index] * egFactor
         
-        psqt += sign*(mgValue + egValue)
+        psqt += sign*(mgPSQT + egPSQT)
     }
     
     AI.totalmaterial = tempTotalMaterial
