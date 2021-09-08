@@ -1266,39 +1266,40 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
             if (AI.stop) return oAlpha //tested ok
 
-            // Fail-high
-            if (score >= beta) {
-                if (legal === 1) {
-                    AI.fhf++
-                }
-
-                AI.fh++
-
-                //LOWERBOUND
-                AI.ttSave(hashkey, score, LOWERBOUND, depth, move)
-
-                if (!move.isCapture) {
-                    if (
-                        AI.killers[turn | 0][ply][0] &&
-                        AI.killers[turn | 0][ply][0].key != move.key
-                    ) {
-                        AI.killers[turn | 0][ply][1] = AI.killers[turn | 0][ply][0]
-                    }
-
-                    AI.killers[turn | 0][ply][0] = move
-
-                    AI.saveHistory(turn, move, depth*depth)
-                }
-
-                return score
-            }
-
+            
             if (score > alpha) {
                 bestscore = score
                 bestmove = move
                 alpha = score
-
+                
                 if (!move.isCapture) { AI.saveHistory(turn, move, depth) }
+
+                // Fail-high
+                if (score >= beta) {
+                    if (legal === 1) {
+                        AI.fhf++
+                    }
+    
+                    AI.fh++
+    
+                    //LOWERBOUND
+                    AI.ttSave(hashkey, score, LOWERBOUND, depth, move)
+    
+                    if (!move.isCapture) {
+                        if (
+                            AI.killers[turn | 0][ply][0] &&
+                            AI.killers[turn | 0][ply][0].key != move.key
+                        ) {
+                            AI.killers[turn | 0][ply][1] = AI.killers[turn | 0][ply][0]
+                        }
+    
+                        AI.killers[turn | 0][ply][0] = move
+    
+                        AI.saveHistory(turn, move, depth*depth)
+                    }
+    
+                    return score
+                }
             } else {
                 if (!move.isCapture) { AI.saveHistory(turn, move, -depth) }
             }
