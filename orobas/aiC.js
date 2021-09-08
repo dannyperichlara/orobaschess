@@ -1,6 +1,6 @@
 "use strict"
 
-const sort = require('fast-sort').sort
+const {sort} = require('fast-sort')
 require('fast-filter').install('filter')
 
 let AI = {
