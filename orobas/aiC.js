@@ -922,20 +922,6 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
 
     AI.qsnodes++
 
-    // let mateScore = MATE - ply
-
-    // if (mateScore < beta) {
-    //     beta = mateScore
-    //     if (alpha >= mateScore) return mateScore
-    // }
-    
-    // mateScore = -MATE + ply
-    
-    // if (mateScore > alpha) {
-    //     alpha = mateScore
-    //     if (beta <= mateScore) return mateScore
-    // }
-
     let turn = board.turn
     let legal = 0
     let standpat = AI.evaluate(board, ply, alpha, beta, pvNode)
@@ -1067,35 +1053,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     let turn = board.turn
     let hashkey = board.hashkey
 
-    let mateScore = MATE - ply
-
-    if (mateScore < beta) {
-        beta = mateScore
-        if (alpha >= mateScore) {
-            return mateScore
-        }
-    }
-
-    mateScore = -MATE + ply
-
-    if (mateScore > alpha) {
-        alpha = mateScore
-        if (beta <= mateScore) {
-            return mateScore
-        }
-    }
-    
-    let repetitions = 0
-
-    // for (let i = board.repetitionHistory.length - 4; i >= 0; i -= 4) {
-    
-    //     if (board.hashkey === AI.repetitionHistory[i]) {
-    //         repetions++
-    //     }
-
-    //     if (repetitions === 2) return DRAW
-    // }
-
     let incheck = board.isKingInCheck()
 
     let ttEntry = AI.ttGet(hashkey)
@@ -1115,7 +1072,8 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     }
 
     //Búsqueda QS
-    if (!incheck && depth <= 0) {
+    // if (!incheck && depth <= 0) { // Genera muhcos bugs
+    if (/*!incheck &&*/ depth <= 0) {
         return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
     }
 
