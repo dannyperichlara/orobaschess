@@ -427,6 +427,10 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
     AI.totalmaterial = tempTotalMaterial
 
     score += material + psqt
+
+    let savedStructure = AI.getSavedStructure(board)
+
+    score += savedStructure
     
     if (AI.isLazyFutile(sign, score, alpha, beta, VPAWNx2)) {
         // let t1 = (new Date).getTime()
@@ -441,7 +445,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
     
     if (pvNode) {
         // Pawn structure
-        score += AI.getStructure(board, pawnindexW, pawnindexB)
+        if (true || !savedStructure) {
+            score += AI.getStructure(board, pawnindexW, pawnindexB)
+        }
         
         // Pawn shield
         score += AI.getKingSafety(board, AI.phase)
@@ -576,7 +582,20 @@ AI.getMobility = (board)=>{
 
 let max = 0
 
+AI.getSavedStructure = (board)=>{
+    let hashkey = board.pawnhashkey
 
+    let hashentry = AI.pawnTable[hashkey % AI.pawntlength]
+
+    AI.pnodes++
+
+    if (hashentry !== null) {
+        AI.phnodes++
+        return hashentry
+    }
+
+    return 0
+}
 
 // IMPORTANTE: Esta función devuelve el valor de la estructura de peones.
 // Dado que la estructura tiende a ser relativamente fija, el valor se guarda
@@ -1214,13 +1233,21 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
         //Reducciones
         let R = 0
+        // console.log(AI.history[move.piece][move.to])
 
         if (depth >= 3 && legal >=1 && !mateE && !incheck) {
             R += AI.LMR_TABLE[depth][legal]
 
             if (pvNode) R--
 
-            if (cutNode && !move.killer1 && !move.killer2) R+= 2
+            if (cutNode && !move.killer1 && !move.killer2) {
+                R+= 2
+                
+                if (!move.isCapture && AI.history[move.piece][move.to] < -100) {
+                    // console.log('si po')
+                    R += 2
+                }
+            }
 
             if (!move.isCapture) {
                 // Move count reductions
@@ -1755,7 +1782,7 @@ AI.search = function (board, options) {
         AI.lastscore = 0
         AI.f = 0
     } else {
-        AI.createTables(true, true, true)
+        AI.createTables(true, true, false)
         AI.f = AI.lastscore
     }
 
