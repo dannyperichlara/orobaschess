@@ -1221,11 +1221,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
             if (cutNode && !move.killer1 && !move.killer2) {
                 R+= 2
-                
-                if (!move.isCapture && AI.history[move.piece][move.to] < -100) {
-                    // console.log('si po')
-                    R += 2
-                }
             }
 
             if (!move.isCapture) {
