@@ -428,10 +428,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
 
     score += material + psqt
 
-    let savedStructure = AI.getSavedStructure(board)
-
-    score += savedStructure
-    
     if (AI.isLazyFutile(sign, score, alpha, beta, VPAWNx2)) {
         // let t1 = (new Date).getTime()
         // AI.evalTime += t1 - t0
@@ -445,9 +441,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
     
     if (pvNode) {
         // Pawn structure
-        if (true || !savedStructure) {
-            score += AI.getStructure(board, pawnindexW, pawnindexB)
-        }
+        score += AI.getStructure(board, pawnindexW, pawnindexB)
         
         // Pawn shield
         score += AI.getKingSafety(board, AI.phase)
@@ -581,21 +575,6 @@ AI.getMobility = (board)=>{
 }
 
 let max = 0
-
-AI.getSavedStructure = (board)=>{
-    let hashkey = board.pawnhashkey
-
-    let hashentry = AI.pawnTable[hashkey % AI.pawntlength]
-
-    AI.pnodes++
-
-    if (hashentry !== null) {
-        AI.phnodes++
-        return hashentry
-    }
-
-    return 0
-}
 
 // IMPORTANTE: Esta función devuelve el valor de la estructura de peones.
 // Dado que la estructura tiende a ser relativamente fija, el valor se guarda
