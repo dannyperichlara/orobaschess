@@ -1,5 +1,5 @@
 # ♘ Orobas Chess Engine
-v2.1.2
+v2.1.3
 
 Orobas is a Chess-Engine created in 2020, written entirely in Javascript. You can try Orobas in http://45.58.62.235:3665
 
@@ -9,6 +9,7 @@ Orobas is a Chess-Engine created in 2020, written entirely in Javascript. You ca
 * Principal Variation Search = Negamax + Alpha-Beta Pruning + Null Window Search + Aspiration Window
 * Quiescense Search with stand-pat pruning and delta pruning
 * Piece-Square-Tables based on PeSTO
+* Tappered Eval (for PSQT only)
 * Late move reductions and other reductions
 * Move count reductions
 * Mate-threath extensions
@@ -48,7 +49,7 @@ Orobas is a Chess-Engine created in 2020, written entirely in Javascript. You ca
   * Phase 2: Midgame
   * Phase 3: Early endgame
   * Phase 4: Late endgame
-* MTD(f), but inactive due to some buggy behaviours related to the hash table. See https://www.chessprogramming.org/MTD(f)
+* MTD(f) (slighly modified in order to obtain PV Nodes). See https://www.chessprogramming.org/MTD(f)
 
 ### To Do
 * Piece lists
