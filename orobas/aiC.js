@@ -458,12 +458,12 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         
         // Center control
         if (AI.phase <= MIDGAME) {
-            for (let i = 0, len=CENTER.length; i < len; i++) {
+            for (let i = 0, len=WIDECENTER.length; i < len; i++) {
                 
-                score += 5 * board.isSquareAttacked(CENTER[i], WHITE, false)
-                score -= 5 * board.isSquareAttacked(CENTER[i], BLACK, false)
+                score += 5 * board.isSquareAttacked(WIDECENTER[i], WHITE, true)
+                score -= 5 * board.isSquareAttacked(WIDECENTER[i], BLACK, true)
 
-                let piece = board.board[CENTER[i]]
+                let piece = board.board[WIDECENTER[i]]
                 
                 if (!piece) continue
                 
@@ -1152,6 +1152,15 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     for (let i = 0, len = moves.length; i < len; i++) {
         let move = moves[i]
         let piece = move.piece
+
+        // 12 & 8 ~ 24+ ELO
+        if (cutNode && legal > 1 && !move.isCapture && i > 12) {
+            if (Math.random() < 0.9) {
+                // max++
+                // console.log(max)
+                continue
+            }
+        }
 
         // Futility Pruning
         if (!incheck && legal >= 1) {
