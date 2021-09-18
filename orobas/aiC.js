@@ -1032,22 +1032,23 @@ AI.givescheck = function (board, move) {
 
         return incheck
     }
-
+    
     return false
 }
 
 // PRINCIPAL VARIATION SEARCH
 // El método PVS es Negamax + Ventana-Nula
 AI.PVS = function (board, alpha, beta, depth, ply) {
+    let oAlpha = alpha
     let pvNode = beta - alpha > 1 // PV-Node
     
     let cutNode = beta - alpha === 1 // Cut-Node
-
+    
     if (pvNode) AI.pvnodes++
     
     AI.nodes++
-
-    if (!pvNode && AI.iteration > AI.mindepth[AI.phase]) {
+    
+    if (pvNode && AI.iteration > AI.mindepth[AI.phase]) {
         if (Date.now() > AI.timer + AI.milspermove) {
             AI.stop = true
         }
@@ -1080,7 +1081,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
     }
 
-    let oAlpha = alpha
 
     if (AI.stop && AI.iteration > AI.mindepth[AI.phase]) return alpha
 
@@ -1282,6 +1282,8 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             if (bestmove) {
                 AI.ttSave(hashkey, bestscore, EXACT, depth, bestmove)
             }
+
+            // AI.ttSave(hashkey, bestscore, LOWERBOUND, depth, moves[0])
 
             return bestscore
         } else {
@@ -1712,7 +1714,7 @@ AI.search = function (board, options) {
         AI.f = 0
     } else {
         AI.createTables(true, true, true)
-        AI.f = AI.lastscore
+        AI.f = AI.lastscore / AI.nullWindowFactor
     }
 
     if (!AI.f) AI.f = 0
