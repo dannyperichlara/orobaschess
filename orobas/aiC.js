@@ -533,7 +533,12 @@ AI.getKingSafety = (board, phase)=>{
 AI.isLazyFutile = (sign, score, alpha, beta, margin)=> {
     let signedScore = sign * score
 
-    if (signedScore > beta + margin) {
+    // if (signedScore > beta + margin) {
+    if (signedScore >= beta) {
+        return true
+    }
+
+    if (signedScore < alpha) {
         return true
     }
 }
