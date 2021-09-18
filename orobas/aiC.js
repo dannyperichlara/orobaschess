@@ -834,10 +834,10 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         // if (move.pv || move.tt) continue
 
         // CRITERIO 1: Enroque
-        // if (AI.phase <= MIDGAME && move.castleSide) {
-        //     move.score += 1e8
-        //     continue
-        // }
+        if (AI.phase <= MIDGAME && move.castleSide) {
+            move.score += 1e8
+            continue
+        }
 
         // CRITERIO 2: La jugada es una promoción
         if (move.promotingPiece) {
@@ -926,9 +926,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
     let legal = 0
     let standpat = AI.evaluate(board, ply, alpha, beta, pvNode)
     let hashkey = board.hashkey
-    // let incheck = board.isKingInCheck()
-
-    // if (incheck) console.log('si')
+    let incheck = board.isKingInCheck()
 
     if (standpat >= beta) {
         return standpat
@@ -954,7 +952,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
 
         let move = moves[i]
         // delta pruning para cada movimiento
-        if (standpat + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]] + VPAWN < alpha) {
+        if (!incheck && standpat + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]] + VPAWN < alpha) {
             continue
         }
 
@@ -1073,7 +1071,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
     //Búsqueda QS
     // if (!incheck && depth <= 0) { // Genera muhcos bugs
-    if (/*!incheck &&*/ depth <= 0) {
+    if (depth <= 0) {
         return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
     }
 
@@ -1087,10 +1085,10 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode)
 
     //Futility
-    if (!pvNode &&  depth < 9 &&  staticeval - VPAWN*depth >= beta) return staticeval
+    if (cutNode && depth < 9 &&  staticeval - VPAWN*depth >= beta) return staticeval
 
     // Extended Null Move Reductions
-    if (!incheck && depth > 1) {
+    if (!incheck && depth > 2) {
         if (!board.enPassantSquares[board.enPassantSquares.length - 1]) {
             board.changeTurn()
             let nullR = depth > 6? 4 : 3
@@ -1109,18 +1107,10 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     }
 
     // // Razoring
-    if (cutNode) {
-        if (depth <= 3) {
-            // if (staticeval < alpha) { // likely a fail-low node ?
-            //     let score = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
-            //     if (score < alpha) return staticeval
-            // }
-            
-            if (staticeval + VPAWN2 < beta) { // likely a fail-low node ?
-                let score = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
-                if (score < beta) return score
-            }
-
+    if (cutNode && depth <= 3) {
+        if (staticeval + VPAWN2 < beta) { // likely a fail-low node ?
+            let score = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
+            if (score < beta) return score
         }
     }
 
@@ -1155,7 +1145,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
         // 12 & 8 ~ 24+ ELO
         if (cutNode && legal > 1 && !move.isCapture && i > 12) {
-            if (Math.random() < 0.9) {
+            if (Math.random() < 0.8) {
                 // max++
                 // console.log(max)
                 continue
@@ -1163,12 +1153,9 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         }
 
         // Futility Pruning
-        if (!incheck && legal >= 1) {
-            if (!move.isCapture) {
-                if (staticeval + VPAWN2*depth < alpha) {
-                    continue
-                    // break
-                }
+        if (cutNode && !incheck && legal > 1 && !move.isCapture) {
+            if (staticeval + VPAWN2*depth < alpha) {
+                continue
             }
         }
 
@@ -1230,7 +1217,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             board.unmakeMove(move)
 
             if (AI.stop) return oAlpha //tested ok
-
             
             if (score > alpha) {
                 bestscore = score
@@ -1720,7 +1706,7 @@ AI.search = function (board, options) {
         AI.lastscore = 0
         AI.f = 0
     } else {
-        AI.createTables(true, true, false)
+        AI.createTables(true, true, true)
         AI.f = AI.lastscore
     }
 
