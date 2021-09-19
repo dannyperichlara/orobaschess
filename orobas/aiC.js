@@ -1149,8 +1149,8 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         let piece = move.piece
 
         // 12 & 8 ~ 24+ ELO
-        if (cutNode && legal >= 1 && !move.isCapture && i > 12) {
-            if (Math.random() < 0.8) {
+        if (cutNode && ply > 1 && legal >= 1 && !move.isCapture && i > 12) {
+            if (Math.random() > 0.8) {
                 AI.rnodes++
                 continue
             }
@@ -1723,6 +1723,19 @@ AI.search = function (board, options) {
         [0, 0, 0, 0, 0, 0],
     ]
 
+    AI.RANDOMLIST = new Array(218)
+
+    for (let i = 0; i < 218; i++) {
+        AI.RANDOMLIST[i] = Math.sqrt(2) * Math.sqrt(Math.log(i) / (i - 1))
+    }
+
+    AI.RANDOMLIST[0] = 1
+    AI.RANDOMLIST[1] = 1
+
+    // console.log(AI.RANDOMLIST)
+
+    // process.exit()
+
     return new Promise((resolve, reject) => {
         let color = board.turn
 
@@ -1829,7 +1842,7 @@ AI.search = function (board, options) {
 
         let score100 = AI.lastscore * (100/VPAWN)
 
-        let sigmoid = 1 / (1 + Math.pow(10, -score100 / 400))
+        let sigmoid = 1 / (1 + Math.pow(10, -score100 / 500))
 
         AI.lastmove = AI.bestmove
 
