@@ -13,6 +13,7 @@ let AI = {
     pnodes: 0, //Pawn structure nodes
     phnodes: 0, //Pawn hash nodes
     pvnodes: 0, //Pawn attack hash nodes
+    rnodes: 0, //Random pruned nodes
     evalhashnodes: 0,
     evalnodes: 0,
     evalTime: 0,
@@ -887,7 +888,6 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
             move.score += 1000 + hvalue
             continue
         } else {
-            // move.score = 0; continue
             // CRITERIO 7
             // Las jugadas restantes se orden de acuerdo a donde se estima sería
             // su mejor posición absoluta en el tablero
@@ -1149,10 +1149,9 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         let piece = move.piece
 
         // 12 & 8 ~ 24+ ELO
-        if (cutNode && legal > 1 && !move.isCapture && i > 12) {
+        if (cutNode && legal >= 1 && !move.isCapture && i > 12) {
             if (Math.random() < 0.8) {
-                // max++
-                // console.log(max)
+                AI.rnodes++
                 continue
             }
         }
@@ -1744,6 +1743,7 @@ AI.search = function (board, options) {
         AI.ttnodes = 0
         AI.evalhashnodes = 0
         AI.evalnodes = 0
+        AI.rnodes = 0
         AI.evalTime = 0
         AI.moveTime = 0
         AI.iteration = 0
@@ -1843,7 +1843,8 @@ AI.search = function (board, options) {
         AI.searchTime1 = Date.now()
         AI.searchTime = AI.searchTime1 - AI.searchTime0
         console.log('Sorting % time: ', (AI.sortingTime / AI.searchTime) * 100 | 0,
-                    'Evaluation % time: ', (AI.evalTime / AI.searchTime) * 100 | 0
+                    'Evaluation % time: ', (AI.evalTime / AI.searchTime) * 100 | 0,
+                    'Random Nodes Pruned (%): ', (AI.rnodes / AI.nodes) * 100 | 0,
         )
 
         console.log(AI.bestmove, (AI.moveTime / AI.searchTime) * 100 | 0)
