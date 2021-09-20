@@ -72,4 +72,4 @@ You can try Orobas in [45.58.62.235:3665](http://45.58.62.235:3665)
 * Improve piece coordination
 * Some way to reduce the odd-even effect
 * Some clever and cheap way to evaluate the loss of castling rights
-* Best Node Search ([https://en.wikipedia.org/wiki/Best_node_search](https://en.wikipedia.org/wiki/Best_node_search)). This a fuzzy minimax algorithm. I once tried to implement it and effectively is faster than MTD(f) but because it doesn't deliver full information it's very expensive to retrieve the PV Nodes in order to calculate the more complex evaluation terms.
+* Best Node Search ([https://en.wikipedia.org/wiki/Best_node_search](https://en.wikipedia.org/wiki/Best_node_search)). This a fuzzy minimax algorithm. I once tried to implement it and is indeed faster than MTD(f); but, because it doesn't gives full information, it's very expensive to retrieve the PV Nodes in order to calculate the more complex evaluation terms.
