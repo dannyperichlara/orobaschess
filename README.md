@@ -3,7 +3,7 @@ v2.1.2
 
 Orobas is a Chess-Engine created in 2020, written entirely in Javascript.
 
-You can try Orobas in [45.58.62.235:3665] (http://45.58.62.235:3665)
+You can try Orobas in [45.58.62.235:3665](http://45.58.62.235:3665)
 
 --------------
 ## FEATURES
