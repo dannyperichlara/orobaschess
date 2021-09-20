@@ -6,15 +6,16 @@ Orobas is a Chess-Engine created in 2020, written entirely in Javascript.
 You can try Orobas in http://45.58.62.235:3665
 
 --------------
-## Características (en inglés)
+## FEATURES
 * Mailbox 0x88 board
 * MTD(f) (slightly modified in order to obtain PV Nodes). See https://www.chessprogramming.org/MTD(f)
 * Quiescense Search with stand-pat pruning and delta pruning
-* Piece-Square-Tables based on PeSTO
-* Tappered Evaluation for PSQT and material
-* Late move reductions
+* Piece-Square-Tables (PSQT) based on PeSTO
+* Tapered Evaluation for PSQT and material
+* Late move reductions (old Stockfish formula)
 * Bad moves reductions
 * Move count reductions
+* Other reductions
 * Late moves random pruning
 * Mate-threath extensions
 * Check extensions
@@ -38,13 +39,13 @@ You can try Orobas in http://45.58.62.235:3665
 * History heuristic
 * Killer heuristic
 * Move ordering (fail-high on the first move > 90%):
-  * 1) Hash moves
-  * 2) Promotions
-  * 3) Good captures
-  * 4) Killer moves
-  * 5) Bad captures
-  * 6) History moves
-  * 7) PSQT
+  1. Hash moves
+  2. Promotions
+  3. Good captures
+  4. Killer moves
+  5. Bad captures
+  6. History moves
+  7. PSQT
 * Iterative Deepening
 * Internal Iterative Deepening
 * Orobas considers 4 phases for several evaluation terms:
@@ -56,7 +57,7 @@ You can try Orobas in http://45.58.62.235:3665
 ## INNOVATIONS
 
 1. Bad moves reductions: Orobas reduces by 4 the depth of moves to squares defended by enemy pawns
-2. Late moves random pruning: This pruning technique is based on the observation that in MCTS, most of the moves are not even explored. Considering, algo, that most of the nodes fail-high on the first or the second move is very safe to prune the 80% of non PV-Nodes after the 12th move.
+2. Late moves random pruning: This pruning technique is based on the observation that in MCTS, most of the moves are not even explored. Considering, algo, that most of the nodes fail-high on the first or the second move is very safe to prune the 80% of non PV-Nodes randomly after the 12th move.
 3. Complex evaluation terms only for PV Nodes. This technique has proved to be more efficient than a full evaluation in every node.
 4. MTD(f) with an initial window of beta-2. This allows to get the Principal Variation nodes in order to evaluate the more complex terms.
 5. Null-Window-Factor. All evaluation values are divided by 20 in order to make the MTD(f) algorithm work faster.
@@ -71,4 +72,4 @@ You can try Orobas in http://45.58.62.235:3665
 * Improve piece coordination
 * Some way to reduce the odd-even effect
 * Some clever and cheap way to evaluate the loss of castling rights
-* Implementation of Best Node Search (https://en.wikipedia.org/wiki/Best_node_search)
+* Implementation of Best Node Search (https://en.wikipedia.org/wiki/Best_node_search). This a fuzzy minimax algorithm. I once tried to implement it and effectively is faster than MTD(f) but because it doesn't deliver full information it's very expensive to retrieve the PV Nodes in order to calculate the more complex evaluation terms.
