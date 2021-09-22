@@ -439,15 +439,16 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         return nullWindowScore
     }
     
+    // Pawn structure
+    score += AI.getStructure(board, pawnindexW, pawnindexB)
+    
+    // Pawn shield
+    score += AI.getKingSafety(board, AI.phase)
     
     if (pvNode) {
-        // Pawn structure
-        score += AI.getStructure(board, pawnindexW, pawnindexB)
-        
-        // Pawn shield
-        score += AI.getKingSafety(board, AI.phase)
+        // Mobility
+        score += AI.getMobility(board)
 
-        
         // Is king under attack
         score -= 20*board.isSquareAttacked(board.whiteKingIndex-15, BLACK, true)
         score -= 20*board.isSquareAttacked(board.whiteKingIndex-16, BLACK, true)
@@ -477,9 +478,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
                 }
             }
         }
-        
-        // Mobility
-        score += AI.getMobility(board)
         
         if (score > VPAWNx2) {
             if (queensW >= queensB) score += 20
