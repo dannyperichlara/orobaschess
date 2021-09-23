@@ -445,7 +445,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
     // Pawn shield
     score += AI.getKingSafety(board, AI.phase)
     
-    if (pvNode) {
+    if (false && pvNode) {
         // Mobility
         score += AI.getMobility(board)
 
