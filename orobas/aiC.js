@@ -438,6 +438,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
         return nullWindowScore
     }
+
     
     // Pawn structure
     score += AI.getStructure(board, pawnindexW, pawnindexB)
@@ -445,51 +446,99 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
     // Pawn shield
     score += AI.getKingSafety(board, AI.phase)
     
-    if (false && pvNode) {
-        // Mobility
-        score += AI.getMobility(board)
-
-        // Is king under attack
-        score -= 20*board.isSquareAttacked(board.whiteKingIndex-15, BLACK, true)
-        score -= 20*board.isSquareAttacked(board.whiteKingIndex-16, BLACK, true)
-        score -= 20*board.isSquareAttacked(board.whiteKingIndex-17, BLACK, true)
+    if (AI.isLazyFutile(sign, score, alpha, beta, VPAWNx2)) {
+        // let t1 = (new Date).getTime()
+        // AI.evalTime += t1 - t0
         
-        score += 20*board.isSquareAttacked(board.blackKingIndex+15, WHITE, true)
-        score += 20*board.isSquareAttacked(board.blackKingIndex+16, WHITE, true)
-        score += 20*board.isSquareAttacked(board.blackKingIndex+17, WHITE, true)
+        let nullWindowScore = sign * score / AI.nullWindowFactor | 0
         
-        // Center control
-        if (AI.phase <= MIDGAME) {
-            for (let i = 0, len=WIDECENTER.length; i < len; i++) {
-                
-                score += 5 * board.isSquareAttacked(WIDECENTER[i], WHITE, true)
-                score -= 5 * board.isSquareAttacked(WIDECENTER[i], BLACK, true)
+        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+        return nullWindowScore
+    }
+    
+    // Mobility
+    score += AI.getMobility(board)
 
-                let piece = board.board[WIDECENTER[i]]
-                
-                if (!piece) continue
-                
-                let occupiedBy = board.pieces[piece].color
-                
-                if (occupiedBy === WHITE) {
-                    score += i < 64? 20 : 10
-                } else {
-                    score -= i > 64? -20 : -10
-                }
+    if (AI.isLazyFutile(sign, score, alpha, beta, VPAWNx2)) {
+        // let t1 = (new Date).getTime()
+        // AI.evalTime += t1 - t0
+        
+        let nullWindowScore = sign * score / AI.nullWindowFactor | 0
+        
+        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+        return nullWindowScore
+    }
+    
+    // Is king under attack
+    score -= 20*board.isSquareAttacked(board.whiteKingIndex-15, BLACK, true)
+    score -= 20*board.isSquareAttacked(board.whiteKingIndex-16, BLACK, true)
+    score -= 20*board.isSquareAttacked(board.whiteKingIndex-17, BLACK, true)
+    
+    score += 20*board.isSquareAttacked(board.blackKingIndex+15, WHITE, true)
+    score += 20*board.isSquareAttacked(board.blackKingIndex+16, WHITE, true)
+    score += 20*board.isSquareAttacked(board.blackKingIndex+17, WHITE, true)
+
+    if (AI.isLazyFutile(sign, score, alpha, beta, VPAWNx2)) {
+        // let t1 = (new Date).getTime()
+        // AI.evalTime += t1 - t0
+        
+        let nullWindowScore = sign * score / AI.nullWindowFactor | 0
+        
+        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+        return nullWindowScore
+    }
+    
+    // Center control
+    if (AI.phase <= MIDGAME) {
+        for (let i = 0, len=WIDECENTER.length; i < len; i++) {
+            
+            score += 5 * board.isSquareAttacked(WIDECENTER[i], WHITE, true)
+            score -= 5 * board.isSquareAttacked(WIDECENTER[i], BLACK, true)
+
+            let piece = board.board[WIDECENTER[i]]
+            
+            if (!piece) continue
+            
+            let occupiedBy = board.pieces[piece].color
+            
+            if (occupiedBy === WHITE) {
+                score += i < 64? 20 : 10
+            } else {
+                score -= i > 64? -20 : -10
             }
         }
-        
-        if (score > VPAWNx2) {
-            if (queensW >= queensB) score += 20
-            if (rooksW >= rooksB) score += 20
-            
-        }
-            
-        if (score < -VPAWNx2) {
-            if (queensB >= queensW) score -= 20
-            if (rooksB >= rooksW) score -= 20
-        }
     }
+
+    if (AI.isLazyFutile(sign, score, alpha, beta, VPAWNx2)) {
+        // let t1 = (new Date).getTime()
+        // AI.evalTime += t1 - t0
+        
+        let nullWindowScore = sign * score / AI.nullWindowFactor | 0
+        
+        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+        return nullWindowScore
+    }
+    
+    if (score > VPAWNx2) {
+        if (queensW >= queensB) score += 20
+        if (rooksW >= rooksB) score += 20
+        
+    }
+        
+    if (score < -VPAWNx2) {
+        if (queensB >= queensW) score -= 20
+        if (rooksB >= rooksW) score -= 20
+    }
+
+    // if (AI.isLazyFutile(sign, score, alpha, beta, VPAWNx2)) {
+    //     // let t1 = (new Date).getTime()
+    //     // AI.evalTime += t1 - t0
+        
+    //     let nullWindowScore = sign * score / AI.nullWindowFactor | 0
+        
+    //     AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+    //     return nullWindowScore
+    // }
     
     let nullWindowScore = sign * score / AI.nullWindowFactor | 0
 
@@ -1046,7 +1095,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     
     AI.nodes++
     
-    if (pvNode && AI.iteration > AI.mindepth[AI.phase]) {
+    if (AI.iteration > AI.mindepth[AI.phase]) {
         if (Date.now() > AI.timer + AI.milspermove) {
             AI.stop = true
         }
