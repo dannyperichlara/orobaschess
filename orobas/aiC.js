@@ -883,20 +883,6 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
             continue
         }
 
-        // if (move.pv || move.tt) continue
-
-        // CRITERIO 1: Enroque
-        if (AI.phase <= MIDGAME && move.castleSide) {
-            move.score += 1e8
-            continue
-        }
-
-        // CRITERIO 2: La jugada es una promoción
-        if (move.promotingPiece) {
-            move.score += 2e7
-            continue
-        }
-
         if (move.isCapture) {
             move.mvvlva = AI.MVVLVASCORES[move.piece][move.capturedPiece]
             
@@ -911,14 +897,27 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
             continue
         }
 
-        // CRITERIO 4: La jugada es un movimiento Killer
+        // CRITERIO: La jugada es un movimiento Killer
         // (Los killers son movimientos que anteriormente han generado Fail-Highs en el mismo ply)
         if (killer1 && killer1.key === move.key) {
             move.killer1 = true
+            move.score += 3e6
+            continue
+        }
+        
+        // CRITERIO: La jugada es una promoción
+        if (move.promotingPiece) {
+            move.score += 2e6
+            continue
+        }
+
+        // CRITERIO: Enroque
+        if (AI.phase <= MIDGAME && move.castleSide) {
             move.score += 2e6
             continue
         }
         
+        // CRITERIO: La jugada es el segundo movimiento Killer
         if (killer2 && killer2.key === move.key) {
             move.killer2 = true
             move.score += 1e6
