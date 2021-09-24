@@ -98,6 +98,10 @@ const VPAWN5 = VPAWN / 5 | 0
 const VPAWN10= VPAWN /10 | 0
 const VPAWNx2 = 2*VPAWN
 
+const MARGIN1 = VPAWN/AI.nullWindowFactor | 0
+const MARGIN2 = VPAWN*2/AI.nullWindowFactor | 0
+const MARGIN3 = VPAWN*3/AI.nullWindowFactor | 0
+
 AI.PIECE_VALUES = [
     new Map(),
     new Map(),
@@ -429,7 +433,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
 
     score += material + psqt
 
-    if (AI.isLazyFutile(sign, score, alpha, beta, VPAWNx2)) {
+    if (AI.isLazyFutile(sign, score, alpha, beta)) {
         // let t1 = (new Date).getTime()
         // AI.evalTime += t1 - t0
         
@@ -446,7 +450,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
     // Pawn shield
     score += AI.getKingSafety(board, AI.phase)
     
-    if (AI.isLazyFutile(sign, score, alpha, beta, VPAWNx2)) {
+    if (AI.isLazyFutile(sign, score, alpha, beta)) {
         // let t1 = (new Date).getTime()
         // AI.evalTime += t1 - t0
         
@@ -467,7 +471,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         score += 20*board.isSquareAttacked(board.blackKingIndex+16, WHITE, true)
         score += 20*board.isSquareAttacked(board.blackKingIndex+17, WHITE, true)
     
-        if (AI.isLazyFutile(sign, score, alpha, beta, VPAWNx2)) {
+        if (AI.isLazyFutile(sign, score, alpha, beta)) {
             // let t1 = (new Date).getTime()
             // AI.evalTime += t1 - t0
             
@@ -481,7 +485,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
     // Mobility
     score += AI.getMobility(board)
 
-    if (AI.isLazyFutile(sign, score, alpha, beta, VPAWNx2)) {
+    if (AI.isLazyFutile(sign, score, alpha, beta)) {
         // let t1 = (new Date).getTime()
         // AI.evalTime += t1 - t0
         
@@ -512,7 +516,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         }
     }
 
-    if (AI.isLazyFutile(sign, score, alpha, beta, VPAWNx2)) {
+    if (AI.isLazyFutile(sign, score, alpha, beta)) {
         // let t1 = (new Date).getTime()
         // AI.evalTime += t1 - t0
         
@@ -999,7 +1003,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
 
         let move = moves[i]
         // delta pruning para cada movimiento
-        if (!incheck && standpat + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]] + VPAWN < alpha) {
+        if (!incheck && standpat + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]] + MARGIN1 < alpha) {
             continue
         }
 
@@ -1132,7 +1136,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode)
 
     //Futility
-    if (cutNode && depth < 9 &&  staticeval - VPAWN*depth >= beta) return staticeval
+    if (cutNode && depth < 9 &&  staticeval - MARGIN1*depth >= beta) return staticeval
 
     // Extended Null Move Reductions
     if (!incheck && depth > 2) {
@@ -1155,7 +1159,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
     // // Razoring
     if (cutNode && depth <= 3) {
-        if (staticeval + VPAWN2 < beta) { // likely a fail-low node ?
+        if (staticeval + MARGIN1/2 < beta) { // likely a fail-low node ?
             let score = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
             if (score < beta) return score
         }
@@ -1200,7 +1204,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
         // Futility Pruning
         if (cutNode && !incheck && legal > 1 && !move.isCapture) {
-            if (staticeval + VPAWN2*depth < alpha) {
+            if (staticeval + MARGIN1*depth < alpha) {
                 continue
             }
         }
@@ -1846,8 +1850,8 @@ AI.search = function (board, options) {
                     continue
                 }
 
-                alpha -= VPAWN
-                beta += VPAWN
+                alpha -= MARGIN1
+                beta += MARGIN1
 
                 score = AI.nullWindowFactor * (isWhite ? 1 : -1) * AI.f
 
