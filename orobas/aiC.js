@@ -455,28 +455,31 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
         return nullWindowScore
     }
+
+    // Is king under attack
+
+    if (AI.phase >= MIDGAME) {
+        score -= 20*board.isSquareAttacked(board.whiteKingIndex-15, BLACK, true)
+        score -= 20*board.isSquareAttacked(board.whiteKingIndex-16, BLACK, true)
+        score -= 20*board.isSquareAttacked(board.whiteKingIndex-17, BLACK, true)
+        
+        score += 20*board.isSquareAttacked(board.blackKingIndex+15, WHITE, true)
+        score += 20*board.isSquareAttacked(board.blackKingIndex+16, WHITE, true)
+        score += 20*board.isSquareAttacked(board.blackKingIndex+17, WHITE, true)
+    
+        if (AI.isLazyFutile(sign, score, alpha, beta, VPAWNx2)) {
+            // let t1 = (new Date).getTime()
+            // AI.evalTime += t1 - t0
+            
+            let nullWindowScore = sign * score / AI.nullWindowFactor | 0
+            
+            AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+            return nullWindowScore
+        }
+    }
     
     // Mobility
     score += AI.getMobility(board)
-
-    if (AI.isLazyFutile(sign, score, alpha, beta, VPAWNx2)) {
-        // let t1 = (new Date).getTime()
-        // AI.evalTime += t1 - t0
-        
-        let nullWindowScore = sign * score / AI.nullWindowFactor | 0
-        
-        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
-        return nullWindowScore
-    }
-    
-    // Is king under attack
-    score -= 20*board.isSquareAttacked(board.whiteKingIndex-15, BLACK, true)
-    score -= 20*board.isSquareAttacked(board.whiteKingIndex-16, BLACK, true)
-    score -= 20*board.isSquareAttacked(board.whiteKingIndex-17, BLACK, true)
-    
-    score += 20*board.isSquareAttacked(board.blackKingIndex+15, WHITE, true)
-    score += 20*board.isSquareAttacked(board.blackKingIndex+16, WHITE, true)
-    score += 20*board.isSquareAttacked(board.blackKingIndex+17, WHITE, true)
 
     if (AI.isLazyFutile(sign, score, alpha, beta, VPAWNx2)) {
         // let t1 = (new Date).getTime()
@@ -518,27 +521,19 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
         return nullWindowScore
     }
-    
-    if (score > VPAWNx2) {
-        if (queensW >= queensB) score += 20
-        if (rooksW >= rooksB) score += 20
-        
-    }
-        
-    if (score < -VPAWNx2) {
-        if (queensB >= queensW) score -= 20
-        if (rooksB >= rooksW) score -= 20
-    }
 
-    // if (AI.isLazyFutile(sign, score, alpha, beta, VPAWNx2)) {
-    //     // let t1 = (new Date).getTime()
-    //     // AI.evalTime += t1 - t0
-        
-    //     let nullWindowScore = sign * score / AI.nullWindowFactor | 0
-        
-    //     AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
-    //     return nullWindowScore
-    // }
+    if (AI.phase > EARLY_ENDGAME) {
+        if (score > VPAWNx2) {
+            if (queensW >= queensB) score += 20
+            if (rooksW >= rooksB) score += 20
+            
+        }
+            
+        if (score < -VPAWNx2) {
+            if (queensB >= queensW) score -= 20
+            if (rooksB >= rooksW) score -= 20
+        }
+    }
     
     let nullWindowScore = sign * score / AI.nullWindowFactor | 0
 
