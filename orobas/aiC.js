@@ -22,10 +22,10 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 20,
+    random: 0,
     phase: 1,
     htlength: 1 << 24,
-    pawntlength: 5e5,
+    pawntlength: 1e6,
     mindepth: [3,3,3,3],
     secondspermove: 3,
     lastmove: null,
@@ -254,7 +254,7 @@ AI.randomizePSQT = function () {
 }
 
 // FUNCIÓN DE EVALUACIÓN DE LA POSICIÓN
-AI.evaluate = function (board, ply, alpha, beta, pvNode) {
+AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
     // let t0 = (new Date).getTime()
 
     alpha = alpha*this.nullWindowFactor
@@ -273,7 +273,10 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
     
     let turn = board.turn
     let sign = turn === WHITE? 1 : -1
-    let score = 0
+    let score = AI.random? Math.random()*AI.random - AI.random/2 | 0 : 0
+
+    max += score
+
     let safety = 0
     let mobility = 0
     let doubled = 0
@@ -308,7 +311,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         let piece = board.board[i]
         
         if (!piece) continue
-
 
         if (true || pvNode) {
             if (piece === P) pawnindexW.push(i)
@@ -442,14 +444,13 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
         return nullWindowScore
     }
-
     
     // Pawn structure
     score += AI.getStructure(board, pawnindexW, pawnindexB)
     
     // Pawn shield
     score += AI.getKingSafety(board, AI.phase)
-    
+
     if (AI.isLazyFutile(sign, score, alpha, beta)) {
         // let t1 = (new Date).getTime()
         // AI.evalTime += t1 - t0
@@ -485,6 +486,8 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
     // Mobility
     score += AI.getMobility(board)
 
+    // console.log('si')
+
     if (AI.isLazyFutile(sign, score, alpha, beta)) {
         // let t1 = (new Date).getTime()
         // AI.evalTime += t1 - t0
@@ -495,7 +498,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode) {
         return nullWindowScore
     }
     
-    // Center control
+    // Expensive center control
     if (AI.phase <= MIDGAME) {
         for (let i = 0, len=WIDECENTER.length; i < len; i++) {
             
@@ -1663,7 +1666,7 @@ AI.setPhase = function (board) {
     }
 
     AI.createPSQT()
-    AI.randomizePSQT()
+    // AI.randomizePSQT()
 }
 
 AI.getPV = function (board, length) {
