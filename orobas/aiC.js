@@ -1002,7 +1002,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
 
         let move = moves[i]
         // delta pruning para cada movimiento
-        if (!incheck && standpat + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]] + MARGIN1 < alpha) {
+        if (!incheck && standpat + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]] < alpha) {
             continue
         }
 
