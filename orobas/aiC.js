@@ -1313,7 +1313,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
     if (legal === 0) {
         // Ahogado
-        if (!board.isKingInCheck()) {
+        if (!incheck) {
             AI.ttSave(hashkey, DRAW, EXACT, depth, bestmove)
             
             return DRAW
@@ -1321,8 +1321,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         
         // Mate
         AI.ttSave(hashkey, -MATE + ply, EXACT, depth, bestmove)
-
-        console.log(ply)
 
         return -MATE + ply
 
