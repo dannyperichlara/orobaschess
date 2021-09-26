@@ -3,6 +3,11 @@
 const {sort} = require('fast-sort')
 require('fast-filter').install('filter')
 
+let seedrandom = require('seedrandom')
+let rnd = new seedrandom('orobas1234', {global: true})
+
+console.log(Math.random())
+
 let AI = {
     version: "2.1.2",
     totaldepth: 48,
@@ -285,6 +290,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
     let pawnindexW = []
     let pawnindexB = []
 
+    let knightsW = 0
+    let knightsB = 0
+
     let bishopsW = 0
     let bishopsB = 0
 
@@ -302,6 +310,20 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
     let mgFactor = (AI.totalmaterial - 600) / 7360
     let egFactor = (7960 - AI.totalmaterial) / 7360
 
+    let lightSquaresWhitePawns = 0
+    let lightSquaresBlackPawns = 0
+    let darkSquaresWhitePawns = 0
+    let darkSquaresBlackPawns = 0
+    let blockedLightSquaresWhitePawns = 0
+    let blockedDarkSquaresWhitePawns = 0
+    let blockedLightSquaresBlackPawns = 0
+    let blockedDarkSquaresBlackPawns = 0
+
+    let lightSquaresWhiteBishop = 0
+    let lightSquaresBlackBishop = 0
+    let darkSquaresWhiteBishop = 0
+    let darkSquaresBlackBishop = 0
+
     for (let i = 0; i < 128; i++) {
         if (i & 0x88) {
             i+=7
@@ -312,9 +334,31 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
         
         if (!piece) continue
 
+
         if (true || pvNode) {
-            if (piece === P) pawnindexW.push(i)
-            if (piece === p) pawnindexB.push(i)
+            if (piece === P) {
+                pawnindexW.push(i)
+
+                if (board.colorOfSquare(i)) {
+                    lightSquaresWhitePawns++
+
+                    if (board.board[i-16] === p) blockedLightSquaresWhitePawns++
+                } else {
+                    darkSquaresWhitePawns++
+                    if (board.board[i-16] === p) blockedDarkSquaresWhitePawns++
+                }
+            }
+            if (piece === p) {
+                pawnindexB.push(i)
+                
+                if (board.colorOfSquare(i)) {
+                    lightSquaresBlackPawns++
+                    if (board.board[i+16] === P) blockedLightSquaresBlackPawns++
+                } else {
+                    darkSquaresBlackPawns++
+                    if (board.board[i+16] === P) blockedDarkSquaresBlackPawns++
+                }
+            }
     
             if (piece === B) {
                 bishopsW++
@@ -326,7 +370,14 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
                 } else if (board.diagonals2[i] === board.diagonals2[board.blackKingIndex]) {
                     score += 20
                 }
+
+                if (board.colorOfSquare(i)) {
+                    lightSquaresWhiteBishop++
+                } else {
+                    darkSquaresWhiteBishop++
+                }
             }
+
             if (piece === b) {
                 bishopsB++
                 if (AI.phase === OPENING && board.board[i-16] === p) score+=40
@@ -336,6 +387,12 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
                     score -= 20
                 } else if (board.diagonals2[i] === board.diagonals2[board.whiteKingIndex]) {
                     score -= 20
+                }
+
+                if (board.colorOfSquare(i)) {
+                    lightSquaresBlackBishop++
+                } else {
+                    darkSquaresBlackBishop++
                 }
             }
     
@@ -372,9 +429,11 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
     
             if (piece === N) {
                 if (AI.phase === OPENING && board.board[i-16] === P) score+=10
+                knightsW++
             }
             if (piece === n) {
                 if (AI.phase === OPENING && board.board[i+16] === p) score-=10
+                knightsB++
             }
     
             if (piece === K) {
@@ -432,9 +491,10 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
     }
     
     AI.totalmaterial = tempTotalMaterial
-
+    
+    // Material + PSQT
     score += material + psqt
-
+    
     if (AI.isLazyFutile(sign, score, alpha, beta)) {
         // let t1 = (new Date).getTime()
         // AI.evalTime += t1 - t0
@@ -444,6 +504,21 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
         AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
         return nullWindowScore
     }
+
+    // Pawns on same squares of bishops //8 for MG, 15 for EG
+    let badpawns = (8*lightSquaresWhiteBishop*lightSquaresWhitePawns + 8*darkSquaresWhiteBishop*darkSquaresWhitePawns)
+        badpawns+= (10*lightSquaresWhiteBishop*blockedLightSquaresWhitePawns + 10*darkSquaresWhiteBishop*blockedDarkSquaresWhitePawns)
+        badpawns-= (8*lightSquaresBlackBishop*lightSquaresBlackPawns + 8*darkSquaresBlackBishop*darkSquaresBlackPawns)
+        badpawns-= (10*lightSquaresBlackBishop*blockedLightSquaresBlackPawns + 10*darkSquaresBlackBishop*blockedDarkSquaresBlackPawns)
+
+    score -= badpawns
+
+    // Knights with blocked pawns
+    // let blockedWhitePawns = blockedLightSquaresWhitePawns + blockedDarkSquaresWhitePawns
+    // let blockedBlackPawns = blockedLightSquaresBlackPawns + blockedDarkSquaresBlackPawns
+
+    // score += 8*blockedWhitePawns*knightsW
+    // score -= 8*blockedBlackPawns*knightsB
     
     // Pawn structure
     score += AI.getStructure(board, pawnindexW, pawnindexB)

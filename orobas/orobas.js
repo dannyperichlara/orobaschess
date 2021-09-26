@@ -380,6 +380,10 @@ module.exports = orobas = {
         console.log(attackBoards[81])
     },
 
+    colorOfSquare(square) {
+        return (0x00AA0055 >> square) & 1
+    },
+
     changeTurn(turn) {
         if (turn) {
             this.turn = turn
