@@ -655,7 +655,7 @@ module.exports = orobas = {
 
             if (this.color(piece) !== this.turn) continue
 
-            if (!forMobility) {
+            if (!forMobility && !onlyCaptures) {
                 if (piece === K && i === 116) {
                     moves[moveindex++]=(this.createMove({piece: K, from:116, to:118, isCapture:false, capturedPiece:0, castleSide:8, enPassantSquares:null}))
                     moves[moveindex++]=(this.createMove({piece: K, from:116, to:114, isCapture:false, capturedPiece:0, castleSide:4, enPassantSquares:null}))
@@ -703,7 +703,7 @@ module.exports = orobas = {
                                 if (to === lastEP) {
                                     isCapture = false
                                     //En passant move
-                                    // moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece:0, castleSide:0, enPassantSquares:null, enPassant: true}))
+                                    moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece:0, castleSide:0, enPassantSquares:null, enPassant: true}))
                                     // epnodes++
                                 }
                             }

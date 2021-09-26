@@ -22,7 +22,7 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 0,
+    random: 40,
     phase: 1,
     htlength: 1 << 24,
     pawntlength: 1e6,
@@ -1271,12 +1271,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             if (AI.stop) return oAlpha //tested ok
             
             if (score > alpha) {
-                bestscore = score
-                bestmove = move
-                alpha = score
-                
-                if (!move.isCapture) { AI.saveHistory(turn, move, depth) }
-
                 // Fail-high
                 if (score >= beta) {
                     if (legal === 1) {
@@ -1303,8 +1297,16 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     
                     return score
                 }
+
+                // score > alpha continuation
+                bestscore = score
+                bestmove = move
+                alpha = score
+
+                if (!move.isCapture) { AI.saveHistory(turn, move, depth) }
+
             } else {
-                if (!move.isCapture) { AI.saveHistory(turn, move, -depth) }
+                // if (!move.isCapture) { AI.saveHistory(turn, move, -depth) }
             }
         }
     }
@@ -1320,10 +1322,11 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         // Mate
         AI.ttSave(hashkey, -MATE + ply, EXACT, depth, bestmove)
 
+        console.log(ply)
+
         return -MATE + ply
 
     } else {
-        // Tablas
         if (bestscore > oAlpha) {
             // Mejor movimiento
             if (bestmove) {
@@ -1680,12 +1683,12 @@ AI.getPV = function (board, length) {
         ttFound = false
         let hashkey = board.hashkey
         ttEntry = AI.ttGet(hashkey)
-        
+
         if (ttEntry) {
             let moves = board.getMoves().filter(move => {
                 return move.key === ttEntry.move.key
             })
-            
+
             if (moves.length > 0) {
                 if (board.makeMove(ttEntry.move)) {
                     legal++
@@ -1811,6 +1814,7 @@ AI.search = function (board, options) {
         AI.timer = Date.now()
         AI.stop = false
         AI.PV = AI.getPV(board, 1)
+
         AI.changeinPV = true
 
         let score = 0
