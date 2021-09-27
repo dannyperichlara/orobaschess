@@ -300,6 +300,18 @@ AI.CENTERMANHATTAN = [
     6, 5, 4, 3, 3, 4, 5, 6,  null,  null,  null,  null,  null,  null,  null,  null,
 ]
 
+let manhattanDistance = (sq1, sq2)=> {
+    let file1, file2, rank1, rank2;
+    let rankDistance, fileDistance;
+    file1 = sq1  & 7;
+    file2 = sq2  & 7;
+    rank1 = sq1 >> 3;
+    rank2 = sq2 >> 3;
+    rankDistance = Math.abs(rank2 - rank1);
+    fileDistance = Math.abs(file2 - file1);
+    return rankDistance + fileDistance;
+ }
+
 // MVV-LVA
 // Valor para determinar orden de capturas,
 // prefiriendo la víctima más valiosa con el atacante más débil
@@ -482,9 +494,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
                     }
     
                     //Neighbour
-                    if (board.board[i+2] === P || board.board[i-2] === P) {
-                        score += AI.NEIGHBOURPAWNBONUS[i]
-                    }
+                    // if (board.board[i+2] === P || board.board[i-2] === P) {
+                    //     score += AI.NEIGHBOURPAWNBONUS[i]
+                    // }
     
                     //Levers
                     if (board.board[i-15] === p || board.board[i-17] === p) {
@@ -517,7 +529,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
             if (piece === p) {
                 pawnindexB.push(i)
 
-                if (pvNode) {
+                if (true || pvNode) {
                     //Defended
                     if (board.board[i-15] === p || board.board[i-17] === p) {
                         score -= AI.DEFENDEDPAWNBONUS[112^i]
@@ -529,9 +541,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
                     }
     
                     //Neighbour
-                    if (board.board[i+2] === P || board.board[i-2] === P) {
-                        score -= AI.NEIGHBOURPAWNBONUS[112^i]
-                    }
+                    // if (board.board[i+2] === P || board.board[i-2] === P) {
+                    //     score -= AI.NEIGHBOURPAWNBONUS[112^i]
+                    // }
     
                     //Levers
                     if (board.board[i+15] === P || board.board[i+17] === P) {
@@ -694,6 +706,16 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
     
     // Material + PSQT
     score += material + psqt
+
+    if (AI.phase === LATE_ENDGAME && alpha > 300) {
+        let mopup = 20 * AI.CENTERMANHATTAN[board.blackKingIndex] + 20 * (14 - manhattanDistance(board.whiteKingIndex, board.blackKingIndex)) | 0
+
+        if (turn === WHITE) {
+            score += mopup
+        } else {
+            score -= mopup
+        }
+    }
     
     if (AI.isLazyFutile(sign, score, alpha, beta)) {
         // let t1 = (new Date).getTime()
@@ -715,11 +737,11 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
     score -= badpawns
 
     // Knights with blocked pawns
-    // let blockedWhitePawns = blockedLightSquaresWhitePawns + blockedDarkSquaresWhitePawns
-    // let blockedBlackPawns = blockedLightSquaresBlackPawns + blockedDarkSquaresBlackPawns
+    let blockedWhitePawns = blockedLightSquaresWhitePawns + blockedDarkSquaresWhitePawns
+    let blockedBlackPawns = blockedLightSquaresBlackPawns + blockedDarkSquaresBlackPawns
 
-    // score += 8*blockedWhitePawns*knightsW
-    // score -= 8*blockedBlackPawns*knightsB
+    score += 8*blockedWhitePawns*knightsW
+    score -= 8*blockedBlackPawns*knightsB
 
     //Pawn span (distance between first and last pawn)
     let spanbonus = AI.phase <= MIDGAME? 5 : 10
