@@ -1014,7 +1014,7 @@ AI.getStructure = (board, pawnindexW, pawnindexB)=> {
         return hashentry
     }
 
-    let doubled = 0//AI.getDoubled(board, pawnindexW, pawnindexB)
+    let doubled = AI.getDoubled(board, pawnindexW, pawnindexB)
     let defended = 0//AI.getDefended(board, pawnindexW, pawnindexB)
     let passers = AI.getPassers(board, pawnindexW, pawnindexB)
     let space = AI.getSpace(board, pawnindexW, pawnindexB)
@@ -1149,7 +1149,7 @@ AI.getDoubled = (board, pawnindexW, pawnindexB)=>{
 
             centerFile -= 16
 
-            if ((centerFile - 16) & 0x88) break // -16 es para llegar sólo hasta la penúltima fila
+            if ((centerFile - 32) & 0x88) break
         }
     }
 
@@ -1161,11 +1161,11 @@ AI.getDoubled = (board, pawnindexW, pawnindexB)=>{
 
             centerFile += 16
 
-            if ((centerFile + 16) & 0x88) break // -16 es para llegar sólo hasta la penúltima fila
+            if ((centerFile + 32) & 0x88) break
         }
     }
 
-    let score = -20*(doubledW - doubledB)
+    let score = -40*(doubledW - doubledB)
 
     return score
 }
