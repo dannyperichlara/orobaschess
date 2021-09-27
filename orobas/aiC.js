@@ -106,6 +106,7 @@ const VPAWNx2 = 2*VPAWN
 const MARGIN1 = VPAWN/AI.nullWindowFactor | 0
 const MARGIN2 = VPAWN*2/AI.nullWindowFactor | 0
 const MARGIN3 = VPAWN*3/AI.nullWindowFactor | 0
+const SMALLMARGIN = (VPAWN/2)/AI.nullWindowFactor | 0
 
 AI.PIECE_VALUES = [
     new Map(),
@@ -889,15 +890,14 @@ AI.getKingSafety = (board, phase)=>{
     return score
 } 
 
-AI.isLazyFutile = (sign, score, alpha, beta, margin)=> {
+AI.isLazyFutile = (sign, score, alpha, beta)=> {
     let signedScore = sign * score
 
-    // if (signedScore > beta + margin) {
-    if (signedScore >= beta) {
+    if (signedScore >= beta + SMALLMARGIN) {
         return true
     }
 
-    if (signedScore < alpha) {
+    if (signedScore < alpha - SMALLMARGIN) {
         return true
     }
 }
