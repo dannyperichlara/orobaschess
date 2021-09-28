@@ -493,11 +493,23 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
             //Weak spots
             if (pvNode && AI.phase <= MIDGAME && board.board[i] === 0) {
                 if (board.ranksW[i] === 2 && board.board[i + 16] === P) {
-                    if (board.board[i + 15] !== P || board.board[i + 17] !== P) score -= 10
+                    if (board.board[i + 15] !== P || board.board[i + 17] !== P) {
+                        score -= 10
+
+                        if (board.board[i+31] === K || board.board[i+33] === K) {
+                            score -= 20
+                        }
+                    }
                 }
     
                 if (board.ranksB[i] === 2 && board.board[i - 16] === p) {
-                    if (board.board[i - 15] !== p || board.board[i + 17] !== p) score += 10
+                    if (board.board[i - 15] !== p || board.board[i + 17] !== p) {
+                        score += 10
+
+                        if (board.board[i-31] === k || board.board[i-33] === k) {
+                            score += 20
+                        }
+                    }
                 }
             }
 
@@ -978,6 +990,8 @@ AI.getPawnShield = (board, phase)=>{
 
             score += board.board[board.whiteKingIndex-32] === 0?-20 : 0
         }
+
+        //TODO: Penalty for doubled pawns in king shelter (mg: 15, eg: 8)
     }
     
     if (phase <= MIDGAME && board.columns[board.blackKingIndex] === 3 || board.columns[board.blackKingIndex] === 4) score += 10
@@ -996,6 +1010,8 @@ AI.getPawnShield = (board, phase)=>{
             
             score += board.board[board.whiteKingIndex+32] === 0? 20 : 0
         }
+
+        //TODO: Penalty for doubled pawns in king shelter (mg: 15, eg: 8)
     }
 
     return score
