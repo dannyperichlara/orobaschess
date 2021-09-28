@@ -868,7 +868,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
     score += AI.getStructure(board, pawnindexW, pawnindexB)
     
     // Pawn shield
-    score += AI.getKingSafety(board, AI.phase)
+    score += AI.getPawnShield(board, AI.phase)
 
     if (AI.isLazyFutile(sign, score, alpha, beta)) {
         // let t1 = (new Date).getTime()
@@ -958,29 +958,36 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
     return nullWindowScore
 }
 
-AI.getKingSafety = (board, phase)=>{
+AI.getPawnShield = (board, phase)=>{
     let score = 0
-    // King safety
-    if (phase <= EARLY_ENDGAME) {
-        if (phase <= MIDGAME && board.columns[board.whiteKingIndex] === 3 || board.columns[board.whiteKingIndex] === 4) score -= 10
-        
-        if (board.whiteKingIndex !== 116) {
-            score += board.board[board.whiteKingIndex-17] === P? 20 : 0
-            score += board.board[board.whiteKingIndex-16] === 0?-40 : 0
-            score += board.board[board.whiteKingIndex-16] === P? 20 : 0
-            score += board.board[board.whiteKingIndex-32] === P? 20 : 0
-            score += board.board[board.whiteKingIndex-15] === P? 20 : 0
-        }
-        
-        if (phase <= MIDGAME && board.columns[board.blackKingIndex] === 3 || board.columns[board.blackKingIndex] === 4) score += 10
+    let bonus = phase <= MIDGAME? 30 : 15
+
+    if (phase <= MIDGAME && board.columns[board.whiteKingIndex] === 3 || board.columns[board.whiteKingIndex] === 4) score -= 10
     
-        if (board.blackKingIndex !== 4) {
-            score += board.board[board.blackKingIndex+17] === p? -20 : 0
-            score += board.board[board.blackKingIndex+16] === 0?  40 : 0
-            score += board.board[board.blackKingIndex+16] === p? -20 : 0
-            score += board.board[board.blackKingIndex+32] === p? -20 : 0
-            score += board.board[board.blackKingIndex+15] === p? -20 : 0
-        }
+    if (board.whiteKingIndex !== 116) {
+        score += board.board[board.whiteKingIndex-15] === P? bonus : 0
+        score += board.board[board.whiteKingIndex-16] === P? bonus : 0
+        score += board.board[board.whiteKingIndex-17] === P? bonus : 0
+        score += board.board[board.whiteKingIndex-31] === P? bonus : 0
+        score += board.board[board.whiteKingIndex-32] === P? bonus : 0
+        score += board.board[board.whiteKingIndex-33] === P? bonus : 0
+        // score += board.board[board.whiteKingIndex-1] === P? bonus : 0
+        // score += board.board[board.whiteKingIndex+1] === P? bonus : 0
+        // score += board.board[board.whiteKingIndex-16] === 0?-40 : 0
+    }
+    
+    if (phase <= MIDGAME && board.columns[board.blackKingIndex] === 3 || board.columns[board.blackKingIndex] === 4) score += 10
+
+    if (board.blackKingIndex !== 4) {
+        score += board.board[board.blackKingIndex+15] === p? -bonus : 0
+        score += board.board[board.blackKingIndex+16] === p? -bonus : 0
+        score += board.board[board.blackKingIndex+17] === p? -bonus : 0
+        score += board.board[board.blackKingIndex+31] === p? -bonus : 0
+        score += board.board[board.blackKingIndex+32] === p? -bonus : 0
+        score += board.board[board.blackKingIndex+33] === p? -bonus : 0
+        // score += board.board[board.blackKingIndex-1] === p? -bonus : 0
+        // score += board.board[board.blackKingIndex+1] === p? -bonus : 0
+        // score += board.board[board.blackKingIndex+16] === 0?  40 : 0
     }
 
     return score
