@@ -290,6 +290,29 @@ AI.QMOBILITY = [
      2,  3,  3,  4,  4,  3,  3,  2,  null,  null,  null,  null,  null,  null,  null,  null,
 ]
 
+AI.OUTPOSTBONUSKNIGHT= [
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+   28, 45, 60, 70, 70, 60, 45, 28,  null,  null,  null,  null,  null,  null,  null,  null,
+   15, 28, 35, 55, 55, 35, 28, 15,  null,  null,  null,  null,  null,  null,  null,  null,
+    9, 14, 18, 25, 25, 18, 14,  9,  null,  null,  null,  null,  null,  null,  null,  null,
+    5,  7,  9, 12, 12,  9,  7,  5,  null,  null,  null,  null,  null,  null,  null,  null,
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+
+]
+
+AI.OUTPOSTBONUSBISHOP= [
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+   28, 45, 60, 70, 70, 60, 45, 28,  null,  null,  null,  null,  null,  null,  null,  null,
+   15, 28, 35, 55, 55, 35, 28, 15,  null,  null,  null,  null,  null,  null,  null,  null,
+    8, 14, 18, 25, 25, 18, 14,  8,  null,  null,  null,  null,  null,  null,  null,  null,
+    5,  7,  9, 12, 12,  9,  7,  5,  null,  null,  null,  null,  null,  null,  null,  null,
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+]
+
 AI.CENTERMANHATTAN = [
     6, 5, 4, 3, 3, 4, 5, 6,  null,  null,  null,  null,  null,  null,  null,  null,
     5, 4, 3, 2, 2, 3, 4, 5,  null,  null,  null,  null,  null,  null,  null,  null,
@@ -464,20 +487,22 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
             continue
         }
 
-        //Weak spots
-        if (pvNode && AI.phase <= MIDGAME) {
-            if (board.ranksW[i] === 2 && board.board[i + 16] === P) {
-                if (board.board[i + 15] !== P || board.board[i + 17] !== P) score -= 10
-            }
-
-            if (board.ranksB[i] === 2 && board.board[i - 16] === p) {
-                if (board.board[i - 15] !== p || board.board[i + 17] !== p) score += 10
-            }
-        }
-
         let piece = board.board[i]
         
-        if (!piece) continue
+        if (!piece) {
+            //Weak spots
+            if (pvNode && AI.phase <= MIDGAME && board.board[i] === 0) {
+                if (board.ranksW[i] === 2 && board.board[i + 16] === P) {
+                    if (board.board[i + 15] !== P || board.board[i + 17] !== P) score -= 10
+                }
+    
+                if (board.ranksB[i] === 2 && board.board[i - 16] === p) {
+                    if (board.board[i - 15] !== p || board.board[i + 17] !== p) score += 10
+                }
+            }
+
+            continue
+        }
 
         if (true) {
             if (piece === P) {
@@ -605,6 +630,12 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
                     score += 20
                 }
 
+                if (board.board[i + 15] === P || board.board[i + 17] === P) {
+                    score += AI.OUTPOSTBONUSBISHOP[i]
+
+                    if (board.board[i-16] === p) score += 10
+                }
+
                 if (board.colorOfSquare(i)) {
                     lightSquaresWhiteBishop++
                 } else {
@@ -621,6 +652,12 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
                     score -= 20
                 } else if (board.diagonals2[i] === board.diagonals2[board.whiteKingIndex]) {
                     score -= 20
+                }
+
+                if (board.board[i - 15] === p || board.board[i - 17] === p) {
+                    score -= AI.OUTPOSTBONUSBISHOP[112^i]
+
+                    if (board.board[i+16] === P) score -= 10
                 }
 
                 if (board.colorOfSquare(i)) {
@@ -664,10 +701,22 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
             if (piece === N) {
                 if (AI.phase === OPENING && board.board[i-16] === P) score+=10
                 knightsW++
+
+                if (board.board[i + 15] === P || board.board[i + 17] === P) {
+                    score += AI.OUTPOSTBONUSKNIGHT[i]
+
+                    if (board.board[i-16] === p) score += 10
+                }
             }
             if (piece === n) {
                 if (AI.phase === OPENING && board.board[i+16] === p) score-=10
                 knightsB++
+
+                if (board.board[i - 15] === p || board.board[i - 17] === p) {
+                    score -= AI.OUTPOSTBONUSKNIGHT[112^i]
+
+                    if (board.board[i+16] === P) score -= 10
+                }
             }
     
             if (piece === K) {
@@ -706,7 +755,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
                 }
             }
         }
-        
         
         let turn = board.color(piece)
         let sign = turn === WHITE? 1 : -1
