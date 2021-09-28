@@ -632,12 +632,12 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
                     score += 20
                 }
 
-                if (AI.phase <= MIDGAME) {
-                    if (board.board[i + 15] === P || board.board[i + 17] === P) {
-                        score += AI.OUTPOSTBONUSBISHOP[i]
-    
-                        if (board.board[i-16] === p) score += 10
-                    }
+                if (board.board[i + 15] === P || board.board[i + 17] === P) {
+                    score += AI.OUTPOSTBONUSBISHOP[i]
+
+                    if (board.board[i-16] === p) score += 10
+
+                    if (board.ranksW[i] === 6) score += AI.phase <= MIDGAME? 30 : 15
                 }
 
                 if (board.colorOfSquare(i)) {
@@ -660,12 +660,12 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
                     score -= 20
                 }
 
-                if (AI.phase <= MIDGAME) {
-                    if (board.board[i - 15] === p || board.board[i - 17] === p) {
-                        score -= AI.OUTPOSTBONUSBISHOP[112^i]
-    
-                        if (board.board[i+16] === P) score -= 10
-                    }
+                if (board.board[i - 15] === p || board.board[i - 17] === p) {
+                    score -= AI.OUTPOSTBONUSBISHOP[112^i]
+
+                    if (board.board[i+16] === P) score -= 10
+
+                    if (board.ranksB[i] === 6) score -= AI.phase <= MIDGAME? 30 : 15
                 }
 
                 if (board.colorOfSquare(i)) {
@@ -712,25 +712,26 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
                 
                 knightsW++
 
-                if (AI.phase <= MIDGAME) {
-                    if (board.board[i + 15] === P || board.board[i + 17] === P) {
-                        score += AI.OUTPOSTBONUSKNIGHT[i]
-    
-                        if (board.board[i-16] === p) score += 10
-                    }
+                if (board.board[i + 15] === P || board.board[i + 17] === P) {
+                    score += AI.OUTPOSTBONUSKNIGHT[i]
+
+                    if (board.board[i-16] === p) score += 10
+
+                    if (board.ranksW[i] === 6) score += AI.phase <= MIDGAME? 30 : 15
                 }
+                
             }
             if (piece === n) {
                 // Semi outpost
                 if (AI.phase <= MIDGAME && board.ranksB[i] >= 3 && board.board[i+16] === p) score-=15
                 knightsB++
 
-                if (AI.phase <= MIDGAME) {
-                    if (board.board[i - 15] === p || board.board[i - 17] === p) {
-                        score -= AI.OUTPOSTBONUSKNIGHT[112^i]
-    
-                        if (board.board[i+16] === P) score -= 10
-                    }
+                if (board.board[i - 15] === p || board.board[i - 17] === p) {
+                    score -= AI.OUTPOSTBONUSKNIGHT[112^i]
+
+                    if (board.board[i+16] === P) score -= 10
+
+                    if (board.ranksB[i] === 6) score -= AI.phase <= MIDGAME? 30 : 15
                 }
             }
     
@@ -745,28 +746,36 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
             if (piece === R) {
                 rooksW++
     
-                if (i >= 64 && board.board[i-16] !== P && board.board[i-32] !== P && board.board[i-48] !== P) {
-                    score += 20
-                }
+                // if (i >= 64 && board.board[i-16] !== P && board.board[i-32] !== P && board.board[i-48] !== P) {
+                //     score += 20
+                // }
     
                 if (board.columns[i] === board.columns[board.blackKingIndex]) {
                     score += 20
                 } else if (board.ranksW[i] === board.ranksW[board.blackKingIndex]) {
                     score += 40
                 }
+
+                if (board.ranksW[i] === 5) {
+                    if (board.board[i + 15] === P || board.board[i + 17] === P) score += 10
+                } 
             }
     
             if (piece === r) {
                 rooksB++
     
-                if (i <= 55 && board.board[i+16] !== p && board.board[i+32] !== p && board.board[i+48] !== p) {
-                    score -= 20
-                }
+                // if (i <= 55 && board.board[i+16] !== p && board.board[i+32] !== p && board.board[i+48] !== p) {
+                //     score -= 20
+                // }
     
                 if (board.columns[i] === board.columns[board.whiteKingIndex]) {
                     score -= 20
                 } else if (board.ranksB[i] === board.ranksB[board.whiteKingIndex]) {
                     score -= 40
+                }
+
+                if (board.ranksB[i] === 5) {
+                    if (board.board[i - 15] === p || board.board[i - 17] === p) score -= 10
                 }
             }
         }
