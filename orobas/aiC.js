@@ -456,6 +456,12 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
     let rooksW = 0
     let rooksB = 0
 
+    let bishopsindexW = []
+    let bishopsindexB = []
+
+    let rookscolumnsW = []
+    let rookscolumnsB = []
+
     let queensW = 0
     let queensB = 0
 
@@ -518,9 +524,21 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
             continue
         }
 
+        if (board.color(piece) === WHITE) {
+            if (piece !== P) score -= board.isSquareAttacked(i, BLACK, false)*10
+        } else {
+            if (piece !== p) score += board.isSquareAttacked(i, WHITE, false)*10
+        }
+
         if (true) {
             if (piece === P) {
                 pawnindexW.push(i)
+
+                //Attacking pieces
+                if (board.board[i-15] === q || board.board[i-17] === q) score += 100
+                if (board.board[i-15] === r || board.board[i-17] === r) score += 65
+                if (board.board[i-15] === b || board.board[i-17] === b) score += 45
+                if (board.board[i-15] === n || board.board[i-17] === n) score += 45
 
                 //Defended
                 if (board.board[i+15] === P || board.board[i+17] === P) {
@@ -580,61 +598,68 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
             if (piece === p) {
                 pawnindexB.push(i)
 
-                if (true || pvNode) {
-                    //Defended
-                    if (board.board[i-15] === p || board.board[i-17] === p) {
-                        score -= AI.DEFENDEDPAWNBONUS[112^i]
-                    }
-    
-                    //Aligned
-                    if (board.board[i+1] === p || board.board[i-1] === p) {
-                        score -= AI.ALIGNEDPAWNBONUS[112^i]
-                    }
-    
-                    //Neighbour
-                    // if (board.board[i+2] === P || board.board[i-2] === P) {
-                    //     score -= AI.NEIGHBOURPAWNBONUS[112^i]
-                    // }
-    
-                    //Levers
-                    if (board.board[i+15] === P || board.board[i+17] === P) {
-                        score -= AI.LEVERPAWNBONUS[112^i]
-                    }
-    
-                    if (AI.phase <= MIDGAME) {
-                        //Center control
-                        if (i === 51 && board.board[68] === 0) score-=10
-                        if (i === 52 && board.board[67] === 0) score-=10
+                //Attacking pieces
+                if (board.board[i+15] === Q || board.board[i+17] === Q) score -= 100
+                if (board.board[i+15] === R || board.board[i+17] === R) score -= 65
+                if (board.board[i+15] === B || board.board[i+17] === B) score -= 45
+                if (board.board[i+15] === N || board.board[i+17] === N) score -= 45
 
-                        //Outer central lever
-                        if (i === 50 && (board.board[67] === P || board.board[67] === 0)) {
-                            score-=20
-                            if (board.board[33] === p || board.board[35] === p) score -= 15
-                        } 
-                        if (i === 53 && (board.board[68] === P || board.board[68] === 0)) {
-                            score-=20
-                            if (board.board[36] === p || board.board[38] === p) score -= 15
-                        } 
+                //Defended
+                if (board.board[i-15] === p || board.board[i-17] === p) {
+                    score -= AI.DEFENDEDPAWNBONUS[112^i]
+                }
+
+                //Aligned
+                if (board.board[i+1] === p || board.board[i-1] === p) {
+                    score -= AI.ALIGNEDPAWNBONUS[112^i]
+                }
+
+                //Neighbour
+                // if (board.board[i+2] === P || board.board[i-2] === P) {
+                //     score -= AI.NEIGHBOURPAWNBONUS[112^i]
+                // }
+
+                //Levers
+                if (board.board[i+15] === P || board.board[i+17] === P) {
+                    score -= AI.LEVERPAWNBONUS[112^i]
+                }
+
+                if (AI.phase <= MIDGAME) {
+                    //Center control
+                    if (i === 51 && board.board[68] === 0) score-=10
+                    if (i === 52 && board.board[67] === 0) score-=10
+
+                    //Outer central lever
+                    if (i === 50 && (board.board[67] === P || board.board[67] === 0)) {
+                        score-=20
+                        if (board.board[33] === p || board.board[35] === p) score -= 15
+                    } 
+                    if (i === 53 && (board.board[68] === P || board.board[68] === 0)) {
+                        score-=20
+                        if (board.board[36] === p || board.board[38] === p) score -= 15
+                    } 
+                }
+
+                if (board.colorOfSquare(i)) {
+                    lightSquaresBlackPawns++
+                    if (board.board[i+16] === P) {
+                        blockedLightSquaresBlackPawns++
+                        score -= AI.BLOCKEDPAWNBONUS[112^i]
                     }
-    
-                    if (board.colorOfSquare(i)) {
-                        lightSquaresBlackPawns++
-                        if (board.board[i+16] === P) {
-                            blockedLightSquaresBlackPawns++
-                            score -= AI.BLOCKEDPAWNBONUS[112^i]
-                        }
-                    } else {
-                        darkSquaresBlackPawns++
-                        if (board.board[i+16] === P) {
-                            blockedDarkSquaresBlackPawns++
-                            score -= AI.BLOCKEDPAWNBONUS[112^i]
-                        }
+                } else {
+                    darkSquaresBlackPawns++
+                    if (board.board[i+16] === P) {
+                        blockedDarkSquaresBlackPawns++
+                        score -= AI.BLOCKEDPAWNBONUS[112^i]
                     }
                 }
             }
     
             if (piece === B) {
                 bishopsW++
+
+                bishopsindexW.push(i)
+
                 if (AI.phase === OPENING && board.board[i+16] === P) score-=40
 
                 //Semi outpost
@@ -663,6 +688,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
 
             if (piece === b) {
                 bishopsB++
+
+                bishopsindexB.push(i)
+
                 if (AI.phase === OPENING && board.board[i-16] === p) score+=40
 
                 //Semi outpost
@@ -760,14 +788,11 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
             if (piece === R) {
                 rooksW++
     
-                // if (i >= 64 && board.board[i-16] !== P && board.board[i-32] !== P && board.board[i-48] !== P) {
-                //     score += 20
-                // }
+                rookscolumnsW.push(board.columns[i])
     
-                if (board.columns[i] === board.columns[board.blackKingIndex]) {
-                    score += 20
-                } else if (board.ranksW[i] === board.ranksW[board.blackKingIndex]) {
-                    score += 40
+                if (AI.phase <= MIDGAME) {
+                    if (board.columns[i] === board.columns[board.blackKingIndex]) score += 20
+                    if (board.ranksW[i] === board.ranksW[board.blackKingIndex]) score += 40
                 }
 
                 if (board.ranksW[i] === 5) {
@@ -778,14 +803,11 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
             if (piece === r) {
                 rooksB++
     
-                // if (i <= 55 && board.board[i+16] !== p && board.board[i+32] !== p && board.board[i+48] !== p) {
-                //     score -= 20
-                // }
+                rookscolumnsB.push(board.columns[i])
     
-                if (board.columns[i] === board.columns[board.whiteKingIndex]) {
-                    score -= 20
-                } else if (board.ranksB[i] === board.ranksB[board.whiteKingIndex]) {
-                    score -= 40
+                if (AI.phase <= MIDGAME) {
+                    if (board.columns[i] === board.columns[board.whiteKingIndex]) score -= 20
+                    if (board.ranksB[i] === board.ranksB[board.whiteKingIndex]) score -= 40
                 }
 
                 if (board.ranksB[i] === 5) {
@@ -815,6 +837,17 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
     // Material + PSQT
     score += material + psqt
 
+    //Rook battery
+    if (AI.phase <= MIDGAME) {
+        if (rookscolumnsW.length === 2) {
+            if (rookscolumnsW[0] === rookscolumnsW[1]) score += 15
+        }
+
+        if (rookscolumnsB.length === 2) {
+            if (rookscolumnsB[0] === rookscolumnsB[1]) score -= 15
+        }
+    }
+
     if (AI.phase === LATE_ENDGAME && alpha > 300) {
         let mopup = 20 * AI.CENTERMANHATTAN[board.blackKingIndex] + 20 * (14 - manhattanDistance(board.whiteKingIndex, board.blackKingIndex)) | 0
 
@@ -840,6 +873,17 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
 
     // Bishop pair
     score += AI.BISHOP_PAIR[AI.phase]*(bishopsW - bishopsB)
+
+    // Raking bishops
+    if (bishopsW === 2) {
+        if (Math.abs(bishopsindexW[0] - bishopsindexW[1]) === 1) score += 10
+        if (Math.abs(bishopsindexW[0] - bishopsindexW[1]) === 16) score += 10
+    }
+
+    if (bishopsB === 2) {
+        if (Math.abs(bishopsindexB[0] - bishopsindexB[1]) === 1) score -= 10
+        if (Math.abs(bishopsindexB[0] - bishopsindexB[1]) === 16) score -= 10
+    }
     
     if (AI.isLazyFutile(sign, score, alpha, beta)) {
         // let t1 = (new Date).getTime()
