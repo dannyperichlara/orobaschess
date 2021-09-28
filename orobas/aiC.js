@@ -973,7 +973,11 @@ AI.getPawnShield = (board, phase)=>{
         score += board.board[board.whiteKingIndex-33] === P? bonus : 0
         // score += board.board[board.whiteKingIndex-1] === P? bonus : 0
         // score += board.board[board.whiteKingIndex+1] === P? bonus : 0
-        // score += board.board[board.whiteKingIndex-16] === 0?-40 : 0
+        if (board.board[board.whiteKingIndex-16] === 0) {
+            score -= 20
+
+            score += board.board[board.whiteKingIndex-32] === 0?-20 : 0
+        }
     }
     
     if (phase <= MIDGAME && board.columns[board.blackKingIndex] === 3 || board.columns[board.blackKingIndex] === 4) score += 10
@@ -987,7 +991,11 @@ AI.getPawnShield = (board, phase)=>{
         score += board.board[board.blackKingIndex+33] === p? -bonus : 0
         // score += board.board[board.blackKingIndex-1] === p? -bonus : 0
         // score += board.board[board.blackKingIndex+1] === p? -bonus : 0
-        // score += board.board[board.blackKingIndex+16] === 0?  40 : 0
+        if (board.board[board.whiteKingIndex+16] === 0) {
+            score += 20
+            
+            score += board.board[board.whiteKingIndex+32] === 0? 20 : 0
+        }
     }
 
     return score
