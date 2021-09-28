@@ -622,7 +622,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
             if (piece === B) {
                 bishopsW++
                 if (AI.phase === OPENING && board.board[i+16] === P) score-=40
-                if (AI.phase === OPENING && board.board[i-16] === P) score+=10
+
+                //Semi outpost
+                if (AI.phase <= MIDGAME && board.ranksW[i] >= 3 && board.board[i-16] === P) score+=12
     
                 if (board.diagonals1[i] === board.diagonals1[board.blackKingIndex]) {
                     score += 20
@@ -630,10 +632,12 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
                     score += 20
                 }
 
-                if (board.board[i + 15] === P || board.board[i + 17] === P) {
-                    score += AI.OUTPOSTBONUSBISHOP[i]
-
-                    if (board.board[i-16] === p) score += 10
+                if (AI.phase <= MIDGAME) {
+                    if (board.board[i + 15] === P || board.board[i + 17] === P) {
+                        score += AI.OUTPOSTBONUSBISHOP[i]
+    
+                        if (board.board[i-16] === p) score += 10
+                    }
                 }
 
                 if (board.colorOfSquare(i)) {
@@ -646,7 +650,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
             if (piece === b) {
                 bishopsB++
                 if (AI.phase === OPENING && board.board[i-16] === p) score+=40
-                if (AI.phase === OPENING && board.board[i+16] === p) score-=10
+
+                //Semi outpost
+                if (AI.phase <= MIDGAME && board.ranksB[i] >= 3 && board.board[i+16] === p) score-=12
     
                 if (board.diagonals1[i] === board.diagonals1[board.whiteKingIndex]) {
                     score -= 20
@@ -654,10 +660,12 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
                     score -= 20
                 }
 
-                if (board.board[i - 15] === p || board.board[i - 17] === p) {
-                    score -= AI.OUTPOSTBONUSBISHOP[112^i]
-
-                    if (board.board[i+16] === P) score -= 10
+                if (AI.phase <= MIDGAME) {
+                    if (board.board[i - 15] === p || board.board[i - 17] === p) {
+                        score -= AI.OUTPOSTBONUSBISHOP[112^i]
+    
+                        if (board.board[i+16] === P) score -= 10
+                    }
                 }
 
                 if (board.colorOfSquare(i)) {
@@ -699,23 +707,30 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
             }
     
             if (piece === N) {
-                if (AI.phase === OPENING && board.board[i-16] === P) score+=10
+                // Semi outpost
+                if (AI.phase <= MIDGAME && board.ranksW[i] >= 3 && board.board[i-16] === P) score+=15
+                
                 knightsW++
 
-                if (board.board[i + 15] === P || board.board[i + 17] === P) {
-                    score += AI.OUTPOSTBONUSKNIGHT[i]
-
-                    if (board.board[i-16] === p) score += 10
+                if (AI.phase <= MIDGAME) {
+                    if (board.board[i + 15] === P || board.board[i + 17] === P) {
+                        score += AI.OUTPOSTBONUSKNIGHT[i]
+    
+                        if (board.board[i-16] === p) score += 10
+                    }
                 }
             }
             if (piece === n) {
-                if (AI.phase === OPENING && board.board[i+16] === p) score-=10
+                // Semi outpost
+                if (AI.phase <= MIDGAME && board.ranksB[i] >= 3 && board.board[i+16] === p) score-=15
                 knightsB++
 
-                if (board.board[i - 15] === p || board.board[i - 17] === p) {
-                    score -= AI.OUTPOSTBONUSKNIGHT[112^i]
-
-                    if (board.board[i+16] === P) score -= 10
+                if (AI.phase <= MIDGAME) {
+                    if (board.board[i - 15] === p || board.board[i - 17] === p) {
+                        score -= AI.OUTPOSTBONUSKNIGHT[112^i]
+    
+                        if (board.board[i+16] === P) score -= 10
+                    }
                 }
             }
     
