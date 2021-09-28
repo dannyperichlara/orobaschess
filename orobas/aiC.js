@@ -496,6 +496,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
                     if (board.board[i + 15] !== P || board.board[i + 17] !== P) {
                         score -= 10
 
+                        // Weak spots in the king shelter
                         if (board.board[i+31] === K || board.board[i+33] === K) {
                             score -= 20
                         }
@@ -506,6 +507,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
                     if (board.board[i - 15] !== p || board.board[i + 17] !== p) {
                         score += 10
 
+                        // Weak spots in the king shelter
                         if (board.board[i-31] === k || board.board[i-33] === k) {
                             score += 20
                         }
@@ -979,6 +981,7 @@ AI.getPawnShield = (board, phase)=>{
     if (board.whiteKingIndex !== 116) {
         score += board.board[board.whiteKingIndex-15] === P? bonus : 0
         score += board.board[board.whiteKingIndex-16] === P? bonus : 0
+        score += board.board[board.whiteKingIndex-16] === B && phase <= MIDGAME? 15 : 0
         score += board.board[board.whiteKingIndex-17] === P? bonus : 0
         score += board.board[board.whiteKingIndex-31] === P? bonus : 0
         score += board.board[board.whiteKingIndex-32] === P? bonus : 0
@@ -987,18 +990,19 @@ AI.getPawnShield = (board, phase)=>{
         // score += board.board[board.whiteKingIndex+1] === P? bonus : 0
         if (board.board[board.whiteKingIndex-16] === 0) {
             score -= 20
-
+            
             score += board.board[board.whiteKingIndex-32] === 0?-20 : 0
         }
-
+        
         //TODO: Penalty for doubled pawns in king shelter (mg: 15, eg: 8)
     }
     
     if (phase <= MIDGAME && board.columns[board.blackKingIndex] === 3 || board.columns[board.blackKingIndex] === 4) score += 10
-
+    
     if (board.blackKingIndex !== 4) {
         score += board.board[board.blackKingIndex+15] === p? -bonus : 0
         score += board.board[board.blackKingIndex+16] === p? -bonus : 0
+        score += board.board[board.whiteKingIndex+16] === b && phase <= MIDGAME? -15 : 0
         score += board.board[board.blackKingIndex+17] === p? -bonus : 0
         score += board.board[board.blackKingIndex+31] === p? -bonus : 0
         score += board.board[board.blackKingIndex+32] === p? -bonus : 0
