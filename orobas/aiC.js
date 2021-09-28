@@ -143,7 +143,7 @@ AI.PIECE_VALUES[LATE_ENDGAME][R] = VPAWN*6.24 | 0
 AI.PIECE_VALUES[LATE_ENDGAME][Q] = VPAWN*11.41 | 0
 AI.PIECE_VALUES[LATE_ENDGAME][K] = 0
 
-AI.BISHOP_PAIR = VPAWN2
+AI.BISHOP_PAIR = [30, 30, 50, 50]
 
 // CONSTANTES
 const MATE = 10000 / AI.nullWindowFactor | 0
@@ -811,18 +811,21 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
         }
     }
 
-    if (AI.phase > EARLY_ENDGAME) {
-        if (score > VPAWNx2) {
+    if (AI.phase >= EARLY_ENDGAME) {
+        if (score > MARGIN2) {
             if (queensW >= queensB) score += 40
             if (rooksW >= rooksB) score += 40
             
         }
             
-        if (score < -VPAWNx2) {
+        if (score < -MARGIN2) {
             if (queensB >= queensW) score -= 40
             if (rooksB >= rooksW) score -= 40
         }
     }
+
+    // Bishop pair
+    score += AI.BISHOP_PAIR[AI.phase]*(bishopsW - bishopsB)
     
     if (AI.isLazyFutile(sign, score, alpha, beta)) {
         // let t1 = (new Date).getTime()
