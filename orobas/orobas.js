@@ -47,7 +47,7 @@ module.exports = orobas = {
         "a2","b2","c2","d2","e2","f2","g2","h2",    0,0,0,0,0,0,0,0,
         "a1","b1","c1","d1","e1","f1","g1","h1",    0,0,0,0,0,0,0,0,
     ],
-    board: new Uint8Array(128),
+    board: new Uint8Array(120),
     
     boardbits: [
         31,	30,	29,	28,	27,	26,	25,	24,	null,	null,	null,	null,	null,	null,	null,	null,
@@ -245,7 +245,7 @@ module.exports = orobas = {
             R,  N,  B,  Q,  K,  B,  N,  R,     null, null, null, null, null, null, null, null,
         ]
 
-        for (let i = 0; i < 128; i++) {
+        for (let i = 0; i < 120; i++) {
             this.board[i] = board[i]
         }
 
@@ -307,7 +307,7 @@ module.exports = orobas = {
         for (let piece of [k, q, r, b, n, p, P, N, B, R, Q, K]) {
             this.zobristKeys.positions[piece] = new Map()
 
-            for (let i = 0; i < 128; i++) {
+            for (let i = 0; i < 120; i++) {
                 if (i & 0x88) {
                     i += 7
                     continue
@@ -338,7 +338,7 @@ module.exports = orobas = {
         }
 
         // Inicializa hashkey con piezas del tablero
-        for (let i = 0; i < 128; i++) {
+        for (let i = 0; i < 120; i++) {
             if (i & 0x88) {
                 i += 7
                 continue
@@ -368,11 +368,11 @@ module.exports = orobas = {
     },
 
     createAttackRays() {
-        let attackBoards = new Array(128)
-        for (i = 0; i < 128; i++) {
+        let attackBoards = new Array(120)
+        for (i = 0; i < 120; i++) {
             if (i & 0x88) { i+= 7; continue}
 
-            let board = new Array(128).fill(0)
+            let board = new Array(120).fill(0)
         }
 
         console.log(attackBoards[2])
@@ -431,7 +431,7 @@ module.exports = orobas = {
             [K]: 0,
         }
 
-        for (let i = 0; i < 128; i++) {
+        for (let i = 0; i < 120; i++) {
             if (i & 0x88) {
                 i += 7
                 continue
@@ -589,9 +589,9 @@ module.exports = orobas = {
     },
 
     getAttackZone(color) {
-        let attackZone = Array(128).fill(0)
+        let attackZone = Array(120).fill(0)
 
-        for (let square = 0; square < 128; square++) {
+        for (let square = 0; square < 120; square++) {
             if (square & 0x88) continue
             let attacks = this.isSquareAttacked(square, color, true)
 
@@ -604,7 +604,7 @@ module.exports = orobas = {
     drawAttackZone(attackZone) {
         let attackString = ''
 
-        for (let i = 0; i < 128; i++) {
+        for (let i = 0; i < 120; i++) {
             if (i & 0x88) {
                 i += 7
                 continue
@@ -829,7 +829,7 @@ module.exports = orobas = {
         let material = 0
         let psqt = 0
         
-        for (let i = 0; i < 128; i++) {
+        for (let i = 0; i < 120; i++) {
             if (i & 0x88) {
                 i+=7; continue
             }
@@ -846,7 +846,7 @@ module.exports = orobas = {
 
     draw() {
         let board = ''
-        for (i = 0; i < 128; i++) {
+        for (i = 0; i < 120; i++) {
             if (i & 0x88) {
                 i += 7
                 continue
