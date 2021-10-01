@@ -447,8 +447,13 @@ module.exports = orobas = {
 
     },
 
-    isSlidingPiece(piece) {
-        return piece === B || piece === R || piece === Q || piece === b || piece === r || piece === q
+    isSlidingPiece(piece, turn) {
+        if (turn === WHITE) {
+            return piece === B || piece === R || piece === Q
+        } else {
+            return piece === b || piece === r || piece === q
+        }
+
     },
 
     //Parameters: piece, from, to, isCapture, capturedPiece, castleSide, enPassantSquares, promotingPiece
@@ -786,7 +791,7 @@ module.exports = orobas = {
             }
             
             //Alfiles, Torres y Dama
-            if (this.isSlidingPiece(piece)) {
+            if (this.isSlidingPiece(piece, this.turn)) {
                 for (j=0, len = this.pieces[piece].offsets.length; j < len; j++) {
                     let to = i
                     
