@@ -375,19 +375,19 @@ AI.createTables = function (tt, hh, pp) {
         delete AI.history
         AI.history = new Map()
 
-        AI.history[K] = Array(128).fill(0)
-        AI.history[Q] = Array(128).fill(0)
-        AI.history[R] = Array(128).fill(0)
-        AI.history[B] = Array(128).fill(0)
-        AI.history[N] = Array(128).fill(0)
-        AI.history[P] = Array(128).fill(0)
+        AI.history[K] = Array(120).fill(0)
+        AI.history[Q] = Array(120).fill(0)
+        AI.history[R] = Array(120).fill(0)
+        AI.history[B] = Array(120).fill(0)
+        AI.history[N] = Array(120).fill(0)
+        AI.history[P] = Array(120).fill(0)
         
-        AI.history[k] = Array(128).fill(0)
-        AI.history[q] = Array(128).fill(0)
-        AI.history[r] = Array(128).fill(0)
-        AI.history[b] = Array(128).fill(0)
-        AI.history[n] = Array(128).fill(0)
-        AI.history[p] = Array(128).fill(0)
+        AI.history[k] = Array(120).fill(0)
+        AI.history[q] = Array(120).fill(0)
+        AI.history[r] = Array(120).fill(0)
+        AI.history[b] = Array(120).fill(0)
+        AI.history[n] = Array(120).fill(0)
+        AI.history[p] = Array(120).fill(0)
     }
 
     if (tt) {
@@ -441,7 +441,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
     let mobility = 0
     let doubled = 0
     
-    let pawns = new Array(128)
+    let pawns = new Array(120)
     let pawnindexW = []
     let pawnindexB = []
 
@@ -485,7 +485,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
     let darkSquaresWhiteBishop = 0
     let darkSquaresBlackBishop = 0
 
-    for (let i = 0; i < 128; i++) {
+    for (let i = 0; i < 120; i++) {
         if (i & 0x88) {
             i+=7
             continue
@@ -2313,8 +2313,8 @@ AI.search = function (board, options) {
 
         AI.killers = []
 
-        AI.killers[WHITE] = (new Array(128)).fill([null, null])
-        AI.killers[BLACK] = (new Array(128)).fill([null, null])
+        AI.killers[WHITE] = (new Array(120)).fill([null, null])
+        AI.killers[BLACK] = (new Array(120)).fill([null, null])
 
         AI.fh = AI.fhf = 0.001
         
