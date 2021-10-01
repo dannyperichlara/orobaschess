@@ -27,7 +27,7 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 40,
+    random: 50,
     phase: 1,
     htlength: 1 << 24,
     pawntlength: 1e6,
@@ -437,8 +437,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
     let sign = turn === WHITE? 1 : -1
     let score = AI.random? Math.random()*AI.random - AI.random/2 | 0 : 0
 
-    max += score
-
     let safety = 0
     let mobility = 0
     let doubled = 0
@@ -497,43 +495,49 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
         
         if (!piece) {
             //Weak spots
-            if (pvNode && AI.phase <= MIDGAME && board.board[i] === 0) {
-                if (board.ranksW[i] === 2 && board.board[i + 16] === P) {
-                    if (board.board[i + 15] !== P || board.board[i + 17] !== P) {
-                        score -= 10
+            // if (AI.iteration < 3 && AI.phase <= MIDGAME && board.board[i] === 0) {
+            //     if (board.ranksW[i] === 2 && board.board[i + 16] === P) {
+            //         if (board.board[i + 15] !== P || board.board[i + 17] !== P) {
+            //             score -= 10
 
-                        // Weak spots in the king shelter
-                        if (board.board[i+31] === K || board.board[i+33] === K) {
-                            score -= 20
-                        }
-                    }
-                }
+            //             // Weak spots in the king shelter
+            //             if (board.board[i+31] === K || board.board[i+33] === K) {
+            //                 score -= 20
+            //             }
+            //         }
+            //     }
     
-                if (board.ranksB[i] === 2 && board.board[i - 16] === p) {
-                    if (board.board[i - 15] !== p || board.board[i + 17] !== p) {
-                        score += 10
+            //     if (board.ranksB[i] === 2 && board.board[i - 16] === p) {
+            //         if (board.board[i - 15] !== p || board.board[i + 17] !== p) {
+            //             score += 10
 
-                        // Weak spots in the king shelter
-                        if (board.board[i-31] === k || board.board[i-33] === k) {
-                            score += 20
-                        }
-                    }
-                }
-            }
+            //             // Weak spots in the king shelter
+            //             if (board.board[i-31] === k || board.board[i-33] === k) {
+            //                 score += 20
+            //             }
+            //         }
+            //     }
+            // }
 
             continue
         }
 
-        if (board.color(piece) === WHITE) {
-            if (piece !== P) score -= board.isSquareAttacked(i, BLACK, false)*10
-        } else {
-            if (piece !== p) score += board.isSquareAttacked(i, WHITE, false)*10
+        if (piece === P) {
+            pawnindexW.push(i)
         }
 
-        if (true) {
-            if (piece === P) {
-                pawnindexW.push(i)
+        if (piece === p) {
+            pawnindexB.push(i)
+        }
+        
+        if (pvNode) {
+            if (board.color(piece) === WHITE) {
+                if (piece !== P) score -= board.isSquareAttacked(i, BLACK, false)*10
+            } else {
+                if (piece !== p) score += board.isSquareAttacked(i, WHITE, false)*10
+            }
 
+            if (piece === P) {
                 //Attacking pieces
                 if (board.board[i-15] === q || board.board[i-17] === q) score += 100
                 if (board.board[i-15] === r || board.board[i-17] === r) score += 65
@@ -551,9 +555,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
                 }
 
                 //Neighbour
-                // if (board.board[i+2] === P || board.board[i-2] === P) {
-                //     score += AI.NEIGHBOURPAWNBONUS[i]
-                // }
+                if (board.board[i+2] === P || board.board[i-2] === P) {
+                    score += AI.NEIGHBOURPAWNBONUS[i]
+                }
 
                 //Levers
                 if (board.board[i-15] === p || board.board[i-17] === p) {
@@ -596,8 +600,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
             }
 
             if (piece === p) {
-                pawnindexB.push(i)
-
                 //Attacking pieces
                 if (board.board[i+15] === Q || board.board[i+17] === Q) score -= 100
                 if (board.board[i+15] === R || board.board[i+17] === R) score -= 65
@@ -615,9 +617,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
                 }
 
                 //Neighbour
-                // if (board.board[i+2] === P || board.board[i-2] === P) {
-                //     score -= AI.NEIGHBOURPAWNBONUS[112^i]
-                // }
+                if (board.board[i+2] === P || board.board[i-2] === P) {
+                    score -= AI.NEIGHBOURPAWNBONUS[112^i]
+                }
 
                 //Levers
                 if (board.board[i+15] === P || board.board[i+17] === P) {
@@ -837,19 +839,14 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
     // Material + PSQT
     score += material + psqt
 
-    //Rook battery
-    if (AI.phase <= MIDGAME) {
-        if (rookscolumnsW.length === 2) {
-            if (rookscolumnsW[0] === rookscolumnsW[1]) score += 15
-        }
-
-        if (rookscolumnsB.length === 2) {
-            if (rookscolumnsB[0] === rookscolumnsB[1]) score -= 15
-        }
-    }
+    // Bishop pair
+    score += AI.BISHOP_PAIR[AI.phase]*(bishopsW - bishopsB)
 
     if (AI.phase === LATE_ENDGAME && alpha > 300) {
-        let mopup = 20 * AI.CENTERMANHATTAN[board.blackKingIndex] + 20 * (14 - manhattanDistance(board.whiteKingIndex, board.blackKingIndex)) | 0
+        let kingToTheCorner = AI.CENTERMANHATTAN[board.blackKingIndex] - 3
+        let distanceBetweenKings = 8 - manhattanDistance(board.whiteKingIndex, board.blackKingIndex)
+
+        let mopup = 20*(kingToTheCorner + distanceBetweenKings)
 
         if (turn === WHITE) {
             score += mopup
@@ -858,31 +855,25 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
         }
     }
 
-    if (AI.phase >= EARLY_ENDGAME) {
-        if (score > MARGIN2) {
-            if (queensW >= queensB) score += 40
-            if (rooksW >= rooksB) score += 40
-            
-        }
-            
-        if (score < -MARGIN2) {
-            if (queensB >= queensW) score -= 40
-            if (rooksB >= rooksW) score -= 40
-        }
+    if (!pvNode || AI.isLazyFutile(sign, score, alpha, beta)) {
+        // let t1 = (new Date).getTime()
+        // AI.evalTime += t1 - t0
+        
+        let nullWindowScore = sign * score / AI.nullWindowFactor | 0
+        
+        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+        return nullWindowScore
     }
 
-    // Bishop pair
-    score += AI.BISHOP_PAIR[AI.phase]*(bishopsW - bishopsB)
+    //Rook battery
+    if (AI.phase <= MIDGAME) {
+        if (rookscolumnsW.length === 2) {
+            if (rookscolumnsW[0] === rookscolumnsW[1]) score += 10
+        }
 
-    // Raking bishops
-    if (bishopsW === 2) {
-        if (Math.abs(bishopsindexW[0] - bishopsindexW[1]) === 1) score += 10
-        if (Math.abs(bishopsindexW[0] - bishopsindexW[1]) === 16) score += 10
-    }
-
-    if (bishopsB === 2) {
-        if (Math.abs(bishopsindexB[0] - bishopsindexB[1]) === 1) score -= 10
-        if (Math.abs(bishopsindexB[0] - bishopsindexB[1]) === 16) score -= 10
+        if (rookscolumnsB.length === 2) {
+            if (rookscolumnsB[0] === rookscolumnsB[1]) score -= 10
+        }
     }
     
     if (AI.isLazyFutile(sign, score, alpha, beta)) {
@@ -1004,6 +995,30 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
         
         AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
         return nullWindowScore
+    }
+
+    if (AI.phase >= EARLY_ENDGAME) {
+        if (score > MARGIN2) {
+            if (queensW >= queensB) score += 40
+            if (rooksW >= rooksB) score += 40
+            
+        }
+            
+        if (score < -MARGIN2) {
+            if (queensB >= queensW) score -= 40
+            if (rooksB >= rooksW) score -= 40
+        }
+    }
+
+    // Raking bishops
+    if (bishopsW === 2) {
+        if (Math.abs(bishopsindexW[0] - bishopsindexW[1]) === 1) score += 10
+        if (Math.abs(bishopsindexW[0] - bishopsindexW[1]) === 16) score += 10
+    }
+
+    if (bishopsB === 2) {
+        if (Math.abs(bishopsindexB[0] - bishopsindexB[1]) === 1) score -= 10
+        if (Math.abs(bishopsindexB[0] - bishopsindexB[1]) === 16) score -= 10
     }
     
     let nullWindowScore = sign * score / AI.nullWindowFactor | 0

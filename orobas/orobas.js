@@ -1151,9 +1151,13 @@ module.exports = orobas = {
     },
 
     isKingInCheck() {
-        let kingIndex = this.turn === WHITE? this.board.indexOf(K) : this.board.indexOf(k)
+        if (this.turn === WHITE) {
+            return this.isSquareAttacked(this.whiteKingIndex, BLACK, false)
+            
+        } else {
+            return this.isSquareAttacked(this.blackKingIndex, WHITE, false)
 
-        return this.isSquareAttacked(kingIndex, this.turn === WHITE? BLACK : WHITE, false)
+        }
     },
 
     perft(depth) {
