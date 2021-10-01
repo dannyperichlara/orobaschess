@@ -432,10 +432,11 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
         return evalEntry
     }
     
+    let incheck = board.isKingInCheck()
     
     let turn = board.turn
     let sign = turn === WHITE? 1 : -1
-    let score = AI.random? Math.random()*AI.random - AI.random/2 | 0 : 0
+    let score = (AI.random? Math.random()*AI.random - AI.random/2 | 0 : 0) - 100*incheck
 
     let safety = 0
     let mobility = 0
@@ -509,6 +510,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
             } else {
                 if (piece !== p) score += board.isSquareAttacked(i, WHITE, false)*10
             }
+        }
+
+        {
 
             if (piece === P) {
                 //Attacking pieces
@@ -2347,8 +2351,8 @@ AI.search = function (board, options) {
                     continue
                 }
 
-                alpha -= MARGIN1
-                beta += MARGIN1
+                alpha -= MARGIN1/2
+                beta += MARGIN1/2
 
                 score = AI.nullWindowFactor * (isWhite ? 1 : -1) * AI.f
 
