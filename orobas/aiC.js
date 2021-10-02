@@ -504,7 +504,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
             pawnindexB.push(i)
         }
         
-        if (pvNode) {
+        if (false && pvNode) {
             if (board.color(piece) === WHITE) {
                 if (piece !== P) score -= board.isSquareAttacked(i, BLACK, false)*10
             } else {
@@ -512,7 +512,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
             }
         }
 
-        {
+        if (false){
 
             if (piece === P) {
                 //Attacking pieces
@@ -1658,7 +1658,8 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
     // // Razoring
     if (cutNode && depth <= 3) {
-        if (staticeval + MARGIN1/2 < beta) { // likely a fail-low node ?
+        // console.log(beta-staticeval)
+        if (staticeval + 2 < beta) { // likely a fail-low node ?
             let score = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
             if (score < beta) return score
         }
@@ -1694,16 +1695,16 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         let piece = move.piece
 
         // 12 & 8 ~ 24+ ELO
-        if (cutNode && ply > 1 && legal >= 1 && !move.isCapture && i > 12) {
-            if (Math.random() > 0.8) {
+        if (cutNode && ply > 2 && legal >= 1 && !move.isCapture && i > 12) {
+            if (Math.random() < 0.8) {
                 AI.rnodes++
                 continue
             }
         }
 
         // Futility Pruning
-        if (cutNode && !incheck && legal > 1 && !move.isCapture) {
-            if (staticeval + MARGIN1*depth < alpha) {
+        if (cutNode && !incheck && legal >= 1 && !move.isCapture) {
+            if (staticeval + MARGIN2*depth < alpha) {
                 continue
             }
         }
@@ -1716,12 +1717,18 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         //Reducciones
         let R = 0
 
-        if (depth >= 3 && legal >=1 && !mateE && !incheck) {
+        if (depth >= 3 && legal >=1 && !mateE) {
             R += AI.LMR_TABLE[depth][legal]
 
             if (pvNode) R--
 
             if (cutNode && !move.killer1 && !move.killer2) R+= 2
+
+            // if (alpha >= 0) {
+            //     R++
+            // } else {
+            //     R--
+            // }
 
             if (!move.isCapture) {
                 // Move count reductions
