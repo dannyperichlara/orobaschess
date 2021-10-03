@@ -1,3 +1,4 @@
+const { square } = require('@tensorflow/tfjs-core')
 var seedrandom = require('seedrandom')
 const { totaldepth } = require('./aiC')
 
@@ -713,7 +714,7 @@ module.exports = orobas = {
                                     isCapture = false
                                     //En passant move
                                     // moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece:0, castleSide:0, enPassantSquares:null, enPassant: true}))
-                                    // epnodes++
+                                    epnodes++
                                 }
                             }
                             
@@ -867,7 +868,7 @@ module.exports = orobas = {
 
         if (move.castleSide) {
             let canCastle = move.castleSide & this.getCastlingRights()
-
+            
             if (!canCastle) {
                 return false
             }
@@ -930,44 +931,28 @@ module.exports = orobas = {
     makeEffectiveMove(move) {
         this.ply++
 
-        // Mueve la pieza de from a to
-        this.updateHashkey(this.zobristKeys.positions[move.piece][move.from]) //Quita pieza del hashkey de su casilla original
-        
-        if (move.piece === P || move.piece === p) {
-            this.updatePawnHashkey(this.zobristKeys.positions[move.piece][move.from]) //Quita pieza del hashkey de su casilla original
-        }
-        
+        // Remueve pieza capturada de casilla de destino
         if (move.isCapture) {
-            this.updateHashkey(this.zobristKeys.positions[move.capturedPiece][move.to]) // Remueve pieza capturada del hashkey
-
-            if (move.capturedPiece === P || move.capturedPiece === p) {
-                this.updatePawnHashkey(this.zobristKeys.positions[move.capturedPiece][move.to]) // Remueve pieza capturada del hashkey
-            }
+            this.removePiece(move.capturedPiece, move.to)
         }
+
+        // Quita la pieza de casilla de origen
+        this.removePiece(move.piece, move.from)
         
-        this.updateHashkey(this.zobristKeys.positions[move.piece][move.to]) //Agrega pieza al hashkey en casilla de destino
-
-        if (move.piece === P || move.piece === p) {
-            this.updatePawnHashkey(this.zobristKeys.positions[move.piece][move.to]) //Agrega pieza al hashkey en casilla de destino
-        }
-
         if (move.promotingPiece) {
-            this.board[move.to] = move.promotingPiece
+            this.addPîece(move.promotingPiece, move.to)
         } else {
-            this.board[move.to] = this.board[move.from]
+            this.addPîece(move.piece, move.to)
         }
-        this.board[move.from] = 0
 
         if (move.piece === K) this.setKingPosition(WHITE, move.to)
         if (move.piece === k) this.setKingPosition(BLACK, move.to)
 
         if (move.enPassant) {
             if (this.turn === WHITE) {
-                this.board[move.to+16] = 0
-                this.updateHashkey(this.zobristKeys.positions[p][move.to+16])
+                this.removePiece(p, move.to + 16)
             } else {
-                this.board[move.to-16] = 0
-                this.updateHashkey(this.zobristKeys.positions[P][move.to-16])
+                this.removePiece(P, move.to - 16)
             }
         }
         
@@ -983,42 +968,30 @@ module.exports = orobas = {
 
         if (move.castleSide) {
             if (move.castleSide === 8) {
-                this.board[119] = 0
-                this.board[117] = R
-                
-                this.updateHashkey(this.zobristKeys.positions[R][119]) //Agrega torre al hashkey
-                this.updateHashkey(this.zobristKeys.positions[R][117]) //Quita torre del hashkey
+                this.removePiece(R, 119)
+                this.addPîece(R, 117)
                 
                 castlingRights = castlingRights ^ 8 ^ 4
             }
             
             if (move.castleSide === 4) {
-                this.board[112] = 0
-                this.board[115] = R
-                
-                this.updateHashkey(this.zobristKeys.positions[R][112]) //Quita torre del hashkey
-                this.updateHashkey(this.zobristKeys.positions[R][115]) //Agrega torre al hashkey
+                this.removePiece(R, 112)
+                this.addPîece(R, 115)
                 
                 castlingRights = castlingRights ^ 8 ^ 4
             }
 
             if (move.castleSide === 2) {
-                this.board[7] = 0
-                this.board[5] = r
-
-                this.updateHashkey(this.zobristKeys.positions[r][7]) //Quita torre del hashkey
-                this.updateHashkey(this.zobristKeys.positions[r][5]) //Agrega torre al hashkey
+                this.removePiece(r, 7)
+                this.addPîece(r, 5)
 
                 castlingRights = castlingRights ^ 2 ^ 1
             }
 
 
             if (move.castleSide === 1) {
-                this.board[0] = 0
-                this.board[3] = r
-
-                this.updateHashkey(this.zobristKeys.positions[r][0]) //Quita torre del hashkey
-                this.updateHashkey(this.zobristKeys.positions[r][3]) //Agrega torre al hashkey
+                this.removePiece(r, 0)
+                this.addPîece(r, 3)
 
                 castlingRights = castlingRights ^ 2 ^ 1
             }
@@ -1049,74 +1022,45 @@ module.exports = orobas = {
     unmakeMove(move) {
         this.ply--
 
-        this.updateHashkey(this.zobristKeys.positions[move.piece][move.to]) //Quita pieza al hashkey en casilla de destino
-        
-        if (move.piece === P || move.piece === p) {
-            this.updatePawnHashkey(this.zobristKeys.positions[move.piece][move.to]) //Quita pieza al hashkey en casilla de destino
-        }
+        this.removePiece(move.piece, move.to)
         
         if (move.capturedPiece) {
-            this.updateHashkey(this.zobristKeys.positions[move.capturedPiece][move.to]) // Agrega pieza capturada al hashkey
-            
-            if (move.capturedPiece === P || move.capturedPiece === p) {
-                this.updatePawnHashkey(this.zobristKeys.positions[move.capturedPiece][move.to]) // Agrega pieza capturada al hashkey
-            }
+            this.addPîece(move.capturedPiece, move.to)
         }
         
-        this.updateHashkey(this.zobristKeys.positions[move.piece][move.from]) //Agrega pieza del hashkey de su casilla original
-        
-        if (move.piece === P || move.piece === p) {
-            this.updatePawnHashkey(this.zobristKeys.positions[move.piece][move.from]) //Agrega pieza del hashkey de su casilla original
-        }
-
-        this.board[move.to] = move.capturedPiece 
-        this.board[move.from] = move.piece
+        this.addPîece(move.piece, move.from)
 
         if (move.piece === K) this.setKingPosition(WHITE, move.from)
         if (move.piece === k) this.setKingPosition(BLACK, move.from)
 
         if (move.enPassant) {
             if (this.turn === BLACK) {
-                this.board[move.to+16] = p
-                this.updateHashkey(this.zobristKeys.positions[p][move.to+16])
+                this.addPîece(p, move.to + 16)
 
             } else {
-                this.board[move.to-16] = P
-                this.updateHashkey(this.zobristKeys.positions[P][move.to-16])
+                this.addPîece(P, move.to - 16)
             }
         }
 
         if (move.castleSide) {
             if (move.castleSide === 8) {
-                this.board[117] = 0
-                this.board[119] = R
-                
-                this.updateHashkey(this.zobristKeys.positions[R][117]) //Quita torre del hashkey
-                this.updateHashkey(this.zobristKeys.positions[R][119]) //Agrega torre al hashkey
+                this.removePiece(R, 117)
+                this.addPîece(R, 119)
             }
             
             if (move.castleSide === 4) {
-                this.board[115] = 0
-                this.board[112] = R
-                
-                this.updateHashkey(this.zobristKeys.positions[R][115]) //Quita torre del hashkey
-                this.updateHashkey(this.zobristKeys.positions[R][112]) //Agrega torre al hashkey
+                this.removePiece(R, 115)
+                this.addPîece(R, 112)
             }
             
             if (move.castleSide === 2) {
-                this.board[5] = 0
-                this.board[7] = r
-
-                this.updateHashkey(this.zobristKeys.positions[r][5]) //Quita torre del hashkey
-                this.updateHashkey(this.zobristKeys.positions[r][7]) //Agrega torre al hashkey
+                this.removePiece(r, 5)
+                this.addPîece(r, 7)
             }
 
             if (move.castleSide === 1) {
-                this.board[3] = 0
-                this.board[0] = r
-
-                this.updateHashkey(this.zobristKeys.positions[r][3]) //Quita torre del hashkey
-                this.updateHashkey(this.zobristKeys.positions[r][0]) //Agrega torre al hashkey
+                this.removePiece(r, 3)
+                this.addPîece(r, 0)
             }
         }
 
@@ -1132,6 +1076,27 @@ module.exports = orobas = {
 
         this.changeTurn()
 
+    },
+
+    addPîece(piece, square) {
+        this.updateHashkey(this.zobristKeys.positions[piece][square]) //Agrega pieza al hashkey en casilla de destino
+
+        if (piece === P || piece === p) {
+            this.updatePawnHashkey(this.zobristKeys.positions[piece][square]) //Agrega pieza al hashkey en casilla de destino
+        }
+
+        this.board[square] = piece
+    },
+
+    removePiece(piece, square) {
+        
+        this.updateHashkey(this.zobristKeys.positions[piece][square]) //Quita pieza del hashkey de su casilla original
+        
+        if (piece === P || piece === p) {
+            this.updatePawnHashkey(this.zobristKeys.positions[piece][square]) //Quita pieza del hashkey de su casilla original
+        }
+        
+        this.board[square] = 0
     },
 
     setKingPosition(turn, square) {
@@ -1221,7 +1186,7 @@ orobas.draw()
 console.log(orobas.hashkey, orobas.pawnhashkey)
 
 // Kiwi-Pete
-// orobas.loadFen('r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ')
+orobas.loadFen('r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ')
 
 // console.log('PLY', orobas.ply)
 console.time()
@@ -1237,7 +1202,7 @@ console.log('PERFT 3', orobas.perft(3), 8902, 97862) // OK
 console.timeEnd()
 // console.log('PLY', orobas.ply)
 // orobas.draw()
-// console.log(orobas.hashkey, orobas.pawnhashkey)
+console.log(orobas.hashkey, orobas.pawnhashkey)
 
 // orobas.boardToBits(true)
 // let move = {from: 118, to: 85, piece: N}

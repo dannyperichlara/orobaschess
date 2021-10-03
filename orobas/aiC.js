@@ -436,7 +436,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
     
     let turn = board.turn
     let sign = turn === WHITE? 1 : -1
-    let score = (AI.random? Math.random()*AI.random - AI.random/2 | 0 : 0) - 100*incheck
+    let score = AI.random? Math.random()*AI.random - AI.random/2 | 0 : 0
 
     let safety = 0
     let mobility = 0
@@ -795,9 +795,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
     // Material + PSQT
     score += material + psqt
 
-    // Bishop pair
-    score += AI.BISHOP_PAIR[AI.phase]*(bishopsW - bishopsB)
-
     if (AI.phase === LATE_ENDGAME && alpha > 300) {
         let kingToTheCorner = AI.CENTERMANHATTAN[board.blackKingIndex] - 3
         let distanceBetweenKings = 8 - manhattanDistance(board.whiteKingIndex, board.blackKingIndex)
@@ -811,7 +808,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
         }
     }
 
-    if (AI.isLazyFutile(sign, score, alpha, beta)) {
+    if (true || AI.isLazyFutile(sign, score, alpha, beta)) {
         // let t1 = (new Date).getTime()
         // AI.evalTime += t1 - t0
         
@@ -820,6 +817,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
         AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
         return nullWindowScore
     }
+
+    // Bishop pair
+    score += AI.BISHOP_PAIR[AI.phase]*(bishopsW - bishopsB)
 
     // Pawns on same squares of bishops //8 for MG, 15 for EG
     let bpmalus = AI.phase <= MIDGAME? 8 : 15
@@ -1658,8 +1658,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
     // // Razoring
     if (cutNode && depth <= 3) {
-        // console.log(beta-staticeval)
-        if (staticeval + 2 < beta) { // likely a fail-low node ?
+        if (staticeval + MARGIN1/2 < beta) { // likely a fail-low node ?
             let score = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
             if (score < beta) return score
         }
@@ -1695,16 +1694,16 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         let piece = move.piece
 
         // 12 & 8 ~ 24+ ELO
-        if (cutNode && ply > 2 && legal >= 1 && !move.isCapture && i > 12) {
-            if (Math.random() < 0.8) {
+        if (cutNode && ply > 1 && legal >= 1 && !move.isCapture && i > 12) {
+            if (Math.random() > 0.8) {
                 AI.rnodes++
                 continue
             }
         }
 
         // Futility Pruning
-        if (cutNode && !incheck && legal >= 1 && !move.isCapture) {
-            if (staticeval + MARGIN2*depth < alpha) {
+        if (cutNode && !incheck && legal > 1 && !move.isCapture) {
+            if (staticeval + MARGIN1*depth < alpha) {
                 continue
             }
         }
@@ -1717,18 +1716,12 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         //Reducciones
         let R = 0
 
-        if (depth >= 3 && legal >=1 && !mateE) {
+        if (depth >= 3 && legal >=1 && !mateE && !incheck) {
             R += AI.LMR_TABLE[depth][legal]
 
             if (pvNode) R--
 
             if (cutNode && !move.killer1 && !move.killer2) R+= 2
-
-            // if (alpha >= 0) {
-            //     R++
-            // } else {
-            //     R--
-            // }
 
             if (!move.isCapture) {
                 // Move count reductions
