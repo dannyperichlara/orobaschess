@@ -29,7 +29,7 @@ let AI = {
     fh: 0,
     random: 50,
     phase: 1,
-    htlength: 1 << 24,
+    htlength: (1 << 24) / 2 | 0,
     pawntlength: 1e6,
     mindepth: [3,3,3,3],
     secondspermove: 3,
@@ -392,10 +392,14 @@ AI.createTables = function (tt, hh, pp) {
 
     if (tt) {
         delete AI.hashTable
-        AI.hashTable = new Map()
+        AI.hashTable = [null, new Map(), new Map()]
 
         delete AI.evalTable
-        AI.evalTable = (new Array(this.htlength)).fill(null)
+        AI.evalTable = [
+            null,
+            (new Array(this.htlength)).fill(null),
+            (new Array(this.htlength)).fill(null),
+        ]
     }
     if (pp) {
         delete AI.pawnTable
@@ -422,7 +426,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
     alpha = alpha*this.nullWindowFactor
     beta = beta*this.nullWindowFactor
     
-    let evalEntry = AI.evalTable[board.hashkey % this.htlength]
+    let evalEntry = AI.evalTable[board.turn][board.hashkey % this.htlength]
     this.evalnodes++
     
     if (evalEntry !== null) {
@@ -814,7 +818,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
         
         let nullWindowScore = sign * score / AI.nullWindowFactor | 0
         
-        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+        AI.evalTable[board.turn][board.hashkey % this.htlength] = nullWindowScore
         return nullWindowScore
     }
 
@@ -836,7 +840,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
         
         let nullWindowScore = sign * score / AI.nullWindowFactor | 0
         
-        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+        AI.evalTable[board.turn][board.hashkey % this.htlength] = nullWindowScore
         return nullWindowScore
     }
     
@@ -852,7 +856,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
         
         let nullWindowScore = sign * score / AI.nullWindowFactor | 0
         
-        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+        AI.evalTable[board.turn][board.hashkey % this.htlength] = nullWindowScore
         return nullWindowScore
     }
 
@@ -867,7 +871,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
         
         let nullWindowScore = sign * score / AI.nullWindowFactor | 0
         
-        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+        AI.evalTable[board.turn][board.hashkey % this.htlength] = nullWindowScore
         return nullWindowScore
     }
 
@@ -888,7 +892,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
             
             let nullWindowScore = sign * score / AI.nullWindowFactor | 0
             
-            AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+            AI.evalTable[board.turn][board.hashkey % this.htlength] = nullWindowScore
             return nullWindowScore
         }
     }
@@ -920,7 +924,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
         
         let nullWindowScore = sign * score / AI.nullWindowFactor | 0
         
-        AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+        AI.evalTable[board.turn][board.hashkey % this.htlength] = nullWindowScore
         return nullWindowScore
     }
 
@@ -979,7 +983,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
     
     let nullWindowScore = sign * score / AI.nullWindowFactor | 0
 
-    AI.evalTable[board.hashkey % this.htlength] = nullWindowScore
+    AI.evalTable[board.turn][board.hashkey % this.htlength] = nullWindowScore
 
     // let t1 = (new Date).getTime()
     // AI.evalTime += t1 - t0
@@ -1490,7 +1494,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
         return alpha
     }
     
-    let ttEntry = AI.ttGet(hashkey)
+    let ttEntry = AI.ttGet(turn, hashkey)
     let score = -INFINITY
     
     moves = AI.sortMoves(moves, turn, ply, board, ttEntry)
@@ -1516,7 +1520,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
             board.unmakeMove(move)
 
             if (score >= beta) {
-                AI.ttSave(hashkey, score, LOWERBOUND, 0, move)
+                AI.ttSave(turn, hashkey, score, LOWERBOUND, 0, move)
                 return score
             }
             
@@ -1531,7 +1535,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
     
     if (alpha > oAlpha) {
         // Mejor movimiento
-        // AI.ttSave(hashkey, score, EXACT, 0, bestmove)
+        // AI.ttSave(turn, hashkey, score, EXACT, 0, bestmove)
         return alpha
     } else {
         //Upperbound
@@ -1539,13 +1543,13 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
     }
 }
 
-AI.ttSave = function (hashkey, score, flag, depth, move) {
+AI.ttSave = function (turn, hashkey, score, flag, depth, move) {
     if (!move || AI.stop) {
         // console.log('no move')
         return
     }
 
-    AI.hashTable[hashkey % AI.htlength] = {
+    AI.hashTable[turn][hashkey % AI.htlength] = {
         hashkey,
         score,
         flag,
@@ -1554,9 +1558,9 @@ AI.ttSave = function (hashkey, score, flag, depth, move) {
     }
 }
 
-AI.ttGet = function (hashkey) {
+AI.ttGet = function (turn, hashkey) {
     AI.ttnodes++
-    return AI.hashTable[hashkey % AI.htlength]
+    return AI.hashTable[turn][hashkey % AI.htlength]
 }
 
 // let max = 0
@@ -1604,7 +1608,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
     let incheck = board.isKingInCheck()
 
-    let ttEntry = AI.ttGet(hashkey)
+    let ttEntry = AI.ttGet(turn, hashkey)
 
     if (ttEntry && ttEntry.depth >= depth) {
         if (ttEntry.flag === EXACT) {
@@ -1674,7 +1678,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     //IID (si no hay entrada en ttEntry, busca una para mejorar el orden de movimientos)
     if (!ttEntry && depth > 2) {
         AI.PVS(board, alpha, beta, depth - 2, ply) //depth - 2 tested ok + 31 ELO
-        ttEntry = AI.ttGet(hashkey)
+        ttEntry = AI.ttGet(turn, hashkey)
     }
 
     if (pvNode && depth >= 6 && !ttEntry) depth -= 2
@@ -1777,7 +1781,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                     AI.fh++
     
                     //LOWERBOUND
-                    AI.ttSave(hashkey, score, LOWERBOUND, depth, move)
+                    AI.ttSave(turn, hashkey, score, LOWERBOUND, depth, move)
     
                     if (!move.isCapture) {
                         if (
@@ -1811,13 +1815,13 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     if (legal === 0) {
         // Ahogado
         if (!incheck) {
-            AI.ttSave(hashkey, DRAW, EXACT, depth, bestmove)
+            AI.ttSave(turn, hashkey, DRAW, EXACT, depth, bestmove)
             
             return DRAW
         }
         
         // Mate
-        AI.ttSave(hashkey, -MATE + ply, EXACT, depth, bestmove)
+        AI.ttSave(turn, hashkey, -MATE + ply, EXACT, depth, bestmove)
 
         return -MATE + ply
 
@@ -1825,15 +1829,15 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         if (bestscore > oAlpha) {
             // Mejor movimiento
             if (bestmove) {
-                AI.ttSave(hashkey, bestscore, EXACT, depth, bestmove)
+                AI.ttSave(turn, hashkey, bestscore, EXACT, depth, bestmove)
             }
 
-            // AI.ttSave(hashkey, bestscore, LOWERBOUND, depth, moves[0])
+            // AI.ttSave(turn, hashkey, bestscore, LOWERBOUND, depth, moves[0])
 
             return bestscore
         } else {
             //Upperbound
-            AI.ttSave(hashkey, oAlpha, UPPERBOUND, depth, bestmove)
+            AI.ttSave(turn, hashkey, oAlpha, UPPERBOUND, depth, bestmove)
 
             return oAlpha
         }
@@ -2177,7 +2181,7 @@ AI.getPV = function (board, length) {
     for (let i = 0; i < length; i++) {
         ttFound = false
         let hashkey = board.hashkey
-        ttEntry = AI.ttGet(hashkey)
+        ttEntry = AI.ttGet(board.turn, hashkey)
 
         if (ttEntry) {
             let moves = board.getMoves().filter(move => {
