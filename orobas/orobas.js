@@ -387,11 +387,16 @@ module.exports = orobas = {
 
     changeTurn(turn) {
         if (turn) {
-            this.turn = turn
-            this.updateHashkey(this.zobristKeys.turn[turn])
+            if (turn !== this.turn) {
+                this.turn = turn
+
+                this.updateHashkey(this.zobristKeys.turn[WHITE])
+                this.updateHashkey(this.zobristKeys.turn[BLACK])
+            }
         } else {
             this.turn = this.turn === WHITE? BLACK : WHITE // Esto es 35% más rápido que ~turn o -turn o cualquier otra cosa
             this.updateHashkey(this.zobristKeys.turn[WHITE])
+            this.updateHashkey(this.zobristKeys.turn[BLACK])
         }
     },
 
@@ -459,7 +464,7 @@ module.exports = orobas = {
 
     //Parameters: piece, from, to, isCapture, capturedPiece, castleSide, enPassantSquares, promotingPiece
     createMove(m) {
-        m.key = m.piece + 100*m.from + 100000*m.to
+        m.key = m.piece + 100*m.from + 100000*m.to + 10*m.capturedPiece
 
         return m
     },
@@ -641,42 +646,53 @@ module.exports = orobas = {
 
             if (!piece) continue
 
-            if (isWhite) {
-                if (piece < 7) {
-                    occupied[occupiedIndex] = i
-                    occupiedIndex++
-                }
-            } else {
-                if (piece >= 7) {
-                    occupied[occupiedIndex] = i
-                    occupiedIndex++
-                }
-            }
-        }
+        //     if (isWhite) {
+        //         if (piece < 7) {
+        //             occupied[occupiedIndex] = i
+        //             occupiedIndex++
+        //         }
+        //     } else {
+        //         if (piece >= 7) {
+        //             occupied[occupiedIndex] = i
+        //             occupiedIndex++
+        //         }
+        //     }
+        // }
 
-        for (let oindex = 0; oindex < 16; oindex++) {
-            let i = occupied[oindex]
+        // for (let oindex = 0; oindex < 16; oindex++) {
+        //     let i = occupied[oindex]
 
-            let piece = this.board[i]
+        //     let piece = this.board[i]
 
-            if (!piece) break
+        //     if (!piece) break
 
             let from = i
 
             if (this.color(piece) !== this.turn) continue
 
             if (!forMobility && !onlyCaptures) {
+                let castlingRights = this.getCastlingRights()
+                
                 if (piece === K && i === 116) {
-                    moves[moveindex++]=(this.createMove({piece: K, from:116, to:118, isCapture:false, capturedPiece:0, castleSide:8, enPassantSquares:null}))
-                    moves[moveindex++]=(this.createMove({piece: K, from:116, to:114, isCapture:false, capturedPiece:0, castleSide:4, enPassantSquares:null}))
+                    if (castlingRights & 8) {
+                        moves[moveindex++]=(this.createMove({piece: K, from:116, to:118, isCapture:false, capturedPiece:0, castleSide:8, enPassantSquares:null}))
+                    }
+                    
+                    if (castlingRights & 4) {
+                        moves[moveindex++]=(this.createMove({piece: K, from:116, to:114, isCapture:false, capturedPiece:0, castleSide:4, enPassantSquares:null}))
+                    } 
                 }
     
                 if (piece === k && i === 4) {
-                    moves[moveindex++]=(this.createMove({piece: k, from:4, to:6, isCapture:false, capturedPiece:0, castleSide:2, enPassantSquares:null}))
-                    moves[moveindex++]=(this.createMove({piece: k, from:4, to:2, isCapture:false, capturedPiece:0, castleSide:1, enPassantSquares:null}))
+                    if (castlingRights & 2) {
+                        moves[moveindex++]=(this.createMove({piece: k, from:4, to:6, isCapture:false, capturedPiece:0, castleSide:2, enPassantSquares:null}))
+                    }
+                    
+                    if (castlingRights & 1) {
+                        moves[moveindex++]=(this.createMove({piece: k, from:4, to:2, isCapture:false, capturedPiece:0, castleSide:1, enPassantSquares:null}))
+                    }
                 }
             }
-
 
             //Peones
             if (!forMobility) {
@@ -764,60 +780,34 @@ module.exports = orobas = {
                 }
             }
             
-            //Caballos y rey
-            if (piece === N || piece === n || (!forMobility && (piece === K || piece === k))) {
-                for (j=0, len=this.pieces[piece].offsets.length; j < len; j++) {
-                    let to = from + this.pieces[piece].offsets[j]
-
-                    if (to & 0x88) continue
-
+            for (j=0, len = this.pieces[piece].offsets.length; j < len; j++) {
+                let to = i
+                
+                while (true) {
+                    to += this.pieces[piece].offsets[j]
+                    
+                    if (to & 0x88) break
+                    
                     let isCapture = false
 
                     let capturedPiece = this.board[to]
 
                     if (capturedPiece) {
                         if (this.color(capturedPiece) === this.turn) {
-                            continue
+                            break
+                        } else {
+                            isCapture = true
                         }
-                        
-                        isCapture = true
                     } else {
                         if (onlyCaptures) continue
                     }
 
                     moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
-                }
 
-                continue
-            }
-            
-            //Alfiles, Torres y Dama
-            if (this.isSlidingPiece(piece, this.turn)) {
-                for (j=0, len = this.pieces[piece].offsets.length; j < len; j++) {
-                    let to = i
-                    
-                    while (true) {
-                        to += this.pieces[piece].offsets[j]
-                        
-                        if (to & 0x88) break
-                        
-                        let isCapture = false
+                    if (isCapture) break
 
-                        let capturedPiece = this.board[to]
-
-                        if (capturedPiece) {
-                            if (this.color(capturedPiece) === this.turn) {
-                                break
-                            } else {
-                                isCapture = true
-                            }
-                        } else {
-                            if (onlyCaptures) continue
-                        }
-
-                        moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
-
-                        if (isCapture) break
+                    if (piece === N || piece === n || piece === K || piece === k) {
+                        break
                     }
                 }
             }
@@ -914,16 +904,17 @@ module.exports = orobas = {
         
         this.makeEffectiveMove(move)
 
+        
         //Chequea legalidad
-        if (!illegal) {
+        
+        if (this.isKingInCheck()) {
+            this.unmakeMove(move)
+            
             this.changeTurn()
-            if (this.isKingInCheck()) {
-                this.unmakeMove(move)
-                this.changeTurn()
-                return false
-            }
-            this.changeTurn()
+            return false
         }
+        
+        this.changeTurn()
 
         return true
     },
@@ -971,21 +962,21 @@ module.exports = orobas = {
                 this.removePiece(R, 119)
                 this.addPîece(R, 117)
                 
-                castlingRights = castlingRights ^ 8 ^ 4
+                castlingRights = castlingRights & ~8 & ~4
             }
             
             if (move.castleSide === 4) {
                 this.removePiece(R, 112)
                 this.addPîece(R, 115)
                 
-                castlingRights = castlingRights ^ 8 ^ 4
+                castlingRights = castlingRights & ~8 & ~4
             }
 
             if (move.castleSide === 2) {
                 this.removePiece(r, 7)
                 this.addPîece(r, 5)
 
-                castlingRights = castlingRights ^ 2 ^ 1
+                castlingRights = castlingRights & ~2 & ~1
             }
 
 
@@ -993,36 +984,40 @@ module.exports = orobas = {
                 this.removePiece(r, 0)
                 this.addPîece(r, 3)
 
-                castlingRights = castlingRights ^ 2 ^ 1
+                castlingRights = castlingRights & ~2 & ~1
             }
         } else {
-            if ((castlingRights & 8) && (move.piece === K || (move.piece === R && move.from === 119) || move.to === 119)) {
-                castlingRights = castlingRights ^ 8
-            }
-
-            if ((castlingRights & 4) && (move.piece === K || (move.piece === R && move.from === 112) || move.to === 112)) {
-                castlingRights = castlingRights ^ 4
             
-            }
+        }
+        if ((castlingRights & 8) && (move.piece === K || (move.piece === R && move.from === 119) || move.to === 119)) {
+            castlingRights = castlingRights & ~8
+        }
 
-            if ((castlingRights & 2) && (move.piece === k || (move.piece === r && move.from === 7) || move.to === 7)) {
-                castlingRights = castlingRights ^ 2
-            }
+        if ((castlingRights & 4) && (move.piece === K || (move.piece === R && move.from === 112) || move.to === 112)) {
+            castlingRights = castlingRights & ~4
+        
+        }
 
-            if ((castlingRights & 1) && (move.piece === k || (move.piece === r && move.from === 0) || move.to === 0)) {
-                castlingRights = castlingRights ^ 1
-            }
+        if ((castlingRights & 2) && (move.piece === k || (move.piece === r && move.from === 7) || move.to === 7)) {
+            castlingRights = castlingRights & ~2
+        }
 
+        if ((castlingRights & 1) && (move.piece === k || (move.piece === r && move.from === 0) || move.to === 0)) {
+            castlingRights = castlingRights & ~1
         }
         
         this.castlingRights.push(castlingRights)
-        this.changeTurn()
+        // this.changeTurn()
     },
 
     unmakeMove(move) {
         this.ply--
 
-        this.removePiece(move.piece, move.to)
+        if (move.promotingPiece) {
+            this.removePiece(move.promotingPiece, move.to)
+        } else {
+            this.removePiece(move.piece, move.to)
+        }
         
         if (move.capturedPiece) {
             this.addPîece(move.capturedPiece, move.to)
@@ -1186,7 +1181,7 @@ orobas.draw()
 console.log(orobas.hashkey, orobas.pawnhashkey)
 
 // Kiwi-Pete
-orobas.loadFen('r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ')
+// orobas.loadFen('r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ')
 
 // console.log('PLY', orobas.ply)
 console.time()
