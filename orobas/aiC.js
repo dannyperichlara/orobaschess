@@ -27,7 +27,7 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 0,
+    random: 100,
     phase: 1,
     htlength: (1 << 24) / 2 | 0,
     pawntlength: 5e5,
@@ -1476,13 +1476,13 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
     let hashkey = board.hashkey
     let incheck = board.isKingInCheck()
 
-    if (!incheck) {
+    // if (!incheck) {
         if (standpat >= beta) {
             return standpat
         }
     
         if (standpat > alpha) alpha = standpat
-    }
+    // }
 
     let moves = board.getMoves(false, !incheck)
 
