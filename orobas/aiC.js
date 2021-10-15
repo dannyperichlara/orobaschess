@@ -1476,13 +1476,15 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
     let hashkey = board.hashkey
     let incheck = board.isKingInCheck()
 
-    if (standpat >= beta) {
-        return standpat
+    if (!incheck) {
+        if (standpat >= beta) {
+            return standpat
+        }
+    
+        if (standpat > alpha) alpha = standpat
     }
 
-    if (standpat > alpha) alpha = standpat
-
-    let moves = board.getMoves(false, true)
+    let moves = board.getMoves(false, !incheck)
 
     if (moves.length === 0) {
         return alpha
@@ -1624,8 +1626,8 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     }
 
     //Búsqueda QS
-    // if (!incheck && depth <= 0) { // Genera muhcos bugs
-    if (depth <= 0) {
+    if (!incheck && depth <= 0) { // Genera muhcos bugs
+    // if (depth <= 0) {
         return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
     }
 
