@@ -1720,18 +1720,19 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         if (depth >= 3 && legal >=1 && !mateE && !incheck) {
             R += AI.LMR_TABLE[depth][legal]
 
-            if (pvNode) {
+            if (pvNode && i < 6) {
                 R--
             }
 
-            if (cutNode && !move.killer1 && !move.killer2) R+= 2
+            if (cutNode && !move.killer1) R+= 2
 
+            
             if (!move.isCapture) {
                 // Move count reductions
                 if (legal >= (3 + depth*depth) / 2) {
                     R++
                 }
-        
+                
                 // Bad moves reductions
                 if (AI.phase <= EARLY_ENDGAME) {
                     // console.log('no')
@@ -1743,6 +1744,9 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                         R+=4
                     }
                 }
+            } else {
+                // if TT Move is a capture
+                if (ttEntry && ttEntry.move.key === move.key) R++
             }
 
             if (R < 0) R = 0
