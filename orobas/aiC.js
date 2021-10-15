@@ -9,7 +9,7 @@ let rnd = new seedrandom('orobas1234', {global: true})
 console.log(Math.random())
 
 let AI = {
-    version: "2.1.3",
+    version: "2.1.4",
     totaldepth: 48,
     ttNodes: 0,
     iteration: 0,
