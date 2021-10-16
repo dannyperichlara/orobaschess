@@ -27,7 +27,7 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 100,
+    random: 0,
     phase: 1,
     htlength: (1 << 24) / 2 | 0,
     pawntlength: 5e5,
