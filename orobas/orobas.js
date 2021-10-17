@@ -646,26 +646,6 @@ module.exports = orobas = {
 
             if (!piece) continue
 
-        //     if (isWhite) {
-        //         if (piece < 7) {
-        //             occupied[occupiedIndex] = i
-        //             occupiedIndex++
-        //         }
-        //     } else {
-        //         if (piece >= 7) {
-        //             occupied[occupiedIndex] = i
-        //             occupiedIndex++
-        //         }
-        //     }
-        // }
-
-        // for (let oindex = 0; oindex < 16; oindex++) {
-        //     let i = occupied[oindex]
-
-        //     let piece = this.board[i]
-
-        //     if (!piece) break
-
             let from = i
 
             if (this.color(piece) !== this.turn) continue

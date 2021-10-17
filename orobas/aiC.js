@@ -27,7 +27,7 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 0,
+    random: 100,
     phase: 1,
     htlength: (1 << 24) / 2 | 0,
     pawntlength: 5e5,
@@ -1679,7 +1679,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     // }
 
     // IID
-    if (depth >= 2 && !ttEntry) depth -= 2
+    if (depth > 2 && !ttEntry) depth -= 2
 
     let moves = board.getMoves()
 
@@ -1694,17 +1694,18 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         let move = moves[i]
         let piece = move.piece
 
-        // 12 & 8 ~ 24+ ELO
-        // if (cutNode && ply > 1 && legal > 1 && !move.isCapture && i > 12) {
-        //     if (Math.random() > 0.8) {
-        //         AI.rnodes++
-        //         continue
-        //     }
-        // }
         
         // Futility Pruning
         if (cutNode && !incheck && legal >= 1 && !move.isCapture) {
             if (staticeval + MARGIN1*depth < alpha) {
+                continue
+            }
+        }
+
+        // 12 & 8 ~ 24+ ELO
+        if (cutNode && ply > 1 && legal > 1 && !move.isCapture && i > 12) {
+            if (Math.random() < 0.8) {
+                AI.rnodes++
                 continue
             }
         }
@@ -2222,7 +2223,9 @@ AI.getPV = function (board, length) {
     return PV
 }
 
-AI.MTDF = function (board, f, d, lowerBound, upperBound) {    
+// https://www.chessprogramming.org/MTD(f) +55 ELO
+AI.MTDF = function (board, f, d, lowerBound, upperBound) {
+    
     //Esta línea permite que el algoritmo funcione como PVS normal
     // return AI.PVS(board, lowerBound, upperBound, d, 1)
     
