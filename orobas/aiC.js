@@ -48,6 +48,7 @@ const BISHOP = 3
 const ROOK = 4
 const QUEEN = 5
 const KING = 6
+
 const K = KING
 const Q = QUEEN
 const R = ROOK
@@ -1665,7 +1666,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
     // // Razoring
     if (cutNode && depth <= 3) {
-        if (staticeval + MARGIN1/2 < beta) { // likely a fail-low node ?
+        if (staticeval + MARGIN2 < beta) { // likely a fail-low node ?
             let score = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
             if (score < beta) return score
         }
@@ -1696,9 +1697,16 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
         
         // Futility Pruning
-        if (cutNode && !incheck && legal >= 1 && !move.isCapture) {
-            if (staticeval + MARGIN1*depth < alpha) {
-                continue
+        if (cutNode && !incheck && legal >= 1 && depth <= 3) {
+            if (move.isCapture) {
+                // console.log(AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]])
+                if (staticeval + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]] + MARGIN1*depth < alpha) {
+                    continue
+                }
+            } else {
+                if (staticeval + MARGIN1*depth < alpha) {
+                    continue
+                }
             }
         }
 
@@ -1727,6 +1735,8 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
             if (cutNode && !move.killer1) R+= 2
 
+            // Reduce negative history
+            if (AI.history[piece][move.to] < 0) R++
             
             if (!move.isCapture) {
                 // Move count reductions
@@ -1816,7 +1826,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                 if (!move.isCapture) { AI.saveHistory(turn, move, depth) }
 
             } else {
-                // if (!move.isCapture) { AI.saveHistory(turn, move, -depth) }
+                if (!move.isCapture) { AI.saveHistory(turn, move, -depth) }
             }
         }
     }

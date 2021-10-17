@@ -58,7 +58,7 @@ You can try Orobas in [45.58.62.235:3665](http://45.58.62.235:3665)
 ## INNOVATIONS
 
 1. Bad moves reductions: Orobas reduces by 4 the depth of moves to squares defended by enemy pawns
-2. Late moves random pruning: This pruning technique is based on the observation that in MCTS, most of the moves are not even explored. Considering, algo, that most of the nodes fail-high on the first or the second move is very safe to prune 20% of moves in non PV-Nodes randomly after the 12th move.
+2. Late moves random pruning: This pruning technique is based on the observation that in MCTS, most of the moves are not even explored. Considering, algo, that most of the nodes fail-high on the first or the second move is very safe to prune 80% of moves in non PV-Nodes randomly after the 12th move.
 3. Null-Window-Factor. All evaluation values are divided by 20 in order to make the MTD(f) algorithm work faster.
 4. Wide-Center-Control. For the evaluation of center control, Orobas considers a wide center (from c-file to f-file).
 
