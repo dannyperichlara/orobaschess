@@ -27,7 +27,7 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 0,
+    random: 100,
     phase: 1,
     htlength: (1 << 24) / 2 | 0,
     pawntlength: 5e5,
@@ -48,6 +48,7 @@ const BISHOP = 3
 const ROOK = 4
 const QUEEN = 5
 const KING = 6
+
 const K = KING
 const Q = QUEEN
 const R = ROOK
@@ -1368,18 +1369,19 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         move.killer2 = 0
         move.score = 0
 
-        if (AI.PV[ply] && move.key === AI.PV[ply].key) {
-            move.pv = true
-            move.score += 2e9
-            continue
-        }
         
         // CRITERIO 0: La jugada está en la Tabla de Trasposición
-        if (ttEntry && ttEntry.flag < UPPERBOUND && move.key === ttEntry.move.key) {
+        if (ttEntry /*&& ttEntry.flag < UPPERBOUND*/ && move.key === ttEntry.move.key) {
             move.tt = true
-            move.score += 1e9
-            continue
+            move.score += 2e9
+            // continue
         }
+
+        // if (AI.PV[ply] && move.key === AI.PV[ply].key) {
+        //     move.pv = true
+        //     move.score += 1e9
+        //     // continue
+        // }
 
         if (move.isCapture) {
             move.mvvlva = AI.MVVLVASCORES[move.piece][move.capturedPiece]
@@ -1476,13 +1478,15 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
     let hashkey = board.hashkey
     let incheck = board.isKingInCheck()
 
-    if (standpat >= beta) {
-        return standpat
-    }
+    // if (!incheck) {
+        if (standpat >= beta) {
+            return standpat
+        }
+    
+        if (standpat > alpha) alpha = standpat
+    // }
 
-    if (standpat > alpha) alpha = standpat
-
-    let moves = board.getMoves(false, true)
+    let moves = board.getMoves(false, !incheck)
 
     if (moves.length === 0) {
         return alpha
@@ -1624,8 +1628,8 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     }
 
     //Búsqueda QS
-    // if (!incheck && depth <= 0) { // Genera muhcos bugs
-    if (depth <= 0) {
+    if (!incheck && depth <= 0) { // Genera muhcos bugs
+    // if (depth <= 0) {
         return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
     }
 
@@ -1663,7 +1667,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
     // // Razoring
     if (cutNode && depth <= 3) {
-        if (staticeval + MARGIN1/2 < beta) { // likely a fail-low node ?
+        if (staticeval + MARGIN2 < beta) { // likely a fail-low node ?
             let score = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
             if (score < beta) return score
         }
@@ -1677,7 +1681,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     // }
 
     // IID
-    if (depth >= 2 && !ttEntry) depth -= 2
+    if (depth >=2 && !ttEntry) depth -= 2
 
     let moves = board.getMoves()
 
@@ -1692,18 +1696,27 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         let move = moves[i]
         let piece = move.piece
 
-        // 12 & 8 ~ 24+ ELO
-        // if (cutNode && ply > 1 && legal > 1 && !move.isCapture && i > 12) {
-        //     if (Math.random() > 0.8) {
-        //         AI.rnodes++
-        //         continue
-        //     }
-        // }
-        
-        // Futility Pruning
-        if (cutNode && !incheck && legal >= 1 && !move.isCapture) {
-            if (staticeval + MARGIN1*depth < alpha) {
-                continue
+        if (!move.killer1 && !incheck && legal >= 1 && !move.isCapture) {
+            // Futility Pruning
+            if (depth <= 3) {
+                if (move.isCapture) {
+                    // console.log(AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]])
+                    if (staticeval + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]] + MARGIN1*depth < alpha) {
+                        continue
+                    }
+                } else {
+                    if (staticeval + MARGIN1*depth < alpha) {
+                        continue
+                    }
+                }
+            }
+    
+            // 12 & 8 ~ 24+ ELO
+            if (ply > 1 && i > 12) {
+                if (Math.random() < 0.8) {
+                    AI.rnodes++
+                    continue
+                }
             }
         }
 
@@ -1718,18 +1731,21 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         if (depth >= 3 && legal >=1 && !mateE && !incheck) {
             R += AI.LMR_TABLE[depth][legal]
 
-            if (pvNode) {
+            if (pvNode && i < 6) {
                 R--
             }
 
-            if (cutNode && !move.killer1 && !move.killer2) R+= 2
+            if (cutNode && !move.killer1) R+= 2
 
+            // Reduce negative history
+            if (AI.history[piece][move.to] < 0) R++
+            
             if (!move.isCapture) {
                 // Move count reductions
                 if (legal >= (3 + depth*depth) / 2) {
                     R++
                 }
-        
+                
                 // Bad moves reductions
                 if (AI.phase <= EARLY_ENDGAME) {
                     // console.log('no')
@@ -1741,6 +1757,9 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                         R+=4
                     }
                 }
+            } else {
+                // if TT Move is a capture
+                if (ttEntry && ttEntry.move.key === move.key) R++
             }
 
             if (R < 0) R = 0
@@ -1809,7 +1828,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                 if (!move.isCapture) { AI.saveHistory(turn, move, depth) }
 
             } else {
-                // if (!move.isCapture) { AI.saveHistory(turn, move, -depth) }
+                if (!move.isCapture) { AI.saveHistory(turn, move, -depth) }
             }
         }
     }
@@ -2216,7 +2235,9 @@ AI.getPV = function (board, length) {
     return PV
 }
 
-AI.MTDF = function (board, f, d, lowerBound, upperBound) {    
+// https://www.chessprogramming.org/MTD(f) +55 ELO
+AI.MTDF = function (board, f, d, lowerBound, upperBound) {
+    
     //Esta línea permite que el algoritmo funcione como PVS normal
     // return AI.PVS(board, lowerBound, upperBound, d, 1)
     
@@ -2379,12 +2400,14 @@ AI.search = function (board, options) {
 
                 if (!AI.stop) AI.lastscore = score
 
-                if (AI.PV && !AI.stop) console.log(depth, AI.PV.map(e => { return e? [e.from,e.to] : '-'}).join(' '), '| Fhf ' + fhfperc + '%',
-                        'Pawn hit ' + (AI.phnodes / AI.pnodes * 100 | 0), score | 0, AI.nodes.toString(),
-                        AI.qsnodes.toString(), AI.ttnodes.toString(),
-                        ((100*this.evalhashnodes/(this.evalnodes)) | 0),
-                        'PV Nodes: ' + (AI.pvnodes| 0)
-                )
+                console.log(depth, `FHF: ${fhfperc}%`)
+
+                // if (AI.PV && !AI.stop) console.log(depth, AI.PV.map(e => { return e? [e.from,e.to] : '-'}).join(' '), '| Fhf ' + fhfperc + '%',
+                //         'Pawn hit ' + (AI.phnodes / AI.pnodes * 100 | 0), score | 0, AI.nodes.toString(),
+                //         AI.qsnodes.toString(), AI.ttnodes.toString(),
+                //         ((100*this.evalhashnodes/(this.evalnodes)) | 0),
+                //         'PV Nodes: ' + (AI.pvnodes| 0)
+                // )
             
                 depth++
             }
