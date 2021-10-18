@@ -27,7 +27,7 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 0,
+    random: 100,
     phase: 1,
     htlength: (1 << 24) / 2 | 0,
     pawntlength: 5e5,
@@ -1371,16 +1371,16 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
 
         
         // CRITERIO 0: La jugada está en la Tabla de Trasposición
-        if (ttEntry && ttEntry.flag < UPPERBOUND && move.key === ttEntry.move.key) {
+        if (ttEntry /*&& ttEntry.flag < UPPERBOUND*/ && move.key === ttEntry.move.key) {
             move.tt = true
             move.score += 2e9
-            continue
+            // continue
         }
 
         // if (AI.PV[ply] && move.key === AI.PV[ply].key) {
         //     move.pv = true
         //     move.score += 1e9
-        //     continue
+        //     // continue
         // }
 
         if (move.isCapture) {
@@ -1681,7 +1681,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     // }
 
     // IID
-    if (depth > 2 && !ttEntry) depth -= 2
+    if (depth >=2 && !ttEntry) depth -= 2
 
     let moves = board.getMoves()
 
@@ -1696,26 +1696,27 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         let move = moves[i]
         let piece = move.piece
 
-        
-        // Futility Pruning
-        if (cutNode && !incheck && legal >= 1 && depth <= 3) {
-            if (move.isCapture) {
-                // console.log(AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]])
-                if (staticeval + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]] + MARGIN1*depth < alpha) {
-                    continue
-                }
-            } else {
-                if (staticeval + MARGIN1*depth < alpha) {
-                    continue
+        if (!move.killer1 && !incheck && legal >= 1 && !move.isCapture) {
+            // Futility Pruning
+            if (depth <= 3) {
+                if (move.isCapture) {
+                    // console.log(AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]])
+                    if (staticeval + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]] + MARGIN1*depth < alpha) {
+                        continue
+                    }
+                } else {
+                    if (staticeval + MARGIN1*depth < alpha) {
+                        continue
+                    }
                 }
             }
-        }
-
-        // 12 & 8 ~ 24+ ELO
-        if (cutNode && ply > 1 && legal > 1 && !move.isCapture && i > 12) {
-            if (Math.random() < 0.8) {
-                AI.rnodes++
-                continue
+    
+            // 12 & 8 ~ 24+ ELO
+            if (ply > 1 && i > 12) {
+                if (Math.random() < 0.8) {
+                    AI.rnodes++
+                    continue
+                }
             }
         }
 
@@ -2399,12 +2400,14 @@ AI.search = function (board, options) {
 
                 if (!AI.stop) AI.lastscore = score
 
-                if (AI.PV && !AI.stop) console.log(depth, AI.PV.map(e => { return e? [e.from,e.to] : '-'}).join(' '), '| Fhf ' + fhfperc + '%',
-                        'Pawn hit ' + (AI.phnodes / AI.pnodes * 100 | 0), score | 0, AI.nodes.toString(),
-                        AI.qsnodes.toString(), AI.ttnodes.toString(),
-                        ((100*this.evalhashnodes/(this.evalnodes)) | 0),
-                        'PV Nodes: ' + (AI.pvnodes| 0)
-                )
+                console.log(depth, `FHF: ${fhfperc}%`)
+
+                // if (AI.PV && !AI.stop) console.log(depth, AI.PV.map(e => { return e? [e.from,e.to] : '-'}).join(' '), '| Fhf ' + fhfperc + '%',
+                //         'Pawn hit ' + (AI.phnodes / AI.pnodes * 100 | 0), score | 0, AI.nodes.toString(),
+                //         AI.qsnodes.toString(), AI.ttnodes.toString(),
+                //         ((100*this.evalhashnodes/(this.evalnodes)) | 0),
+                //         'PV Nodes: ' + (AI.pvnodes| 0)
+                // )
             
                 depth++
             }
