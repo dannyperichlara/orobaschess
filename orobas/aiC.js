@@ -1369,18 +1369,19 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         move.killer2 = 0
         move.score = 0
 
-        if (AI.PV[ply] && move.key === AI.PV[ply].key) {
-            move.pv = true
-            move.score += 2e9
-            continue
-        }
         
         // CRITERIO 0: La jugada está en la Tabla de Trasposición
         if (ttEntry && ttEntry.flag < UPPERBOUND && move.key === ttEntry.move.key) {
             move.tt = true
-            move.score += 1e9
+            move.score += 2e9
             continue
         }
+
+        // if (AI.PV[ply] && move.key === AI.PV[ply].key) {
+        //     move.pv = true
+        //     move.score += 1e9
+        //     continue
+        // }
 
         if (move.isCapture) {
             move.mvvlva = AI.MVVLVASCORES[move.piece][move.capturedPiece]
