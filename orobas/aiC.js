@@ -1074,6 +1074,7 @@ AI.getMobility = (board)=>{
     for (let i = 0, len = whiteMoves.length; i < len; i++) {
         let move = whiteMoves[i]
 
+        // Safe Mobility +12 ELO
         if (board.board[move.to - 17] === p || board.board[move.to - 15] === p) continue
 
         if (move.piece === N) {
@@ -1096,6 +1097,7 @@ AI.getMobility = (board)=>{
     for (let i = 0, len = blackMoves.length; i < len; i++) {
         let move = blackMoves[i]
 
+        // Safe Mobility +12 ELO
         if (board.board[move.to + 17] === P || board.board[move.to + 15] === P) continue
 
         if (move.piece === n) {
@@ -1711,7 +1713,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                 }
             }
     
-            // 12 & 8 ~ 24+ ELO
+            // 12 & 8 ~ +24 ELO
             if (ply > 1 && i > 12) {
                 if (Math.random() < 0.8) {
                     AI.rnodes++
