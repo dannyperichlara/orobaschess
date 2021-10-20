@@ -38,7 +38,7 @@ let AI = {
     f: 0,
     previousls: 0,
     lastscore: 0,
-    nullWindowFactor: 20
+    nullWindowFactor: 20 // +132 ELO
 }
 
 // ÍNDICES
