@@ -1630,8 +1630,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     }
 
     //Búsqueda QS
-    if (!incheck && depth <= 0) { // Genera muhcos bugs
-    // if (depth <= 0) {
+    if (!incheck && depth <= 0) {
         return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
     }
 
@@ -1697,6 +1696,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     for (let i = 0, len = moves.length; i < len; i++) {
         let move = moves[i]
         let piece = move.piece
+        let historyValue = AI.history[piece][move.to]
 
         if (!move.killer1 && !incheck && legal >= 1 && !move.isCapture) {
             // Futility Pruning
@@ -1712,14 +1712,18 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                     }
                 }
             }
-    
-            // 12 & 8 ~ +24 ELO
-            if (ply > 1 && i > 12) {
+
+            if (i > 12 && ply > 1) {
+                // // Late moves pruning
+                // if (historyValue < 0) continue
+
+                // Late moves random pruning
                 if (Math.random() < 0.8) {
                     AI.rnodes++
                     continue
                 }
             }
+    
         }
 
         // Extensiones
@@ -1740,7 +1744,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             if (cutNode && !move.killer1) R+= 2
 
             // Reduce negative history
-            if (AI.history[piece][move.to] < 0) R++
+            if (historyValue < 0) R++
             
             if (!move.isCapture) {
                 // Move count reductions
