@@ -27,12 +27,13 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 100,
+    random: 40,
     phase: 1,
     htlength: (1 << 24) / 2 | 0,
     pawntlength: 5e5,
     // mindepth: [6,10,12,18],
     mindepth: [3,3,3,3],
+    // mindepth: [1,1,1,1],
     secondspermove: 3,
     lastmove: null,
     f: 0,
@@ -246,6 +247,17 @@ AI.PASSERSBONUS = [
    13, 18, 24, 32, 32, 24, 18, 13,  null,  null,  null,  null,  null,  null,  null,  null, 
     6,  8, 12, 14, 14, 13,  8,  6,  null,  null,  null,  null,  null,  null,  null,  null, 
     0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+]
+
+AI.DOUBLEDPENALTY = [
+     0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+    38, 18, 23, 28, 28, 23, 18, 38,  null,  null,  null,  null,  null,  null,  null,  null, 
+    36, 16, 21, 26, 26, 21, 16, 36,  null,  null,  null,  null,  null,  null,  null,  null, 
+    34, 14, 19, 24, 24, 19, 14, 34,  null,  null,  null,  null,  null,  null,  null,  null, 
+    32, 12, 17, 22, 22, 17, 12, 32,  null,  null,  null,  null,  null,  null,  null,  null, 
+    30, 10, 15, 20, 20, 15, 10, 30,  null,  null,  null,  null,  null,  null,  null,  null, 
+     0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+     0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
 ]
 
 AI.NMOBILITY = [
@@ -544,6 +556,11 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
                     score += AI.LEVERPAWNBONUS[i]
                 }
 
+                //Knight mobility blocker
+                if (board.board[i-50] === n || board.board[i-46] === n) {
+                    score += 40
+                }
+
                 // if (AI.phase <= MIDGAME) {
                 //     //Center control
                 //     if (i === 68 && board.board[51] === 0) score+=10
@@ -601,6 +618,11 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
                 //Levers
                 if (board.board[i+15] === P || board.board[i+17] === P) {
                     score -= AI.LEVERPAWNBONUS[112^i]
+                }
+
+                //Knight mobility blocker
+                if (board.board[i+50] === N || board.board[i+46] === N) {
+                    score -= 40
                 }
 
                 // if (AI.phase <= MIDGAME) {
@@ -1141,7 +1163,7 @@ AI.getStructure = (board, pawnindexW, pawnindexB)=> {
         return hashentry
     }
 
-    let doubled = 0 //AI.getDoubled(board, pawnindexW, pawnindexB)
+    let doubled = 0 // AI.getDoubled(board, pawnindexW, pawnindexB) // -32 ELO (why?)
     let defended = AI.getDefended(board, pawnindexW, pawnindexB)
     let passers = AI.getPassers(board, pawnindexW, pawnindexB)
     let space = AI.getSpace(board, pawnindexW, pawnindexB)
@@ -1265,34 +1287,45 @@ AI.getPassers = (board, pawnindexW, pawnindexB)=>{
 }
 
 AI.getDoubled = (board, pawnindexW, pawnindexB)=>{
-    let doubledW = 0
-    let doubledB = 0
+    let score = 0
+
+    if (pawnindexW.length > 2) {
+        for (let i = 0, len=pawnindexW.length; i < len; i++) {
+            let square = pawnindexW[i] - 16
+            
+            while (true) {
+                let piece = board.board[square]
     
-    for (let i = 0, len=pawnindexW.length; i < len; i++) {
-        let centerFile = pawnindexW[i] - 16
-        
-        while (true) {
-            if (board.board[centerFile] === P) doubledW++
-
-            centerFile -= 16
-
-            if ((centerFile - 32) & 0x88) break
+                if (piece) {
+                    if (piece === P) score -= AI.DOUBLEDPENALTY[square]
+                    break
+                }
+                square -= 16
+    
+                if ((square - 32) & 0x88) break
+    
+            }
         }
     }
-
-    for (let i = 0, len=pawnindexB.length; i < len; i++) {
-        let centerFile = pawnindexB[i] + 16
-
-        while (true) {
-            if (board.board[centerFile] === p) doubledB++
-
-            centerFile += 16
-
-            if ((centerFile + 32) & 0x88) break
+    
+    if (pawnindexB.length > 2) {
+        for (let i = 0, len=pawnindexB.length; i < len; i++) {
+            let square = pawnindexB[i] + 16
+    
+            while (true) {
+                let piece = board.board[square]
+    
+                if (piece) {
+                    if (piece === p) score += AI.DOUBLEDPENALTY[square]
+                    break
+                }
+    
+                square += 16
+    
+                if ((square + 32) & 0x88) break
+            }
         }
     }
-
-    let score = -40*(doubledW - doubledB)
 
     return score
 }
@@ -1371,7 +1404,7 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         move.killer2 = 0
         move.score = 0
 
-        
+
         // CRITERIO 0: La jugada está en la Tabla de Trasposición
         if (ttEntry /*&& ttEntry.flag < UPPERBOUND*/ && move.key === ttEntry.move.key) {
             move.tt = true
@@ -1438,8 +1471,10 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
             // CRITERIO 7
             // Las jugadas restantes se orden de acuerdo a donde se estima sería
             // su mejor posición absoluta en el tablero
-            move.psqtvalue = AI.PSQT[ABS[move.piece]][turn === WHITE ? move.to : 112^move.to] -
-                             AI.PSQT[ABS[move.piece]][turn === WHITE ? move.from : 112^move.from]
+            let pieceType = ABS[move.piece]
+
+            move.psqtvalue = AI.PSQT[pieceType][turn === WHITE ? move.to : 112^move.to] -
+                             AI.PSQT[pieceType][turn === WHITE ? move.from : 112^move.from]
             move.score += move.psqtvalue
 
             continue
@@ -1696,7 +1731,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     for (let i = 0, len = moves.length; i < len; i++) {
         let move = moves[i]
         let piece = move.piece
-        let historyValue = AI.history[piece][move.to]
 
         if (!move.killer1 && !incheck && legal >= 1 && !move.isCapture) {
             // Futility Pruning
@@ -1713,17 +1747,12 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                 }
             }
 
-            if (i > 12 && ply > 1) {
-                // // Late moves pruning
-                // if (historyValue < 0) continue
-
-                // Late moves random pruning
+            if (ply > 1 && i > 12) {
                 if (Math.random() < 0.8) {
                     AI.rnodes++
                     continue
                 }
             }
-    
         }
 
         // Extensiones
@@ -1744,7 +1773,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             if (cutNode && !move.killer1) R+= 2
 
             // Reduce negative history
-            if (historyValue < 0) R++
+            if (AI.history[piece][move.to] < 0) R++
             
             if (!move.isCapture) {
                 // Move count reductions
@@ -2241,7 +2270,7 @@ AI.getPV = function (board, length) {
     return PV
 }
 
-// https://www.chessprogramming.org/MTD(f) +55 ELO
+// https://www.chessprogramming.org/MTD(f) +150 ELO
 AI.MTDF = function (board, f, d, lowerBound, upperBound) {
     
     //Esta línea permite que el algoritmo funcione como PVS normal
