@@ -917,8 +917,8 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
         if (AI.phase <= MIDGAME) {
             for (let i = 0, len=WIDECENTER.length; i < len; i++) {
                 
-                score += 5 * board.isSquareAttacked(WIDECENTER[i], WHITE, false)
-                score -= 5 * board.isSquareAttacked(WIDECENTER[i], BLACK, false)
+                score += 20 * board.isSquareAttacked(WIDECENTER[i], WHITE, false)
+                score -= 20 * board.isSquareAttacked(WIDECENTER[i], BLACK, false)
     
                 let piece = board.board[WIDECENTER[i]]
                 
@@ -1426,7 +1426,7 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
                 move.score += 1e7 + move.mvvlva
             } else {
                 // CRITERIO 5: La jugada es una captura probablemente perdedora
-                move.score += 1e5 + move.mvvlva
+                move.score += 4e6 + move.mvvlva
             }
 
             continue
@@ -1436,13 +1436,20 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         // (Los killers son movimientos que anteriormente han generado Fail-Highs en el mismo ply)
         if (killer1 && killer1.key === move.key) {
             move.killer1 = true
-            move.score += 3e6
+            move.score += 6e6
+            continue
+        }
+
+        // CRITERIO: La jugada es el segundo movimiento Killer
+        if (killer2 && killer2.key === move.key) {
+            move.killer2 = true
+            move.score += 5e6
             continue
         }
         
         // CRITERIO: La jugada es una promoción
         if (move.promotingPiece) {
-            move.score += 2e6
+            move.score += 3e6
             continue
         }
 
@@ -1452,12 +1459,6 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
             continue
         }
         
-        // CRITERIO: La jugada es el segundo movimiento Killer
-        if (killer2 && killer2.key === move.key) {
-            move.killer2 = true
-            move.score += 1e6
-            continue
-        }
 
         // CRITERIO 6: Movimientos históricos
         // Se da preferencia a movimientos posicionales que han tenido 
