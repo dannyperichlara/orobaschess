@@ -438,7 +438,8 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
     // let t0 = (new Date).getTime()
 
     alpha = alpha*this.nullWindowFactor
-    beta = beta*this.nullWindowFactor
+    beta = alpha + VPAWN
+    // beta = beta*this.nullWindowFactor
     
     let evalEntry = AI.evalTable[board.turn][board.hashkey % this.htlength]
     this.evalnodes++
@@ -2436,14 +2437,14 @@ AI.search = function (board, options) {
 
                 if (!AI.stop) AI.lastscore = score
 
-                console.log(depth, `FHF: ${fhfperc}%`)
+                // console.log(depth, `FHF: ${fhfperc}%`)
 
-                // if (AI.PV && !AI.stop) console.log(depth, AI.PV.map(e => { return e? [e.from,e.to] : '-'}).join(' '), '| Fhf ' + fhfperc + '%',
-                //         'Pawn hit ' + (AI.phnodes / AI.pnodes * 100 | 0), score | 0, AI.nodes.toString(),
-                //         AI.qsnodes.toString(), AI.ttnodes.toString(),
-                //         ((100*this.evalhashnodes/(this.evalnodes)) | 0),
-                //         'PV Nodes: ' + (AI.pvnodes| 0)
-                // )
+                if (AI.PV && !AI.stop) console.log(depth, AI.PV.map(e => { return e? [e.from,e.to] : '-'}).join(' '), '| Fhf ' + fhfperc + '%',
+                        'Pawn hit ' + (AI.phnodes / AI.pnodes * 100 | 0), score | 0, AI.nodes.toString(),
+                        AI.qsnodes.toString(), AI.ttnodes.toString(),
+                        ((100*this.evalhashnodes/(this.evalnodes)) | 0),
+                        'PV Nodes: ' + (AI.pvnodes| 0)
+                )
             
                 depth++
             }
