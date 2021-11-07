@@ -2361,7 +2361,7 @@ AI.search = function (board, options) {
         AI.lastscore = 0
         AI.f = 0
     } else {
-        AI.createTables(false, true, false)
+        AI.createTables(true, true, false)
         AI.f = AI.lastscore / AI.nullWindowFactor
     }
 
