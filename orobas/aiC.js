@@ -404,20 +404,24 @@ AI.createTables = function (tt, hh, pp) {
         AI.history[p] = Array(120).fill(0)
     }
 
+    
     if (tt) {
-        delete AI.hashTable
-        AI.hashTable = [null, new Map(), new Map()]
-
         delete AI.evalTable
         AI.evalTable = [
             null,
             (new Array(this.htlength)).fill(null),
             (new Array(this.htlength)).fill(null),
         ]
+        delete AI.hashTable
+        AI.hashTable = [null, new Array(this.htlength).fill(null), new Array(this.htlength).fill(null)]
+
     }
     if (pp) {
         delete AI.pawnTable
         AI.pawnTable = (new Array(this.pawntlength)).fill(null)
+
+        AI.phnodes = 0
+        AI.pnodes = 0
     }
 }
 
@@ -1512,6 +1516,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
     AI.qsnodes++
 
     let turn = board.turn
+    let opponentTurn = turn === WHITE? BLACK : WHITE
     let legal = 0
     let standpat = AI.evaluate(board, ply, alpha, beta, pvNode)
     let hashkey = board.hashkey
@@ -1539,9 +1544,19 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
     let bestmove = moves[0]
 
     for (let i = 0, len = moves.length; i < len; i++) {
-        if (!moves[i].capturedPiece && !moves[i].promotingPiece) continue
+        // if (!moves[i].capturedPiece && !moves[i].promotingPiece) continue
 
         let move = moves[i]
+
+        // Bad captures pruning (+34 ELO)
+        if (move.mvvlva < 6000) {
+            // if (board.isSquareAttacked(move.to, opponentTurn, true, false) > 1) {
+            if (board.isSquareAttacked(move.to, opponentTurn, false, false)) {
+                // console.log('bad moves prune')
+                continue
+            }
+        }
+        
         // delta pruning para cada movimiento
         if (!incheck && standpat + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]] < alpha) {
             continue
@@ -1733,6 +1748,21 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     for (let i = 0, len = moves.length; i < len; i++) {
         let move = moves[i]
         let piece = move.piece
+
+        // Enhanced Transposition Cutoff actual position
+        if (!ttEntry) {
+            let ttETC = AI.ttGet(turn, hashkey)
+
+            if (ttETC && ttETC.hashkey === hashkey && ttETC.depth >= depth) {
+                if (ttETC.flag === LOWERBOUND) {
+                    if (ttETC.score > alpha) alpha = ttETC.score
+                } else if (ttETC.flag === UPPERBOUND) {
+                    if (ttETC.score < beta) beta = ttETC.score
+                } else { // EXACT
+                    return ttETC.score
+                }
+            }
+        }
 
         if (!move.killer1 && !incheck && legal >= 1 && !move.isCapture) {
             // Futility Pruning

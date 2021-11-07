@@ -390,13 +390,13 @@ module.exports = orobas = {
             if (turn !== this.turn) {
                 this.turn = turn
 
-                this.updateHashkey(this.zobristKeys.turn[WHITE])
-                this.updateHashkey(this.zobristKeys.turn[BLACK])
+                // this.updateHashkey(this.zobristKeys.turn[WHITE])
+                // this.updateHashkey(this.zobristKeys.turn[BLACK])
             }
         } else {
             this.turn = this.turn === WHITE? BLACK : WHITE // Esto es 35% más rápido que ~turn o -turn o cualquier otra cosa
-            this.updateHashkey(this.zobristKeys.turn[WHITE])
-            this.updateHashkey(this.zobristKeys.turn[BLACK])
+            // this.updateHashkey(this.zobristKeys.turn[WHITE])
+            // this.updateHashkey(this.zobristKeys.turn[BLACK])
         }
     },
 
@@ -817,7 +817,7 @@ module.exports = orobas = {
 
     draw() {
         let board = ''
-        for (i = 0; i < 120; i++) {
+        for (let i = 0; i < 120; i++) {
             if (i & 0x88) {
                 i += 7
                 continue
