@@ -43,8 +43,7 @@ Chess.AI = require('./orobas/aiC.js')
 app.get('/', function (req, res) {
   if (req.query.fen) {
      let fen = req.query.fen
-
-      Chess.loadFen(fen)
+    Chess.loadFen(fen)
 
       Chess.draw()
   }

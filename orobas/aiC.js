@@ -1150,6 +1150,7 @@ AI.getMobility = (board)=>{
 }
 
 let max = 0
+let total = 1
 
 // IMPORTANTE: Esta función devuelve el valor de la estructura de peones.
 // Dado que la estructura tiende a ser relativamente fija, el valor se guarda
@@ -1749,11 +1750,14 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         let move = moves[i]
         let piece = move.piece
 
-        // Enhanced Transposition Cutoff actual position
+        // Enhanced Transposition Cutoff actual position +12 ELO
         if (!ttEntry) {
+            // total++
+            
             let ttETC = AI.ttGet(turn, hashkey)
-
+            
             if (ttETC && ttETC.hashkey === hashkey && ttETC.depth >= depth) {
+                // max++
                 if (ttETC.flag === LOWERBOUND) {
                     if (ttETC.score > alpha) alpha = ttETC.score
                 } else if (ttETC.flag === UPPERBOUND) {
@@ -2357,7 +2361,7 @@ AI.search = function (board, options) {
         AI.lastscore = 0
         AI.f = 0
     } else {
-        AI.createTables(true, true, false)
+        AI.createTables(false, true, false)
         AI.f = AI.lastscore / AI.nullWindowFactor
     }
 
@@ -2507,6 +2511,7 @@ AI.search = function (board, options) {
         console.log('Sorting % time: ', (AI.sortingTime / AI.searchTime) * 100 | 0,
                     'Evaluation % time: ', (AI.evalTime / AI.searchTime) * 100 | 0,
                     'Random Nodes Pruned (%): ', (AI.rnodes / AI.nodes) * 100 | 0,
+                    'ETC 1 (%): ', (max/total*1000 | 0) / 10,
         )
 
         // console.log(AI.bestmove, (AI.moveTime / AI.searchTime) * 100 | 0)
