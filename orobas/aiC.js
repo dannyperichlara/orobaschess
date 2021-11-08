@@ -1531,6 +1531,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
         if (standpat > alpha) alpha = standpat
     // }
 
+    // let moves = board.getMoves(false, true)
     let moves = board.getMoves(false, !incheck)
 
     if (moves.length === 0) {
@@ -1545,15 +1546,11 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
     let bestmove = moves[0]
 
     for (let i = 0, len = moves.length; i < len; i++) {
-        // if (!moves[i].capturedPiece && !moves[i].promotingPiece) continue
-
         let move = moves[i]
 
         // Bad captures pruning (+34 ELO)
         if (move.mvvlva < 6000) {
-            // if (board.isSquareAttacked(move.to, opponentTurn, true, false) > 1) {
             if (board.isSquareAttacked(move.to, opponentTurn, false, false)) {
-                // console.log('bad moves prune')
                 continue
             }
         }
@@ -1840,6 +1837,32 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         if (board.makeMove(move)) {
             // AI.moveTime += (new Date()).getTime() - m0
             legal++
+
+            // Enhanced Transposiiton Table +16 ELO
+            let ttETC = AI.ttGet(board.turn, board.hashkey)
+
+            if (legal > 1 && ttETC && ttETC.hashkey === board.hashkey && ttETC.depth > depth) {
+                let scoreETC = -ttETC.score
+                
+                if (ttETC.flag === LOWERBOUND) {
+                    if (scoreETC < beta) beta = ttETC.score
+                    // console.log('beta')
+                } else if (ttETC.flag === UPPERBOUND) {
+                    if (scoreETC > alpha) alpha = ttETC.score
+                    // console.log('alpha')
+                }
+            }
+            
+            // if (ttETC && ttETC.hashkey === hashkey && ttETC.depth >= depth) {
+            //     // max++
+            //     if (ttETC.flag === LOWERBOUND) {
+            //         if (ttETC.score > alpha) alpha = ttETC.score
+            //     } else if (ttETC.flag === UPPERBOUND) {
+            //         if (ttETC.score < beta) beta = ttETC.score
+            //     } else { // EXACT
+            //         return ttETC.score
+            //     }
+            // }
 
             if (legal === 1) {
                 // El primer movimiento se busca con ventana total y sin reducciones
