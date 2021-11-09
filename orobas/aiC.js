@@ -9,7 +9,7 @@ let rnd = new seedrandom('orobas1234', {global: true})
 console.log(Math.random())
 
 let AI = {
-    version: "2.1.4",
+    version: "2.1.5",
     totaldepth: 48,
     ttNodes: 0,
     iteration: 0,
@@ -1621,9 +1621,26 @@ AI.ttSave = function (turn, hashkey, score, flag, depth, move) {
     }
 }
 
+// AI.ttGet = function (turn, hashkey) {
+//     AI.ttnodes++
+//     return AI.hashTable[turn][hashkey % AI.htlength]
+// }
+
 AI.ttGet = function (turn, hashkey) {
-    AI.ttnodes++
-    return AI.hashTable[turn][hashkey % AI.htlength]
+    let ttEntry = AI.hashTable[turn][hashkey % AI.htlength]
+    
+    if (ttEntry) {
+        if (ttEntry.hashkey === hashkey) {
+            AI.ttnodes++
+            return ttEntry
+        } else {
+            // console.log('collision')
+            return null
+        }
+    } else {
+        return null
+    }
+
 }
 
 // let max = 0
