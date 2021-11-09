@@ -666,6 +666,10 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
 
                 if (AI.phase === OPENING && (i === 83 || i === 84) && board.board[i+16] === P) score-=100
 
+                // Bishop blocked by own pawns
+                if (board.board[i-15] === P) score -= 20
+                if (board.board[i-17] === P) score -= 20
+
                 //Semi outpost
                 if (AI.phase <= MIDGAME && board.ranksW[i] >= 3 && board.board[i-16] === P) score+=12
     
@@ -695,6 +699,10 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
                 bishopsindexB.push(i)
 
                 if (AI.phase === OPENING && (i === 35 || i === 36) && board.board[i-16] === p) score+=100
+
+                // Bishop blocked by own pawns
+                if (board.board[i+15] === p) score += 20
+                if (board.board[i+17] === p) score += 20
 
                 //Semi outpost
                 if (AI.phase <= MIDGAME && board.ranksB[i] >= 3 && board.board[i+16] === p) score-=12
@@ -1933,13 +1941,15 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     if (legal === 0) {
         // Ahogado
         if (!incheck) {
-            AI.ttSave(turn, hashkey, DRAW, EXACT, depth, bestmove)
+            // AI.ttSave(turn, hashkey, DRAW, EXACT, depth, bestmove)
+            AI.ttSave(turn, hashkey, DRAW, LOWERBOUND, depth, bestmove)
             
             return DRAW
         }
         
         // Mate
-        AI.ttSave(turn, hashkey, -MATE + ply, EXACT, depth, bestmove)
+        // AI.ttSave(turn, hashkey, -MATE + ply, EXACT, depth, bestmove)
+        AI.ttSave(turn, hashkey, -MATE + ply, LOWERBOUND, depth, bestmove)
 
         return -MATE + ply
 
@@ -1948,7 +1958,8 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         if (bestscore > oAlpha) {
             // Mejor movimiento
             if (bestmove) {
-                AI.ttSave(turn, hashkey, bestscore, EXACT, depth, bestmove)
+                // AI.ttSave(turn, hashkey, bestscore, EXACT, depth, bestmove)
+                AI.ttSave(turn, hashkey, bestscore, LOWERBOUND, depth, bestmove)
             }
 
             return bestscore
