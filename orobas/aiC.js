@@ -1621,11 +1621,6 @@ AI.ttSave = function (turn, hashkey, score, flag, depth, move) {
     }
 }
 
-// AI.ttGet = function (turn, hashkey) {
-//     AI.ttnodes++
-//     return AI.hashTable[turn][hashkey % AI.htlength]
-// }
-
 AI.ttGet = function (turn, hashkey) {
     let ttEntry = AI.hashTable[turn][hashkey % AI.htlength]
     
@@ -2357,7 +2352,7 @@ AI.getPV = function (board, length) {
     return PV
 }
 
-// https://www.chessprogramming.org/MTD(f) +150 ELO
+// https://www.chessprogramming.org/MTD(f) +168 ELO
 AI.MTDF = function (board, f, d, lowerBound, upperBound) {
     
     //Esta línea permite que el algoritmo funcione como PVS normal
@@ -2412,7 +2407,7 @@ AI.search = function (board, options) {
         AI.lastscore = 0
         AI.f = 0
     } else {
-        AI.createTables(true, true, false)
+        AI.createTables(false, true, false)
         AI.f = AI.lastscore / AI.nullWindowFactor
     }
 

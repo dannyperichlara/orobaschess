@@ -188,6 +188,8 @@ module.exports = orobas = {
             this.enPassantSquares = [this.coords.indexOf(enpassantsquare)]
             console.log('En Passant Square', this.enPassantSquares)
         }
+
+        this.initHashkey()
     },
 
     fen2board (fen) {
@@ -338,6 +340,15 @@ module.exports = orobas = {
             this.zobristKeys.enPassantSquares[i] = (Math.random()*0xFFFFFFFF) >>> 0
         }
 
+        this.initHashkey()
+        
+        // Actualiza hashkey con turno
+        // this.updateHashkey(this.zobristKeys.turn[this.turn])
+    },
+
+    initHashkey() {
+        this.hashkey = 0
+
         // Inicializa hashkey con piezas del tablero
         for (let i = 0; i < 120; i++) {
             if (i & 0x88) {
@@ -355,11 +366,8 @@ module.exports = orobas = {
                 this.updatePawnHashkey(this.zobristKeys.positions[piece][i])
             }
         }
-        
-        // Actualiza hashkey con turno
-        this.updateHashkey(this.zobristKeys.turn[this.turn])
     },
-
+ 
     updateHashkey(value) {
         this.hashkey = ((this.hashkey ^ value) >>> 0)
     },
