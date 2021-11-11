@@ -29,7 +29,7 @@ let AI = {
     fh: 0,
     random: 40,
     phase: 1,
-    htlength: (1 << 24) / 2 | 0,
+    htlength: 1 << 22,
     pawntlength: 5e5,
     // mindepth: [6,10,12,18],
     mindepth: [3,3,3,3],

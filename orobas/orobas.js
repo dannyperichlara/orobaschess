@@ -1,3 +1,5 @@
+"use strict"
+
 const { square } = require('@tensorflow/tfjs-core')
 var seedrandom = require('seedrandom')
 const { totaldepth } = require('./aiC')
@@ -20,6 +22,7 @@ const k =  12
 const WHITE =  1
 const BLACK =  2
 
+let orobas
 
 module.exports = orobas = {
     pieces: new Map(),
@@ -480,6 +483,19 @@ module.exports = orobas = {
     isSquareAttacked(square, attackerSide, count, xrays) {
         if (square & 0x88) return count? 0 : false
 
+        let pFrom
+        let nFrom
+        let bFrom
+        let rFrom
+        let qFrom
+        let kFrom
+        let pTo  
+        let nTo  
+        let bTo  
+        let rTo  
+        let qTo  
+        let kTo  
+
         if (attackerSide === BLACK) {
             pFrom = P
             nFrom = N
@@ -685,7 +701,7 @@ module.exports = orobas = {
             //Peones
             if (!forMobility) {
                 if (piece === P || piece === p) {
-                    for (j = 0, len=this.pieces[piece].offsets.length; j < len; j++) {
+                    for (let j = 0, len=this.pieces[piece].offsets.length; j < len; j++) {
                         let to = from + this.pieces[piece].offsets[j]
     
                         if (to & 0x88) continue
@@ -701,6 +717,8 @@ module.exports = orobas = {
                                     continue
                                 } else {
                                     isCapture = true
+
+                                    let promotingPiece = null
     
                                     if (to>=0 && to <= 7) {
                                         promotingPiece = Q
@@ -768,7 +786,7 @@ module.exports = orobas = {
                 }
             }
             
-            for (j=0, len = this.pieces[piece].offsets.length; j < len; j++) {
+            for (let j=0, len = this.pieces[piece].offsets.length; j < len; j++) {
                 let to = i
                 
                 while (true) {
