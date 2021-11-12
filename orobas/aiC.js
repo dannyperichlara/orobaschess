@@ -1717,20 +1717,16 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         return staticeval
     }
 
-    // Extended Null Move Reductions
-    if (!incheck && depth > 2) {
-        if (!board.enPassantSquares[board.enPassantSquares.length - 1]) {
-            board.changeTurn()
-            let nullR = depth > 6? 4 : 3
-            let nullScore = -AI.PVS(board, -beta, -beta + 1, depth - nullR - 1, ply)
-            board.changeTurn()
-            if (nullScore >= beta) {
-                depth -= 4
-
-                if (depth <= 0) return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
-            }
-    
-            if (depth <= 2 && nullScore < -MATE + AI.totaldepth) {
+    // Null move pruning
+    if (!incheck && depth > 2 && AI.phase < LATE_ENDGAME) {
+        board.changeTurn()
+        let nullR = depth > 6? 4 : 3
+        let nullScore = -AI.PVS(board, -beta, -beta + 1, depth - nullR - 1, ply)
+        board.changeTurn()
+        if (nullScore >= beta) {
+            return nullScore
+        } else {
+            if (nullScore < -MATE + AI.totaldepth) {
                 mateE = 1
             }
         }
@@ -1785,7 +1781,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             }
         }
 
-        if (!move.killer1 && !incheck && legal >= 1 && !move.isCapture) {
+        if (!move.killer1 && !incheck && legal >= 1) {
             // Futility Pruning
             if (depth <= 3) {
                 if (move.isCapture) {
@@ -1800,7 +1796,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                 }
             }
 
-            if (ply > 1 && i > 12) {
+            if (ply > 1 && i > 12 && !move.isCapture) {
                 if (Math.random() < 0.8) {
                     AI.rnodes++
                     continue
@@ -2563,10 +2559,10 @@ AI.search = function (board, options) {
         // console.log(AI.bestmove, (AI.moveTime / AI.searchTime) * 100 | 0)
 
         resolve({
-            n: board.movenumber, phase: AI.phase, depth: AI.iteration - 1, from: board.board64[AI.bestmove.from],
+            n: board.movenumber, phase: AI.phase, depth: AI.iteration - 1, FHF: fhfperc + '%', from: board.board64[AI.bestmove.from],
             to: board.board64[AI.bestmove.to], fromto0x88: [AI.bestmove.from, AI.bestmove.to],
             score: AI.lastscore | 0, sigmoid: (sigmoid * 100 | 0) / 100, nodes: AI.nodes, qsnodes: AI.qsnodes,
-            FHF: fhfperc + '%', version: AI.version
+            version: AI.version
         })
     })
 }
