@@ -845,7 +845,8 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
     score += AI.getPawnShield(board, AI.phase)
 
     if (AI.phase === LATE_ENDGAME && alpha > 300) {
-        let kingToTheCorner = AI.CENTERMANHATTAN[board.blackKingIndex] - 3
+        let opponentKing = turn === WHITE? board.blackKingIndex : board.whiteKingIndex
+        let kingToTheCorner = AI.CENTERMANHATTAN[opponentKing] - 3
         let distanceBetweenKings = 8 - manhattanDistance(board.whiteKingIndex, board.blackKingIndex)
 
         let mopup = 20*(kingToTheCorner + distanceBetweenKings)
@@ -1718,7 +1719,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     if (cutNode && depth < 9 &&  staticeval - MARGIN1*depth >= beta) {
         return staticeval
     }
-
+    
     // Null move pruning
     if (!incheck && depth > 2 && AI.phase < LATE_ENDGAME) {
         board.changeTurn()
@@ -1734,7 +1735,8 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         }
     }
 
-    // // Razoring
+
+    // Razoring
     if (cutNode && depth <= 3) {
         if (staticeval + MARGIN2 < beta) { // likely a fail-low node ?
             let score = AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
