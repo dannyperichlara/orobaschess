@@ -355,6 +355,7 @@ let manhattanDistance = (sq1, sq2)=> {
 // prefiriendo la víctima más valiosa con el atacante más débil
 //https://open-chess.org/viewtopic.php?t=3058
 let mvvlvaScores = [
+        /* P      N      B      R      Q      K
   /*P*/[6002, 20225, 20250, 20400, 20800, 26900],
   /*N*/[4775,  6004, 20025, 20175, 20575, 26675],
   /*B*/[4750,  4975,  6006, 20150, 20550, 26650],
@@ -362,6 +363,7 @@ let mvvlvaScores = [
   /*Q*/[4200,  4425,  4450,  4600,  6010, 26100],
   /*K*/[3100,  3325,  3350,  3500,  3900, 26000],
 ]
+
 AI.MVVLVASCORES = []
 for (let e of ALLINDEX) {
     AI.MVVLVASCORES[e] = []

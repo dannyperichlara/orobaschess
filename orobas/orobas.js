@@ -365,7 +365,7 @@ module.exports = orobas = {
 
             this.updateHashkey(this.zobristKeys.positions[piece][i])
 
-            if (piece === P || piece === p) {
+            if (piece === P || piece === p || piece === K || piece === k) {
                 this.updatePawnHashkey(this.zobristKeys.positions[piece][i])
             }
         }
@@ -1082,7 +1082,7 @@ module.exports = orobas = {
     addPîece(piece, square) {
         this.updateHashkey(this.zobristKeys.positions[piece][square]) //Agrega pieza al hashkey en casilla de destino
 
-        if (piece === P || piece === p) {
+        if (piece === P || piece === p || piece === K || piece === k) {
             this.updatePawnHashkey(this.zobristKeys.positions[piece][square]) //Agrega pieza al hashkey en casilla de destino
         }
 
@@ -1093,7 +1093,7 @@ module.exports = orobas = {
         
         this.updateHashkey(this.zobristKeys.positions[piece][square]) //Quita pieza del hashkey de su casilla original
         
-        if (piece === P || piece === p) {
+        if (piece === P || piece === p || piece === K || piece === k) {
             this.updatePawnHashkey(this.zobristKeys.positions[piece][square]) //Quita pieza del hashkey de su casilla original
         }
         
