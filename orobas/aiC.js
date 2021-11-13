@@ -1486,14 +1486,15 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
             move.score += 1000 + hvalue
             continue
         } else {
-            // CRITERIO 7
-            // Las jugadas restantes se orden de acuerdo a donde se estima sería
-            // su mejor posición absoluta en el tablero
-            let pieceType = ABS[move.piece]
+            move.score += Math.random()*1000 | 0
+            // // CRITERIO 7
+            // // Las jugadas restantes se orden de acuerdo a donde se estima sería
+            // // su mejor posición absoluta en el tablero
+            // let pieceType = ABS[move.piece]
 
-            move.psqtvalue = AI.PSQT[pieceType][turn === WHITE ? move.to : 112^move.to] -
-                             AI.PSQT[pieceType][turn === WHITE ? move.from : 112^move.from]
-            move.score += move.psqtvalue
+            // move.psqtvalue = AI.PSQT[pieceType][turn === WHITE ? move.to : 112^move.to] -
+            //                  AI.PSQT[pieceType][turn === WHITE ? move.from : 112^move.from]
+            // move.score += move.psqtvalue
 
             continue
         }
