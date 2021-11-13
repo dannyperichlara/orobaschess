@@ -1809,7 +1809,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         }
 
         // Extensiones
-        let E = (incheck || mateE) && ply <= 2? 1 : 0
+        let E = mateE && depth <= 2? 1 : 0
 
         if (AI.phase === LATE_ENDGAME && (piece === P || piece === p)) E++
 
