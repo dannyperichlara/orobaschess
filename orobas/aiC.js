@@ -2364,7 +2364,7 @@ AI.MTDF = function (board, f, d, lowerBound, upperBound) {
        let beta = f + (f == bound[0]);
        f = AI.PVS(board, beta - 2, beta, d, 1)
        bound[(f < beta) | 0] = f
-    } while (bound[0] < bound[1]);
+    } while (bound[0] < bound[1] && !AI.stop);
     
     return f
 }
