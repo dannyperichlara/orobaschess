@@ -844,7 +844,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, moves) {
     // Pawn shield
     score += AI.getPawnShield(board, AI.phase)
 
-    if (AI.phase === LATE_ENDGAME && alpha > 300) {
+    if (AI.phase === LATE_ENDGAME && alpha > MARGIN3) {
         let opponentKing = turn === WHITE? board.blackKingIndex : board.whiteKingIndex
         let kingToTheCorner = AI.CENTERMANHATTAN[opponentKing] - 3
         let distanceBetweenKings = 8 - manhattanDistance(board.whiteKingIndex, board.blackKingIndex)
@@ -2352,7 +2352,7 @@ AI.getPV = function (board, length) {
     return PV
 }
 
-// https://www.chessprogramming.org/MTD(f) +168 ELO
+// https://www.chessprogramming.org/MTD(f) +188 ELO
 AI.MTDF = function (board, f, d, lowerBound, upperBound) {
     
     //Esta línea permite que el algoritmo funcione como PVS normal
