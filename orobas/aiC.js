@@ -1426,7 +1426,7 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         if (ttEntry /*&& ttEntry.flag < UPPERBOUND*/ && move.key === ttEntry.move.key) {
             move.tt = true
             move.score += 2e9
-            // continue
+            continue
         }
 
         // if (AI.PV[ply] && move.key === AI.PV[ply].key) {
