@@ -1180,7 +1180,7 @@ AI.getStructure = (board, pawnindexW, pawnindexB)=> {
         return hashentry
     }
 
-    let doubled = 0 // AI.getDoubled(board, pawnindexW, pawnindexB) // -32 ELO (why?)
+    let doubled = AI.getDoubled(board, pawnindexW, pawnindexB) // -32 ELO (why?)
     let defended = AI.getDefended(board, pawnindexW, pawnindexB)
     let passers = AI.getPassers(board, pawnindexW, pawnindexB)
     let space = AI.getSpace(board, pawnindexW, pawnindexB)
@@ -1319,7 +1319,7 @@ AI.getDoubled = (board, pawnindexW, pawnindexB)=>{
                 }
                 square -= 16
     
-                if ((square - 32) & 0x88) break
+                if ((square - 16) & 0x88) break
     
             }
         }
@@ -1333,13 +1333,13 @@ AI.getDoubled = (board, pawnindexW, pawnindexB)=>{
                 let piece = board.board[square]
     
                 if (piece) {
-                    if (piece === p) score += AI.DOUBLEDPENALTY[square]
+                    if (piece === p) score += AI.DOUBLEDPENALTY[112^square]
                     break
                 }
     
                 square += 16
     
-                if ((square + 32) & 0x88) break
+                if ((square + 16) & 0x88) break
             }
         }
     }
