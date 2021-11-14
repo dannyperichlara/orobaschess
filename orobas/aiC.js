@@ -1736,7 +1736,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         }
     }
 
-
     // Razoring
     if (cutNode && depth <= 3) {
         if (staticeval + MARGIN2 < beta) { // likely a fail-low node ?
@@ -1744,13 +1743,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             if (score < beta) return score
         }
     }
-
-    //Reverse Futility pruning (Static Null Move Pruning)
-    // let reverseval = staticeval - AI.PIECE_VALUES[0][KNIGHT]
-
-    // if (!incheck && depth > 1 && reverseval >= beta) {
-    //     return reverseval
-    // }
 
     // IID
     if (depth >=2 && !ttEntry) depth -= 2
