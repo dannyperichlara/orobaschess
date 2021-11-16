@@ -1421,19 +1421,12 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         move.killer2 = 0
         move.score = 0
 
-
         // CRITERIO 0: La jugada está en la Tabla de Trasposición
         if (ttEntry /*&& ttEntry.flag < UPPERBOUND*/ && move.key === ttEntry.move.key) {
             move.tt = true
             move.score += 2e9
             continue
         }
-
-        // if (AI.PV[ply] && move.key === AI.PV[ply].key) {
-        //     move.pv = true
-        //     move.score += 1e9
-        //     // continue
-        // }
 
         if (move.isCapture) {
             move.mvvlva = AI.MVVLVASCORES[move.piece][move.capturedPiece]
@@ -1535,15 +1528,12 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
     let hashkey = board.hashkey
     let incheck = board.isKingInCheck()
 
-    // if (!incheck) {
-        if (standpat >= beta) {
-            return standpat
-        }
-    
-        if (standpat > alpha) alpha = standpat
-    // }
+    if (standpat >= beta) {
+        return standpat
+    }
 
-    // let moves = board.getMoves(false, true)
+    if (standpat > alpha) alpha = standpat
+
     let moves = board.getMoves(false, !incheck)
 
     if (moves.length === 0) {
@@ -1593,16 +1583,18 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
         }
     }
 
-    if (legal === 0) return alpha
+    return alpha
+
+    // if (legal === 0) return alpha
     
-    if (alpha > oAlpha) {
-        // Mejor movimiento
-        // AI.ttSave(turn, hashkey, score, EXACT, 0, bestmove)
-        return alpha
-    } else {
-        //Upperbound
-        return oAlpha
-    }
+    // if (alpha > oAlpha) {
+    //     // Mejor movimiento
+    //     // AI.ttSave(turn, hashkey, score, EXACT, 0, bestmove)
+    //     return alpha
+    // } else {
+    //     //Upperbound
+    //     return oAlpha
+    // }
 }
 
 AI.ttSave = function (turn, hashkey, score, flag, depth, move) {
@@ -1612,7 +1604,7 @@ AI.ttSave = function (turn, hashkey, score, flag, depth, move) {
     }
 
     if (!move) {
-        console.log('no move')
+        // console.log('no move')
         return
     }
 
@@ -1649,19 +1641,6 @@ AI.saveHistory = function (turn, move, value) {
     AI.history[move.piece][move.to] += 32 * value - AI.history[move.piece][move.to]*Math.abs(value)/512 | 0
 
     //HistoryTableEntry += 32 * bonus - HistoryTableEntry * abs(bonus) / 512;
-}
-
-AI.givescheck = function (board, move) {
-
-    if (board.makeMove(move)) {
-        let incheck = board.isKingInCheck()
-
-        board.unmakeMove(move)
-
-        return incheck
-    }
-    
-    return false
 }
 
 // PRINCIPAL VARIATION SEARCH
@@ -1708,16 +1687,14 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
     }
 
-
     if (AI.stop && AI.iteration > AI.mindepth[AI.phase]) return alpha
 
-    // console.log(pvNode)
     let mateE = 0 // Mate threat extension
 
     let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode)
 
     //Futility
-    if (cutNode && depth < 9 &&  staticeval - MARGIN1*depth >= beta) {
+    if (cutNode && depth < 9 && staticeval - MARGIN1*depth >= beta) {
         return staticeval
     }
     
@@ -1745,7 +1722,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
     }
 
     // IID
-    if (depth >=2 && !ttEntry) depth -= 2
+    if (!ttEntry && depth >=2) depth -= 2
 
     let moves = board.getMoves()
 
@@ -1782,7 +1759,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             // Futility Pruning
             if (depth <= 3) {
                 if (move.isCapture) {
-                    // console.log(AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]])
                     if (staticeval + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]] + MARGIN1*depth < alpha) {
                         continue
                     }
@@ -1865,17 +1841,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                     // console.log('alpha')
                 }
             }
-            
-            // if (ttETC && ttETC.hashkey === hashkey && ttETC.depth >= depth) {
-            //     // max++
-            //     if (ttETC.flag === LOWERBOUND) {
-            //         if (ttETC.score > alpha) alpha = ttETC.score
-            //     } else if (ttETC.flag === UPPERBOUND) {
-            //         if (ttETC.score < beta) beta = ttETC.score
-            //     } else { // EXACT
-            //         return ttETC.score
-            //     }
-            // }
 
             if (legal === 1) {
                 // El primer movimiento se busca con ventana total y sin reducciones
@@ -1905,8 +1870,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                     }
     
                     AI.fh++
-
-                    AI.PV[ply] = move
     
                     //LOWERBOUND
                     AI.ttSave(turn, hashkey, score, LOWERBOUND, depth, move)
@@ -1939,9 +1902,6 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             }
         }
     }
-
-    // if (ply === 1) console.log('ply 1', bestmove.key, depth)
-    AI.PV[ply] = bestmove
 
     if (legal === 0) {
         // Ahogado
