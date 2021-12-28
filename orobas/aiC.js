@@ -495,7 +495,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
     let psqt = 0
 
     let tempTotalMaterial = 0
-    let tempTotalMaterial = 0
 
     let mgFactor = AI.totalmaterial / AI.maxMaterialValue
     let egFactor = 1 - mgFactor
