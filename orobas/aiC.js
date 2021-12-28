@@ -1264,11 +1264,19 @@ AI.getPassers = (board, pawnindexW, pawnindexB)=>{
         }
 
         if (!encounters) {
-            score += AI.PASSERSBONUS[pawnindexW[i]]
+            let bonus = AI.PASSERSBONUS[pawnindexW[i]]
+
+            score += bonus
 
             //blocked passer
             let blockerindex = pawnindexW[i] - 16
             if (board.board[blockerindex] === n || board.board[blockerindex] === b) score-=20
+
+            // Defended passer
+            score += pawnindexB[i] + 15 === P? bonus/4 | 0 : 0
+            score += pawnindexB[i] + 17 === P? bonus/4 | 0 : 0
+            score += pawnindexB[i] -  1 === P? bonus/5 | 0 : 0
+            score += pawnindexB[i] +  1 === P? bonus/5 | 0 : 0
 
             //TODO: passer protected by king
         }
@@ -1307,11 +1315,19 @@ AI.getPassers = (board, pawnindexW, pawnindexB)=>{
         }
         
         if (!encounters) {
-            score -= AI.PASSERSBONUS[112^pawnindexB[i]]
+            let bonus = AI.PASSERSBONUS[112^pawnindexB[i]]
+
+            score -= bonus
             
             //blocked passer
-            let blockerindex = pawnindexW[i] + 16
+            let blockerindex = pawnindexB[i] + 16
             if (board.board[blockerindex] === N || board.board[blockerindex] === B) score+=20
+
+            // Defended passer
+            score -= pawnindexB[i] - 15 === p? bonus/4 | 0 : 0
+            score -= pawnindexB[i] - 17 === p? bonus/4 | 0 : 0
+            score -= pawnindexB[i] -  1 === p? bonus/5 | 0 : 0
+            score -= pawnindexB[i] +  1 === p? bonus/5 | 0 : 0
             
             //TODO: passer protected by king
         }
@@ -1561,20 +1577,22 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
     for (let i = 0, len = moves.length; i < len; i++) {
         let move = moves[i]
 
-        
-        // Bad captures pruning (+34 ELO)
-        if (move.mvvlva < 6000) {
-            let attackers = board.isSquareAttacked(move.to, opponentTurn, false, false)
-
-            if (attackers) {
+        if (!incheck) {
+            // Bad captures pruning (+34 ELO)
+            if (move.mvvlva < 6000) {
+                let attackers = board.isSquareAttacked(move.to, opponentTurn, false, false)
+    
+                if (attackers) {
+                    continue
+                }
+            }
+            
+            // delta pruning para cada movimiento
+            if (standpat + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]]/this.nullWindowFactor < alpha) {
                 continue
             }
         }
         
-        // delta pruning para cada movimiento
-        if (!incheck && standpat + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]]/this.nullWindowFactor < alpha) {
-            continue
-        }
 
         // let m0 = (new Date()).getTime()
         if (board.makeMove(move)) {
