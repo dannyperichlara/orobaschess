@@ -495,6 +495,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
     let psqt = 0
 
     let tempTotalMaterial = 0
+    let tempTotalMaterial = 0
 
     let mgFactor = AI.totalmaterial / AI.maxMaterialValue
     let egFactor = 1 - mgFactor
@@ -1526,15 +1527,18 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
     let opponentTurn = turn === WHITE? BLACK : WHITE
     let legal = 0
     let incheck = board.isKingInCheck()
-    let standpat = AI.evaluate(board, ply, alpha, beta, pvNode, incheck) | 0
+    let standpat = alpha // Only to prevent undefined values for standpat
     
     let hashkey = board.hashkey
 
-    if (!incheck && standpat >= beta) {
-        return standpat
-    }
+    if (!incheck) {
+        standpat = AI.evaluate(board, ply, alpha, beta, pvNode, incheck) | 0
+        if (standpat >= beta) {
+            return standpat
+        }
 
-    if (standpat > alpha) alpha = standpat
+        if (standpat > alpha) alpha = standpat
+    }
 
     let moves = board.getMoves(false, !incheck)
 
@@ -1588,12 +1592,11 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
         }
     }
 
-    if (alpha > alphaOriginal) {
-        // AI.ttSave(turn, hashkey, alpha, LOWERBOUND, depth, bestmove)
-        return alpha
-    } else {
-        return alphaOriginal
+    if (incheck && legal === 0) {
+        return -MATE + ply
     }
+
+    return alpha
 
 }
 
@@ -1970,18 +1973,19 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
 
     if (legal === 0) {
         // Ahogado
-        if (!incheck) {
+        if (incheck) {
+            // Mate
+            // AI.ttSave(turn, hashkey, -MATE + ply, EXACT, depth, bestmove)
+            // AI.ttSave(turn, hashkey, -MATE + ply, LOWERBOUND, depth, bestmove)
+    
+            return -MATE + ply
+        } else {
             // AI.ttSave(turn, hashkey, DRAW, EXACT, depth, bestmove)
             // AI.ttSave(turn, hashkey, DRAW, LOWERBOUND, depth, bestmove)
             
             return DRAW
         }
         
-        // Mate
-        // AI.ttSave(turn, hashkey, -MATE + ply, EXACT, depth, bestmove)
-        // AI.ttSave(turn, hashkey, -MATE + ply, LOWERBOUND, depth, bestmove)
-
-        return -MATE + ply
 
     } else {
 
