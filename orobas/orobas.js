@@ -185,7 +185,6 @@ module.exports = orobas = {
         this.whiteKingIndex = this.board.indexOf(K)
         this.blackKingIndex = this.board.indexOf(k)
 
-        this.changeTurn(turn)
         
         if (enpassantsquare !== '-') {
             this.enPassantSquares = [this.coords.indexOf(enpassantsquare)]
@@ -193,6 +192,7 @@ module.exports = orobas = {
         }
 
         this.initHashkey()
+        this.changeTurn(turn)
     },
 
     fen2board (fen) {
@@ -344,9 +344,6 @@ module.exports = orobas = {
         }
 
         this.initHashkey()
-        
-        // Actualiza hashkey con turno
-        // this.updateHashkey(this.zobristKeys.turn[this.turn])
     },
 
     initHashkey() {
@@ -365,7 +362,7 @@ module.exports = orobas = {
 
             this.updateHashkey(this.zobristKeys.positions[piece][i])
 
-            if (piece === P || piece === p || piece === K || piece === k) {
+            if (piece === P || piece === p || piece === K || piece === k) {
                 this.updatePawnHashkey(this.zobristKeys.positions[piece][i])
             }
         }
@@ -654,6 +651,9 @@ module.exports = orobas = {
 
     getMoves(forMobility, onlyCaptures) {
         forMobility = !!forMobility
+
+        let mobilityMoves = new Array(13).fill(0)
+
         let moves = []
         let moveindex = 0
 
@@ -699,8 +699,8 @@ module.exports = orobas = {
             }
 
             //Peones
-            if (!forMobility) {
-                if (piece === P || piece === p) {
+            if (piece === P || piece === p) {
+                if (!forMobility) {
                     for (let j = 0, len=this.pieces[piece].offsets.length; j < len; j++) {
                         let to = from + this.pieces[piece].offsets[j]
     
@@ -728,7 +728,7 @@ module.exports = orobas = {
                                         promotingPiece = q
                                     }
     
-                                    moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
+                                    moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null, promotingPiece}))
                                 }
                             } else {
                                 let lastEP = this.enPassantSquares[this.enPassantSquares.length - 1]
@@ -784,40 +784,48 @@ module.exports = orobas = {
     
                     continue
                 }
-            }
-            
-            for (let j=0, len = this.pieces[piece].offsets.length; j < len; j++) {
-                let to = i
-                
-                while (true) {
-                    to += this.pieces[piece].offsets[j]
+            } else {
+                for (let j=0, len = this.pieces[piece].offsets.length; j < len; j++) {
+                    let to = i
                     
-                    if (to & 0x88) break
-                    
-                    let isCapture = false
-
-                    let capturedPiece = this.board[to]
-
-                    if (capturedPiece) {
-                        if (this.color(capturedPiece) === this.turn) {
-                            break
+                    while (true) {
+                        to += this.pieces[piece].offsets[j]
+                        
+                        if (to & 0x88) break
+                        
+                        let isCapture = false
+    
+                        let capturedPiece = this.board[to]
+    
+                        if (capturedPiece) {
+                            if (this.color(capturedPiece) === this.turn) {
+                                break
+                            } else {
+                                isCapture = true
+                            }
                         } else {
-                            isCapture = true
+                            if (onlyCaptures) continue
                         }
-                    } else {
-                        if (onlyCaptures) continue
-                    }
-
-                    moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
-
-                    if (isCapture) break
-
-                    if (piece === N || piece === n || piece === K || piece === k) {
-                        break
+    
+                        if (forMobility) {
+                            mobilityMoves[piece]++
+                        } else {
+                            moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
+                        }
+    
+    
+                        if (isCapture) break
+    
+                        if (piece === N || piece === n || piece === K || piece === k) {
+                            break
+                        }
                     }
                 }
             }
+            
         }
+
+        if (forMobility) return mobilityMoves
 
         return moves
     },
@@ -1013,7 +1021,6 @@ module.exports = orobas = {
         }
         
         this.castlingRights.push(castlingRights)
-        // this.changeTurn()
     },
 
     unmakeMove(move) {
@@ -1074,7 +1081,6 @@ module.exports = orobas = {
             this.updateHashkey(this.zobristKeys.enPassantSquares[lastEnPassantSquare]) // Agrega e.p. anterior
         }
         
-
         this.changeTurn()
 
     },
@@ -1108,8 +1114,8 @@ module.exports = orobas = {
         }
     },
  
-    color(n) {
-        return n > 6? BLACK : WHITE
+    color(piece) {
+        return piece >= p? BLACK : WHITE
     },
 
     perftData: {
