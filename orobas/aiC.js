@@ -148,8 +148,8 @@ AI.PIECE_VALUES[LATE_ENDGAME][R] = VPAWN*6.24 | 0
 AI.PIECE_VALUES[LATE_ENDGAME][Q] = VPAWN*11.40 | 0
 AI.PIECE_VALUES[LATE_ENDGAME][K] = 0
 
-AI.maxMaterialValue = 16 * AI.PIECE_VALUES[OPENING][P] +
-                      4 * AI.PIECE_VALUES[OPENING][N] +
+// Total material value doesnt count pawns
+AI.maxMaterialValue = 4 * AI.PIECE_VALUES[OPENING][N] +
                       4 * AI.PIECE_VALUES[OPENING][B] +
                       4 * AI.PIECE_VALUES[OPENING][R] +
                       2 * AI.PIECE_VALUES[OPENING][Q] +
@@ -160,8 +160,8 @@ console.log('Max material value', AI.maxMaterialValue)
 AI.BISHOP_PAIR = [50, 50, 80, 80]
 
 // CONSTANTES
-const MATE = AI.maxMaterialValue / AI.nullWindowFactor | 0
-const DRAW = 0 //-2*VPAWN
+const MATE = (AI.maxMaterialValue + 16*VPAWN) / AI.nullWindowFactor | 0
+const DRAW = 0
 const INFINITY = MATE + 1 | 0
 
 AI.ZEROINDEX = new Map()
@@ -499,6 +499,8 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
     let mgFactor = AI.totalmaterial / AI.maxMaterialValue
     let egFactor = 1 - mgFactor
 
+    // if (Math.random()>0.999) console.log(mgFactor, egFactor)
+
     let lightSquaresWhitePawns = 0
     let lightSquaresBlackPawns = 0
     let darkSquaresWhitePawns = 0
@@ -525,10 +527,14 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
             continue
         }
 
+        let sumMaterial = true // Sum material only if piece is not a pawn
+
         if (piece === P) {
             pawnindexW.push(i)
+            sumMaterial = false
         } else if (piece === p) {
             pawnindexB.push(i)
+            sumMaterial = false
         }
 
         if (AI.phase === OPENING) {
@@ -838,7 +844,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
 
         material += (mgMaterial + egMaterial) //Material
 
-        tempTotalMaterial += AI.PIECE_VALUES[OPENING][ABS[piece]] //Material
+        tempTotalMaterial += sumMaterial? AI.PIECE_VALUES[OPENING][ABS[piece]] : 0 //Not-pawn material
 
         let index = turn === WHITE? i : (112^i)
         let piecetype = ABS[piece]
