@@ -27,7 +27,7 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 0,
+    random: 50, 
     phase: 0,
     htlength: 8e6,
     pawntlength: 1e6,
@@ -1792,7 +1792,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
     }
 
     // IID
-    if (!ttEntry && depth >= 6) depth-=2
+    // if (!ttEntry && depth >= 6) depth-=2
+    if (!ttEntry) depth -= 2
 
     let moves = board.getMoves()
 
@@ -1811,6 +1812,11 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
         let E = mateE && depth <= 2? 1 : 0
 
         if (pvNode && AI.phase === LATE_ENDGAME && (piece === P || piece === p)) E++
+
+        // if (depth <= 2 && staticeval > beta + MARGIN3) {
+        //     // console.log('extend', total++)
+        //     E++
+        // }
 
         //Reducciones
         let R = 0
