@@ -1,10 +1,10 @@
 "use strict"
 
-const { square } = require('@tensorflow/tfjs-core')
-var seedrandom = require('seedrandom')
+// const { square } = require('@tensorflow/tfjs-core')
+// var seedrandom = require('seedrandom')
 const { totaldepth } = require('./aiC')
 
-let rnd = new seedrandom('orobas1234', {global: true})
+// let rnd = new seedrandom('orobas1234', {global: true})
 
 const P =   1
 const N =   2
@@ -188,7 +188,9 @@ module.exports = orobas = {
         
         if (enpassantsquare !== '-') {
             this.enPassantSquares = [this.coords.indexOf(enpassantsquare)]
-            console.log('En Passant Square', this.enPassantSquares)
+            // console.log('En Passant Square', this.enPassantSquares)
+        } else {
+            this.enPassantSquares = [null]
         }
 
         this.initHashkey()
@@ -679,21 +681,51 @@ module.exports = orobas = {
                 
                 if (piece === K && i === 116) {
                     if (castlingRights & 8) {
-                        moves[moveindex++]=(this.createMove({piece: K, from:116, to:118, isCapture:false, capturedPiece:0, castleSide:8, enPassantSquares:null}))
+                        if (
+                            !this.board[117] &&
+                            !this.board[118] &&
+                            !this.isSquareAttacked(117, BLACK) &&
+                            !this.isSquareAttacked(118, BLACK)
+                            ) {
+                            moves[moveindex++]=(this.createMove({piece: K, from:116, to:118, isCapture:false, capturedPiece:0, castleSide:8, enPassantSquares:null}))
+                        }
                     }
                     
                     if (castlingRights & 4) {
-                        moves[moveindex++]=(this.createMove({piece: K, from:116, to:114, isCapture:false, capturedPiece:0, castleSide:4, enPassantSquares:null}))
+                        if (
+                            !this.board[115] &&
+                            !this.board[114] &&
+                            !this.board[113] &&
+                            !this.isSquareAttacked(115, BLACK) &&
+                            !this.isSquareAttacked(114, BLACK)
+                            ) {
+                            moves[moveindex++]=(this.createMove({piece: K, from:116, to:114, isCapture:false, capturedPiece:0, castleSide:4, enPassantSquares:null}))
+                        }
                     } 
                 }
     
                 if (piece === k && i === 4) {
                     if (castlingRights & 2) {
-                        moves[moveindex++]=(this.createMove({piece: k, from:4, to:6, isCapture:false, capturedPiece:0, castleSide:2, enPassantSquares:null}))
+                        if (
+                            !this.board[5] &&
+                            !this.board[6] &&
+                            !this.isSquareAttacked(5, WHITE) &&
+                            !this.isSquareAttacked(6, WHITE)
+                            ) {
+                            moves[moveindex++]=(this.createMove({piece: k, from:4, to:6, isCapture:false, capturedPiece:0, castleSide:2, enPassantSquares:null}))
+                        }
                     }
                     
                     if (castlingRights & 1) {
-                        moves[moveindex++]=(this.createMove({piece: k, from:4, to:2, isCapture:false, capturedPiece:0, castleSide:1, enPassantSquares:null}))
+                        if (
+                            !this.board[3] &&
+                            !this.board[2] &&
+                            !this.board[1] &&
+                            !this.isSquareAttacked(3, WHITE) &&
+                            !this.isSquareAttacked(2, WHITE)
+                            ) {
+                            moves[moveindex++]=(this.createMove({piece: k, from:4, to:2, isCapture:false, capturedPiece:0, castleSide:1, enPassantSquares:null}))
+                        }
                     }
                 }
             }
@@ -735,7 +767,7 @@ module.exports = orobas = {
                                 if (to === lastEP) {
                                     isCapture = false
                                     //En passant move
-                                    // moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece:0, castleSide:0, enPassantSquares:null, enPassant: true}))
+                                    moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece:0, castleSide:0, enPassantSquares:null, enPassant: true}))
                                     epnodes++
                                 }
                             }
@@ -808,7 +840,17 @@ module.exports = orobas = {
                         }
     
                         if (forMobility) {
-                            mobilityMoves[piece]++
+                            let safe = true
+                            
+                            if (this.turn === WHITE) {
+                                if (this.board[to - 15] === p || this.board[to - 17] === p) safe = false
+                            } else {
+                                if (this.board[to + 15] === P || this.board[to + 17] === P) safe = false
+                            }
+                            
+                            if (safe) {
+                                mobilityMoves[piece]++
+                            }
                         } else {
                             moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
                         }
