@@ -45,17 +45,17 @@ let piece = {
     12: 'k',
 }
 
-let texel = async ()=>{
+let texel = async (subset)=>{
     let sumOfSquares = 0
     
-    for (let i = 0; i < positions.length; i++) {
+    for (let i = 0; i < subset.length; i++) {
     // for (let i = 0; i < 4; i++) {
         // orobas.init(true)
-        orobas.loadFen(positions[i].fen)
+        orobas.loadFen(positions[subset[i]].fen)
     
         await AI.search(orobas, {seconds:0.01}).then(res=>{
-            sumOfSquares += ((positions[i].result - res.sigmoid)**2)
-            if (i % 100 === 0) console.log('position ' + i)
+            sumOfSquares += ((positions[subset[i]].result - res.sigmoid)**2)
+            if (i % 40 === 0) console.log('position ' + subset[i])
         })
     }
 
@@ -83,10 +83,8 @@ let shield = JSON.parse(JSON.stringify(AI.PAWNSHIELD))
 let par = JSON.parse(JSON.stringify(AI.PAR))
 let mob = JSON.parse(JSON.stringify(AI.MOB))
 
-let bestS2 = 2989.8651427959035
-
 let iterate = async ()=>{
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 40; i++) {
         console.log('_____________________ ITERATION ' + i)
         AI.PSQT_OPENING = JSON.parse(JSON.stringify(opening))
         AI.PSQT_LATE_ENDGAME = JSON.parse(JSON.stringify(endgame))
@@ -112,7 +110,15 @@ let iterate = async ()=>{
         AI.PAR = JSON.parse(JSON.stringify(par))
         AI.MOB = JSON.parse(JSON.stringify(mob))
 
-        if (i > 0) {
+        let subset = []
+
+        for (let i = 0; i < positions.length; i++) {
+            if (Math.random() < 0.1) subset.push(i)
+        }
+
+        let originalS2 = await texel(subset)
+
+        if (true || i > 0) {
             AI.PSQT_OPENING[P] = AI.PSQT_OPENING[P].map(e=>(e === null? null : Math.random()>0.5? e + 1 : e - 1))
             AI.PSQT_OPENING[N] = AI.PSQT_OPENING[N].map(e=>(e === null? null : Math.random()>0.5? e + 1 : e - 1))
             AI.PSQT_OPENING[B] = AI.PSQT_OPENING[B].map(e=>(e === null? null : Math.random()>0.5? e + 1 : e - 1))
@@ -127,17 +133,17 @@ let iterate = async ()=>{
             AI.PSQT_LATE_ENDGAME[Q] = AI.PSQT_LATE_ENDGAME[Q].map(e=>(e === null? null : Math.random()>0.5? e + 1 : e - 1))
             AI.PSQT_LATE_ENDGAME[K] = AI.PSQT_LATE_ENDGAME[K].map(e=>(e === null? null : Math.random()>0.5? e + 1 : e - 1))
 
-            AI.POV = AI.POV.map(e=>(Math.random()>0.5? e + 5 : e - 5))
-            AI.PEV = AI.PEV.map(e=>(Math.random()>0.5? e + 5 : e - 5))
+            AI.POV = AI.POV.map(e=>(Math.random()>0.5? e + 2 : e - 2))
+            AI.PEV = AI.PEV.map(e=>(Math.random()>0.5? e + 2 : e - 2))
 
             AI.BISHOP_PAIR = AI.BISHOP_PAIR.map(e=>(Math.random()>0.5? e + 2 : e - 2))
 
             AI.DEFENDED_VALUES = AI.DEFENDED_VALUES.map(e=>(Math.random()>0.5? e + 1 : e - 1))
-            AI.BLOCKEDPAWNBONUS = AI.BLOCKEDPAWNBONUS.map(e=>(e === null? null : Math.random()>0.5? e + 2 : e - 2))
-            AI.DEFENDEDPAWNBONUS = AI.DEFENDEDPAWNBONUS.map(e=>(e === null? null : Math.random()>0.5? e + 2 : e - 2))
-            AI.ALIGNEDPAWNBONUS = AI.ALIGNEDPAWNBONUS.map(e=>(e === null? null : Math.random()>0.5? e + 2 : e - 2))
-            AI.NEIGHBOURPAWNBONUS = AI.NEIGHBOURPAWNBONUS.map(e=>(e === null? null : Math.random()>0.5? e + 2 : e - 2))
-            AI.LEVERPAWNBONUS = AI.LEVERPAWNBONUS.map(e=>(e === null? null : Math.random()>0.5? e + 2 : e - 2))
+            AI.BLOCKEDPAWNBONUS = AI.BLOCKEDPAWNBONUS.map(e=>(e === null? null : Math.random()>0.5? e + 1 : e - 1))
+            AI.DEFENDEDPAWNBONUS = AI.DEFENDEDPAWNBONUS.map(e=>(e === null? null : Math.random()>0.5? e + 1 : e - 1))
+            AI.ALIGNEDPAWNBONUS = AI.ALIGNEDPAWNBONUS.map(e=>(e === null? null : Math.random()>0.5? e + 1 : e - 1))
+            AI.NEIGHBOURPAWNBONUS = AI.NEIGHBOURPAWNBONUS.map(e=>(e === null? null : Math.random()>0.5? e + 1 : e - 1))
+            AI.LEVERPAWNBONUS = AI.LEVERPAWNBONUS.map(e=>(e === null? null : Math.random()>0.5? e + 1 : e - 1))
             AI.PASSERSBONUS = AI.PASSERSBONUS.map(e=>(e === null? null : Math.random()>0.5? e + 2 : e - 2))
             AI.DOUBLEDPENALTY = AI.DOUBLEDPENALTY.map(e=>(e === null? null : Math.random()>0.5? e + 2 : e - 2))
             AI.OUTPOSTBONUSKNIGHT = AI.OUTPOSTBONUSKNIGHT.map(e=>(e === null? null : Math.random()>0.5? e + 2 : e - 2))
@@ -153,12 +159,10 @@ let iterate = async ()=>{
             AI.MOB[Q] = AI.MOB[Q].map(e=>(Math.random()>0.5? e + 1 : e - 1))
         }
     
-        let sumOfSquares = await texel()
+        let sumOfSquares = await texel(subset)
     
-        if (sumOfSquares < bestS2) {
-            bestS2 = sumOfSquares
-
-            console.log(sumOfSquares, 'Better')
+        if (sumOfSquares < originalS2) {
+            console.log(originalS2, sumOfSquares, 'Better')
 
             opening = JSON.parse(JSON.stringify(AI.PSQT_OPENING))
             endgame = JSON.parse(JSON.stringify(AI.PSQT_LATE_ENDGAME))
@@ -183,7 +187,7 @@ let iterate = async ()=>{
             par = JSON.parse(JSON.stringify(AI.PAR))
             mob = JSON.parse(JSON.stringify(AI.MOB))
         } else {
-            console.log(sumOfSquares, 'No better')
+            console.log(originalS2, sumOfSquares, 'No better')
         }
     }
 
@@ -207,8 +211,6 @@ let iterate = async ()=>{
     console.log('AI.PAWNSHIELD = ', JSON.stringify(shield))
     console.log('AI.PAR = ', JSON.stringify(par))
     console.log('AI.MOB = ', JSON.stringify(mob))
-
-    console.log('Best S2', bestS2)
 }
 
 iterate()
