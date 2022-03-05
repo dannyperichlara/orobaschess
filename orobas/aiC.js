@@ -10,7 +10,7 @@ console.log(Math.random())
 
 let AI = {
     version: "2.1.5",
-    totaldepth: 6,
+    totaldepth: 0,
     ttNodes: 0,
     collisions: 0,
     iteration: 0,
@@ -30,11 +30,11 @@ let AI = {
     fh: 0,
     random: 0,
     phase: 0,
-    htlength: 8e6,
-    pawntlength: 5e5,
+    htlength: 46000,
+    pawntlength: 12000,
     // mindepth: [6,10,12,18],
     // mindepth: [18,20,22,24],
-    mindepth: [6,6,6,6],
+    mindepth: [0,0,0,0],
     secondspermove: 1,
     lastmove: null,
     f: 0,
@@ -122,29 +122,26 @@ AI.PIECE_VALUES = [
     new Map(),
 ]
 
-AI.PSQT_OPENING =  [null,[9,-3,9,5,-29,-7,3,-7,null,null,null,null,null,null,null,null,99,123,58,82,75,149,15,-14,null,null,null,null,null,null,null,null,13,-2,17,32,82,57,20,-17,null,null,null,null,null,null,null,null,-27,6,-7,32,14,35,30,-22,null,null,null,null,null,null,null,null,-44,-13,0,3,-4,7,9,-18,null,null,null,null,null,null,null,null,-25,-25,5,-15,8,2,10,-17,null,null,null,null,null,null,null,null,-32,36,-7,-22,-32,21,35,-29,null,null,null,null,null,null,null,null,23,-17,15,-23,35,33,-15,-11,null,null,null,null,null,null,null,null],[-162,-98,-17,-78,90,-90,-16,-118,null,null,null,null,null,null,null,null,-90,-38,67,17,6,21,8,-8,null,null,null,null,null,null,null,null,-42,83,44,50,71,154,100,43,null,null,null,null,null,null,null,null,-22,24,42,60,50,74,3,19,null,null,null,null,null,null,null,null,-18,3,15,2,31,26,22,-11,null,null,null,null,null,null,null,null,-38,-22,5,-1,-6,10,12,-17,null,null,null,null,null,null,null,null,-30,-58,1,-26,6,13,-33,-16,null,null,null,null,null,null,null,null,-92,14,-51,-2,2,-29,-32,-20,null,null,null,null,null,null,null,null],[-44,-1,-53,-56,-18,-29,-8,5,null,null,null,null,null,null,null,null,-25,-5,-15,-6,21,44,29,-52,null,null,null,null,null,null,null,null,-15,52,44,25,32,57,44,-33,null,null,null,null,null,null,null,null,-29,2,38,29,18,30,34,-5,null,null,null,null,null,null,null,null,-5,6,26,25,39,5,1,15,null,null,null,null,null,null,null,null,-23,30,36,22,13,26,25,33,null,null,null,null,null,null,null,null,-15,8,7,-7,22,20,22,-2,null,null,null,null,null,null,null,null,-44,-22,-17,-30,-18,9,-38,-10,null,null,null,null,null,null,null,null],[29,9,5,48,70,14,32,44,null,null,null,null,null,null,null,null,-4,29,55,57,97,64,15,41,null,null,null,null,null,null,null,null,-40,76,23,33,24,46,32,21,null,null,null,null,null,null,null,null,-9,-14,-4,23,23,14,1,-31,null,null,null,null,null,null,null,null,-21,-39,-13,-22,18,8,23,-48,null,null,null,null,null,null,null,null,-52,-14,-37,-20,-4,-1,4,-46,null,null,null,null,null,null,null,null,-49,-19,-15,-28,-10,10,-1,-56,null,null,null,null,null,null,null,null,0,-22,-24,14,17,4,-40,-11,null,null,null,null,null,null,null,null],[-11,5,40,13,94,31,70,68,null,null,null,null,null,null,null,null,-41,-40,-4,12,-27,54,31,35,null,null,null,null,null,null,null,null,-18,-20,12,19,40,43,64,56,null,null,null,null,null,null,null,null,-24,-12,-13,1,-8,-4,-21,-2,null,null,null,null,null,null,null,null,10,-21,-20,-25,-19,-13,16,-4,null,null,null,null,null,null,null,null,21,5,-16,-5,10,3,35,26,null,null,null,null,null,null,null,null,-32,1,-6,13,-13,14,4,18,null,null,null,null,null,null,null,null,-4,-33,-18,1,-36,-22,2,-77,null,null,null,null,null,null,null,null],[-40,38,9,-22,-69,-51,-31,-4,null,null,null,null,null,null,null,null,-4,-10,-25,0,-31,7,-27,-2,null,null,null,null,null,null,null,null,-6,27,9,-31,-7,3,7,-7,null,null,null,null,null,null,null,null,-10,-17,17,-22,-37,-34,-11,-21,null,null,null,null,null,null,null,null,-60,-10,-38,-24,-41,-19,-30,-64,null,null,null,null,null,null,null,null,-7,13,-49,-63,-45,-41,0,-18,null,null,null,null,null,null,null,null,22,46,-15,-61,-38,-1,-12,13,null,null,null,null,null,null,null,null,-12,53,9,-33,1,-53,15,1,null,null,null,null,null,null,null,null]]
-AI.PSQT_LATE_ENDGAME =  [null,[-15,-43,5,-9,9,-5,23,5,null,null,null,null,null,null,null,null,195,164,151,117,164,147,190,186,null,null,null,null,null,null,null,null,89,115,94,70,63,54,113,59,null,null,null,null,null,null,null,null,37,35,-2,2,-5,-25,-6,22,null,null,null,null,null,null,null,null,4,-14,-18,4,-14,-7,8,-14,null,null,null,null,null,null,null,null,15,-2,-7,16,13,-28,8,23,null,null,null,null,null,null,null,null,28,13,13,19,22,7,17,-24,null,null,null,null,null,null,null,null,-1,11,-17,-23,-5,-13,3,21,null,null,null,null,null,null,null,null],[-53,-3,-12,-37,-32,-30,-60,-106,null,null,null,null,null,null,null,null,-42,-3,-30,-3,-14,-26,-37,-59,null,null,null,null,null,null,null,null,-13,-39,9,-8,10,-10,-34,-10,null,null,null,null,null,null,null,null,16,-8,31,-7,25,-4,15,-35,null,null,null,null,null,null,null,null,-33,-21,27,32,23,18,9,-9,null,null,null,null,null,null,null,null,-4,6,-12,6,13,6,-39,-27,null,null,null,null,null,null,null,null,-23,-31,-41,14,-13,-25,-42,-45,null,null,null,null,null,null,null,null,-50,-48,-6,-18,-13,-23,-49,-57,null,null,null,null,null,null,null,null],[-11,-12,-14,-27,-28,-32,2,-35,null,null,null,null,null,null,null,null,-19,-3,-14,-15,0,-4,25,-5,null,null,null,null,null,null,null,null,21,-25,-39,-4,7,-11,-37,1,null,null,null,null,null,null,null,null,0,-4,9,4,-1,31,0,-5,null,null,null,null,null,null,null,null,17,-2,16,42,16,-11,6,-24,null,null,null,null,null,null,null,null,-3,-6,-11,5,18,-8,14,12,null,null,null,null,null,null,null,null,-15,7,24,10,1,0,-18,-26,null,null,null,null,null,null,null,null,-46,-16,0,-8,2,-31,-4,4,null,null,null,null,null,null,null,null],[14,17,21,16,-19,-17,19,24,null,null,null,null,null,null,null,null,34,40,0,16,-8,-2,-1,-22,null,null,null,null,null,null,null,null,-22,4,-2,16,-17,-6,-12,-24,null,null,null,null,null,null,null,null,19,12,20,14,9,-16,-4,7,null,null,null,null,null,null,null,null,-6,10,-9,-9,-24,15,-17,8,null,null,null,null,null,null,null,null,-7,-19,22,-28,-16,-5,-3,-17,null,null,null,null,null,null,null,null,-21,-3,-17,-3,-16,10,-10,-8,null,null,null,null,null,null,null,null,-12,-7,4,6,4,-28,3,-1,null,null,null,null,null,null,null,null],[-10,15,23,26,32,24,-1,13,null,null,null,null,null,null,null,null,-12,31,33,26,55,24,31,-17,null,null,null,null,null,null,null,null,-29,-1,10,72,72,24,16,20,null,null,null,null,null,null,null,null,16,39,15,32,50,61,76,29,null,null,null,null,null,null,null,null,-33,13,0,56,30,35,50,36,null,null,null,null,null,null,null,null,-5,-4,14,15,26,24,-5,-12,null,null,null,null,null,null,null,null,-19,-4,-17,-17,-35,-58,-39,-23,null,null,null,null,null,null,null,null,-18,-49,-21,-52,-20,-35,-47,-12,null,null,null,null,null,null,null,null],[-71,-30,-25,-31,-8,-8,15,-16,null,null,null,null,null,null,null,null,-23,6,15,38,28,29,22,38,null,null,null,null,null,null,null,null,11,30,12,12,-9,62,57,8,null,null,null,null,null,null,null,null,7,17,35,22,7,38,45,10,null,null,null,null,null,null,null,null,-37,-1,26,23,36,34,10,2,null,null,null,null,null,null,null,null,0,-44,10,22,38,25,2,-26,null,null,null,null,null,null,null,null,-20,-2,5,2,9,31,-26,4,null,null,null,null,null,null,null,null,-56,-15,-28,-12,-41,-23,1,-8,null,null,null,null,null,null,null,null]]
-AI.POV =  [402,432,556,1266]
-AI.PEV =  [426,342,664,1204]
-AI.BISHOP_PAIR =  [20,38,92,62]
-AI.DEFENDED_VALUES =  [-2,11,10,29,30,51,-2,16,-22,-22,-64,-34,-60,-32,-48,-28,-60,-50,-46,-30,-50,-44,-62,-36,-34,-40]
-AI.BLOCKEDPAWNBONUS =  [-6,-2,4,46,-4,-4,10,30,null,null,null,null,null,null,null,null,32,10,18,-10,-8,-6,4,20,null,null,null,null,null,null,null,null,7,20,4,36,36,40,26,19,null,null,null,null,null,null,null,null,13,19,15,21,53,15,13,-15,null,null,null,null,null,null,null,null,-2,4,-10,12,-18,2,14,-6,null,null,null,null,null,null,null,null,-4,-10,-18,-8,-6,-6,2,18,null,null,null,null,null,null,null,null,-2,-4,-14,-6,8,-12,-22,12,null,null,null,null,null,null,null,null,14,18,24,22,24,32,8,2,null,null,null,null,null,null,null,null]
-AI.DEFENDEDPAWNBONUS =  [-2,26,-2,-12,6,24,-10,28,null,null,null,null,null,null,null,null,11,56,55,32,64,43,48,15,null,null,null,null,null,null,null,null,10,9,9,27,21,33,51,-10,null,null,null,null,null,null,null,null,7,21,29,7,5,11,-1,21,null,null,null,null,null,null,null,null,15,6,-26,-1,-7,20,30,5,null,null,null,null,null,null,null,null,4,3,-4,7,1,0,3,10,null,null,null,null,null,null,null,null,10,18,-20,12,-4,-12,-4,-6,null,null,null,null,null,null,null,null,-12,16,-18,6,10,8,16,6,null,null,null,null,null,null,null,null]
-AI.ALIGNEDPAWNBONUS =  [-18,14,10,-2,10,2,12,6,null,null,null,null,null,null,null,null,34,37,41,47,43,63,71,52,null,null,null,null,null,null,null,null,33,48,39,36,36,71,26,53,null,null,null,null,null,null,null,null,0,43,39,25,-7,67,33,14,null,null,null,null,null,null,null,null,13,17,19,21,25,13,9,31,null,null,null,null,null,null,null,null,-3,2,-4,-3,3,36,14,13,null,null,null,null,null,null,null,null,-6,-5,4,-1,9,8,-1,-30,null,null,null,null,null,null,null,null,4,6,0,-22,10,20,14,-6,null,null,null,null,null,null,null,null]
-AI.NEIGHBOURPAWNBONUS =  [-8,0,-4,2,36,-2,-2,-10,null,null,null,null,null,null,null,null,16,-3,14,11,19,-4,3,20,null,null,null,null,null,null,null,null,8,2,16,10,4,20,-4,-2,null,null,null,null,null,null,null,null,-10,2,20,5,-1,0,24,-14,null,null,null,null,null,null,null,null,20,-5,4,13,27,24,27,-4,null,null,null,null,null,null,null,null,16,12,-15,0,18,7,12,6,null,null,null,null,null,null,null,null,13,-8,-15,-4,-20,23,4,-1,null,null,null,null,null,null,null,null,-18,10,8,-14,-18,-18,-6,-8,null,null,null,null,null,null,null,null]
-AI.LEVERPAWNBONUS =  [12,4,8,-20,10,16,0,2,null,null,null,null,null,null,null,null,2,-2,-26,18,-16,20,8,16,null,null,null,null,null,null,null,null,30,28,20,12,24,6,10,36,null,null,null,null,null,null,null,null,6,9,39,5,17,17,23,22,null,null,null,null,null,null,null,null,-16,-6,2,-24,14,-22,-12,-8,null,null,null,null,null,null,null,null,8,-10,0,4,2,-32,-10,12,null,null,null,null,null,null,null,null,6,6,-2,12,4,10,10,8,null,null,null,null,null,null,null,null,10,4,-4,-6,14,-18,38,16,null,null,null,null,null,null,null,null]
-AI.PASSERSBONUS =  [-12,0,68,-48,8,36,-8,-40,null,null,null,null,null,null,null,null,86,101,127,94,102,87,81,70,null,null,null,null,null,null,null,null,150,24,60,88,28,56,20,38,null,null,null,null,null,null,null,null,70,40,40,32,60,72,68,18,null,null,null,null,null,null,null,null,16,14,70,38,10,70,54,16,null,null,null,null,null,null,null,null,33,38,76,24,44,28,-6,29,null,null,null,null,null,null,null,null,38,-48,56,30,30,29,28,-18,null,null,null,null,null,null,null,null,-12,32,-24,-24,-12,-24,20,4,null,null,null,null,null,null,null,null]
-AI.DOUBLEDPENALTY =  [0,-4,-36,-4,32,-36,-24,12,null,null,null,null,null,null,null,null,46,50,-9,8,0,55,62,58,null,null,null,null,null,null,null,null,12,64,-3,18,38,9,-44,16,null,null,null,null,null,null,null,null,-62,2,51,-16,-8,7,-2,62,null,null,null,null,null,null,null,null,68,16,21,-2,-6,-7,-4,28,null,null,null,null,null,null,null,null,30,30,-61,-4,16,-25,70,10,null,null,null,null,null,null,null,null,-20,-20,80,-44,-36,-12,-16,-8,null,null,null,null,null,null,null,null,12,0,4,28,-60,0,-8,4,null,null,null,null,null,null,null,null]
-AI.OUTPOSTBONUSKNIGHT =  [12,-12,24,-8,8,4,-40,-24,null,null,null,null,null,null,null,null,36,52,-8,8,-28,8,-8,-12,null,null,null,null,null,null,null,null,-4,29,84,34,78,60,21,40,null,null,null,null,null,null,null,null,55,16,47,27,27,35,52,11,null,null,null,null,null,null,null,null,-11,6,82,61,37,6,-6,9,null,null,null,null,null,null,null,null,29,15,-7,64,-36,-11,-13,17,null,null,null,null,null,null,null,null,40,4,20,-36,-48,24,-48,-36,null,null,null,null,null,null,null,null,20,-48,-44,-12,16,20,16,8,null,null,null,null,null,null,null,null]
-AI.OUTPOSTBONUSBISHOP =  [-4,36,-12,-24,-24,28,-56,-80,null,null,null,null,null,null,null,null,4,32,-32,-32,36,16,36,32,null,null,null,null,null,null,null,null,48,37,96,58,50,72,29,44,null,null,null,null,null,null,null,null,-9,20,19,59,31,43,36,-25,null,null,null,null,null,null,null,null,0,-18,2,-3,-51,54,-2,68,null,null,null,null,null,null,null,null,29,39,1,28,24,1,15,-7,null,null,null,null,null,null,null,null,-28,-12,0,20,16,-12,-8,48,null,null,null,null,null,null,null,null,-24,56,-8,60,0,-8,-24,-32,null,null,null,null,null,null,null,null]// AI.ATTACKING_PIECES =  [null,null,33,57,77,120]
-AI.PAWNSHIELD =  [30,30,20,10]
-AI.PAR =  [
-    43, 13,  6, 25,  9, 17, 55, 15, 25,
-     9,  4, 15,  3, 23,  7,  3, 25, 17,
-     5,  6,  4, 20,  1,  6, 13, 10, 11,
-     3, 37, 30,  4, 27, 13, 93, 27
-  ]
-AI.MOB =  [ null, null, [ 20, 24 ], [ 22, 20 ], [ 28, 20 ], [ 18, 18 ] ]
+AI.PSQT_OPENING =  [null,[25,13,19,11,-21,31,47,3,null,null,null,null,null,null,null,null,115,157,78,124,47,213,15,-54,null,null,null,null,null,null,null,null,21,22,-21,-22,62,57,10,9,null,null,null,null,null,null,null,null,-13,6,-35,86,74,45,-6,-80,null,null,null,null,null,null,null,null,-40,-21,10,-67,-22,-25,-53,-72,null,null,null,null,null,null,null,null,-15,-21,15,-27,40,32,20,-23,null,null,null,null,null,null,null,null,-36,40,-21,-32,-32,-1,9,5,null,null,null,null,null,null,null,null,71,31,-3,9,7,-17,21,-43,null,null,null,null,null,null,null,null],[-194,-92,-45,-96,104,-104,-58,-162,null,null,null,null,null,null,null,null,-72,-80,79,19,26,89,28,16,null,null,null,null,null,null,null,null,-80,45,8,72,13,156,118,27,null,null,null,null,null,null,null,null,12,64,-10,54,50,24,-37,61,null,null,null,null,null,null,null,null,-58,39,61,-30,71,12,-46,-35,null,null,null,null,null,null,null,null,-20,-18,13,51,32,10,60,-7,null,null,null,null,null,null,null,null,-46,-26,51,14,-28,35,-31,-20,null,null,null,null,null,null,null,null,-92,46,-85,-20,20,-55,-18,-96,null,null,null,null,null,null,null,null],[-4,3,-117,-74,18,-53,-8,23,null,null,null,null,null,null,null,null,-7,-49,-27,6,39,86,29,-88,null,null,null,null,null,null,null,null,5,32,122,61,58,45,16,-41,null,null,null,null,null,null,null,null,-29,-54,98,27,-6,-40,18,-25,null,null,null,null,null,null,null,null,-47,-42,36,9,33,-15,19,39,null,null,null,null,null,null,null,null,-49,0,-8,36,-41,54,9,21,null,null,null,null,null,null,null,null,21,-4,-13,-45,6,-22,46,-14,null,null,null,null,null,null,null,null,-34,-32,39,-16,32,-15,-18,-2,null,null,null,null,null,null,null,null],[47,25,41,52,130,-4,60,104,null,null,null,null,null,null,null,null,56,59,89,47,75,30,7,57,null,null,null,null,null,null,null,null,-44,50,3,27,20,26,26,47,null,null,null,null,null,null,null,null,-23,-34,-4,-35,-7,48,-19,19,null,null,null,null,null,null,null,null,-13,3,-1,-38,2,-86,-29,2,null,null,null,null,null,null,null,null,-34,28,-21,-4,22,-3,-18,-32,null,null,null,null,null,null,null,null,-105,-43,-19,-52,-34,-18,-21,-36,null,null,null,null,null,null,null,null,-106,-26,-14,48,-27,-30,22,-11,null,null,null,null,null,null,null,null],[-27,-17,20,47,70,-1,32,-34,null,null,null,null,null,null,null,null,-61,2,12,-12,-9,20,47,41,null,null,null,null,null,null,null,null,-14,-78,18,-17,18,59,10,92,null,null,null,null,null,null,null,null,-24,-24,-59,-67,10,6,-15,56,null,null,null,null,null,null,null,null,34,17,-46,-13,-17,-3,62,-18,null,null,null,null,null,null,null,null,45,-35,48,29,50,-23,65,16,null,null,null,null,null,null,null,null,-22,19,-58,-17,5,-14,20,92,null,null,null,null,null,null,null,null,28,5,-4,-3,-74,8,-6,-43,null,null,null,null,null,null,null,null],[-10,70,21,-10,-85,-47,-11,-2,null,null,null,null,null,null,null,null,22,-2,19,54,-103,41,-45,-60,null,null,null,null,null,null,null,null,-28,-47,-29,77,-31,43,-13,7,null,null,null,null,null,null,null,null,14,13,-1,-52,-7,-106,-53,-71,null,null,null,null,null,null,null,null,-62,10,-34,-6,1,-49,-10,-68,null,null,null,null,null,null,null,null,-17,31,-31,-51,-33,-43,-18,-14,null,null,null,null,null,null,null,null,-20,78,61,-71,-32,21,28,33,null,null,null,null,null,null,null,null,-12,41,1,-57,-23,-29,27,3,null,null,null,null,null,null,null,null]]
+AI.PSQT_LATE_ENDGAME =  [null,[1,-81,35,21,-25,-5,49,-29,null,null,null,null,null,null,null,null,181,168,177,139,156,95,238,220,null,null,null,null,null,null,null,null,29,161,118,86,33,82,113,31,null,null,null,null,null,null,null,null,27,35,0,18,-47,-39,-22,2,null,null,null,null,null,null,null,null,28,-46,-30,-22,-24,-15,0,-22,null,null,null,null,null,null,null,null,-17,-12,9,40,37,-44,-12,39,null,null,null,null,null,null,null,null,18,19,15,71,22,41,67,-32,null,null,null,null,null,null,null,null,-17,7,-79,23,-21,-19,3,7,null,null,null,null,null,null,null,null],[-75,1,-18,-19,-10,6,28,-86,null,null,null,null,null,null,null,null,14,13,-26,-5,-48,-6,-57,-59,null,null,null,null,null,null,null,null,-19,-1,-1,-30,-22,-38,-88,0,null,null,null,null,null,null,null,null,-68,-26,-25,-13,-11,20,13,-37,null,null,null,null,null,null,null,null,-45,-5,35,36,-11,24,-23,-31,null,null,null,null,null,null,null,null,-32,-24,-52,-8,27,58,-51,-49,null,null,null,null,null,null,null,null,-53,-43,41,-54,-5,-23,-76,-5,null,null,null,null,null,null,null,null,-52,-78,58,2,-31,-35,-91,-103,null,null,null,null,null,null,null,null],[17,-24,-2,-33,-20,-16,14,-79,null,null,null,null,null,null,null,null,-27,-25,10,49,30,6,9,39,null,null,null,null,null,null,null,null,95,-21,-29,-24,37,-29,-59,-57,null,null,null,null,null,null,null,null,-88,22,9,-4,21,21,-16,63,null,null,null,null,null,null,null,null,-9,16,0,24,-10,23,36,-84,null,null,null,null,null,null,null,null,5,-2,13,11,-6,-26,0,58,null,null,null,null,null,null,null,null,29,9,52,98,-1,2,-42,-78,null,null,null,null,null,null,null,null,-84,12,16,20,8,1,-6,28,null,null,null,null,null,null,null,null],[54,13,33,24,-29,-7,37,60,null,null,null,null,null,null,null,null,8,68,16,14,0,-6,41,-12,null,null,null,null,null,null,null,null,28,38,-4,16,21,16,52,-24,null,null,null,null,null,null,null,null,39,-8,-12,-2,-23,-10,6,13,null,null,null,null,null,null,null,null,42,-12,-17,-27,0,-23,45,-14,null,null,null,null,null,null,null,null,-5,7,26,12,14,-19,-21,-19,null,null,null,null,null,null,null,null,-23,-13,39,-17,12,8,26,-42,null,null,null,null,null,null,null,null,-54,-7,32,70,62,-34,13,-19,null,null,null,null,null,null,null,null],[-112,17,35,68,4,20,9,-5,null,null,null,null,null,null,null,null,-56,67,57,6,23,20,59,-3,null,null,null,null,null,null,null,null,7,19,-72,110,110,56,114,14,null,null,null,null,null,null,null,null,48,93,-9,54,56,45,70,45,null,null,null,null,null,null,null,null,-41,5,16,24,6,-41,48,14,null,null,null,null,null,null,null,null,3,-22,-34,23,52,6,45,0,null,null,null,null,null,null,null,null,-31,12,1,-25,-69,-70,-79,-95,null,null,null,null,null,null,null,null,6,-123,7,-96,-54,3,-31,-10,null,null,null,null,null,null,null,null],[-63,16,-45,-71,6,36,-3,48,null,null,null,null,null,null,null,null,1,-18,21,32,88,9,18,32,null,null,null,null,null,null,null,null,-15,48,-18,42,-33,54,27,22,null,null,null,null,null,null,null,null,7,29,115,54,-21,18,-15,6,null,null,null,null,null,null,null,null,-43,7,36,31,0,54,44,34,null,null,null,null,null,null,null,null,12,-2,4,20,-22,51,-62,-24,null,null,null,null,null,null,null,null,0,-2,23,6,59,29,-44,18,null,null,null,null,null,null,null,null,-62,-39,16,-52,-7,-23,-33,32,null,null,null,null,null,null,null,null]]
+AI.POV =  [null,94,300,306,494,890]
+AI.PEV =  [null,92,300,302,494,884]
+AI.BISHOP_PAIR =  [17,23,28,27]
+AI.DEFENDED_VALUES =  [28,36,30,26,30,10,10,14,10,14,16,36,14,26,8,28,28,18,26,16,8,22,26,22,28,32]
+AI.BLOCKEDPAWNBONUS =  [18,14,11,18,24,22,27,29,null,null,null,null,null,null,null,null,22,15,17,15,20,13,13,17,null,null,null,null,null,null,null,null,12,40,32,19,29,8,3,20,null,null,null,null,null,null,null,null,13,12,33,13,37,5,30,8,null,null,null,null,null,null,null,null,16,20,16,19,23,22,36,21,null,null,null,null,null,null,null,null,23,14,19,32,21,33,25,21,null,null,null,null,null,null,null,null,9,19,30,18,10,23,7,27,null,null,null,null,null,null,null,null,12,30,21,20,30,24,30,11,null,null,null,null,null,null,null,null]
+AI.DEFENDEDPAWNBONUS =  [26,16,16,14,26,25,36,22,null,null,null,null,null,null,null,null,38,6,14,21,20,23,30,11,null,null,null,null,null,null,null,null,44,24,10,23,13,14,16,30,null,null,null,null,null,null,null,null,35,15,35,37,30,12,22,44,null,null,null,null,null,null,null,null,34,36,19,34,20,7,14,32,null,null,null,null,null,null,null,null,18,32,34,23,19,20,45,8,null,null,null,null,null,null,null,null,26,7,31,15,27,8,6,24,null,null,null,null,null,null,null,null,22,21,16,13,29,16,3,10,null,null,null,null,null,null,null,null]
+AI.ALIGNEDPAWNBONUS =  [35,30,18,10,13,8,29,14,null,null,null,null,null,null,null,null,30,17,28,21,8,37,18,20,null,null,null,null,null,null,null,null,30,19,18,3,26,24,10,8,null,null,null,null,null,null,null,null,24,30,28,36,29,26,28,14,null,null,null,null,null,null,null,null,17,25,19,30,20,24,41,18,null,null,null,null,null,null,null,null,6,14,16,24,21,9,17,10,null,null,null,null,null,null,null,null,17,7,8,28,32,5,24,15,null,null,null,null,null,null,null,null,17,14,12,24,15,37,22,28,null,null,null,null,null,null,null,null]
+AI.NEIGHBOURPAWNBONUS =  [10,27,20,21,18,31,8,12,null,null,null,null,null,null,null,null,20,15,36,32,27,13,47,12,null,null,null,null,null,null,null,null,36,14,22,19,8,21,16,21,null,null,null,null,null,null,null,null,23,31,6,19,20,24,23,13,null,null,null,null,null,null,null,null,19,24,16,24,20,34,40,8,null,null,null,null,null,null,null,null,28,14,18,7,8,6,20,25,null,null,null,null,null,null,null,null,14,10,16,13,14,22,24,26,null,null,null,null,null,null,null,null,17,25,24,21,22,14,1,17,null,null,null,null,null,null,null,null]
+AI.LEVERPAWNBONUS =  [17,32,30,25,20,4,24,37,null,null,null,null,null,null,null,null,13,20,18,20,16,6,20,8,null,null,null,null,null,null,null,null,9,28,22,21,36,34,18,18,null,null,null,null,null,null,null,null,1,22,33,23,28,20,20,25,null,null,null,null,null,null,null,null,22,14,13,16,40,39,18,27,null,null,null,null,null,null,null,null,30,19,40,34,31,24,23,30,null,null,null,null,null,null,null,null,15,36,16,11,30,2,9,26,null,null,null,null,null,null,null,null,18,16,22,36,30,22,22,16,null,null,null,null,null,null,null,null]
+AI.PASSERSBONUS =  [28,24,28,20,14,12,18,2,null,null,null,null,null,null,null,null,22,34,24,16,28,34,24,18,null,null,null,null,null,null,null,null,14,14,20,24,26,28,20,18,null,null,null,null,null,null,null,null,16,12,24,14,10,2,12,22,null,null,null,null,null,null,null,null,42,8,8,24,18,44,34,14,null,null,null,null,null,null,null,null,10,12,22,26,14,12,16,14,null,null,null,null,null,null,null,null,22,16,28,8,20,10,16,22,null,null,null,null,null,null,null,null,18,28,20,16,24,30,30,0,null,null,null,null,null,null,null,null]
+AI.DOUBLEDPENALTY =  [29,5,16,20,26,31,22,29,null,null,null,null,null,null,null,null,28,14,20,21,20,7,15,26,null,null,null,null,null,null,null,null,21,31,6,22,30,17,22,23,null,null,null,null,null,null,null,null,18,29,25,30,16,24,26,9,null,null,null,null,null,null,null,null,33,18,17,31,40,23,18,18,null,null,null,null,null,null,null,null,29,9,11,16,8,27,14,30,null,null,null,null,null,null,null,null,18,36,20,35,35,23,34,22,null,null,null,null,null,null,null,null,33,20,14,33,22,19,32,22,null,null,null,null,null,null,null,null]
+AI.OUTPOSTBONUSKNIGHT =  [8,18,11,36,16,22,26,30,null,null,null,null,null,null,null,null,36,38,27,6,19,12,26,23,null,null,null,null,null,null,null,null,30,24,23,24,32,29,21,22,null,null,null,null,null,null,null,null,12,32,15,20,24,12,23,21,null,null,null,null,null,null,null,null,12,11,22,15,19,9,35,29,null,null,null,null,null,null,null,null,12,23,9,7,39,27,18,16,null,null,null,null,null,null,null,null,12,12,19,24,30,24,5,13,null,null,null,null,null,null,null,null,20,26,25,30,10,10,20,1,null,null,null,null,null,null,null,null]
+AI.OUTPOSTBONUSBISHOP =  [16,11,11,15,28,35,23,17,null,null,null,null,null,null,null,null,18,5,34,21,32,21,30,31,null,null,null,null,null,null,null,null,38,19,29,2,6,30,36,28,null,null,null,null,null,null,null,null,25,5,1,8,2,35,2,5,null,null,null,null,null,null,null,null,20,30,36,27,30,24,19,32,null,null,null,null,null,null,null,null,24,12,9,4,24,27,21,10,null,null,null,null,null,null,null,null,16,26,16,16,20,17,16,16,null,null,null,null,null,null,null,null,15,21,42,7,21,15,16,23,null,null,null,null,null,null,null,null]
+AI.ATTACKING_PIECES =  [null,null,30,30,20,22]
+AI.PAWNSHIELD =  [28,19,11,6]
+AI.PAR =  [11,14,21,30,16,28,28,26,20,24,16,12,13,26,25,20,22,26,5,3,12,7,9,14,1,4,30,39,19,29,10,20,22,22,25]
+AI.MOB =  [null,null,[22,33],[46,21],[18,20],[32,26]]
+
 
 // AI.PAR = [
 //     40, //0 center control
@@ -192,32 +189,32 @@ AI.MOB =  [ null, null, [ 20, 24 ], [ 22, 20 ], [ 28, 20 ], [ 18, 18 ] ]
 
 AI.PIECE_VALUES[OPENING][0] = 0
 
-AI.PIECE_VALUES[OPENING][p] = -VPAWN | 0
-AI.PIECE_VALUES[OPENING][n] = -VPAWN*AI.POV[0]/100 | 0
-AI.PIECE_VALUES[OPENING][b] = -VPAWN*AI.POV[1]/100 | 0
-AI.PIECE_VALUES[OPENING][r] = -VPAWN*AI.POV[2]/100 | 0
-AI.PIECE_VALUES[OPENING][q] = -VPAWN*AI.POV[3]/100 | 0
+AI.PIECE_VALUES[OPENING][p] = -VPAWN*AI.POV[P]/100 | 0
+AI.PIECE_VALUES[OPENING][n] = -VPAWN*AI.POV[N]/100 | 0
+AI.PIECE_VALUES[OPENING][b] = -VPAWN*AI.POV[B]/100 | 0
+AI.PIECE_VALUES[OPENING][r] = -VPAWN*AI.POV[R]/100 | 0
+AI.PIECE_VALUES[OPENING][q] = -VPAWN*AI.POV[Q]/100 | 0
 AI.PIECE_VALUES[OPENING][k] = 0
 
-AI.PIECE_VALUES[OPENING][P] = VPAWN | 0
-AI.PIECE_VALUES[OPENING][N] = VPAWN*AI.POV[0]/100 | 0
-AI.PIECE_VALUES[OPENING][B] = VPAWN*AI.POV[1]/100 | 0
-AI.PIECE_VALUES[OPENING][R] = VPAWN*AI.POV[2]/100 | 0
-AI.PIECE_VALUES[OPENING][Q] = VPAWN*AI.POV[3]/100 | 0
+AI.PIECE_VALUES[OPENING][P] = VPAWN*AI.POV[P]/100 | 0
+AI.PIECE_VALUES[OPENING][N] = VPAWN*AI.POV[N]/100 | 0
+AI.PIECE_VALUES[OPENING][B] = VPAWN*AI.POV[B]/100 | 0
+AI.PIECE_VALUES[OPENING][R] = VPAWN*AI.POV[R]/100 | 0
+AI.PIECE_VALUES[OPENING][Q] = VPAWN*AI.POV[Q]/100 | 0
 AI.PIECE_VALUES[OPENING][K] = 0
 
-AI.PIECE_VALUES[LATE_ENDGAME][p] = -VPAWN | 0
-AI.PIECE_VALUES[LATE_ENDGAME][n] = -VPAWN*AI.PEV[0]/100 | 0
-AI.PIECE_VALUES[LATE_ENDGAME][b] = -VPAWN*AI.PEV[1]/100 | 0
-AI.PIECE_VALUES[LATE_ENDGAME][r] = -VPAWN*AI.PEV[2]/100 | 0
-AI.PIECE_VALUES[LATE_ENDGAME][q] = -VPAWN*AI.PEV[3]/100 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][p] = -VPAWN*AI.POV[P]/100 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][n] = -VPAWN*AI.POV[N]/100 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][b] = -VPAWN*AI.POV[B]/100 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][r] = -VPAWN*AI.POV[R]/100 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][q] = -VPAWN*AI.POV[Q]/100 | 0
 AI.PIECE_VALUES[LATE_ENDGAME][k] = 0
 
-AI.PIECE_VALUES[LATE_ENDGAME][P] = VPAWN | 0
-AI.PIECE_VALUES[LATE_ENDGAME][N] = VPAWN*AI.PEV[0]/100 | 0
-AI.PIECE_VALUES[LATE_ENDGAME][B] = VPAWN*AI.PEV[1]/100 | 0
-AI.PIECE_VALUES[LATE_ENDGAME][R] = VPAWN*AI.PEV[2]/100 | 0
-AI.PIECE_VALUES[LATE_ENDGAME][Q] = VPAWN*AI.PEV[3]/100 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][P] = VPAWN*AI.POV[P]/100 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][N] = VPAWN*AI.POV[N]/100 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][B] = VPAWN*AI.POV[B]/100 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][R] = VPAWN*AI.POV[R]/100 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][Q] = VPAWN*AI.POV[Q]/100 | 0
 AI.PIECE_VALUES[LATE_ENDGAME][K] = 0
 
 // Total material value doesnt count pawns
@@ -519,7 +516,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
 
                 //Aligned
                 if (board.board[i+1] === P || board.board[i-1] === P) {
-                    positionalScore = AI.ALIGNEDPAWNBONUS[i]
+                    positionalScore += AI.ALIGNEDPAWNBONUS[i]
                 }
 
                 //Neighbour
@@ -589,7 +586,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
                 }
 
                 //Neighbour
-                if (board.board[i+2] === P || board.board[i-2] === P) {
+                if (board.board[i+2] === p || board.board[i-2] === p) {
                     positionalScore -= AI.NEIGHBOURPAWNBONUS[112^i]
                 }
 
@@ -2129,13 +2126,15 @@ AI.search = function (board, options) {
 
     AI.lastphase = AI.phase
 
-    if (board.movenumber && board.movenumber <= 1) {
+    AI.createTables(board, true, true, true, true)
+
+    if (board.movenumber && board.movenumber === 1) {
         AI.createTables(board, true, true, true, true)
         AI.lastscore = 0
         AI.f = 0
     } else {
         if (changeofphase) {
-            AI.createTables(board, true, true, true, true)
+            // AI.createTables(board, true, true, true, true)
         }
 
         AI.f = AI.lastscore / AI.nullWindowFactor | 0
@@ -2299,6 +2298,6 @@ AI.search = function (board, options) {
     })
 }
 
-AI.createTables(true, true, true, true)
+// AI.createTables(board,true, true, true, true)
 
 module.exports = AI
