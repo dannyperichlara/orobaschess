@@ -42,7 +42,7 @@ let getPositions = ()=>{
         return {fen: line[0], result: line[1]}
     })
 
-    positions = positions.filter(e=>(Math.random() < 0.1))
+    positions = positions.filter(e=>(Math.random() < 0.9))
     console.log('Total positions', positions.length)
 } 
 
@@ -82,6 +82,29 @@ let texel = async ()=>{
     return sumOfSquares
 }
 
+let print = ()=>{
+    console.log('AI.PSQT_OPENING = ', JSON.stringify(opening))
+    console.log('AI.PSQT_LATE_ENDGAME = ', JSON.stringify(endgame))
+
+    console.log('AI.POV = ', JSON.stringify(pov))
+    console.log('AI.PEV = ', JSON.stringify(pev))
+    console.log('AI.BISHOP_PAIR = ', JSON.stringify(bishoppair))
+    console.log('AI.DEFENDED_VALUES = ', JSON.stringify(defended))
+    console.log('AI.BLOCKEDPAWNBONUS = ', JSON.stringify(blocked))
+    console.log('AI.DEFENDEDPAWNBONUS = ', JSON.stringify(defendedbonus))
+    console.log('AI.ALIGNEDPAWNBONUS = ', JSON.stringify(aligned))
+    console.log('AI.NEIGHBOURPAWNBONUS = ', JSON.stringify(neighbour))
+    console.log('AI.LEVERPAWNBONUS = ', JSON.stringify(lever))
+    console.log('AI.PASSERSBONUS = ', JSON.stringify(passers))
+    console.log('AI.DOUBLEDPENALTY = ', JSON.stringify(doubled))
+    console.log('AI.OUTPOSTBONUSKNIGHT = ', JSON.stringify(outpostknight))
+    console.log('AI.OUTPOSTBONUSBISHOP = ', JSON.stringify(outpostbishop))
+    console.log('AI.ATTACKING_PIECES = ', JSON.stringify(attacking))
+    console.log('AI.PAWNSHIELD = ', JSON.stringify(shield))
+    console.log('AI.PAR = ', JSON.stringify(par))
+    console.log('AI.MOB = ', JSON.stringify(mob))
+}
+
 let opening = JSON.parse(JSON.stringify(AI.PSQT_OPENING))
 let endgame = JSON.parse(JSON.stringify(AI.PSQT_LATE_ENDGAME))
 let pov = JSON.parse(JSON.stringify(AI.POV))
@@ -109,7 +132,7 @@ let iterate = async ()=>{
     while (true) {
         getPositions()
     
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 100; i++) {
             console.log('ITERATION ' + i)
             
             console.log(AI.POV, AI.PEV, AI.PAWNSHIELD)
@@ -160,27 +183,27 @@ let iterate = async ()=>{
                 AI.POV = AI.POV.map((e,i)=>(e === null || i === 2? e : Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
                 AI.PEV = AI.PEV.map((e,i)=>(e === null || i === 2? e : Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
     
-                AI.BISHOP_PAIR = AI.BISHOP_PAIR.map(e=>(Math.random()<0.6? e + 1 : (e > 0? e - 1 : 0)))
+                AI.BISHOP_PAIR = AI.BISHOP_PAIR.map(e=>(Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
     
-                AI.DEFENDED_VALUES = AI.DEFENDED_VALUES.map(e=>(Math.random()<0.6? e + 1 : e - 1))
-                AI.BLOCKEDPAWNBONUS = AI.BLOCKEDPAWNBONUS.map(e=>(e === null? null : Math.random()<0.6? e + 1 : (e > 0? e - 1 : 0)))
-                AI.DEFENDEDPAWNBONUS = AI.DEFENDEDPAWNBONUS.map(e=>(e === null? null : Math.random()<0.6? e + 1 : (e > 0? e - 1 : 0)))
-                AI.ALIGNEDPAWNBONUS = AI.ALIGNEDPAWNBONUS.map(e=>(e === null? null : Math.random()<0.6? e + 1 : (e > 0? e - 1 : 0)))
-                AI.NEIGHBOURPAWNBONUS = AI.NEIGHBOURPAWNBONUS.map(e=>(e === null? null : Math.random()<0.6? e + 1 : (e > 0? e - 1 : 0)))
-                AI.LEVERPAWNBONUS = AI.LEVERPAWNBONUS.map(e=>(e === null? null : Math.random()<0.6? e + 1 : (e > 0? e - 1 : 0)))
-                AI.PASSERSBONUS = AI.PASSERSBONUS.map(e=>(e === null? null : Math.random()<0.6? e + 1 : e - 1))
-                AI.DOUBLEDPENALTY = AI.DOUBLEDPENALTY.map(e=>(e === null? null : Math.random()<0.6? e + 1 : (e > 0? e - 1 : 0)))
-                AI.OUTPOSTBONUSKNIGHT = AI.OUTPOSTBONUSKNIGHT.map(e=>(e === null? null : Math.random()<0.6? e + 1 : (e > 0? e - 1 : 0)))
-                AI.OUTPOSTBONUSBISHOP = AI.OUTPOSTBONUSBISHOP.map(e=>(e === null? null : Math.random()<0.6? e + 1 : (e > 0? e - 1 : 0)))
-                // AI.ATTACKING_PIECES = AI.ATTACKING_PIECES.map(e=>(e === null? null : Math.random()<0.6? e + 1 : e - 1))
-                AI.PAWNSHIELD = AI.PAWNSHIELD.map(e=>(Math.random()<0.6? e + 1 : (e > 0? e - 1 : 0)))
+                AI.DEFENDED_VALUES = AI.DEFENDED_VALUES.map(e=>(Math.random()<0.5? e + 1 : e - 1))
+                AI.BLOCKEDPAWNBONUS = AI.BLOCKEDPAWNBONUS.map(e=>(e === null? null : Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
+                AI.DEFENDEDPAWNBONUS = AI.DEFENDEDPAWNBONUS.map(e=>(e === null? null : Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
+                AI.ALIGNEDPAWNBONUS = AI.ALIGNEDPAWNBONUS.map(e=>(e === null? null : Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
+                AI.NEIGHBOURPAWNBONUS = AI.NEIGHBOURPAWNBONUS.map(e=>(e === null? null : Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
+                AI.LEVERPAWNBONUS = AI.LEVERPAWNBONUS.map(e=>(e === null? null : Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
+                AI.PASSERSBONUS = AI.PASSERSBONUS.map(e=>(e === null? null : Math.random()<0.5? e + 1 : e - 1))
+                AI.DOUBLEDPENALTY = AI.DOUBLEDPENALTY.map(e=>(e === null? null : Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
+                AI.OUTPOSTBONUSKNIGHT = AI.OUTPOSTBONUSKNIGHT.map(e=>(e === null? null : Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
+                AI.OUTPOSTBONUSBISHOP = AI.OUTPOSTBONUSBISHOP.map(e=>(e === null? null : Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
+                // AI.ATTACKING_PIECES = AI.ATTACKING_PIECES.map(e=>(e === null? null : Math.random()<0.5? e + 1 : e - 1))
+                AI.PAWNSHIELD = AI.PAWNSHIELD.map(e=>(Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
     
-                AI.PAR = AI.PAR.map(e=>(Math.random()<0.6? e + 1 : (e > 0? e - 1 : 0)))
+                AI.PAR = AI.PAR.map(e=>(Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
     
-                AI.MOB[N] = AI.MOB[N].map(e=>(Math.random()<0.6? e + 1 : (e > 0? e - 1 : 0)))
-                AI.MOB[B] = AI.MOB[B].map(e=>(Math.random()<0.6? e + 1 : (e > 0? e - 1 : 0)))
-                AI.MOB[R] = AI.MOB[R].map(e=>(Math.random()<0.6? e + 1 : (e > 0? e - 1 : 0)))
-                AI.MOB[Q] = AI.MOB[Q].map(e=>(Math.random()<0.6? e + 1 : (e > 0? e - 1 : 0)))
+                AI.MOB[N] = AI.MOB[N].map(e=>(Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
+                AI.MOB[B] = AI.MOB[B].map(e=>(Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
+                AI.MOB[R] = AI.MOB[R].map(e=>(Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
+                AI.MOB[Q] = AI.MOB[Q].map(e=>(Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
             }
         
             let sumOfSquares = await texel(positions)
@@ -223,32 +246,12 @@ let iterate = async ()=>{
                 shield = JSON.parse(JSON.stringify(AI.PAWNSHIELD))
                 par = JSON.parse(JSON.stringify(AI.PAR))
                 mob = JSON.parse(JSON.stringify(AI.MOB))
+
+                print()
             } else {
                 console.log(originalS2, sumOfSquares, 'No better')
             }
         }
-    
-        console.log('AI.PSQT_OPENING = ', JSON.stringify(opening))
-        console.log('AI.PSQT_LATE_ENDGAME = ', JSON.stringify(endgame))
-    
-        console.log('AI.POV = ', JSON.stringify(pov))
-        console.log('AI.PEV = ', JSON.stringify(pev))
-        console.log('AI.BISHOP_PAIR = ', JSON.stringify(bishoppair))
-        console.log('AI.DEFENDED_VALUES = ', JSON.stringify(defended))
-        console.log('AI.BLOCKEDPAWNBONUS = ', JSON.stringify(blocked))
-        console.log('AI.DEFENDEDPAWNBONUS = ', JSON.stringify(defendedbonus))
-        console.log('AI.ALIGNEDPAWNBONUS = ', JSON.stringify(aligned))
-        console.log('AI.NEIGHBOURPAWNBONUS = ', JSON.stringify(neighbour))
-        console.log('AI.LEVERPAWNBONUS = ', JSON.stringify(lever))
-        console.log('AI.PASSERSBONUS = ', JSON.stringify(passers))
-        console.log('AI.DOUBLEDPENALTY = ', JSON.stringify(doubled))
-        console.log('AI.OUTPOSTBONUSKNIGHT = ', JSON.stringify(outpostknight))
-        console.log('AI.OUTPOSTBONUSBISHOP = ', JSON.stringify(outpostbishop))
-        console.log('AI.ATTACKING_PIECES = ', JSON.stringify(attacking))
-        console.log('AI.PAWNSHIELD = ', JSON.stringify(shield))
-        console.log('AI.PAR = ', JSON.stringify(par))
-        console.log('AI.MOB = ', JSON.stringify(mob))
-
     }
 }
 
