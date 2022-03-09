@@ -42,7 +42,7 @@ let getPositions = ()=>{
         return {fen: line[0], result: line[1]}
     })
 
-    positions = positions.filter(e=>(Math.random() < 0.9))
+    positions = positions.filter(e=>(Math.random() < 0.06))
     console.log('Total positions', positions.length)
 } 
 
@@ -80,6 +80,10 @@ let texel = async ()=>{
     }
 
     return sumOfSquares
+}
+
+delta = ()=>{
+    return Math.round(3*Math.random())
 }
 
 let print = ()=>{
@@ -132,10 +136,10 @@ let iterate = async ()=>{
     while (true) {
         getPositions()
     
-        for (let i = 0; i < 100; i++) {
+        for (let i = 0; i < 1000; i++) {
             console.log('ITERATION ' + i)
             
-            console.log(AI.POV, AI.PEV, AI.PAWNSHIELD)
+            console.log(AI.DEFENDED_VALUES, AI.MOB, AI.PAWNSHIELD, AI.BISHOP_PAIR)
             
             let better = false
             let attempts = 0
@@ -166,44 +170,44 @@ let iterate = async ()=>{
             AI.MOB = JSON.parse(JSON.stringify(mob))
             
             if (true) {
-                // AI.PSQT_OPENING[P] = AI.PSQT_OPENING[P].map(e=>(e === null? null : Math.random()>0.5? e + 1 : e - 1))
-                // AI.PSQT_OPENING[N] = AI.PSQT_OPENING[N].map(e=>(e === null? null : Math.random()>0.5? e + 1 : e - 1))
-                // AI.PSQT_OPENING[B] = AI.PSQT_OPENING[B].map(e=>(e === null? null : Math.random()>0.5? e + 1 : e - 1))
-                // AI.PSQT_OPENING[R] = AI.PSQT_OPENING[R].map(e=>(e === null? null : Math.random()>0.5? e + 1 : e - 1))
-                // AI.PSQT_OPENING[Q] = AI.PSQT_OPENING[Q].map(e=>(e === null? null : Math.random()>0.5? e + 1 : e - 1))
-                // AI.PSQT_OPENING[K] = AI.PSQT_OPENING[K].map(e=>(e === null? null : Math.random()>0.5? e + 1 : e - 1))
+                // AI.PSQT_OPENING[P] = AI.PSQT_OPENING[P].map(e=>(e === null? null : Math.random()>0.5? e + delta() : e - delta()))
+                // AI.PSQT_OPENING[N] = AI.PSQT_OPENING[N].map(e=>(e === null? null : Math.random()>0.5? e + delta() : e - delta()))
+                // AI.PSQT_OPENING[B] = AI.PSQT_OPENING[B].map(e=>(e === null? null : Math.random()>0.5? e + delta() : e - delta()))
+                // AI.PSQT_OPENING[R] = AI.PSQT_OPENING[R].map(e=>(e === null? null : Math.random()>0.5? e + delta() : e - delta()))
+                // AI.PSQT_OPENING[Q] = AI.PSQT_OPENING[Q].map(e=>(e === null? null : Math.random()>0.5? e + delta() : e - delta()))
+                // AI.PSQT_OPENING[K] = AI.PSQT_OPENING[K].map(e=>(e === null? null : Math.random()>0.5? e + delta() : e - delta()))
         
-                // AI.PSQT_LATE_ENDGAME[P] = AI.PSQT_LATE_ENDGAME[P].map(e=>(e === null? null : Math.random()>0.5? e + 1 : e - 1))
-                // AI.PSQT_LATE_ENDGAME[N] = AI.PSQT_LATE_ENDGAME[N].map(e=>(e === null? null : Math.random()>0.5? e + 1 : e - 1))
-                // AI.PSQT_LATE_ENDGAME[B] = AI.PSQT_LATE_ENDGAME[B].map(e=>(e === null? null : Math.random()>0.5? e + 1 : e - 1))
-                // AI.PSQT_LATE_ENDGAME[R] = AI.PSQT_LATE_ENDGAME[R].map(e=>(e === null? null : Math.random()>0.5? e + 1 : e - 1))
-                // AI.PSQT_LATE_ENDGAME[Q] = AI.PSQT_LATE_ENDGAME[Q].map(e=>(e === null? null : Math.random()>0.5? e + 1 : e - 1))
-                // AI.PSQT_LATE_ENDGAME[K] = AI.PSQT_LATE_ENDGAME[K].map(e=>(e === null? null : Math.random()>0.5? e + 1 : e - 1))
+                // AI.PSQT_LATE_ENDGAME[P] = AI.PSQT_LATE_ENDGAME[P].map(e=>(e === null? null : Math.random()>0.5? e + delta() : e - delta()))
+                // AI.PSQT_LATE_ENDGAME[N] = AI.PSQT_LATE_ENDGAME[N].map(e=>(e === null? null : Math.random()>0.5? e + delta() : e - delta()))
+                // AI.PSQT_LATE_ENDGAME[B] = AI.PSQT_LATE_ENDGAME[B].map(e=>(e === null? null : Math.random()>0.5? e + delta() : e - delta()))
+                // AI.PSQT_LATE_ENDGAME[R] = AI.PSQT_LATE_ENDGAME[R].map(e=>(e === null? null : Math.random()>0.5? e + delta() : e - delta()))
+                // AI.PSQT_LATE_ENDGAME[Q] = AI.PSQT_LATE_ENDGAME[Q].map(e=>(e === null? null : Math.random()>0.5? e + delta() : e - delta()))
+                // AI.PSQT_LATE_ENDGAME[K] = AI.PSQT_LATE_ENDGAME[K].map(e=>(e === null? null : Math.random()>0.5? e + delta() : e - delta()))
     
-                // AI.POV = AI.POV.map((e,i)=>(e === null || i === 2? e : Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
-                // AI.PEV = AI.PEV.map((e,i)=>(e === null || i === 2? e : Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
+                // AI.POV = AI.POV.map((e,i)=>(e === null || i === 2? e : Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
+                // AI.PEV = AI.PEV.map((e,i)=>(e === null || i === 2? e : Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
     
-                AI.BISHOP_PAIR = AI.BISHOP_PAIR.map(e=>(Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
+                AI.BISHOP_PAIR = AI.BISHOP_PAIR.map(e=>(Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
     
-                AI.DEFENDED_VALUES = AI.DEFENDED_VALUES.map(e=>(Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
-                AI.BLOCKEDPAWNBONUS = AI.BLOCKEDPAWNBONUS.map(e=>(e === null? null : Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
-                AI.DEFENDEDPAWNBONUS = AI.DEFENDEDPAWNBONUS.map(e=>(e === null? null : Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
-                AI.ALIGNEDPAWNBONUS = AI.ALIGNEDPAWNBONUS.map(e=>(e === null? null : Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
-                AI.NEIGHBOURPAWNBONUS = AI.NEIGHBOURPAWNBONUS.map(e=>(e === null? null : Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
-                AI.LEVERPAWNBONUS = AI.LEVERPAWNBONUS.map(e=>(e === null? null : Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
-                // AI.PASSERSBONUS = AI.PASSERSBONUS.map(e=>(e === null? null : Math.random()<0.5? e + 1 : e - 1))
-                AI.DOUBLEDPENALTY = AI.DOUBLEDPENALTY.map(e=>(e === null? null : Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
-                AI.OUTPOSTBONUSKNIGHT = AI.OUTPOSTBONUSKNIGHT.map(e=>(e === null? null : Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
-                AI.OUTPOSTBONUSBISHOP = AI.OUTPOSTBONUSBISHOP.map(e=>(e === null? null : Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
-                AI.ATTACKING_PIECES = AI.ATTACKING_PIECES.map(e=>(e === null? null : Math.random()<0.5? e + 1 : e - 1))
-                AI.PAWNSHIELD = AI.PAWNSHIELD.map(e=>(Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
+                AI.DEFENDED_VALUES = AI.DEFENDED_VALUES.map(e=>(Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
+                AI.BLOCKEDPAWNBONUS = AI.BLOCKEDPAWNBONUS.map(e=>(e === null? null : Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
+                AI.DEFENDEDPAWNBONUS = AI.DEFENDEDPAWNBONUS.map(e=>(e === null? null : Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
+                AI.ALIGNEDPAWNBONUS = AI.ALIGNEDPAWNBONUS.map(e=>(e === null? null : Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
+                AI.NEIGHBOURPAWNBONUS = AI.NEIGHBOURPAWNBONUS.map(e=>(e === null? null : Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
+                AI.LEVERPAWNBONUS = AI.LEVERPAWNBONUS.map(e=>(e === null? null : Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
+                // AI.PASSERSBONUS = AI.PASSERSBONUS.map(e=>(e === null? null : Math.random()<0.6? e + delta() : e - delta()))
+                AI.DOUBLEDPENALTY = AI.DOUBLEDPENALTY.map(e=>(e === null? null : Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
+                AI.OUTPOSTBONUSKNIGHT = AI.OUTPOSTBONUSKNIGHT.map(e=>(e === null? null : Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
+                AI.OUTPOSTBONUSBISHOP = AI.OUTPOSTBONUSBISHOP.map(e=>(e === null? null : Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
+                AI.ATTACKING_PIECES = AI.ATTACKING_PIECES.map(e=>(e === null? null : Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
+                AI.PAWNSHIELD = AI.PAWNSHIELD.map(e=>(Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
     
-                AI.PAR = AI.PAR.map(e=>(Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
+                AI.PAR = AI.PAR.map(e=>(Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
     
-                AI.MOB[N] = AI.MOB[N].map(e=>(Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
-                AI.MOB[B] = AI.MOB[B].map(e=>(Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
-                AI.MOB[R] = AI.MOB[R].map(e=>(Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
-                AI.MOB[Q] = AI.MOB[Q].map(e=>(Math.random()<0.5? e + 1 : (e > 0? e - 1 : 0)))
+                AI.MOB[N] = AI.MOB[N].map(e=>(Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
+                AI.MOB[B] = AI.MOB[B].map(e=>(Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
+                AI.MOB[R] = AI.MOB[R].map(e=>(Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
+                AI.MOB[Q] = AI.MOB[Q].map(e=>(Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
             }
         
             let sumOfSquares = await texel(positions)
