@@ -173,6 +173,8 @@ module.exports = orobas = {
     
         let castlingRights = 0
 
+        if (!castling) console.log(fen)
+
         if (castling.indexOf('K') > -1) castlingRights ^= 8
         if (castling.indexOf('Q') > -1) castlingRights ^= 4
         if (castling.indexOf('k') > -1) castlingRights ^= 2
@@ -269,6 +271,8 @@ module.exports = orobas = {
         // ]
         this.whiteKingIndex = this.board.indexOf(K)
         this.blackKingIndex = this.board.indexOf(k)
+
+        this.castlingRights = [1 ^ 2 ^ 4 ^ 8]
 
         this.turn = WHITE
     },

@@ -2,6 +2,13 @@ let orobas = require('./orobas.js')
 let AI = require('./aiC.js')
 const { board } = require('./orobas.js')
 
+let populationLength = 20
+let subPositions = 50000
+let generations = 2
+
+const WHITE = 1
+const BLACK = 2
+
 const P =   1
 const N =   2
 const B =   3
@@ -15,39 +22,35 @@ const r =  10
 const q =  11
 const k =  12
 
-var fs = require('fs');
+var fs = require('fs')
+
+fs.appendFileSync('genetic_pìece_values.txt', '--------------\n', function (err) {
+    if (err) return console.log(err)
+})
+
 let positions = []
 
 let getPositions = ()=>{
-    // var positions = fs.readFileSync('position_scores.txt').toString().split("\n");
-    positions = fs.readFileSync('wukongPositions.txt').toString().split("\n");
-    
-    // positions = positions.map(e=>{
-    //     let line = e.split('\t')
-    
-    //     if (line[2] === '1-0') line[2] = 1 
-    //     if (line[2] === '1/2-1/2') line[2] = 0.5
-    //     if (line[2] === '0-1') line[2] = 0
-    
-    //     return {fen: line[0], result: line[2]}
-    // })
+    // positions = fs.readFileSync('orobasRandomPositionsDepth23.txt').toString().split("\n");
+    positions = fs.readFileSync('orobasRandomPositions.txt').toString().split("\n");
+
+    positions.pop()
     
     positions = positions.map(e=>{
-        let line = e.split(' [')
+        let line = e.split('\t')
         
-        if (line[1] === '1.0]') line[1] = 1 
-        if (line[1] === '0.5]') line[1] = 0.5
-        if (line[1] === '0.0]') line[1] = 0
+        line[1] = parseInt(line[1])
+        line[2] = parseFloat(line[2])
         
-        return {fen: line[0], result: line[1]}
+        return {fen: line[0], score: line[1], result: line[2]}
     })
 
-    positions = positions.filter(e=>(Math.random() < 0.01))
+    positions = positions.filter(e=>(Math.random() < subPositions/positions.length))
     console.log('Total positions', positions.length)
+    // console.log(positions)
 } 
 
 
-// console.log(positions)
 
 let piece = {
      1: 'P',
@@ -71,67 +74,193 @@ let sumOfSquares = async ()=>{
     // for (let i = 0; i < 4; i++) {
         // orobas.init(true)
         orobas.loadFen(positions[i].fen)
+
+        let sign = orobas.turn === WHITE? 1 : -1
+        let score = sign * AI.nullWindowFactor * AI.evaluate(orobas, 4, -Infinity, Infinity, orobas.isKingInCheck(), false, 0)
+        let sigmoid = 1 / (1 + Math.pow(10, -score / 354))
+
+        // console.log(positions[i].score,score)
+
+        // sumOfSquares += (positions[i].score - score)**2
+        sumOfSquares += (positions[i].result - sigmoid)**2
     
-        await AI.search(orobas, {seconds:0.2}).then(res=>{
-            // if (i % 100 === 0) console.log("Position " + i)
-            // console.log(i, res.sigmoid)
-            sumOfSquares += (positions[i].result - res.sigmoid)**2
-        })
+        // await AI.search(orobas, {seconds:0.2}).then(res=>{
+        //     // if (i % 100 === 0) console.log("Position " + i)
+        //     // console.log(i, res.sigmoid)
+        //     sumOfSquares += (positions[i].result - res.sigmoid)**2
+        // })
     }
 
     return sumOfSquares
 }
 
-evolve = async (par)=>{
-    let population = new Array(200)
-    let parameters = eval(par)
-    let generations = 100
+let random = (min, max) => {
+    return Math.round(Math.random() * (max - min) + min)
+}
+
+let unique = (i, n, limit)=>{
+    var arr = [];
+    while(arr.length < n){
+        var r = Math.floor(Math.random() * limit);
+        if(r !== i && arr.indexOf(r) === -1) arr.push(r);
+    }
+    
+    return arr
+}
+
+let maxFitness = -Infinity
+
+evolve = async (par, limits)=>{
+    let fitnessHashTable = {}
+    let population = new Array(populationLength)
+    
+
+    // Se asegura que actual gen esté presente en la población
+    population[0] = {
+        par: eval(par),
+        fitness: -Infinity
+    }
+
+    console.log(limits)
 
     // Creates population
-    for (let i = 0; i < population.length; i++) {
+    for (let i = 1; i < population.length; i++) {
         population[i] = {
-            par: parameters.map(e=>(e !== null? e + Math.round(Math.random()*200 - 100) : e)),
+            par: eval(par).map((e, j)=>{
+                return (e === null? e : random(limits[j][0], limits[j][1]))
+            }),
             fitness: -Infinity
         }
     }
 
     for (let g = 0; g < generations; g++) {
         console.log('GENERACIÓN ' + (g + 1))
+
         // Fitness of population
         for (let i = 0; i < population.length; i++) {
             eval(par + " = population[i].par")
-            console.log(eval(par), 'Evaluating fitness of ' + i)
-    
+            console.log(par, eval(par), 'Evaluating fitness of ' + i)
+
             AI.createPieceValues()
-    
-            let fitness = -(await sumOfSquares())
-            console.log(fitness)
+
+            let key = par+JSON.stringify(population[i].par)
+
+            let fitness = fitnessHashTable[key]
+
+            if (!fitness) {
+                fitness = -(await sumOfSquares())
+                fitnessHashTable[key] = fitness
+                population[i].hash = false
+            } else {
+                population[i].hash = true
+            }
     
             population[i].fitness = fitness
         }
+        
+        for (let i = 0; i < population.length; i++) {
+            let diffIndexes = unique(i, 3, population.length)
+            
+            //Creación de vectores ruidosos
+            let trial = {par:population[diffIndexes[0]].par.map((e,j)=>{
+                return e === null? null : e + 0.5*(population[diffIndexes[1]].par[j] - population[diffIndexes[2]].par[j]) | 0
+            }), fitness: -Infinity}
+
+            //Verifica límites
+            trial.par = trial.par.map((e,j)=>{
+                let min = limits[j][0]
+                let max = limits[j][1]
+
+                return e === null? null : e < min? min : (e > max? max : e)
+            })
+
+            //Recombinación
+            trial.par = trial.par.map((e, j)=>{
+                return Math.random() < 0.7? e : population[i].par[j]
+            })
+
+            eval(par + " = trial.par")
+            console.log(eval(par), 'Evaluating fitness of trial ' + i)
+
+            AI.createPieceValues()
     
-        population = population.sort((a,b)=>{
+            let key = par+JSON.stringify(trial.par)
+
+            let fitness = fitnessHashTable[key]
+
+            if (!fitness) {
+                fitness = -(await sumOfSquares())
+                fitnessHashTable[key] = fitness
+                trial.hash = false
+            } else {
+                trial.hash = true
+            }
+
+            trial.fitness = fitness
+    
+            if (trial.fitness > population[i].fitness) {
+                population[i] = trial
+            }
+        }
+
+
+        let parentSelection = new Array(population.length)
+    
+        // Tournament selection
+        for (let i = 0; i < population.length; i++) {
+            let candidate1 = Math.random() * population.length | 0
+            let candidate2 = Math.random() * population.length | 0
+            let candidate3 = Math.random() * population.length | 0
+
+            let winner = [
+                population[candidate1],
+                population[candidate2],
+                population[candidate3]
+            ].sort((a,b)=>{
+                return b.fitness - a.fitness
+            })[0]
+
+            parentSelection[i] = winner
+        }
+
+        parentSelection.sort((a,b)=>{
             return b.fitness - a.fitness
         })
+
+        if (true || parentSelection[0].fitness > maxFitness) {
+            maxFitness = parentSelection[0].fitness
+            eval(par + ' = ' + JSON.stringify(parentSelection[0].par))
+
+            fs.appendFileSync(
+                'genetic_pìece_values.txt',
+                parentSelection[0].fitness + '|' + g + '|' + par + ' = ' + JSON.stringify(parentSelection[0].par) + '\n',
+                function (err) {
+                    if (err) return console.log(err);
+                    console.log('Appended!')
+                }
+            )
+        }
+
     
-        let children = new Array(population.length)
+        // Crossover
+
+        let children = new Array(parentSelection.length)
     
-        children[0] = child(population[0], population[1])
-        children[1] = child(population[2], population[3])
-    
-        for (let i = 2; i < population.length; i++) {
-            children[i] = child(population[Math.random()*population.length/2 | 0], population[Math.random()*population.length/2 | 0])
+        for (let i = 0; i < parentSelection.length; i++) {
+            children[i] = child(
+                parentSelection[Math.random()*(parentSelection.length) | 0],
+                parentSelection[Math.random()*(parentSelection.length) | 0],
+                limits
+            )
         }
     
-        console.log(population[0], children[0])
-
         population = children
     }
 
-
+    console.log('Done --------------------------------')
 }
 
-child = (parent1, parent2)=> {
+child = (parent1, parent2, limits)=> {
     let child = {
         par: new Array(parent1.par.length).fill(null),
         fitness: -Infinity
@@ -141,8 +270,12 @@ child = (parent1, parent2)=> {
         return (Math.random()>0.5? parent1.par[i] : parent2.par[i])
     })
 
-    par = par.map(e=>{
-        return (Math.random() > 0.9 && e !== null? e + Math.random()*40 - 20 | 0 : e)
+    // Local mutation
+    par = par.map((e, i)=>{
+        let min = limits[i][0]
+        let max = limits[i][1]
+        
+        return (Math.random() > 0.9 && e !== null? random(min, max) : e)
     })
 
     child.par = par
@@ -150,144 +283,52 @@ child = (parent1, parent2)=> {
     return child
 }
 
-let print = ()=>{
-    console.log('AI.PSQT_OPENING = ', JSON.stringify(opening))
-    console.log('AI.PSQT_LATE_ENDGAME = ', JSON.stringify(endgame))
-
-    console.log('AI.POV = ', JSON.stringify(pov))
-    console.log('AI.PEV = ', JSON.stringify(pev))
-    console.log('AI.BISHOP_PAIR = ', JSON.stringify(bishoppair))
-    console.log('AI.DEFENDED_VALUES = ', JSON.stringify(defended))
-    console.log('AI.BLOCKEDPAWNBONUS = ', JSON.stringify(blocked))
-    console.log('AI.DEFENDEDPAWNBONUS = ', JSON.stringify(defendedbonus))
-    console.log('AI.ALIGNEDPAWNBONUS = ', JSON.stringify(aligned))
-    console.log('AI.NEIGHBOURPAWNBONUS = ', JSON.stringify(neighbour))
-    console.log('AI.LEVERPAWNBONUS = ', JSON.stringify(lever))
-    console.log('AI.PASSERSBONUS = ', JSON.stringify(passers))
-    console.log('AI.DOUBLEDPENALTY = ', JSON.stringify(doubled))
-    console.log('AI.OUTPOSTBONUSKNIGHT = ', JSON.stringify(outpostknight))
-    console.log('AI.OUTPOSTBONUSBISHOP = ', JSON.stringify(outpostbishop))
-    console.log('AI.ATTACKING_PIECES = ', JSON.stringify(attacking))
-    console.log('AI.PAWNSHIELD = ', JSON.stringify(shield))
-    console.log('AI.PAR = ', JSON.stringify(par))
-    console.log('AI.MOB = ', JSON.stringify(mob))
-}
-
-let opening = JSON.parse(JSON.stringify(AI.PSQT_OPENING))
-let endgame = JSON.parse(JSON.stringify(AI.PSQT_LATE_ENDGAME))
-let pov = JSON.parse(JSON.stringify(AI.POV))
-let pev = JSON.parse(JSON.stringify(AI.PEV))
-let bishoppair = JSON.parse(JSON.stringify(AI.BISHOP_PAIR))
-
-let defended = JSON.parse(JSON.stringify(AI.DEFENDED_VALUES))
-let blocked = JSON.parse(JSON.stringify(AI.BLOCKEDPAWNBONUS))
-let defendedbonus = JSON.parse(JSON.stringify(AI.DEFENDEDPAWNBONUS))
-let aligned = JSON.parse(JSON.stringify(AI.ALIGNEDPAWNBONUS))
-let neighbour = JSON.parse(JSON.stringify(AI.NEIGHBOURPAWNBONUS))
-let lever = JSON.parse(JSON.stringify(AI.LEVERPAWNBONUS))
-let passers = JSON.parse(JSON.stringify(AI.PASSERSBONUS))
-let doubled = JSON.parse(JSON.stringify(AI.DOUBLEDPENALTY))
-let outpostknight = JSON.parse(JSON.stringify(AI.OUTPOSTBONUSKNIGHT))
-let outpostbishop = JSON.parse(JSON.stringify(AI.OUTPOSTBONUSBISHOP))
-let attacking = JSON.parse(JSON.stringify(AI.ATTACKING_PIECES))
-let shield = JSON.parse(JSON.stringify(AI.PAWNSHIELD))
-let par = JSON.parse(JSON.stringify(AI.PAR))
-let mob = JSON.parse(JSON.stringify(AI.MOB))
-
 let iterate = async ()=>{
     getPositions()
-        
-    AI.PSQT_OPENING = JSON.parse(JSON.stringify(opening))
-    AI.PSQT_LATE_ENDGAME = JSON.parse(JSON.stringify(endgame))
-
-    AI.POV = JSON.parse(JSON.stringify(pov))
-    AI.PEV = JSON.parse(JSON.stringify(pev))
-
-    AI.BISHOP_PAIR = JSON.parse(JSON.stringify(bishoppair))
-
-    AI.DEFENDED_VALUES = JSON.parse(JSON.stringify(defended))
-    AI.BLOCKEDPAWNBONUS = JSON.parse(JSON.stringify(blocked))
-    AI.DEFENDEDPAWNBONUS = JSON.parse(JSON.stringify(defendedbonus))
-    AI.ALIGNEDPAWNBONUS = JSON.parse(JSON.stringify(aligned))
-    AI.NEIGHBOURPAWNBONUS = JSON.parse(JSON.stringify(neighbour))
-    AI.LEVERPAWNBONUS = JSON.parse(JSON.stringify(lever))
-    AI.PASSERSBONUS = JSON.parse(JSON.stringify(passers))
-    AI.DOUBLEDPENALTY = JSON.parse(JSON.stringify(doubled))
-    AI.OUTPOSTBONUSKNIGHT = JSON.parse(JSON.stringify(outpostknight))
-    AI.OUTPOSTBONUSBISHOP = JSON.parse(JSON.stringify(outpostbishop))
-    AI.ATTACKING_PIECES = JSON.parse(JSON.stringify(attacking))
-    AI.PAWNSHIELD = JSON.parse(JSON.stringify(shield))
-
-    AI.PAR = JSON.parse(JSON.stringify(par))
-    AI.MOB = JSON.parse(JSON.stringify(mob))
     
-    if (true) {
-        // AI.PSQT_OPENING[P] = AI.PSQT_OPENING[P].map(e=>(e === null? null : Math.random()>0.5? e + delta() : e - delta()))
-        // AI.PSQT_OPENING[N] = AI.PSQT_OPENING[N].map(e=>(e === null? null : Math.random()>0.5? e + delta() : e - delta()))
-        // AI.PSQT_OPENING[B] = AI.PSQT_OPENING[B].map(e=>(e === null? null : Math.random()>0.5? e + delta() : e - delta()))
-        // AI.PSQT_OPENING[R] = AI.PSQT_OPENING[R].map(e=>(e === null? null : Math.random()>0.5? e + delta() : e - delta()))
-        // AI.PSQT_OPENING[Q] = AI.PSQT_OPENING[Q].map(e=>(e === null? null : Math.random()>0.5? e + delta() : e - delta()))
-        // AI.PSQT_OPENING[K] = AI.PSQT_OPENING[K].map(e=>(e === null? null : Math.random()>0.5? e + delta() : e - delta()))
+    while (true) {
+        // await evolve("AI.PSQT_LATE_ENDGAME[P]", -50, 50)
+        // await evolve("AI.PSQT_LATE_ENDGAME[R]", -50, 50)
+        // await evolve("AI.PSQT_LATE_ENDGAME[N]", -50, 50)
+        // await evolve("AI.PSQT_LATE_ENDGAME[B]", -50, 50)
+        // await evolve("AI.PSQT_LATE_ENDGAME[Q]", -50, 50)
+        
+        // await evolve("AI.PSQT_OPENING[N]", -50, 50)
+        // await evolve("AI.PSQT_OPENING[B]", -50, 50)
+        // await evolve("AI.PSQT_OPENING[R]", -50, 50)
+        // await evolve("AI.PSQT_OPENING[Q]", -50, 50)
+        // await evolve("AI.PSQT_OPENING[P]", -50, 50)
 
-        // AI.PSQT_LATE_ENDGAME[P] = AI.PSQT_LATE_ENDGAME[P].map(e=>(e === null? null : Math.random()>0.5? e + delta() : e - delta()))
-        // AI.PSQT_LATE_ENDGAME[N] = AI.PSQT_LATE_ENDGAME[N].map(e=>(e === null? null : Math.random()>0.5? e + delta() : e - delta()))
-        // AI.PSQT_LATE_ENDGAME[B] = AI.PSQT_LATE_ENDGAME[B].map(e=>(e === null? null : Math.random()>0.5? e + delta() : e - delta()))
-        // AI.PSQT_LATE_ENDGAME[R] = AI.PSQT_LATE_ENDGAME[R].map(e=>(e === null? null : Math.random()>0.5? e + delta() : e - delta()))
-        // AI.PSQT_LATE_ENDGAME[Q] = AI.PSQT_LATE_ENDGAME[Q].map(e=>(e === null? null : Math.random()>0.5? e + delta() : e - delta()))
-        // AI.PSQT_LATE_ENDGAME[K] = AI.PSQT_LATE_ENDGAME[K].map(e=>(e === null? null : Math.random()>0.5? e + delta() : e - delta()))
+        // await evolve("AI.PSQT_LATE_ENDGAME[K]", -50, 50)
+        // await evolve("AI.PSQT_OPENING[K]", -50, 50)
 
-        // AI.POV = AI.POV.map((e,i)=>(e === null || i === 2? e : Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
-        // AI.PEV = AI.PEV.map((e,i)=>(e === null || i === 2? e : Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
-        // AI.POV = evolve("AI.POV")
-        AI.PEV = evolve("AI.PEV")
+        await evolve("AI.POV", [[null, null], [100,100], [280, 450], [280, 450], [500, 750], [1200, 1400]])
+        await evolve("AI.PEV", [[null, null], [100,100], [280, 450], [280, 450], [500, 750], [1200, 1400]])
 
-        // AI.BISHOP_PAIR = AI.BISHOP_PAIR.map(e=>(Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
+        // await evolve("AI.MOB[R]", 0, 400)
+        // await evolve("AI.MOB[N]", 0, 400)
+        // await evolve("AI.MOB[B]", 0, 400)
+        // await evolve("AI.MOB[Q]", 0, 400)
 
-        // AI.DEFENDED_VALUES = AI.DEFENDED_VALUES.map(e=>(Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
-        // AI.BLOCKEDPAWNBONUS = AI.BLOCKEDPAWNBONUS.map(e=>(e === null? null : Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
-        // AI.DEFENDEDPAWNBONUS = AI.DEFENDEDPAWNBONUS.map(e=>(e === null? null : Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
-        // AI.ALIGNEDPAWNBONUS = AI.ALIGNEDPAWNBONUS.map(e=>(e === null? null : Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
-        // AI.NEIGHBOURPAWNBONUS = AI.NEIGHBOURPAWNBONUS.map(e=>(e === null? null : Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
-        // AI.LEVERPAWNBONUS = AI.LEVERPAWNBONUS.map(e=>(e === null? null : Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
-        // AI.PASSERSBONUS = AI.PASSERSBONUS.map(e=>(e === null? null : Math.random()<0.6? e + delta() : e - delta()))
-        // AI.DOUBLEDPENALTY = AI.DOUBLEDPENALTY.map(e=>(e === null? null : Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
-        // AI.OUTPOSTBONUSKNIGHT = AI.OUTPOSTBONUSKNIGHT.map(e=>(e === null? null : Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
-        // AI.OUTPOSTBONUSBISHOP = AI.OUTPOSTBONUSBISHOP.map(e=>(e === null? null : Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
-        // AI.ATTACKING_PIECES = AI.ATTACKING_PIECES.map(e=>(e === null? null : Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
-        // AI.PAWNSHIELD = AI.PAWNSHIELD.map(e=>(Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
+        // await evolve("AI.DEFENDEDPAWNBONUS", 0, 100)
+        // await evolve("AI.DEFENDED_VALUES", 0, 100)
 
-        // AI.PAR = AI.PAR.map(e=>(Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
+        // await evolve("AI.PASSERSBONUS", 0, 200)
 
-        // AI.MOB[N] = AI.MOB[N].map(e=>(Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
-        // AI.MOB[B] = AI.MOB[B].map(e=>(Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
-        // AI.MOB[R] = AI.MOB[R].map(e=>(Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
-        // AI.MOB[Q] = AI.MOB[Q].map(e=>(Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
+        // await evolve("AI.DOUBLEDPENALTY", 0, 100)
+        // await evolve("AI.LEVERPAWNBONUS", 0, 100)
+        // await evolve("AI.ALIGNEDPAWNBONUS", 0, 100)
+        // await evolve("AI.NEIGHBOURPAWNBONUS", 0, 100)
+        // await evolve("AI.BLOCKEDPAWNBONUS", 0, 100)
+
+        // await evolve("AI.OUTPOSTBONUSKNIGHT", 0, 100)
+        // await evolve("AI.OUTPOSTBONUSBISHOP", 0, 100)
+
+        // await evolve("AI.BISHOP_PAIR", 0, 100)
+        // await evolve("AI.PAWNSHIELD", 0, 100)
+        // await evolve("AI.PAR", 0, 100)
+        // await evolve("AI.ATTACKING_PIECES", 0, 400)
     }
-
-    opening = JSON.parse(JSON.stringify(AI.PSQT_OPENING))
-    endgame = JSON.parse(JSON.stringify(AI.PSQT_LATE_ENDGAME))
-
-    pov = JSON.parse(JSON.stringify(AI.POV))
-    pev = JSON.parse(JSON.stringify(AI.PEV))
-
-    bishoppair = JSON.parse(JSON.stringify(AI.BISHOP_PAIR))
-
-    defended = JSON.parse(JSON.stringify(AI.DEFENDED_VALUES))
-    blocked = JSON.parse(JSON.stringify(AI.BLOCKEDPAWNBONUS))
-    defendedbonus = JSON.parse(JSON.stringify(AI.DEFENDEDPAWNBONUS))
-    aligned = JSON.parse(JSON.stringify(AI.ALIGNEDPAWNBONUS))
-    neighbour = JSON.parse(JSON.stringify(AI.NEIGHBOURPAWNBONUS))
-    lever = JSON.parse(JSON.stringify(AI.LEVERPAWNBONUS))
-    passers = JSON.parse(JSON.stringify(AI.PASSERSBONUS))
-    doubled = JSON.parse(JSON.stringify(AI.DOUBLEDPENALTY))
-    outpostknight = JSON.parse(JSON.stringify(AI.OUTPOSTBONUSKNIGHT))
-    outpostbishop = JSON.parse(JSON.stringify(AI.OUTPOSTBONUSBISHOP))
-    attacking = JSON.parse(JSON.stringify(AI.ATTACKING_PIECES))
-    shield = JSON.parse(JSON.stringify(AI.PAWNSHIELD))
-    par = JSON.parse(JSON.stringify(AI.PAR))
-    mob = JSON.parse(JSON.stringify(AI.MOB))
-
-    // print()
 }
 
 iterate()

@@ -20,30 +20,30 @@ var fs = require('fs');
 let positions = []
 
 let getPositions = ()=>{
-    // var positions = fs.readFileSync('position_scores.txt').toString().split("\n");
-    positions = fs.readFileSync('wukongPositions.txt').toString().split("\n");
+    // positions = fs.readFileSync('position_scores.txt').toString().split("\n");
+    positions = fs.readFileSync('orobasRandomPositions.txt').toString().split("\n");
     
     // positions = positions.map(e=>{
     //     let line = e.split('\t')
     
-    //     if (line[2] === '1-0') line[2] = 1 
-    //     if (line[2] === '1/2-1/2') line[2] = 0.5
-    //     if (line[2] === '0-1') line[2] = 0
+    //     if (line[2] === '1.0') line[2] = 1 
+    //     if (line[2] === '0.5') line[2] = 0.5
+    //     if (line[2] === '0.0') line[2] = 0
     
     //     return {fen: line[0], result: line[2]}
     // })
-    
+
     positions = positions.map(e=>{
-        let line = e.split(' [')
-        
-        if (line[1] === '1.0]') line[1] = 1 
-        if (line[1] === '0.5]') line[1] = 0.5
-        if (line[1] === '0.0]') line[1] = 0
-        
+        let line = e.split('\t')
+    
+        line[1] = parseInt(line[1])
+    
         return {fen: line[0], result: line[1]}
     })
 
-    positions = positions.filter(e=>(Math.random() < 0.01))
+    console.log(positions)
+
+    // positions = positions.filter(e=>(Math.random() < 0.03))
     console.log('Total positions', positions.length)
 } 
 
@@ -75,7 +75,7 @@ let texel = async ()=>{
     
         await AI.search(orobas, {seconds:0.2}).then(res=>{
             // console.log(i, res.sigmoid)
-            sumOfSquares += ((positions[i].result - res.sigmoid)**2)
+            sumOfSquares += ((positions[i].result - res.score)**2)
             if (i % 1000 === 0) console.log('position ' + i)
         })
     }
@@ -83,8 +83,10 @@ let texel = async ()=>{
     return sumOfSquares
 }
 
-delta = ()=>{
-    return Math.round((Math.random() < 0.9? 5 : 10)*Math.random())
+delta = (d)=>{
+    let delta = d * Math.round(Math.random()) | 0
+
+    return delta
 }
 
 let print = ()=>{
@@ -185,8 +187,9 @@ let iterate = async ()=>{
                 // AI.PSQT_LATE_ENDGAME[Q] = AI.PSQT_LATE_ENDGAME[Q].map(e=>(e === null? null : Math.random()>0.5? e + delta() : e - delta()))
                 // AI.PSQT_LATE_ENDGAME[K] = AI.PSQT_LATE_ENDGAME[K].map(e=>(e === null? null : Math.random()>0.5? e + delta() : e - delta()))
     
-                AI.POV = AI.POV.map((e,i)=>(e === null || i === 2? e : Math.random()<0.6? e + 10*delta() : (e > 0? e - 10*delta() : 0)))
-                AI.PEV = AI.POV
+                AI.POV = AI.POV.map((e,i)=>(e === null || i === 1? e : Math.random()<0.6? e + delta(0.1*e) : (e > 0? e - delta(0.1*e) : 0)))
+                AI.PEV =AI.PEV.map((e,i)=>(e === null || i === 1? e : Math.random()<0.6? e + delta(0.1*e) : (e > 0? e - delta(0.1*e) : 0)))
+                // AI.PEV = AI.PEV.map((e,i)=>(e === null || i === 2? e : Math.random()<0.6? e + 10*delta() : (e > 0? e - 10*delta() : 0)))
                 // AI.PEV = AI.PEV.map((e,i)=>(e === null || i === 2? e : Math.random()<0.6? e + 5*delta() : (e > 0? e - 5*delta() : 0)))
     
                 // AI.BISHOP_PAIR = AI.BISHOP_PAIR.map(e=>(Math.random()<0.6? e + delta() : (e > 0? e - delta() : 0)))
@@ -217,13 +220,11 @@ let iterate = async ()=>{
             
             let sumOfSquares = await texel(positions)
             
-            if (i === 0) originalS2 = sumOfSquares
+            if (i % 100 === 0) {
+                originalS2 = sumOfSquares
+                getPositions()
+            }
             
-            fs.appendFileSync('texel.txt', JSON.stringify(AI.POV) + '\n', function (err) {
-                if (err) return console.log(err);
-                console.log('Appended!');
-            });
-    
             if (sumOfSquares < originalS2) {
                 
                 better = true
@@ -259,6 +260,16 @@ let iterate = async ()=>{
             } else {
                 console.log(originalS2, sumOfSquares, 'No better')
             }
+
+            fs.appendFileSync('texel_random_path.txt', JSON.stringify(AI.POV) + '\n', function (err) {
+                if (err) return console.log(err);
+                console.log('Appended!');
+            });
+
+            fs.appendFileSync('texel_piece_values.txt', JSON.stringify(pov) + JSON.stringify(pev) + '\n', function (err) {
+                if (err) return console.log(err);
+                console.log('Appended!');
+            });
         }
     }
 }
