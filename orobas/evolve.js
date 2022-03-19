@@ -2,9 +2,9 @@ let orobas = require('./orobas.js')
 let AI = require('./aiC.js')
 const { board } = require('./orobas.js')
 
-let populationLength = 20
-let subPositions = 50000
-let generations = 2
+let populationLength = 10
+let subPositions = 100000
+let generations = 0
 
 const WHITE = 1
 const BLACK = 2
@@ -24,7 +24,7 @@ const k =  12
 
 var fs = require('fs')
 
-fs.appendFileSync('genetic_pìece_values.txt', '--------------\n', function (err) {
+fs.appendFileSync('genetic_piece_values.txt', '--------------\n', function (err) {
     if (err) return console.log(err)
 })
 
@@ -32,18 +32,33 @@ let positions = []
 
 let getPositions = ()=>{
     // positions = fs.readFileSync('orobasRandomPositionsDepth23.txt').toString().split("\n");
-    positions = fs.readFileSync('orobasRandomPositions.txt').toString().split("\n");
+    // positions = fs.readFileSync('orobasRandomPositions.txt').toString().split("\n");
+    // positions = fs.readFileSync('position_scores.txt').toString().split("\n");
+    positions = fs.readFileSync('wukongPositionsSelfplay.txt').toString().split("\n");
 
     positions.pop()
-    
-    positions = positions.map(e=>{
-        let line = e.split('\t')
+
+    //Wukong
+    positions = positions.map((e,i)=>{
+        let line = e.split(' [')
         
-        line[1] = parseInt(line[1])
-        line[2] = parseFloat(line[2])
+        line[1].replace(']', '')
         
-        return {fen: line[0], score: line[1], result: line[2]}
+        line[1] = parseFloat(line[1])
+        
+        return {fen: line[0], result: line[1]}
     })
+
+    // console.log(positions)
+    
+    // positions = positions.map(e=>{
+    //     let line = e.split('\t')
+        
+    //     line[1] = parseInt(line[1])
+    //     line[2] = parseFloat(line[2])
+        
+    //     return {fen: line[0], score: line[1], result: line[2]}
+    // })
 
     positions = positions.filter(e=>(Math.random() < subPositions/positions.length))
     console.log('Total positions', positions.length)
@@ -76,7 +91,7 @@ let sumOfSquares = async ()=>{
         orobas.loadFen(positions[i].fen)
 
         let sign = orobas.turn === WHITE? 1 : -1
-        let score = sign * AI.nullWindowFactor * AI.evaluate(orobas, 4, -Infinity, Infinity, orobas.isKingInCheck(), false, 0)
+        let score = sign * AI.nullWindowFactor * AI.evaluate(orobas, 4, -Infinity, Infinity, true, orobas.isKingInCheck(), 0)
         let sigmoid = 1 / (1 + Math.pow(10, -score / 354))
 
         // console.log(positions[i].score,score)
@@ -84,7 +99,7 @@ let sumOfSquares = async ()=>{
         // sumOfSquares += (positions[i].score - score)**2
         sumOfSquares += (positions[i].result - sigmoid)**2
     
-        // await AI.search(orobas, {seconds:0.2}).then(res=>{
+        // await AI.search(orobas, {seconds:0.01}).then(res=>{
         //     // if (i % 100 === 0) console.log("Position " + i)
         //     // console.log(i, res.sigmoid)
         //     sumOfSquares += (positions[i].result - res.sigmoid)**2
@@ -108,9 +123,10 @@ let unique = (i, n, limit)=>{
     return arr
 }
 
-let maxFitness = -Infinity
+let maxFitness = Infinity
 
-evolve = async (par, limits)=>{
+evolve = async (par, limits)=>{  
+
     let fitnessHashTable = {}
     let population = new Array(populationLength)
     
@@ -168,10 +184,12 @@ evolve = async (par, limits)=>{
 
             //Verifica límites
             trial.par = trial.par.map((e,j)=>{
+                if (e == null) return null
+                // console.log(limits[j])
                 let min = limits[j][0]
                 let max = limits[j][1]
 
-                return e === null? null : e < min? min : (e > max? max : e)
+                return e < min? min : (e > max? max : e)
             })
 
             //Recombinación
@@ -227,13 +245,16 @@ evolve = async (par, limits)=>{
             return b.fitness - a.fitness
         })
 
-        if (true || parentSelection[0].fitness > maxFitness) {
+        if (parentSelection[0].fitness > maxFitness) {
+            let better = parentSelection[0].fitness > maxFitness? 'OK|' : 'No|'
+
             maxFitness = parentSelection[0].fitness
             eval(par + ' = ' + JSON.stringify(parentSelection[0].par))
 
+
             fs.appendFileSync(
-                'genetic_pìece_values.txt',
-                parentSelection[0].fitness + '|' + g + '|' + par + ' = ' + JSON.stringify(parentSelection[0].par) + '\n',
+                'genetic_param_values.txt',
+                better + parentSelection[0].fitness + '|' + g + '|' + par + ' = ' + JSON.stringify(parentSelection[0].par) + '\n',
                 function (err) {
                     if (err) return console.log(err);
                     console.log('Appended!')
@@ -271,63 +292,77 @@ child = (parent1, parent2, limits)=> {
     })
 
     // Local mutation
-    par = par.map((e, i)=>{
-        let min = limits[i][0]
-        let max = limits[i][1]
+    // par = par.map((e, i)=>{
+    //     let min = limits[i][0]
+    //     let max = limits[i][1]
         
-        return (Math.random() > 0.9 && e !== null? random(min, max) : e)
-    })
+    //     return (Math.random() > 0.9 && e !== null? random(min, max) : e)
+    // })
 
     child.par = par
 
     return child
 }
 
+print = ()=> {
+
+}
+
 let iterate = async ()=>{
     getPositions()
+
+    maxFitness = -(await sumOfSquares())
+
+    fs.appendFileSync('genetic_param_values.txt', 'Initial Sum of Squares : ' + maxFitness + '\n', function (err) {
+        if (err) return console.log(err)
+    })  
     
     while (true) {
-        // await evolve("AI.PSQT_LATE_ENDGAME[P]", -50, 50)
-        // await evolve("AI.PSQT_LATE_ENDGAME[R]", -50, 50)
-        // await evolve("AI.PSQT_LATE_ENDGAME[N]", -50, 50)
-        // await evolve("AI.PSQT_LATE_ENDGAME[B]", -50, 50)
-        // await evolve("AI.PSQT_LATE_ENDGAME[Q]", -50, 50)
+        await evolve("AI.MOB[N]", AI.MOB[N].map(e=>(e === null? e : [Math.max(e-5, 0), e+5])))
+        await evolve("AI.MOB[B]", AI.MOB[B].map(e=>(e === null? e : [Math.max(e-5, 0), e+5])))
+        await evolve("AI.MOB[R]", AI.MOB[R].map(e=>(e === null? e : [Math.max(e-5, 0), e+5])))
+        await evolve("AI.MOB[Q]", AI.MOB[Q].map(e=>(e === null? e : [Math.max(e-5, 0), e+5])))
+
+        // await evolve("AI.POV", [[null, null], [100,100], [200, 500], [200, 500], [400, 750], [800, 1800]])
+        // await evolve("AI.PEV", [[null, null], [100,100], [200, 500], [200, 500], [400, 750], [800, 1800]])
+
+        await evolve("AI.PSQT_LATE_ENDGAME[R]", AI.PSQT_LATE_ENDGAME[R].map(e=>(e === null? e : [Math.max(e-5, -50), e+5])))
+        await evolve("AI.PSQT_OPENING[R]", AI.PSQT_OPENING[R].map(e=>(e === null? e : [Math.max(e-5, -50), e+5])))
+
+        await evolve("AI.PSQT_LATE_ENDGAME[B]", AI.PSQT_LATE_ENDGAME[B].map(e=>(e === null? e : [Math.max(e-5, -50), e+5])))
+        await evolve("AI.PSQT_OPENING[B]", AI.PSQT_OPENING[B].map(e=>(e === null? e : [Math.max(e-5, -50), e+5])))
+
+        await evolve("AI.PSQT_LATE_ENDGAME[N]", AI.PSQT_LATE_ENDGAME[N].map(e=>(e === null? e : [Math.max(e-5, -50), e+5])))
+        await evolve("AI.PSQT_OPENING[N]", AI.PSQT_OPENING[N].map(e=>(e === null? e : [Math.max(e-5, -50), e+5])))
         
-        // await evolve("AI.PSQT_OPENING[N]", -50, 50)
-        // await evolve("AI.PSQT_OPENING[B]", -50, 50)
-        // await evolve("AI.PSQT_OPENING[R]", -50, 50)
-        // await evolve("AI.PSQT_OPENING[Q]", -50, 50)
-        // await evolve("AI.PSQT_OPENING[P]", -50, 50)
+        await evolve("AI.PSQT_LATE_ENDGAME[P]", AI.PSQT_LATE_ENDGAME[P].map(e=>(e === null? e : [Math.max(e-5, -50), e+5])))
+        await evolve("AI.PSQT_OPENING[P]", AI.PSQT_OPENING[P].map(e=>(e === null? e : [Math.max(e-5, -50), e+5])))
 
-        // await evolve("AI.PSQT_LATE_ENDGAME[K]", -50, 50)
-        // await evolve("AI.PSQT_OPENING[K]", -50, 50)
+        await evolve("AI.PSQT_LATE_ENDGAME[Q]", AI.PSQT_LATE_ENDGAME[Q].map(e=>(e === null? e : [Math.max(e-5, -50), e+5])))
+        await evolve("AI.PSQT_OPENING[Q]", AI.PSQT_OPENING[Q].map(e=>(e === null? e : [Math.max(e-5, -50), e+5])))
 
-        await evolve("AI.POV", [[null, null], [100,100], [280, 450], [280, 450], [500, 750], [1200, 1400]])
-        await evolve("AI.PEV", [[null, null], [100,100], [280, 450], [280, 450], [500, 750], [1200, 1400]])
+        await evolve("AI.PSQT_LATE_ENDGAME[K]", AI.PSQT_LATE_ENDGAME[K].map(e=>(e === null? e : [Math.max(e-5, -50), e+5])))
+        await evolve("AI.PSQT_OPENING[K]", AI.PSQT_OPENING[K].map(e=>(e === null? e : [Math.max(e-5, -50), e+5])))
+        
+        await evolve("AI.PASSERSBONUS", AI.PASSERSBONUS.map(e=>(e === null? e : [Math.max(e-5, 0), e+5])))
+        await evolve("AI.DEFENDEDPAWNBONUS", AI.DEFENDEDPAWNBONUS.map(e=>(e === null? e : [Math.max(e-5, 0), e+5])))
+        await evolve("AI.DEFENDED_VALUES", AI.DEFENDED_VALUES.map(e=>(e === null? e : [Math.max(e-5, 0), e+5])))
+        await evolve("AI.DOUBLEDPENALTY", AI.DOUBLEDPENALTY.map(e=>(e === null? e : [Math.max(e-5, 0), e+5])))
+        await evolve("AI.LEVERPAWNBONUS", AI.LEVERPAWNBONUS.map(e=>(e === null? e : [Math.max(e-5, 0), e+5])))
+        await evolve("AI.ALIGNEDPAWNBONUS", AI.ALIGNEDPAWNBONUS.map(e=>(e === null? e : [Math.max(e-5, 0), e+5])))
+        await evolve("AI.NEIGHBOURPAWNBONUS", AI.NEIGHBOURPAWNBONUS.map(e=>(e === null? e : [Math.max(e-5, 0), e+5])))
+        await evolve("AI.BLOCKEDPAWNBONUS", AI.BLOCKEDPAWNBONUS.map(e=>(e === null? e : [Math.max(e-5, 0), e+5])))
+        await evolve("AI.OUTPOSTBONUSKNIGHT", AI.OUTPOSTBONUSKNIGHT.map(e=>(e === null? e : [Math.max(e-5, 0), e+5])))
+        await evolve("AI.OUTPOSTBONUSBISHOP", AI.OUTPOSTBONUSBISHOP.map(e=>(e === null? e : [Math.max(e-5, 0), e+5])))
+        
+        await evolve("AI.ATTACKING_PIECES", AI.ATTACKING_PIECES.map(e=>(e === null? e : [Math.max(e-5, 0), e+5])))
+        await evolve("AI.PAR", AI.PAR.map(e=>(e === null? e : [Math.max(e-5, 0), e+5])))
+        await evolve("AI.PAWNSHIELD", AI.PAWNSHIELD.map(e=>(e === null? e : [Math.max(e-5, 0), e+5])))
+        await evolve("AI.BISHOP_PAIR", AI.BISHOP_PAIR.map(e=>(e === null? e : [Math.max(e-5, 0), e+5])))
 
-        // await evolve("AI.MOB[R]", 0, 400)
-        // await evolve("AI.MOB[N]", 0, 400)
-        // await evolve("AI.MOB[B]", 0, 400)
-        // await evolve("AI.MOB[Q]", 0, 400)
 
-        // await evolve("AI.DEFENDEDPAWNBONUS", 0, 100)
-        // await evolve("AI.DEFENDED_VALUES", 0, 100)
+        generations++
 
-        // await evolve("AI.PASSERSBONUS", 0, 200)
-
-        // await evolve("AI.DOUBLEDPENALTY", 0, 100)
-        // await evolve("AI.LEVERPAWNBONUS", 0, 100)
-        // await evolve("AI.ALIGNEDPAWNBONUS", 0, 100)
-        // await evolve("AI.NEIGHBOURPAWNBONUS", 0, 100)
-        // await evolve("AI.BLOCKEDPAWNBONUS", 0, 100)
-
-        // await evolve("AI.OUTPOSTBONUSKNIGHT", 0, 100)
-        // await evolve("AI.OUTPOSTBONUSBISHOP", 0, 100)
-
-        // await evolve("AI.BISHOP_PAIR", 0, 100)
-        // await evolve("AI.PAWNSHIELD", 0, 100)
-        // await evolve("AI.PAR", 0, 100)
-        // await evolve("AI.ATTACKING_PIECES", 0, 400)
     }
 }
 

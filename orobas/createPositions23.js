@@ -95,7 +95,7 @@ let getFen = ()=>{
 let getScore = async (fen)=>{
     await chessAnalysisApi.getAnalysis({
         fen,
-        depth: 6,
+        depth: 23,
         provider: PROVIDERS.stockfish,
         excludes: [
             PROVIDERS.lichessOpening,
@@ -112,7 +112,7 @@ let getScore = async (fen)=>{
         console.log(result.fen + '\t' + JSON.stringify(result.moves[0].score));
 
         if (result.moves[0].score.type === 'cp') {
-            winner = result.moves[0].score.value > 50? "1.0" : (result.moves[0].score.value < -50? "0.0" : "0.5")
+            winner = result.moves[0].score.value > 120? "1.0" : (result.moves[0].score.value < -120? "0.0" : "0.5")
     
             fs.appendFileSync('orobasRandomPositionsDepth23.txt', result.fen + '\t' + result.moves[0].score.value + '\t' + winner + '\n', function (err) {
                 if (err) return console.log(err);
@@ -131,10 +131,10 @@ let getScore = async (fen)=>{
 }
 
 let createPositions = async ()=>{
-    for (let i = 0; i < 6000; i++) {
-        let numberOfMoves = Math.random()*60 | 0
+    for (let i = 0; i < 25000; i++) {
+        let numberOfMoves = Math.random()*600 | 0
 
-        numberOfMoves = numberOfMoves < 6? 6 : numberOfMoves
+        numberOfMoves = numberOfMoves < 12? 12 : numberOfMoves
 
         let legal = 0
         
@@ -142,26 +142,20 @@ let createPositions = async ()=>{
         for (let j = 0; j < numberOfMoves; j++) {
             let moves = orobas.getMoves()
 
-            // Ordena la mitad de movimientos
-            // para tener variedad de movimientos y
-            // posiciones razonables
-            if (Math.random() < 0.5) {
-                moves = AI.sortMoves(moves, orobas.turn, 1, 10, null)
-            }
+            moves = AI.sortMoves(moves, orobas.turn, 1, 10, null)
 
             let randomMoveIndex = 0
 
             if (moves[0].castleSide) {
                 randomMoveIndex = 0
-                // console.log('castle')
             } else {
-                randomMoveIndex = Math.random()*moves.length*0.1 | 0
+                randomMoveIndex = Math.random()*moves.length | 0
             }
 
             let move = moves[randomMoveIndex]
             
             if (orobas.makeMove(move)) {
-                if (move.castleSide) console.log('castle done')
+                // if (move.castleSide) console.log('castle done')
                 legal++
             }
             
